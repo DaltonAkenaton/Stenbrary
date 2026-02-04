@@ -1,0 +1,85 @@
+<div class="seleccion-container" [class.exito]="registroExitoso">
+  
+  <!-- Pantalla normal - Selección de motivo -->
+  <div class="seleccion-content" *ngIf="!registroExitoso">
+    
+    <!-- Header -->
+    <div class="seleccion-header">
+      <button mat-icon-button class="back-button" (click)="cancelar()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-info">
+        <h1>¿Para qué vienes?</h1>
+        <p class="subtitle" *ngIf="alumno">
+          {{ alumno.nombre }} {{ alumno.apellidoPaterno }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Grid de motivos -->
+    <div class="motivos-grid" *ngIf="!cargando && !error">
+      <mat-card 
+        *ngFor="let motivo of motivos"
+        class="motivo-card"
+        matRipple
+        (click)="seleccionarMotivo(motivo)"
+        [class.disabled]="cargando">
+        
+        <div class="motivo-icon">
+          <mat-icon>{{ motivo.icono || 'help' }}</mat-icon>
+        </div>
+        
+        <div class="motivo-nombre">
+          {{ motivo.nombre }}
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-container" *ngIf="cargando">
+      <mat-spinner diameter="60"></mat-spinner>
+      <p>Guardando registro...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error-container" *ngIf="error && !cargando">
+      <mat-icon>error</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-raised-button color="primary" (click)="cargarMotivos()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Pantalla de éxito -->
+  <div class="exito-content" *ngIf="registroExitoso">
+    <div class="exito-animation">
+      <div class="check-circle">
+        <mat-icon>check</mat-icon>
+      </div>
+    </div>
+    
+    <h1 class="exito-titulo">¡Registro Exitoso!</h1>
+    
+    <div class="exito-info" *ngIf="alumno">
+      <p class="exito-nombre">
+        {{ alumno.nombre }} {{ alumno.apellidoPaterno }}
+      </p>
+      <p class="exito-matricula">
+        Matrícula: {{ alumno.matricula }}
+      </p>
+    </div>
+    
+    <p class="exito-mensaje">
+      Tu acceso ha sido registrado correctamente
+    </p>
+    
+    <div class="exito-loader">
+      <mat-spinner diameter="30"></mat-spinner>
+      <span>Redirigiendo...</span>
+    </div>
+  </div>
+
+</div>

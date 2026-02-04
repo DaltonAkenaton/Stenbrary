@@ -1,0 +1,137 @@
+<div class="scanner-container fullscreen">
+  <!-- Header -->
+  <div class="scanner-header">
+    <h1>📚 Stenbrary</h1>
+    <p class="subtitle">Sistema de Registro de Biblioteca</p>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="scanner-content">
+    
+    <!-- Modo Scanner QR -->
+    <div class="scanner-section" *ngIf="!escaneando">
+      <mat-card class="action-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>qr_code_scanner</mat-icon>
+            Escanear Credencial
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Acerca tu credencial QR a la cámara para registrar tu acceso</p>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            class="scan-button"
+            (click)="iniciarScanner()"
+            [disabled]="cargando">
+            <mat-icon>camera_alt</mat-icon>
+            Iniciar Escáner
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      <div class="divider">
+        <span>O</span>
+      </div>
+
+      <!-- Ingreso Manual -->
+      <mat-card class="action-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>keyboard</mat-icon>
+            Ingreso Manual
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Si no tienes tu credencial, ingresa tu matrícula manualmente</p>
+          
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Matrícula</mat-label>
+            <input 
+              matInput 
+              [(ngModel)]="matriculaManual"
+              placeholder="Ej: 12345"
+              (keyup.enter)="procesarMatriculaManual()"
+              [disabled]="cargando"
+              type="text">
+            <mat-icon matPrefix>badge</mat-icon>
+            <button 
+              mat-icon-button 
+              matSuffix 
+              *ngIf="matriculaManual"
+              (click)="limpiarMatricula()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <button 
+            mat-raised-button 
+            color="accent"
+            class="full-width"
+            (click)="procesarMatriculaManual()"
+            [disabled]="!matriculaManual || cargando">
+            <mat-icon>arrow_forward</mat-icon>
+            Continuar
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+   <!-- Video Scanner Activo -->
+<div class="video-container" *ngIf="escaneando">
+  <div class="video-overlay">
+    <!-- Marco más pequeño y centrado -->
+    <div class="scan-frame-small"></div>
+    
+    <!-- Instrucciones mejoradas -->
+    <div class="scan-instructions">
+      <p class="instruction-main">📱 Acerca el código QR</p>
+      <p class="instruction-sub">Mantén la credencial cerca de la cámara</p>
+      <p class="instruction-detail">El QR debe estar dentro del cuadro</p>
+    </div>
+    
+    <!-- Indicador de esquinas para ayudar a alinear -->
+    <div class="corner-guides">
+      <div class="corner top-left"></div>
+      <div class="corner top-right"></div>
+      <div class="corner bottom-left"></div>
+      <div class="corner bottom-right"></div>
+    </div>
+  </div>
+  
+  <video #video autoplay playsinline></video>
+  
+  <!-- Botón cancelar -->
+  <button 
+    mat-fab 
+    color="warn" 
+    class="cancel-button"
+    (click)="detenerScanner()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" *ngIf="cargando">
+      <div class="spinner"></div>
+      <p>Procesando...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error-message" *ngIf="error && !cargando">
+      <mat-icon>error</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-button (click)="limpiarError()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="scanner-footer">
+    <p class="footer-text">Desarrollado por Dalton Gómez</p>
+    <p class="footer-version">v1.0.0</p>
+  </div>
+</div>

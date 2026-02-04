@@ -1,38 +1,272 @@
-
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
+// Importar variables y mixins
 @use '@angular/material' as mat;
+@import 'styles/variables';
+@import 'styles/mixins';
 
-html {
+// Reset básico
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
   height: 100%;
-  @include mat.theme((
-    color: (
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
-    ),
-    typography: Roboto,
-    density: 0,
-  ));
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
-  color-scheme: light;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: $bg-secondary;
+  color: $text-primary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
+// Utilidades globales
+.full-width {
+  width: 100%;
+}
 
-  // Reset the user agent margin.
-  margin: 0;
+.full-height {
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+// Margin utilities
+.mt-1 { margin-top: $spacing-sm; }
+.mt-2 { margin-top: $spacing-md; }
+.mt-3 { margin-top: $spacing-lg; }
+.mt-4 { margin-top: $spacing-xl; }
+
+.mb-1 { margin-bottom: $spacing-sm; }
+.mb-2 { margin-bottom: $spacing-md; }
+.mb-3 { margin-bottom: $spacing-lg; }
+.mb-4 { margin-bottom: $spacing-xl; }
+
+.ml-1 { margin-left: $spacing-sm; }
+.ml-2 { margin-left: $spacing-md; }
+.ml-3 { margin-left: $spacing-lg; }
+
+.mr-1 { margin-right: $spacing-sm; }
+.mr-2 { margin-right: $spacing-md; }
+.mr-3 { margin-right: $spacing-lg; }
+
+// Padding utilities
+.p-1 { padding: $spacing-sm; }
+.p-2 { padding: $spacing-md; }
+.p-3 { padding: $spacing-lg; }
+.p-4 { padding: $spacing-xl; }
+
+// Flex utilities
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  @include flex-center;
+}
+
+.flex-column {
+  @include flex-column;
+}
+
+.flex-between {
+  @include flex-between;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+// Animaciones globales
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+// Clases de animación
+.fade-in {
+  animation: fadeIn $transition-normal;
+}
+
+.slide-in-up {
+  animation: slideInUp $transition-normal;
+}
+
+.slide-in-down {
+  animation: slideInDown $transition-normal;
+}
+
+.scale-in {
+  animation: scaleIn $transition-normal;
+}
+
+.pulse {
+  animation: pulse 1s infinite;
+}
+
+// Container responsive
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+
+  @include respond-to($breakpoint-md) {
+    padding: 0 $spacing-lg;
+  }
+}
+
+// Card genérico
+.card {
+  @include card;
+  
+  &.card-hover {
+    transition: transform $transition-fast, box-shadow $transition-fast;
+    cursor: pointer;
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: $shadow-lg;
+    }
+  }
+}
+
+// Botón primario custom
+.btn-primary {
+  background-color: $primary-color;
+  color: white;
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  border-radius: $border-radius-sm;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all $transition-fast;
+  
+  &:hover {
+    background-color: darken($primary-color, 10%);
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &:disabled {
+    background-color: lighten($primary-color, 20%);
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// Scrollbar personalizado
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: $bg-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+  background: lighten($primary-color, 20%);
+  border-radius: $border-radius-sm;
+  
+  &:hover {
+    background: $primary-color;
+  }
+}
+
+// Loading spinner
+.spinner {
+  border: 3px solid $bg-secondary;
+  border-top: 3px solid $primary-color;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Overlay
+.overlay {
+  @include overlay;
+  @include flex-center;
+}
+
+// Estilos para pantalla completa (Scanner)
+.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: $z-modal;
+  background: $bg-primary;
+}

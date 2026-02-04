@@ -1,0 +1,235 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.seleccion-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: $spacing-md;
+  
+  &.exito {
+    @include flex-center;
+  }
+}
+
+// ==================== SELECCIÓN ====================
+
+.seleccion-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.seleccion-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  color: white;
+  margin-bottom: $spacing-xl;
+  
+  .back-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  
+  .header-info {
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .subtitle {
+      margin: $spacing-xs 0 0;
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+  }
+}
+
+// ==================== GRID DE MOTIVOS ====================
+
+.motivos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: $spacing-lg;
+  
+  @media (max-width: $breakpoint-sm) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-md;
+  }
+}
+
+.motivo-card {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xl $spacing-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+  animation: scaleIn 0.3s ease-out backwards;
+  
+  @for $i from 1 through 10 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.05}s;
+    }
+  }
+  
+  &:hover:not(.disabled) {
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: $shadow-lg;
+  }
+  
+  &:active:not(.disabled) {
+    transform: translateY(-4px) scale(1.02);
+  }
+  
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .motivo-icon {
+    @include flex-center;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, $primary-color, lighten($primary-color, 10%));
+    border-radius: 50%;
+    margin-bottom: $spacing-md;
+    box-shadow: $shadow-md;
+    
+    mat-icon {
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: white;
+    }
+  }
+  
+  .motivo-nombre {
+    text-align: center;
+    font-weight: 500;
+    font-size: 1rem;
+    color: $text-primary;
+  }
+}
+
+// ==================== LOADING ====================
+
+.loading-container {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xxl;
+  color: white;
+  
+  p {
+    margin-top: $spacing-lg;
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+}
+
+// ==================== ERROR ====================
+
+.error-container {
+  @include flex-center;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: $border-radius-lg;
+  padding: $spacing-xxl;
+  color: $warn-color;
+  
+  mat-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: $spacing-md;
+  }
+  
+  p {
+    margin-bottom: $spacing-lg;
+    font-size: 1.1rem;
+  }
+}
+
+// ==================== PANTALLA DE ÉXITO ====================
+
+.exito-content {
+  @include flex-center;
+  flex-direction: column;
+  text-align: center;
+  color: white;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.exito-animation {
+  margin-bottom: $spacing-xl;
+  
+  .check-circle {
+    @include flex-center;
+    width: 120px;
+    height: 120px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    mat-icon {
+      font-size: 80px;
+      width: 80px;
+      height: 80px;
+      color: $success-color;
+    }
+  }
+}
+
+.exito-titulo {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 $spacing-lg 0;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.exito-info {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $border-radius-lg;
+  padding: $spacing-lg $spacing-xl;
+  margin-bottom: $spacing-lg;
+  backdrop-filter: blur(10px);
+  
+  .exito-nombre {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .exito-matricula {
+    font-size: 1.1rem;
+    margin: $spacing-sm 0 0;
+    opacity: 0.9;
+  }
+}
+
+.exito-mensaje {
+  font-size: 1.2rem;
+  margin: 0 0 $spacing-xl 0;
+  opacity: 0.9;
+}
+
+.exito-loader {
+  @include flex-center;
+  gap: $spacing-md;
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+// ==================== ANIMACIONES ====================
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

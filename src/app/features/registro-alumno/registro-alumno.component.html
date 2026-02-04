@@ -1,0 +1,156 @@
+<div class="registro-container">
+  <!-- Header -->
+  <div class="registro-header">
+    <button mat-icon-button class="back-button" (click)="cancelar()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Registro de Nuevo Alumno</h1>
+  </div>
+
+  <!-- Contenido -->
+  <div class="registro-content">
+    <mat-card class="registro-card">
+      <mat-card-header>
+        <div class="card-header-content">
+          <mat-icon class="header-icon">person_add</mat-icon>
+          <div>
+            <mat-card-title>Datos del Alumno</mat-card-title>
+            <mat-card-subtitle>Matrícula: {{ matricula }}</mat-card-subtitle>
+          </div>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="registroForm" class="registro-form">
+          
+          <!-- Nombre -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nombre(s)</mat-label>
+            <input 
+              matInput 
+              formControlName="nombre"
+              placeholder="Ej: Juan Carlos"
+              [class.input-error]="campoInvalido('nombre')">
+            <mat-icon matPrefix>badge</mat-icon>
+            <mat-error *ngIf="campoInvalido('nombre')">
+              {{ obtenerErrorCampo('nombre') }}
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Apellido Paterno -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Apellido Paterno</mat-label>
+            <input 
+              matInput 
+              formControlName="apellidoPaterno"
+              placeholder="Ej: García"
+              [class.input-error]="campoInvalido('apellidoPaterno')">
+            <mat-icon matPrefix>badge</mat-icon>
+            <mat-error *ngIf="campoInvalido('apellidoPaterno')">
+              {{ obtenerErrorCampo('apellidoPaterno') }}
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Apellido Materno -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Apellido Materno</mat-label>
+            <input 
+              matInput 
+              formControlName="apellidoMaterno"
+              placeholder="Ej: López"
+              [class.input-error]="campoInvalido('apellidoMaterno')">
+            <mat-icon matPrefix>badge</mat-icon>
+            <mat-error *ngIf="campoInvalido('apellidoMaterno')">
+              {{ obtenerErrorCampo('apellidoMaterno') }}
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Carrera -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Carrera</mat-label>
+            <mat-select formControlName="carrera">
+              <mat-option *ngFor="let carrera of carreras" [value]="carrera">
+                {{ carrera }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix>school</mat-icon>
+            <mat-error *ngIf="campoInvalido('carrera')">
+              {{ obtenerErrorCampo('carrera') }}
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Grado, Grupo, Turno en una fila -->
+          <div class="form-row">
+            <!-- Grado -->
+            <mat-form-field appearance="outline" class="form-col">
+              <mat-label>Grado</mat-label>
+              <mat-select formControlName="grado">
+                <mat-option *ngFor="let grado of grados" [value]="grado">
+                  {{ grado }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="campoInvalido('grado')">
+                Requerido
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Grupo -->
+            <mat-form-field appearance="outline" class="form-col">
+              <mat-label>Grupo</mat-label>
+              <mat-select formControlName="grupo">
+                <mat-option *ngFor="let grupo of grupos" [value]="grupo">
+                  {{ grupo }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="campoInvalido('grupo')">
+                Requerido
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Turno -->
+            <mat-form-field appearance="outline" class="form-col">
+              <mat-label>Turno</mat-label>
+              <mat-select formControlName="turno">
+                <mat-option *ngFor="let turno of turnos" [value]="turno">
+                  {{ turno }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="campoInvalido('turno')">
+                Requerido
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Error general -->
+          <div class="error-message" *ngIf="error && !cargando">
+            <mat-icon>error</mat-icon>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Botones -->
+          <div class="form-actions">
+            <button 
+              mat-stroked-button 
+              type="button"
+              (click)="cancelar()"
+              [disabled]="cargando">
+              <mat-icon>close</mat-icon>
+              Cancelar
+            </button>
+
+            <button 
+              mat-raised-button 
+              color="primary"
+              type="button"
+              (click)="registrarAlumno()"
+              [disabled]="cargando">
+              <mat-spinner *ngIf="cargando" diameter="20" class="button-spinner"></mat-spinner>
+              <mat-icon *ngIf="!cargando">check</mat-icon>
+              {{ cargando ? 'Guardando...' : 'Registrar y Continuar' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
