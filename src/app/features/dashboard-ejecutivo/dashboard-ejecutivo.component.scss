@@ -1,0 +1,599 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  dashboard-ejecutivo.component.scss                  ║
+// ║  Stenbrary v3.0 — Dark Theme Fixes                   ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.dashboard-ejecutivo-container {
+  min-height: 100vh;
+  background: transparent;
+  padding: $spacing-lg;
+}
+
+// ═══════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+
+  .back-button {
+    background: $navy-700;
+    color: $text-primary;
+    border: 1px solid $border-subtle;
+    box-shadow: none;
+    transition: all $transition-fast;
+
+    &:hover {
+      background: $navy-600;
+      border-color: $border-glow;
+    }
+  }
+
+  .header-info {
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: $text-primary;
+    }
+
+    .subtitle {
+      margin: $spacing-xs 0 0;
+      color: $text-secondary;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// LOADING
+// ═══════════════════════════════════════════════════
+
+.loading-state {
+  @include flex-center;
+  flex-direction: column;
+  min-height: 60vh;
+  color: $text-secondary;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: $cyan-500;
+    margin-bottom: $spacing-md;
+    animation: spin 1.5s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// ═══════════════════════════════════════════════════
+// INSIGHTS
+// ═══════════════════════════════════════════════════
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-lg;
+  margin-bottom: $spacing-xl;
+}
+
+.insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  border-left: 3px solid;
+  transition: all $transition-fast;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .insight-icon {
+    @include flex-center;
+    width: 44px;
+    height: 44px;
+    border-radius: $border-radius-md;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+  }
+
+  .insight-content {
+    flex: 1;
+
+    h3 {
+      margin: 0 0 $spacing-xs 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: $text-secondary;
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+  }
+
+  &.insight-success {
+    border-left-color: $success-color;
+    .insight-icon { background: rgba($success-color, 0.2); }
+    .insight-icon mat-icon { color: $success-color; }
+  }
+
+  &.insight-warning {
+    border-left-color: $amber-color;
+    .insight-icon { background: rgba($amber-color, 0.2); }
+    .insight-icon mat-icon { color: $amber-color; }
+  }
+
+  &.insight-info {
+    border-left-color: $cyan-500;
+    .insight-icon { background: rgba($cyan-500, 0.2); }
+    .insight-icon mat-icon { color: $cyan-400; }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TENDENCIA
+// ═══════════════════════════════════════════════════
+
+.tendencia-card {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-xl;
+
+  h2 {
+    margin: 0 0 $spacing-xl 0;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    mat-icon { color: $cyan-500; }
+  }
+
+  .tendencia-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: $spacing-xl;
+    align-items: center;
+    margin-bottom: $spacing-lg;
+  }
+
+  .tendencia-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-xs;
+
+    .tendencia-label {
+      font-size: 0.85rem;
+      color: $text-secondary;
+      font-weight: 500;
+    }
+
+    .tendencia-valor {
+      font-size: 2rem;
+      font-weight: 800;
+      color: $cyan-400;
+      font-family: $font-display;
+
+      &.grande { font-size: 2.5rem; }
+    }
+
+    .tendencia-sublabel {
+      font-size: 0.8rem;
+      color: $text-muted;
+      font-family: $font-mono;
+    }
+  }
+
+  .tendencia-icono {
+    @include flex-center;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+    }
+
+    &.success mat-icon { color: $success-color; }
+    &.warning mat-icon { color: $amber-color; }
+    &.neutral mat-icon { color: $text-muted; }
+  }
+
+  .tendencia-texto {
+    text-align: center;
+    padding: $spacing-md;
+    border-radius: $border-radius-md;
+    font-size: 1rem;
+    font-weight: 600;
+
+    &.success {
+      color: $success-color;
+      background: rgba($success-color, 0.1);
+      border: 1px solid rgba($success-color, 0.2);
+    }
+
+    &.warning {
+      color: $amber-color;
+      background: rgba($amber-color, 0.1);
+      border: 1px solid rgba($amber-color, 0.2);
+    }
+
+    &.neutral {
+      color: $text-secondary;
+      background: $navy-700;
+      border: 1px solid $border-subtle;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// HEATMAP
+// ═══════════════════════════════════════════════════
+
+.heatmap-card {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-xl;
+
+  .heatmap-header {
+    @include flex-between;
+    margin-bottom: $spacing-lg;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+
+    h2 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+
+      mat-icon { color: $cyan-500; }
+    }
+  }
+
+  .heatmap-leyenda {
+    display: flex;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+
+    .leyenda-item {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      font-size: 0.8rem;
+      color: $text-secondary;
+    }
+
+    .leyenda-cuadro {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid $border-subtle;
+    }
+  }
+
+  .heatmap-container {
+    overflow-x: auto;
+    margin-bottom: $spacing-lg;
+  }
+
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 100px repeat(15, 50px);
+    gap: 3px;
+    min-width: 900px;
+  }
+
+  .heatmap-corner { background: transparent; }
+
+  .heatmap-hora,
+  .heatmap-dia {
+    @include flex-center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $text-muted;
+    font-family: $font-mono;
+  }
+
+  .heatmap-hora { height: 28px; }
+
+  .heatmap-dia {
+    height: 36px;
+    justify-content: flex-end;
+    padding-right: $spacing-sm;
+    color: $text-secondary;
+  }
+
+  .heatmap-cell {
+    @include flex-center;
+    height: 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all $transition-fast;
+    position: relative;
+
+    &:hover {
+      transform: scale(1.15);
+      z-index: 10;
+    }
+
+    .cell-value {
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: $font-mono;
+    }
+
+    // Dark theme heatmap intensities
+    &.intensidad-0 {
+      background: $navy-700;
+      border: 1px solid $border-subtle;
+
+      .cell-value { color: $text-muted; }
+    }
+
+    &.intensidad-1 {
+      background: rgba($cyan-500, 0.15);
+      border: 1px solid rgba($cyan-500, 0.2);
+
+      .cell-value { color: $cyan-400; }
+    }
+
+    &.intensidad-2 {
+      background: rgba($cyan-500, 0.30);
+      border: 1px solid rgba($cyan-500, 0.35);
+
+      .cell-value { color: white; }
+    }
+
+    &.intensidad-3 {
+      background: rgba($cyan-500, 0.50);
+      box-shadow: 0 0 8px rgba($cyan-500, 0.2);
+
+      .cell-value { color: white; }
+    }
+
+    &.intensidad-4 {
+      background: rgba($cyan-500, 0.75);
+      box-shadow: 0 0 12px rgba($cyan-500, 0.3);
+
+      .cell-value { color: white; font-weight: 800; }
+    }
+  }
+
+  .heatmap-prediccion {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-md;
+    background: rgba($cyan-500, 0.08);
+    border: 1px solid $border-glow;
+    border-radius: $border-radius-md;
+    color: $cyan-400;
+    font-size: 0.9rem;
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+      color: $cyan-500;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TOP ALUMNOS
+// ═══════════════════════════════════════════════════
+
+.top-alumnos-card {
+  padding: $spacing-xl;
+
+  h2 {
+    margin: 0 0 $spacing-xl 0;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    mat-icon { color: $amber-color; }
+  }
+
+  .top-alumnos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .top-alumno-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding: $spacing-lg;
+    background: $navy-700;
+    border: 1px solid $border-subtle;
+    border-radius: $border-radius-md;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover {
+      background: rgba(0, 200, 215, 0.05);
+      border-color: $border-glow;
+      transform: translateX(6px);
+    }
+
+    .alumno-ranking {
+      .ranking-numero {
+        @include flex-center;
+        width: 36px;
+        height: 36px;
+        border-radius: $border-radius-sm;
+        background: $navy-600;
+        color: $text-secondary;
+        font-weight: 700;
+        font-size: 1.1rem;
+        font-family: $font-mono;
+
+        &.top-1 {
+          background: linear-gradient(135deg, #ffd700, #ffb800);
+          color: #1a1a2e;
+          box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+        }
+
+        &.top-2 {
+          background: linear-gradient(135deg, #8e9aaf, #b8c4d4);
+          color: #1a1a2e;
+        }
+
+        &.top-3 {
+          background: linear-gradient(135deg, #cd7f32, #daa06d);
+          color: white;
+        }
+      }
+    }
+
+    .alumno-avatar {
+      mat-icon {
+        font-size: 40px;
+        width: 40px;
+        height: 40px;
+        color: $cyan-500;
+      }
+    }
+
+    .alumno-info {
+      flex: 1;
+
+      h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: $text-primary;
+      }
+
+      .alumno-carrera {
+        margin: 2px 0 0;
+        font-size: 0.85rem;
+        color: $text-secondary;
+      }
+    }
+
+    .alumno-stats {
+      display: flex;
+      gap: $spacing-lg;
+      align-items: center;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: $spacing-xs;
+        font-size: 0.85rem;
+        color: $text-secondary;
+
+        mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+          color: $text-muted;
+        }
+      }
+
+      .motivo-chip {
+        background: rgba($cyan-500, 0.12) !important;
+        color: $cyan-400 !important;
+        border: 1px solid $border-glow !important;
+        font-size: 0.8rem;
+      }
+    }
+
+    .ver-mas {
+      color: $text-muted;
+      opacity: 0;
+      transition: opacity $transition-fast, transform $transition-fast;
+    }
+
+    &:hover .ver-mas {
+      opacity: 1;
+      transform: translateX(4px);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// EMPTY STATE
+// ═══════════════════════════════════════════════════
+
+.empty-state {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xxl;
+  color: $text-muted;
+
+  mat-icon {
+    font-size: 3.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    opacity: 0.3;
+    color: $cyan-500;
+    margin-bottom: $spacing-md;
+  }
+
+  p {
+    font-size: 1rem;
+    color: $text-secondary;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════
+
+@media (max-width: $breakpoint-lg) {
+  .heatmap-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tendencia-grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-lg;
+
+    .tendencia-icono { order: -1; }
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .dashboard-ejecutivo-container { padding: $spacing-md; }
+  .insights-grid { grid-template-columns: 1fr; }
+
+  .top-alumno-item {
+    flex-wrap: wrap;
+
+    .alumno-stats {
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .heatmap-leyenda {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,235 +1,892 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  seleccion-motivo.component.scss                     ║
+// ║  Stenbrary v3.1 — Two-Panel Confirmation Layout      ║
+// ║                                                      ║
+// ║  Desktop: Split-screen (info 360px | motivos 1fr)    ║
+// ║  Mobile:  Full grid + bottom-sheet confirmación      ║
+// ╚══════════════════════════════════════════════════════╝
+
 @import '../../../styles/variables';
 @import '../../../styles/mixins';
 
+// ═══════════════════════════════════════════════════
+// CONTAINER
+// ═══════════════════════════════════════════════════
+
 .seleccion-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: $spacing-md;
-  
-  &.exito {
-    @include flex-center;
+  background: transparent;
+}
+
+// ═══════════════════════════════════════════════════
+// LAYOUT — DOS PANELES
+// ═══════════════════════════════════════════════════
+
+.seleccion-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  min-height: 100vh;
+
+  @media (max-width: $breakpoint-md) {
+    grid-template-columns: 1fr;
   }
 }
 
-// ==================== SELECCIÓN ====================
+// ═══════════════════════════════════════════════════
+// PANEL IZQUIERDO — Info + Confirmación
+// ═══════════════════════════════════════════════════
 
-.seleccion-content {
-  max-width: 800px;
-  margin: 0 auto;
+.panel-info {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-lg;
+  background: $navy-950;
+  border-right: 1px solid $border-subtle;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+
+  // Oculto en mobile (se usa el bottom-sheet)
+  @media (max-width: $breakpoint-md) {
+    display: none;
+  }
 }
 
-.seleccion-header {
+// — Tarjeta del alumno —
+
+.student-card {
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  color: white;
-  margin-bottom: $spacing-xl;
-  
-  .back-button {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
+  padding: $spacing-lg;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+
+  .student-avatar {
+    @include flex-center;
+    width: 52px;
+    height: 52px;
+    background: rgba(0, 200, 215, 0.10);
+    border: 1px solid $border-glow;
+    border-radius: $border-radius-md;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+      color: $cyan-400;
+    }
   }
-  
-  .header-info {
-    h1 {
-      margin: 0;
-      font-size: 2rem;
-      font-weight: 700;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    .subtitle {
-      margin: $spacing-xs 0 0;
-      font-size: 1.1rem;
-      opacity: 0.9;
-    }
+
+  .student-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .student-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .student-matricula {
+    font-family: $font-mono;
+    font-size: 0.8rem;
+    color: $cyan-400;
+    letter-spacing: 0.5px;
+  }
+
+  .student-carrera {
+    font-size: 0.75rem;
+    color: $text-muted;
   }
 }
 
-// ==================== GRID DE MOTIVOS ====================
+// — Estado esperando selección —
 
-.motivos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: $spacing-lg;
-  
-  @media (max-width: $breakpoint-sm) {
-    grid-template-columns: repeat(2, 1fr);
-    gap: $spacing-md;
-  }
-}
-
-.motivo-card {
+.waiting-state {
   @include flex-center;
   flex-direction: column;
-  padding: $spacing-xl $spacing-md;
-  cursor: pointer;
-  transition: all $transition-fast;
-  animation: scaleIn 0.3s ease-out backwards;
-  
-  @for $i from 1 through 10 {
-    &:nth-child(#{$i}) {
-      animation-delay: #{$i * 0.05}s;
-    }
-  }
-  
-  &:hover:not(.disabled) {
-    transform: translateY(-8px) scale(1.05);
-    box-shadow: $shadow-lg;
-  }
-  
-  &:active:not(.disabled) {
-    transform: translateY(-4px) scale(1.02);
-  }
-  
-  &.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .motivo-icon {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-xl;
+  gap: $spacing-md;
+
+  .waiting-icon {
     @include flex-center;
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, $primary-color, lighten($primary-color, 10%));
+    background: rgba(0, 200, 215, 0.06);
+    border: 1px dashed rgba(0, 200, 215, 0.20);
     border-radius: 50%;
-    margin-bottom: $spacing-md;
-    box-shadow: $shadow-md;
-    
+
     mat-icon {
-      font-size: 40px;
-      width: 40px;
-      height: 40px;
-      color: white;
+      font-size: 36px;
+      width: 36px;
+      height: 36px;
+      color: $text-muted;
+      animation: pulseGlow 2.5s ease-in-out infinite;
     }
   }
-  
+
+  .waiting-text {
+    font-size: 1rem;
+    color: $text-secondary;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .waiting-hint {
+    font-size: 0.8rem;
+    color: $text-muted;
+    margin: 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.8; transform: scale(1.05); }
+}
+
+// — Panel de confirmación —
+
+.confirm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  flex: 1;
+  animation: slideInLeft 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+.confirm-motivo {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $navy-800;
+  border: 1px solid $border-glow;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 0 24px rgba(0, 200, 215, 0.06);
+
+  .confirm-icon {
+    @include flex-center;
+    width: 56px;
+    height: 56px;
+    background: rgba(0, 200, 215, 0.10);
+    border: 1px solid $border-glow;
+    border-radius: $border-radius-md;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  .confirm-details {
+    min-width: 0;
+
+    h3 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: $text-primary;
+    }
+
+    .confirm-desc {
+      margin: 0;
+      font-size: 0.8rem;
+      color: $text-secondary;
+      line-height: 1.45;
+    }
+  }
+}
+
+.confirm-question {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: rgba(0, 200, 215, 0.04);
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  font-size: 0.85rem;
+  color: $text-secondary;
+  line-height: 1.5;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: $cyan-500;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+
+  strong {
+    color: $cyan-400;
+  }
+}
+
+// — Botón registrar (prominente) —
+
+.btn-registrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, $cyan-500, $teal-400);
+  color: $navy-950;
+  border: none;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: 0 4px 20px rgba(0, 200, 215, 0.30);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 200, 215, 0.40);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  mat-spinner {
+    display: inline-block;
+  }
+}
+
+// — Links secundarios —
+
+.confirm-links {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.link-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-family: $font-body;
+  font-size: 0.8rem;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 200ms;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    color: $cyan-400;
+  }
+
+  &.warn:hover:not(:disabled) {
+    color: $amber-color;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// — Botón cancelar desktop —
+
+.btn-cancelar-desktop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 10px;
+  background: rgba($warn-color, 0.06);
+  border: 1px solid rgba($warn-color, 0.15);
+  border-radius: $border-radius-md;
+  color: rgba($warn-color, 0.6);
+  font-family: $font-body;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 200ms;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: rgba($warn-color, 0.12);
+    color: $warn-color;
+    border-color: rgba($warn-color, 0.3);
+  }
+
+  @media (max-width: $breakpoint-md) {
+    display: none;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PANEL DERECHO — Grid de motivos
+// ═══════════════════════════════════════════════════
+
+.panel-motivos {
+  display: flex;
+  flex-direction: column;
+  padding: $spacing-lg;
+  overflow-y: auto;
+  min-height: 100vh;
+
+  @media (max-width: $breakpoint-md) {
+    min-height: auto;
+    padding-bottom: 200px;
+  }
+}
+
+.motivos-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+
+  .back-button {
+    background: $navy-700;
+    color: $text-primary;
+    border: 1px solid $border-subtle;
+    transition: all $transition-fast;
+
+    &:hover {
+      background: $navy-600;
+      border-color: $border-glow;
+    }
+
+    @media (min-width: $breakpoint-md) {
+      display: none;
+    }
+  }
+
+  .header-text {
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: $text-primary;
+
+      @media (min-width: $breakpoint-md) {
+        font-size: 1.75rem;
+      }
+    }
+
+    .subtitle {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+      color: $text-secondary;
+    }
+  }
+}
+
+// — Grid —
+
+.motivos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: $spacing-md;
+  align-content: start;
+
+  @media (max-width: $breakpoint-sm) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-sm;
+  }
+}
+
+// — Motivo card —
+
+.motivo-card {
+  position: relative;
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-lg $spacing-md;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: revealUp 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  @for $i from 1 through 16 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 50}ms;
+    }
+  }
+
+  .motivo-icon-wrap {
+    @include flex-center;
+    width: 64px;
+    height: 64px;
+    background: rgba(0, 200, 215, 0.08);
+    border: 1px solid $border-subtle;
+    border-radius: $border-radius-lg;
+    transition: all 250ms;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      transition: all 250ms;
+    }
+  }
+
   .motivo-nombre {
     text-align: center;
-    font-weight: 500;
-    font-size: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
     color: $text-primary;
+    line-height: 1.25;
+  }
+
+  .motivo-desc-hint {
+    display: none;
+    text-align: center;
+    font-size: 0.7rem;
+    color: $text-muted;
+    line-height: 1.3;
+    max-height: 2.6em;
+    overflow: hidden;
+
+    @media (min-width: $breakpoint-md) {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+  }
+
+  &:hover:not(.selected) {
+    border-color: rgba(0, 200, 215, 0.25);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+
+    .motivo-icon-wrap {
+      background: rgba(0, 200, 215, 0.12);
+      border-color: rgba(0, 200, 215, 0.25);
+
+      mat-icon {
+        transform: scale(1.08);
+      }
+    }
+  }
+
+  &.selected {
+    border-color: $border-glow;
+    background: rgba(0, 200, 215, 0.06);
+    box-shadow: 0 0 28px rgba(0, 200, 215, 0.10), 0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+
+    .motivo-icon-wrap {
+      background: rgba(0, 200, 215, 0.15);
+      border-color: $border-glow;
+      box-shadow: 0 0 16px rgba(0, 200, 215, 0.15);
+    }
+
+    .motivo-nombre {
+      color: $cyan-400;
+    }
+  }
+
+  &.dimmed {
+    opacity: 0.45;
+    transform: scale(0.97);
+
+    &:hover {
+      opacity: 0.7;
+      transform: scale(1);
+    }
   }
 }
 
-// ==================== LOADING ====================
+// — Badge de seleccionado —
 
-.loading-container {
+.selected-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
   @include flex-center;
-  flex-direction: column;
-  padding: $spacing-xxl;
-  color: white;
-  
-  p {
-    margin-top: $spacing-lg;
-    font-size: 1.2rem;
-    font-weight: 500;
-  }
-}
+  width: 24px;
+  height: 24px;
+  background: $cyan-500;
+  border-radius: 50%;
+  animation: scaleIn 250ms cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
 
-// ==================== ERROR ====================
-
-.error-container {
-  @include flex-center;
-  flex-direction: column;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: $border-radius-lg;
-  padding: $spacing-xxl;
-  color: $warn-color;
-  
   mat-icon {
-    font-size: 4rem;
-    width: 4rem;
-    height: 4rem;
-    margin-bottom: $spacing-md;
-  }
-  
-  p {
-    margin-bottom: $spacing-lg;
-    font-size: 1.1rem;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: $navy-950;
   }
 }
 
-// ==================== PANTALLA DE ÉXITO ====================
+// — Loading & Error states —
+
+.loading-state {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-xxl;
+  color: $text-secondary;
+}
+
+.error-state {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-xxl;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: $warn-color;
+  }
+
+  p {
+    color: $text-secondary;
+    font-size: 1rem;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// MOBILE — Bottom sheet de confirmación
+// ═══════════════════════════════════════════════════
+
+.mobile-backdrop,
+.mobile-confirm-sheet {
+  display: none;
+
+  @media (max-width: $breakpoint-md) {
+    display: block;
+  }
+}
+
+.mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  animation: fadeIn 200ms ease both;
+}
+
+.mobile-confirm-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 91;
+  background: $navy-800;
+  border-top: 1px solid $border-glow;
+  border-radius: 24px 24px 0 0;
+  padding: $spacing-sm $spacing-lg $spacing-lg;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4), 0 -2px 16px rgba(0, 200, 215, 0.06);
+  animation: sheetSlideUp 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  .sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(160, 200, 215, 0.20);
+    border-radius: 2px;
+    margin: 0 auto $spacing-md;
+  }
+
+  .sheet-motivo {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    margin-bottom: $spacing-md;
+
+    .sheet-motivo-icon {
+      @include flex-center;
+      width: 48px;
+      height: 48px;
+      background: rgba(0, 200, 215, 0.10);
+      border: 1px solid $border-glow;
+      border-radius: $border-radius-md;
+      flex-shrink: 0;
+
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .sheet-motivo-info {
+      h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: $text-primary;
+      }
+
+      p {
+        margin: 2px 0 0;
+        font-size: 0.75rem;
+        color: $text-secondary;
+      }
+    }
+  }
+
+  .sheet-question {
+    font-size: 0.85rem;
+    color: $text-secondary;
+    margin-bottom: $spacing-lg;
+    line-height: 1.4;
+
+    strong {
+      color: $cyan-400;
+    }
+  }
+
+  .sheet-actions {
+    display: flex;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+  }
+
+  .sheet-btn-cancel,
+  .sheet-btn-confirm {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 13px 16px;
+    border: none;
+    border-radius: $border-radius-md;
+    font-family: $font-body;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+  }
+
+  .sheet-btn-cancel {
+    background: $navy-700;
+    color: $text-secondary;
+    border: 1px solid $border-subtle;
+
+    &:hover:not(:disabled) {
+      background: $navy-600;
+    }
+  }
+
+  .sheet-btn-confirm {
+    background: linear-gradient(135deg, $cyan-500, $teal-400);
+    color: $navy-950;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(0, 200, 215, 0.35);
+    }
+
+    mat-spinner {
+      display: inline-block;
+    }
+  }
+
+  .sheet-link {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 8px;
+    font-family: $font-body;
+    font-size: 0.75rem;
+    color: $text-muted;
+    cursor: pointer;
+    text-align: center;
+    transition: color 200ms;
+
+    &:hover:not(:disabled) { color: $amber-color; }
+    &:disabled { opacity: 0.4; }
+  }
+}
+
+@keyframes sheetSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PANTALLA DE ÉXITO
+// ═══════════════════════════════════════════════════
+
+.exito-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  @include flex-center;
+  background: $navy-900;
+  animation: fadeIn 300ms ease both;
+}
 
 .exito-content {
   @include flex-center;
   flex-direction: column;
   text-align: center;
-  color: white;
-  animation: fadeIn 0.5s ease-out;
+  padding: $spacing-xl;
+  animation: revealUp 500ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.exito-animation {
+.exito-check {
+  @include flex-center;
+  width: 100px;
+  height: 100px;
+  background: rgba($success-color, 0.12);
+  border: 2px solid rgba($success-color, 0.35);
+  border-radius: 50%;
   margin-bottom: $spacing-xl;
-  
-  .check-circle {
-    @include flex-center;
-    width: 120px;
-    height: 120px;
-    background: white;
-    border-radius: 50%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    
-    mat-icon {
-      font-size: 80px;
-      width: 80px;
-      height: 80px;
-      color: $success-color;
-    }
+  box-shadow: 0 0 40px rgba($success-color, 0.18);
+  animation: scaleIn 400ms cubic-bezier(0.68, -0.55, 0.27, 1.55) both;
+
+  mat-icon {
+    font-size: 52px;
+    width: 52px;
+    height: 52px;
+    color: $success-color;
+    filter: drop-shadow(0 0 10px rgba($success-color, 0.4));
   }
 }
 
 .exito-titulo {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 $spacing-lg 0;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+  margin: 0 0 $spacing-md;
+  font-family: $font-display;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: $success-color;
 }
 
 .exito-info {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: $border-radius-lg;
-  padding: $spacing-lg $spacing-xl;
   margin-bottom: $spacing-lg;
-  backdrop-filter: blur(10px);
-  
-  .exito-nombre {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-  }
-  
-  .exito-matricula {
-    font-size: 1.1rem;
-    margin: $spacing-sm 0 0;
-    opacity: 0.9;
-  }
-}
 
-.exito-mensaje {
-  font-size: 1.2rem;
-  margin: 0 0 $spacing-xl 0;
-  opacity: 0.9;
+  .exito-nombre {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .exito-detalle {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: $cyan-400;
+    font-family: $font-mono;
+  }
 }
 
 .exito-loader {
   @include flex-center;
-  gap: $spacing-md;
-  font-size: 1rem;
-  opacity: 0.8;
+  gap: $spacing-sm;
+  color: $text-muted;
+  font-size: 0.8rem;
+
+  .exito-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid $border-subtle;
+    border-top-color: $cyan-500;
+    border-radius: 50%;
+    animation: spin 800ms linear infinite;
+  }
 }
 
-// ==================== ANIMACIONES ====================
+// ═══════════════════════════════════════════════════
+// ANIMACIONES
+// ═══════════════════════════════════════════════════
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
 
 @keyframes scaleIn {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }

@@ -1,0 +1,186 @@
+<div class="dashboard-ejecutivo-container">
+  
+  <!-- Header -->
+  <div class="header">
+    <button mat-icon-button class="back-button" (click)="volverDashboard()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="header-info">
+      <h1>Dashboard Ejecutivo</h1>
+      <p class="subtitle">Análisis avanzado y tendencias</p>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="cargando">
+    <mat-icon>hourglass_empty</mat-icon>
+    <p>Analizando datos...</p>
+  </div>
+
+  <!-- Contenido -->
+  <div *ngIf="!cargando" class="content">
+
+    <!-- Insights Automáticos -->
+    <div class="insights-grid" *ngIf="insights.length > 0">
+      <mat-card 
+        *ngFor="let insight of insights" 
+        class="insight-card"
+        [class.insight-success]="insight.tipo === 'success'"
+        [class.insight-warning]="insight.tipo === 'warning'"
+        [class.insight-info]="insight.tipo === 'info'">
+        <div class="insight-icon">
+          <mat-icon>{{ insight.icono }}</mat-icon>
+        </div>
+        <div class="insight-content">
+          <h3>{{ insight.titulo }}</h3>
+          <p>{{ insight.descripcion }}</p>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Tendencia Semanal -->
+    <mat-card class="tendencia-card" *ngIf="tendenciaSemanal">
+      <h2>
+        <mat-icon>timeline</mat-icon>
+        Tendencia Semanal
+      </h2>
+      
+      <div class="tendencia-grid">
+        <div class="tendencia-stat">
+          <span class="tendencia-label">Esta Semana</span>
+          <span class="tendencia-valor grande">{{ tendenciaSemanal.actual }}</span>
+          <span class="tendencia-sublabel">registros</span>
+        </div>
+        
+        <div class="tendencia-icono" [class]="obtenerColorTendencia()">
+          <mat-icon>{{ obtenerIconoTendencia() }}</mat-icon>
+        </div>
+        
+        <div class="tendencia-stat">
+          <span class="tendencia-label">Semana Anterior</span>
+          <span class="tendencia-valor">{{ tendenciaSemanal.anterior }}</span>
+          <span class="tendencia-sublabel">registros</span>
+        </div>
+      </div>
+      
+      <div class="tendencia-texto" [class]="obtenerColorTendencia()">
+        {{ obtenerTextoTendencia() }}
+      </div>
+    </mat-card>
+
+    <!-- Heatmap de Actividad -->
+    <mat-card class="heatmap-card">
+      <div class="heatmap-header">
+        <h2>
+          <mat-icon>grid_on</mat-icon>
+          Mapa de Calor — Actividad por Día y Hora
+        </h2>
+        <div class="heatmap-leyenda">
+          <span class="leyenda-item">
+            <span class="leyenda-cuadro intensidad-0"></span>
+            Nulo
+          </span>
+          <span class="leyenda-item">
+            <span class="leyenda-cuadro intensidad-1"></span>
+            Bajo
+          </span>
+          <span class="leyenda-item">
+            <span class="leyenda-cuadro intensidad-2"></span>
+            Medio
+          </span>
+          <span class="leyenda-item">
+            <span class="leyenda-cuadro intensidad-3"></span>
+            Alto
+          </span>
+          <span class="leyenda-item">
+            <span class="leyenda-cuadro intensidad-4"></span>
+            Muy Alto
+          </span>
+        </div>
+      </div>
+
+      <div class="heatmap-container">
+        <div class="heatmap-grid">
+          <!-- Header con horas -->
+          <div class="heatmap-corner"></div>
+          <div *ngFor="let hora of horasDelDia" class="heatmap-hora">
+            {{ hora }}:00
+          </div>
+
+          <!-- Filas por día -->
+          <ng-container *ngFor="let dia of diasSemana">
+            <div class="heatmap-dia">{{ dia }}</div>
+            <div 
+              *ngFor="let hora of horasDelDia" 
+              class="heatmap-cell"
+              [class]="obtenerClaseIntensidad(obtenerCantidadHeatmap(dia, hora))"
+              [matTooltip]="dia + ' ' + hora + ':00 — ' + obtenerCantidadHeatmap(dia, hora) + ' visitas'">
+              <span class="cell-value" *ngIf="obtenerCantidadHeatmap(dia, hora) > 0">
+                {{ obtenerCantidadHeatmap(dia, hora) }}
+              </span>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <div class="heatmap-prediccion" *ngIf="diaPredicho">
+        <mat-icon>psychology</mat-icon>
+        <span><strong>Predicción:</strong> {{ diaPredicho }} es típicamente el día más concurrido</span>
+      </div>
+    </mat-card>
+
+    <!-- Top Alumnos -->
+    <mat-card class="top-alumnos-card">
+      <h2>
+        <mat-icon>emoji_events</mat-icon>
+        Top 5 Alumnos Más Frecuentes
+      </h2>
+
+      <div class="top-alumnos-lista" *ngIf="topAlumnos.length > 0">
+        <div 
+          *ngFor="let item of topAlumnos; let i = index" 
+          class="top-alumno-item"
+          (click)="verDetalleAlumno(item)">
+          
+          <div class="alumno-ranking">
+            <span class="ranking-numero" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
+              {{ i + 1 }}
+            </span>
+          </div>
+
+          <div class="alumno-avatar">
+            <mat-icon>account_circle</mat-icon>
+          </div>
+
+          <div class="alumno-info">
+            <h3>{{ obtenerNombreCompleto(item) }}</h3>
+            <p class="alumno-carrera">{{ item.alumno.carrera }}</p>
+          </div>
+
+          <div class="alumno-stats">
+            <div class="stat-item">
+              <mat-icon>login</mat-icon>
+              <span>{{ item.totalVisitas }} visitas</span>
+            </div>
+            <div class="stat-item">
+              <mat-icon>event</mat-icon>
+              <span>{{ formatearFecha(item.ultimaVisita) }}</span>
+            </div>
+            <div class="stat-item">
+              <mat-chip class="motivo-chip">{{ item.motivoFrecuente }}</mat-chip>
+            </div>
+          </div>
+
+          <mat-icon class="ver-mas">chevron_right</mat-icon>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="topAlumnos.length === 0">
+        <mat-icon>people_outline</mat-icon>
+        <p>No hay datos suficientes para generar el ranking</p>
+      </div>
+    </mat-card>
+
+  </div>
+
+</div>

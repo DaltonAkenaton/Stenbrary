@@ -1,0 +1,259 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  gestion-motivos.component.scss                      ║
+// ║  Stenbrary v3.0 — Cyan Cube Dark Theme               ║
+// ║                                                      ║
+// ║  REWRITE: Tema claro → oscuro completo               ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.gestion-motivos-container {
+  min-height: 100vh;
+  background: transparent;
+  padding: $spacing-lg;
+}
+
+// ═══════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+
+  .back-button {
+    background: $navy-700;
+    color: $text-primary;
+    border: 1px solid $border-subtle;
+    box-shadow: none;
+    flex-shrink: 0;
+    transition: all $transition-fast;
+
+    &:hover {
+      background: $navy-600;
+      border-color: $border-glow;
+    }
+  }
+
+  .header-info {
+    flex: 1;
+
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: $text-primary;
+    }
+
+    .subtitle {
+      margin: $spacing-xs 0 0;
+      color: $text-secondary;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// LOADING
+// ═══════════════════════════════════════════════════
+
+.loading-state {
+  @include flex-center;
+  flex-direction: column;
+  min-height: 50vh;
+  color: $text-secondary;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: $cyan-500;
+    margin-bottom: $spacing-md;
+    animation: spin 1.5s linear infinite;
+  }
+
+  p { font-size: 1rem; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// ═══════════════════════════════════════════════════
+// GRID DE MOTIVOS
+// ═══════════════════════════════════════════════════
+
+.motivos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: $spacing-lg;
+}
+
+.motivo-card {
+  padding: $spacing-lg;
+  border-radius: $border-radius-lg;
+  border-left: 3px solid $cyan-500;
+  transition: all $transition-fast;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: $border-glow !important;
+    border-left-color: $cyan-400 !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px rgba(0, 200, 215, 0.06);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// HEADER DEL CARD
+// ═══════════════════════════════════════════════════
+
+.motivo-header {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  .motivo-icono {
+    @include flex-center;
+    width: 52px;
+    height: 52px;
+    background: rgba(0, 200, 215, 0.1);
+    border: 1px solid $border-subtle;
+    border-radius: $border-radius-md;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  .motivo-info {
+    flex: 1;
+    min-width: 0;
+
+    h3 {
+      margin: 0 0 2px 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: $text-primary;
+    }
+
+    .motivo-prioridad {
+      margin: 0;
+      font-size: 0.8rem;
+      color: $text-muted;
+      font-family: $font-mono;
+    }
+  }
+
+  .chip-activo {
+    background: rgba($success-color, 0.15) !important;
+    color: $success-color !important;
+    border: 1px solid rgba($success-color, 0.3) !important;
+    font-weight: 600;
+  }
+
+  .chip-inactivo {
+    background: rgba($warn-color, 0.15) !important;
+    color: $warn-color !important;
+    border: 1px solid rgba($warn-color, 0.3) !important;
+    font-weight: 600;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ACCIONES
+// ═══════════════════════════════════════════════════
+
+.motivo-acciones {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding-top: $spacing-md;
+  border-top: 1px solid $border-subtle;
+
+  .orden-buttons {
+    display: flex;
+    gap: 2px;
+    margin-right: auto;
+
+    button:disabled {
+      opacity: 0.2;
+    }
+  }
+
+  button {
+    transition: all $transition-fast;
+
+    &:hover:not(:disabled) {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// EMPTY STATE
+// ═══════════════════════════════════════════════════
+
+.empty-state {
+  @include flex-center;
+  flex-direction: column;
+  min-height: 50vh;
+  text-align: center;
+
+  mat-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    opacity: 0.3;
+    color: $cyan-500;
+    margin-bottom: $spacing-lg;
+  }
+
+  h2 {
+    margin: 0 0 $spacing-sm 0;
+    font-size: 1.5rem;
+    color: $text-primary;
+  }
+
+  p {
+    margin: 0 0 $spacing-lg 0;
+    color: $text-secondary;
+    font-size: 1rem;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════
+
+@media (max-width: $breakpoint-sm) {
+  .gestion-motivos-container { padding: $spacing-md; }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+
+    .back-button { align-self: flex-start; }
+    button { width: 100%; }
+  }
+
+  .motivos-grid { grid-template-columns: 1fr; }
+
+  .motivo-acciones {
+    flex-wrap: wrap;
+
+    .orden-buttons {
+      width: 100%;
+      justify-content: center;
+      margin-right: 0;
+      margin-bottom: $spacing-sm;
+    }
+  }
+}

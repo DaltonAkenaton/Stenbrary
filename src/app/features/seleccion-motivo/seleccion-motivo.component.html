@@ -1,85 +1,266 @@
-<div class="seleccion-container" [class.exito]="registroExitoso">
-  
-  <!-- Pantalla normal - Selección de motivo -->
-  <div class="seleccion-content" *ngIf="!registroExitoso">
-    
-    <!-- Header -->
-    <div class="seleccion-header">
-      <button mat-icon-button class="back-button" (click)="cancelar()">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <div class="header-info">
-        <h1>¿Para qué vienes?</h1>
-        <p class="subtitle" *ngIf="alumno">
-          {{ alumno.nombre }} {{ alumno.apellidoPaterno }}
-        </p>
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  seleccion-motivo.component.html                     ║
+     ║  Stenbrary v3.1 — Two-Panel Confirmation Layout      ║
+     ║                                                      ║
+     ║  Desktop: Panel izq (info+confirm) | Panel der (grid)║
+     ║  Mobile:  Grid arriba + bottom-sheet de confirmación  ║
+     ╚══════════════════════════════════════════════════════╝ -->
+
+<div class="seleccion-container" [class.exito-mode]="registroExitoso">
+
+  <!-- ═══════════════════════════════════════════════════
+       PANTALLA DE ÉXITO (overlay)
+  ═══════════════════════════════════════════════════ -->
+  @if (registroExitoso) {
+    <div class="exito-overlay">
+      <div class="exito-content">
+
+        <div class="exito-check">
+          <mat-icon>check</mat-icon>
+        </div>
+
+        <h1 class="exito-titulo">¡Registro Exitoso!</h1>
+
+        <div class="exito-info" *ngIf="alumno">
+          <p class="exito-nombre">{{ obtenerNombreCorto() }}</p>
+          <p class="exito-detalle">
+            {{ alumno.matricula }} · {{ motivoSeleccionado?.nombre }}
+          </p>
+        </div>
+
+        <div class="exito-loader">
+          <div class="exito-spinner"></div>
+          <span>Redirigiendo al scanner...</span>
+        </div>
       </div>
     </div>
+  }
 
-    <!-- Grid de motivos -->
-    <div class="motivos-grid" *ngIf="!cargando && !error">
-      <mat-card 
-        *ngFor="let motivo of motivos"
-        class="motivo-card"
-        matRipple
-        (click)="seleccionarMotivo(motivo)"
-        [class.disabled]="cargando">
-        
-        <div class="motivo-icon">
-          <mat-icon>{{ motivo.icono || 'help' }}</mat-icon>
+  <!-- ═══════════════════════════════════════════════════
+       LAYOUT PRINCIPAL — DOS PANELES
+  ═══════════════════════════════════════════════════ -->
+  @if (!registroExitoso) {
+    <div class="seleccion-layout">
+
+      <!-- ─────────────────────────────────────────────
+           PANEL IZQUIERDO: Info del alumno + Confirmación
+      ───────────────────────────────────────────── -->
+      <aside class="panel-info" [class.has-selection]="motivoSeleccionado">
+
+        <!-- Tarjeta del alumno -->
+        <div class="student-card" *ngIf="alumno">
+          <div class="student-avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="student-details">
+            <h3 class="student-name">{{ obtenerNombreCorto() }}</h3>
+            <span class="student-matricula">{{ alumno.matricula }}</span>
+            <span class="student-carrera">{{ alumno.carrera }}</span>
+          </div>
         </div>
-        
-        <div class="motivo-nombre">
-          {{ motivo.nombre }}
+
+        <!-- Estado: Esperando selección -->
+        @if (!motivoSeleccionado && !cargandoMotivos) {
+          <div class="waiting-state">
+            <div class="waiting-icon">
+              <mat-icon>touch_app</mat-icon>
+            </div>
+            <p class="waiting-text">Selecciona una actividad de la lista</p>
+            <p class="waiting-hint">Tu acceso se registrará al confirmar</p>
+          </div>
+        }
+
+        <!-- Panel de confirmación (motivo seleccionado) -->
+        @if (motivoSeleccionado) {
+          <div class="confirm-panel">
+
+            <!-- Motivo seleccionado -->
+            <div class="confirm-motivo">
+              <div class="confirm-icon">
+                <mat-icon [style.color]="motivoSeleccionado.color || '#00C8D7'">
+                  {{ motivoSeleccionado.icono }}
+                </mat-icon>
+              </div>
+              <div class="confirm-details">
+                <h3>{{ motivoSeleccionado.nombre }}</h3>
+                @if (motivoSeleccionado.descripcion) {
+                  <p class="confirm-desc">{{ motivoSeleccionado.descripcion }}</p>
+                }
+              </div>
+            </div>
+
+            <!-- Pregunta de confirmación -->
+            <div class="confirm-question">
+              <mat-icon>help_outline</mat-icon>
+              <span>
+                ¿Estás seguro de que la actividad que vas a realizar es 
+                <strong>"{{ motivoSeleccionado.nombre }}"</strong>?
+              </span>
+            </div>
+
+            <!-- Botón principal de registro -->
+            <button
+              class="btn-registrar"
+              (click)="confirmarRegistro()"
+              [disabled]="registrando">
+              @if (!registrando) {
+                <mat-icon>check_circle</mat-icon>
+                <span>Registrar Actividad</span>
+              } @else {
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>Registrando...</span>
+              }
+            </button>
+
+            <!-- Links secundarios -->
+            <div class="confirm-links">
+              <button class="link-action" (click)="deseleccionarMotivo()" [disabled]="registrando">
+                <mat-icon>swap_horiz</mat-icon>
+                Cambiar actividad
+              </button>
+
+              <button class="link-action warn" (click)="volverAEscanear()" [disabled]="registrando">
+                <mat-icon>qr_code_scanner</mat-icon>
+                ¿Matrícula incorrecta? Volver a escanear
+              </button>
+            </div>
+
+          </div>
+        }
+
+        <!-- Botón cancelar (siempre visible en desktop) -->
+        <button class="btn-cancelar-desktop" (click)="cancelar()">
+          <mat-icon>close</mat-icon>
+          Cancelar registro
+        </button>
+
+      </aside>
+
+      <!-- ─────────────────────────────────────────────
+           PANEL DERECHO: Grid de motivos/actividades
+      ───────────────────────────────────────────── -->
+      <main class="panel-motivos">
+
+        <!-- Header -->
+        <div class="motivos-header">
+          <button mat-icon-button class="back-button" (click)="cancelar()">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          <div class="header-text">
+            <h1>¿Para qué vienes?</h1>
+            <p class="subtitle" *ngIf="alumno">
+              {{ obtenerNombreCorto() }} — selecciona tu actividad
+            </p>
+          </div>
         </div>
-      </mat-card>
+
+        <!-- Loading -->
+        @if (cargandoMotivos) {
+          <div class="loading-state">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando actividades...</p>
+          </div>
+        }
+
+        <!-- Grid de motivos -->
+        @if (!cargandoMotivos && !error) {
+          <div class="motivos-grid">
+            @for (motivo of motivos; track motivo.id; let i = $index) {
+              <div
+                class="motivo-card"
+                [class.selected]="motivoSeleccionado?.id === motivo.id"
+                [class.dimmed]="motivoSeleccionado && motivoSeleccionado.id !== motivo.id"
+                (click)="seleccionarMotivo(motivo)"
+                matRipple>
+
+                <div class="motivo-icon-wrap">
+                  <mat-icon [style.color]="motivo.color || '#00C8D7'">
+                    {{ motivo.icono || 'help' }}
+                  </mat-icon>
+                </div>
+
+                <span class="motivo-nombre">{{ motivo.nombre }}</span>
+
+                @if (motivo.descripcion) {
+                  <span class="motivo-desc-hint">{{ motivo.descripcion }}</span>
+                }
+
+                <!-- Indicador de seleccionado -->
+                @if (motivoSeleccionado?.id === motivo.id) {
+                  <div class="selected-badge">
+                    <mat-icon>check</mat-icon>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Error -->
+        @if (error && !cargandoMotivos) {
+          <div class="error-state">
+            <mat-icon>error_outline</mat-icon>
+            <p>{{ error }}</p>
+            <button mat-raised-button color="primary" (click)="cargarMotivos()">
+              <mat-icon>refresh</mat-icon>
+              Reintentar
+            </button>
+          </div>
+        }
+
+      </main>
+
     </div>
 
-    <!-- Loading -->
-    <div class="loading-container" *ngIf="cargando">
-      <mat-spinner diameter="60"></mat-spinner>
-      <p>Guardando registro...</p>
-    </div>
+    <!-- ─────────────────────────────────────────────
+         MOBILE: Bottom sheet de confirmación
+         (Solo visible en mobile cuando hay selección)
+    ───────────────────────────────────────────── -->
+    @if (motivoSeleccionado) {
+      <div class="mobile-backdrop" (click)="deseleccionarMotivo()"></div>
+      <div class="mobile-confirm-sheet">
+        <div class="sheet-handle"></div>
 
-    <!-- Error -->
-    <div class="error-container" *ngIf="error && !cargando">
-      <mat-icon>error</mat-icon>
-      <p>{{ error }}</p>
-      <button mat-raised-button color="primary" (click)="cargarMotivos()">
-        <mat-icon>refresh</mat-icon>
-        Reintentar
-      </button>
-    </div>
+        <div class="sheet-motivo">
+          <div class="sheet-motivo-icon">
+            <mat-icon [style.color]="motivoSeleccionado.color || '#00C8D7'">
+              {{ motivoSeleccionado.icono }}
+            </mat-icon>
+          </div>
+          <div class="sheet-motivo-info">
+            <h3>{{ motivoSeleccionado.nombre }}</h3>
+            @if (motivoSeleccionado.descripcion) {
+              <p>{{ motivoSeleccionado.descripcion }}</p>
+            }
+          </div>
+        </div>
 
-  </div>
+        <div class="sheet-question">
+          ¿Registrar <strong>"{{ motivoSeleccionado.nombre }}"</strong>
+          para <strong>{{ obtenerNombreCorto() }}</strong>?
+        </div>
 
-  <!-- Pantalla de éxito -->
-  <div class="exito-content" *ngIf="registroExitoso">
-    <div class="exito-animation">
-      <div class="check-circle">
-        <mat-icon>check</mat-icon>
+        <div class="sheet-actions">
+          <button class="sheet-btn-cancel" (click)="deseleccionarMotivo()" [disabled]="registrando">
+            <mat-icon>close</mat-icon>
+            Cancelar
+          </button>
+          <button class="sheet-btn-confirm" (click)="confirmarRegistro()" [disabled]="registrando">
+            @if (!registrando) {
+              <mat-icon>check</mat-icon>
+              <span>Registrar</span>
+            } @else {
+              <mat-spinner diameter="18"></mat-spinner>
+              <span>...</span>
+            }
+          </button>
+        </div>
+
+        <button class="sheet-link" (click)="volverAEscanear()" [disabled]="registrando">
+          ¿Matrícula incorrecta? Volver a escanear
+        </button>
       </div>
-    </div>
-    
-    <h1 class="exito-titulo">¡Registro Exitoso!</h1>
-    
-    <div class="exito-info" *ngIf="alumno">
-      <p class="exito-nombre">
-        {{ alumno.nombre }} {{ alumno.apellidoPaterno }}
-      </p>
-      <p class="exito-matricula">
-        Matrícula: {{ alumno.matricula }}
-      </p>
-    </div>
-    
-    <p class="exito-mensaje">
-      Tu acceso ha sido registrado correctamente
-    </p>
-    
-    <div class="exito-loader">
-      <mat-spinner diameter="30"></mat-spinner>
-      <span>Redirigiendo...</span>
-    </div>
-  </div>
+    }
+  }
 
 </div>

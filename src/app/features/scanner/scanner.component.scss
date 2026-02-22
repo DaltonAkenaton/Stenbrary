@@ -1,331 +1,561 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  scanner.component.scss                              ║
+// ║  Stenbrary v3.0 — Bulletproof Scanner                ║
+// ║                                                      ║
+// ║  CAMBIOS vs v2.0:                                    ║
+// ║  - .scanner-controls: contenedor de botones flotantes║
+// ║  - .btn-torch: botón de linterna con estado active   ║
+// ║  - Ajustes responsive para controles                 ║
+// ╚══════════════════════════════════════════════════════╝
+
 @import '../../../styles/variables';
 @import '../../../styles/mixins';
 
+// ─── CONTENEDOR PRINCIPAL ────────────────────────────────
 .scanner-container {
   @include flex-column;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: $spacing-xl $spacing-md;
+  position: relative;
 }
 
-// ==================== HEADER ====================
-
-.scanner-header {
-  text-align: center;
-  padding: $spacing-xl $spacing-md $spacing-lg;
-  
-  h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-  }
-  
-  .subtitle {
-    font-size: 1rem;
-    margin: $spacing-sm 0 0;
-    opacity: 0.9;
-  }
-}
-
-// ==================== CONTENIDO ====================
-
-.scanner-content {
-  flex: 1;
+// ═══════════════════════════════════════════════════════════
+// VISTA PRINCIPAL — Tarjetas de acción
+// ═══════════════════════════════════════════════════════════
+.scanner-section {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: $spacing-md;
-  max-width: 600px;
+  gap: $spacing-lg;
   width: 100%;
-  margin: 0 auto;
+  max-width: 520px;
 }
 
-.scanner-section {
+// ─── ACTION CARD ─────────────────────────────────────────
+.action-card {
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  transition: border-color $transition-normal, box-shadow $transition-normal;
+
+  &:hover {
+    border-color: $border-glow;
+    box-shadow: 0 0 32px rgba(0, 200, 215, 0.06);
+  }
+}
+
+.card-icon-area {
+  padding: $spacing-xl $spacing-lg $spacing-md;
+  display: flex;
+  justify-content: center;
+}
+
+.card-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: $border-radius-lg;
+  background: linear-gradient(135deg,
+    rgba(0, 200, 215, 0.15),
+    rgba(0, 169, 158, 0.10)
+  );
+  border: 1px solid $border-glow;
+  @include flex-center;
+  box-shadow: 0 0 24px rgba(0, 200, 215, 0.12);
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: $cyan-400;
+  }
+}
+
+.card-body {
+  padding: $spacing-md $spacing-lg $spacing-xl;
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
 }
 
-// ==================== CARDS ====================
-
-.action-card {
-  background: white;
+.card-title {
+  font-family: $font-display;
+  font-size: 18px;
+  font-weight: 700;
   color: $text-primary;
-  animation: slideInUp 0.3s ease-out;
-  
-  mat-card-header {
-    margin-bottom: $spacing-md;
-    
-    mat-card-title {
-      @include flex-center;
-      gap: $spacing-sm;
-      font-size: 1.5rem;
-      color: $primary-color;
-      
-      mat-icon {
-        font-size: 2rem;
-        width: 2rem;
-        height: 2rem;
-      }
-    }
+  letter-spacing: -0.3px;
+  text-align: center;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: $text-secondary;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+}
+
+// ─── BOTÓN ESCANEAR ──────────────────────────────────────
+.btn-scan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, $cyan-500, $teal-500);
+  color: $navy-950;
+  border: none;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all $transition-fast;
+  box-shadow: 0 4px 20px rgba(0, 200, 215, 0.25);
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
   }
-  
-  mat-card-content {
-    p {
-      text-align: center;
-      color: $text-secondary;
-      margin-bottom: $spacing-lg;
-    }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(0, 200, 215, 0.40);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 }
 
-.scan-button {
-  width: 100%;
-  height: 56px;
-  font-size: 1.1rem;
-  
-  mat-icon {
+// ─── SEPARADOR ───────────────────────────────────────────
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $border-subtle;
+  }
+
+  .divider-label {
+    font-family: $font-mono;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: $text-muted;
+    white-space: nowrap;
+    padding: 0 $spacing-sm;
+  }
+}
+
+// ─── INPUT DE MATRÍCULA ──────────────────────────────────
+.input-group {
+  display: flex;
+  align-items: center;
+  background: $navy-700;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  padding: 0 $spacing-md;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus-within {
+    border-color: $border-glow;
+    box-shadow: 0 0 0 3px rgba(0, 200, 215, 0.08);
+  }
+
+  .input-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: $text-muted;
+    flex-shrink: 0;
     margin-right: $spacing-sm;
   }
 }
 
-// ==================== DIVIDER ====================
+.matricula-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 14px 0;
+  font-family: $font-mono;
+  font-size: 14px;
+  color: $text-primary;
+  letter-spacing: 0.5px;
 
-.divider {
-  position: relative;
-  text-align: center;
-  margin: $spacing-lg 0;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.3);
+  &::placeholder {
+    color: $text-muted;
+    font-family: $font-body;
+    font-size: 13px;
+    letter-spacing: 0;
   }
-  
-  span {
-    position: relative;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 0 $spacing-md;
-    font-weight: 500;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
-// ==================== VIDEO SCANNER ====================
+.input-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $text-muted;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color $transition-fast, background $transition-fast;
+  flex-shrink: 0;
 
-.video-container {
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: $text-secondary;
+    background: $navy-600;
+  }
+}
+
+// ─── BOTÓN MANUAL ────────────────────────────────────────
+.btn-manual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: $cyan-400;
+  border: 1px solid $border-glow;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    transition: transform $transition-fast;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 200, 215, 0.08);
+    box-shadow: 0 0 20px rgba(0, 200, 215, 0.08);
+
+    mat-icon {
+      transform: translateX(3px);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// VISTA SCANNER ACTIVO — Video + overlay
+// ═══════════════════════════════════════════════════════════
+.video-wrapper {
   position: relative;
   width: 100%;
-  max-width: 600px;
-  height: 500px; // Un poco más alto
-  border-radius: $border-radius-lg;
+  max-width: 640px;
+  border-radius: $border-radius-xl;
   overflow: hidden;
-  box-shadow: $shadow-lg;
-  
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  aspect-ratio: 16 / 10;
+  background: $navy-950;
+  box-shadow: $shadow-lg, 0 0 60px rgba(0, 200, 215, 0.08);
+  border: 1px solid $border-subtle;
 }
 
-.video-overlay {
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+// ─── OVERLAY ─────────────────────────────────────────────
+.scan-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-lg;
+  pointer-events: none;
+}
+
+// ─── HINTS ───────────────────────────────────────────────
+.scan-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  background: rgba(4, 9, 15, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: $cyan-400;
+  }
+
+  &.top { }
+  &.bottom { font-size: 11px; opacity: 0.8; }
+}
+
+// ─── BARCODE FRAME ───────────────────────────────────────
+.barcode-frame {
+  position: relative;
+  width: 65%;
+  height: 22%;
+  box-shadow: 0 0 0 9999px rgba(4, 9, 15, 0.55);
+  border-radius: $border-radius-sm;
+  overflow: visible;
+}
+
+.corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid $cyan-500;
+  filter: drop-shadow(0 0 4px rgba(0, 200, 215, 0.6));
+
+  &.tl { top: -2px;    left: -2px;  border-right: none; border-bottom: none; border-radius: 4px 0 0 0; }
+  &.tr { top: -2px;    right: -2px; border-left: none;  border-bottom: none; border-radius: 0 4px 0 0; }
+  &.bl { bottom: -2px; left: -2px;  border-right: none; border-top: none;    border-radius: 0 0 0 4px; }
+  &.br { bottom: -2px; right: -2px; border-left: none;  border-top: none;    border-radius: 0 0 4px 0; }
+}
+
+.scan-line {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  @include flex-center;
-  flex-direction: column;
-  z-index: 1;
-  pointer-events: none;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    $cyan-500 20%,
+    $cyan-300 50%,
+    $cyan-500 80%,
+    transparent
+  );
+  box-shadow: 0 0 8px $cyan-500, 0 0 16px rgba(0, 200, 215, 0.4);
+  animation: scanLine 2s ease-in-out infinite;
 }
 
-// Marco más pequeño para QRs chicos
-.scan-frame-small {
-  width: 200px;  // Más pequeño
-  height: 200px; // Más pequeño
-  border: 4px solid $accent-color; // Borde más grueso
-  border-radius: $border-radius-md;
-  box-shadow: 
-    0 0 0 9999px rgba(0, 0, 0, 0.6), // Fondo más oscuro
-    inset 0 0 20px rgba(255, 64, 129, 0.3); // Brillo interno
-  animation: pulse 2s infinite;
-  position: relative;
+@keyframes scanLine {
+  0%, 100% { top: 0; }
+  50%      { top: calc(100% - 2px); }
 }
 
-// Guías de esquinas para alinear mejor
-.corner-guides {
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  pointer-events: none;
-  
-  .corner {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    border: 3px solid white;
-    
-    &.top-left {
-      top: -2px;
-      left: -2px;
-      border-right: none;
-      border-bottom: none;
-    }
-    
-    &.top-right {
-      top: -2px;
-      right: -2px;
-      border-left: none;
-      border-bottom: none;
-    }
-    
-    &.bottom-left {
-      bottom: -2px;
-      left: -2px;
-      border-right: none;
-      border-top: none;
-    }
-    
-    &.bottom-right {
-      bottom: -2px;
-      right: -2px;
-      border-left: none;
-      border-top: none;
-    }
-  }
-}
-
-// Instrucciones mejoradas
-.scan-instructions {
-  position: absolute;
-  top: 40px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  
-  .instruction-main {
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: $spacing-md $spacing-lg;
-    border-radius: $border-radius-md;
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin: 0 $spacing-md $spacing-sm;
-    box-shadow: $shadow-lg;
-  }
-  
-  .instruction-sub {
-    background: rgba(255, 64, 129, 0.9);
-    color: white;
-    padding: $spacing-sm $spacing-md;
-    border-radius: $border-radius-sm;
-    font-size: 0.9rem;
-    margin: 0 $spacing-lg $spacing-xs;
-    font-weight: 500;
-  }
-  
-  .instruction-detail {
-    color: white;
-    font-size: 0.8rem;
-    margin: 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-  }
-}
-
-.cancel-button {
+// ─── CONTROLES FLOTANTES (LINTERNA + CANCELAR) ──────────
+.scanner-controls {
   position: absolute;
   bottom: $spacing-lg;
   right: $spacing-lg;
   z-index: 2;
-}
-
-// ==================== RESPONSIVE ====================
-
-@media (max-width: $breakpoint-sm) {
-  .video-container {
-    height: 400px;
-  }
-  
-  .scan-frame-small {
-    width: 180px;
-    height: 180px;
-  }
-  
-  .corner-guides {
-    width: 180px;
-    height: 180px;
-  }
-  
-  .instruction-main {
-    font-size: 1rem;
-  }
-}
-
-// ==================== LOADING ====================
-
-.loading-overlay {
-  @include flex-center;
+  display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: $border-radius-lg;
-  padding: $spacing-xxl;
-  color: $primary-color;
-  animation: fadeIn 0.3s;
-  
-  p {
-    margin-top: $spacing-md;
-    font-size: 1.1rem;
-    font-weight: 500;
-  }
+  gap: $spacing-sm;
+  pointer-events: all;
 }
 
-// ==================== ERROR ====================
-
-.error-message {
+// Botón base flotante (compartido por linterna y cancelar)
+%floating-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
   @include flex-center;
-  flex-direction: column;
-  background: rgba(244, 67, 54, 0.1);
-  border: 2px solid $warn-color;
-  border-radius: $border-radius-lg;
-  padding: $spacing-lg;
-  animation: slideInDown 0.3s;
-  
+  transition: all $transition-fast;
+  backdrop-filter: blur(8px);
+  border: none;
+
   mat-icon {
-    font-size: 3rem;
-    width: 3rem;
-    height: 3rem;
-    color: $warn-color;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
   }
-  
-  p {
-    margin: $spacing-md 0;
-    text-align: center;
-  }
-  
-  button {
-    color: $warn-color;
+
+  &:active {
+    transform: scale(0.96);
   }
 }
 
-// ==================== FOOTER ====================
+.btn-cancel {
+  @extend %floating-btn;
+  background: rgba(240, 82, 82, 0.20);
+  border: 1px solid rgba(240, 82, 82, 0.40);
+  color: #FC8181;
 
-.scanner-footer {
+  &:hover {
+    background: rgba(240, 82, 82, 0.35);
+    transform: scale(1.08);
+  }
+}
+
+.btn-torch {
+  @extend %floating-btn;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  color: rgba(255, 255, 255, 0.75);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.20);
+    transform: scale(1.08);
+  }
+
+  // Estado activo — linterna encendida
+  &.active {
+    background: rgba(255, 214, 0, 0.20);
+    border-color: rgba(255, 214, 0, 0.50);
+    color: #FFD600;
+    box-shadow: 0 0 12px rgba(255, 214, 0, 0.25);
+
+    &:hover {
+      background: rgba(255, 214, 0, 0.30);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ESTADOS — Loading y Error
+// ═══════════════════════════════════════════════════════════
+.state-overlay {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-xxl;
+}
+
+.state-text {
+  font-family: $font-mono;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: $text-muted;
+  text-transform: uppercase;
+}
+
+.error-card {
+  @include flex-center;
+  flex-direction: column;
+  gap: $spacing-md;
+  background: rgba(240, 82, 82, 0.08);
+  border: 1px solid rgba(240, 82, 82, 0.25);
+  border-radius: $border-radius-lg;
+  padding: $spacing-xl $spacing-lg;
+  max-width: 400px;
+  width: 100%;
   text-align: center;
-  padding: $spacing-md;
-  font-size: 0.875rem;
-  opacity: 0.8;
-  
-  .footer-text {
-    margin: 0;
+}
+
+.error-icon {
+  font-size: 40px !important;
+  width: 40px !important;
+  height: 40px !important;
+  color: #FC8181;
+}
+
+.error-text {
+  font-size: 14px;
+  color: $text-secondary;
+  line-height: 1.5;
+}
+
+.btn-retry {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: transparent;
+  border: 1px solid rgba(240, 82, 82, 0.35);
+  color: #FC8181;
+  padding: 8px 16px;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
   }
-  
-  .footer-version {
-    margin: $spacing-xs 0 0;
-    font-size: 0.75rem;
+
+  &:hover {
+    background: rgba(240, 82, 82, 0.12);
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════
+@media (max-width: $breakpoint-sm) {
+  .scanner-container {
+    padding: $spacing-md $spacing-sm;
+    justify-content: flex-start;
+    padding-top: $spacing-lg;
+  }
+
+  .video-wrapper {
+    aspect-ratio: 4 / 3;
+  }
+
+  .barcode-frame {
+    width: 80%;
+    height: 20%;
+  }
+
+  .card-body {
+    padding: $spacing-md $spacing-md $spacing-lg;
+  }
+
+  .scanner-controls {
+    bottom: $spacing-md;
+    right: $spacing-md;
+  }
+}
+
+// ─── CANVAS OCULTO ───────────────────────────────────────
+.scanner-canvas-hidden {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  pointer-events: none;
+  visibility: hidden;
 }

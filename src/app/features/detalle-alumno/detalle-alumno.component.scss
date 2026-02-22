@@ -1,0 +1,470 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  detalle-alumno.component.scss                       ║
+// ║  Stenbrary v3.0 — Cyan Cube Dark Theme               ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.detalle-alumno-container {
+  min-height: 100vh;
+  background: transparent;
+  padding: $spacing-lg;
+}
+
+// ═══════════════════════════════════════════════════
+// LOADING & ERROR
+// ═══════════════════════════════════════════════════
+
+.loading-state,
+.error-state {
+  @include flex-center;
+  flex-direction: column;
+  min-height: 60vh;
+  color: $text-secondary;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: $cyan-500;
+    margin-bottom: $spacing-md;
+  }
+
+  p, h2 { margin: $spacing-md 0; }
+}
+
+.loading-state mat-icon {
+  animation: spin 1.5s linear infinite;
+}
+
+.error-state mat-icon {
+  color: $warn-color;
+}
+
+// ═══════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+
+  .back-button {
+    background: $navy-700;
+    color: $text-primary;
+    border: 1px solid $border-subtle;
+    box-shadow: none;
+    transition: all $transition-fast;
+
+    &:hover {
+      background: $navy-600;
+      border-color: $border-glow;
+    }
+  }
+
+  .header-info {
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: $text-primary;
+    }
+
+    .subtitle {
+      margin: $spacing-xs 0 0;
+      color: $text-secondary;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// INFO CARD
+// ═══════════════════════════════════════════════════
+
+.info-card {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-xl;
+
+  .info-header {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-lg;
+    margin-bottom: $spacing-xl;
+    flex-wrap: wrap;
+
+    .alumno-avatar {
+      @include flex-center;
+
+      mat-icon {
+        font-size: 72px;
+        width: 72px;
+        height: 72px;
+        color: $cyan-500;
+      }
+    }
+
+    .alumno-info {
+      flex: 1;
+      min-width: 250px;
+
+      h2 {
+        margin: 0 0 $spacing-xs 0;
+        font-size: 1.6rem;
+        color: $text-primary;
+      }
+
+      .matricula {
+        margin: $spacing-xs 0;
+        color: $text-secondary;
+        font-size: 1rem;
+
+        strong {
+          color: $cyan-400;
+          font-weight: 600;
+          font-family: $font-mono;
+        }
+      }
+
+      .chip-activo {
+        background: rgba($success-color, 0.15) !important;
+        color: $success-color !important;
+        border: 1px solid rgba($success-color, 0.3) !important;
+        font-weight: 600;
+      }
+
+      .chip-inactivo {
+        background: rgba($warn-color, 0.15) !important;
+        color: $warn-color !important;
+        border: 1px solid rgba($warn-color, 0.3) !important;
+        font-weight: 600;
+      }
+    }
+
+    .actions {
+      display: flex;
+      gap: $spacing-sm;
+      flex-wrap: wrap;
+
+      button mat-icon {
+        margin-right: $spacing-xs;
+      }
+    }
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: $spacing-md;
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+      padding: $spacing-md;
+      background: $navy-700;
+      border: 1px solid $border-subtle;
+      border-radius: $border-radius-md;
+      transition: all $transition-fast;
+
+      &:hover {
+        border-color: $border-glow;
+        background: rgba(0, 200, 215, 0.04);
+      }
+
+      mat-icon {
+        color: $cyan-500;
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+
+      div {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .label {
+          font-size: 0.8rem;
+          color: $text-muted;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          font-family: $font-mono;
+        }
+
+        .value {
+          font-size: 1rem;
+          font-weight: 600;
+          color: $text-primary;
+        }
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ESTADÍSTICAS
+// ═══════════════════════════════════════════════════
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $spacing-lg;
+  margin-bottom: $spacing-xl;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+  padding: $spacing-lg;
+  transition: all $transition-fast;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: $border-glow !important;
+  }
+
+  .stat-icon {
+    @include flex-center;
+    width: 52px;
+    height: 52px;
+    border-radius: $border-radius-md;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 26px;
+      width: 26px;
+      height: 26px;
+      color: white;
+    }
+
+    &.visitas {
+      background: linear-gradient(135deg, $cyan-500, $cyan-600);
+      box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25);
+    }
+
+    &.ultima {
+      background: linear-gradient(135deg, $teal-400, $teal-600);
+      box-shadow: 0 4px 16px rgba(0, 169, 158, 0.25);
+    }
+
+    &.motivo {
+      background: linear-gradient(135deg, $amber-color, darken($amber-color, 10%));
+      box-shadow: 0 4px 16px rgba(245, 166, 35, 0.25);
+    }
+
+    &.promedio {
+      background: linear-gradient(135deg, $cyan-400, $teal-400);
+      box-shadow: 0 4px 16px rgba(0, 200, 215, 0.2);
+    }
+  }
+
+  .stat-content {
+    h3 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: $text-primary;
+      font-family: $font-display;
+    }
+
+    p {
+      margin: 2px 0 0;
+      color: $text-secondary;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// MOTIVOS DISTRIBUCIÓN
+// ═══════════════════════════════════════════════════
+
+.motivos-card {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-lg;
+
+  h3 {
+    margin: 0 0 $spacing-lg 0;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    color: $text-primary;
+
+    mat-icon { color: $cyan-500; }
+  }
+
+  .motivos-lista {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+
+  .motivo-item {
+    display: grid;
+    grid-template-columns: 180px 1fr 60px;
+    align-items: center;
+    gap: $spacing-md;
+
+    .motivo-nombre {
+      font-size: 0.9rem;
+      color: $text-primary;
+    }
+
+    .motivo-bar {
+      height: 20px;
+      background: $navy-700;
+      border: 1px solid $border-subtle;
+      border-radius: $border-radius-sm;
+      overflow: hidden;
+
+      .motivo-fill {
+        height: 100%;
+        background: linear-gradient(90deg, $cyan-500, $teal-400);
+        border-radius: $border-radius-sm;
+        transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 0 8px rgba(0, 200, 215, 0.3);
+      }
+    }
+
+    .motivo-cantidad {
+      text-align: right;
+      font-weight: 700;
+      color: $cyan-400;
+      font-family: $font-mono;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// HISTORIAL
+// ═══════════════════════════════════════════════════
+
+.historial-card {
+  padding: $spacing-lg;
+
+  .historial-header {
+    @include flex-between;
+    margin-bottom: $spacing-lg;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+
+    h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      color: $text-primary;
+      font-size: 1.2rem;
+
+      mat-icon { color: $cyan-500; }
+    }
+
+    .chip-count {
+      background: rgba(0, 200, 215, 0.15) !important;
+      color: $cyan-400 !important;
+      border: 1px solid $border-glow !important;
+      font-weight: 600;
+      font-family: $font-mono;
+      font-size: 12px;
+    }
+  }
+
+  .table-container {
+    overflow-x: auto;
+    border-radius: $border-radius-md;
+    border: 1px solid $border-subtle;
+  }
+
+  .historial-table {
+    width: 100%;
+
+    .fecha-cell {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: $text-muted;
+      }
+    }
+
+    .chip-motivo {
+      background: $navy-700 !important;
+      color: $text-primary !important;
+      border: 1px solid $border-subtle !important;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// EMPTY STATE
+// ═══════════════════════════════════════════════════
+
+.empty-state {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xxl;
+  color: $text-muted;
+
+  mat-icon {
+    font-size: 3.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    opacity: 0.3;
+    color: $cyan-500;
+    margin-bottom: $spacing-md;
+  }
+
+  p {
+    font-size: 1rem;
+    color: $text-secondary;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ANIMATIONS
+// ═══════════════════════════════════════════════════
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// ═══════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════
+
+@media (max-width: $breakpoint-md) {
+  .info-card .info-header {
+    flex-direction: column;
+
+    .actions {
+      width: 100%;
+      button { flex: 1; }
+    }
+  }
+
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+
+  .motivo-item {
+    grid-template-columns: 1fr;
+
+    .motivo-bar { order: 3; }
+    .motivo-cantidad { text-align: left; }
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .detalle-alumno-container { padding: $spacing-md; }
+  .info-card { padding: $spacing-md; }
+  .stats-grid { grid-template-columns: 1fr; }
+}

@@ -1,10 +1,22 @@
-// Importar variables y mixins
+// ╔══════════════════════════════════════════════════════╗
+// ║  Stenbrary — Global Styles                           ║
+// ║  Cyan Cube Design System — v3.0                      ║
+// ║                                                      ║
+// ║  MEJORAS v3.0:                                       ║
+// ║  - Staggered card reveals (CSS vars)                 ║
+// ║  - Glassmorphism utilities                           ║
+// ║  - Micro-interactions en hover globales              ║
+// ║  - Route transition animation                        ║
+// ║  - Fix scrollbar Firefox                             ║
+// ║  - Dark theme consistency en Material overrides      ║
+// ╚══════════════════════════════════════════════════════╝
+
 @use '@angular/material' as mat;
 @import 'styles/variables';
 @import 'styles/mixins';
 
-// Reset básico
-* {
+// ─── RESET ───────────────────────────────────────────────
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -13,260 +25,435 @@
 html, body {
   height: 100%;
   width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 body {
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: $bg-secondary;
+  font-family: $font-body;
+  background-color: $navy-900;
   color: $text-primary;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-// Utilidades globales
-.full-width {
-  width: 100%;
+// ─── FONDO GLOBAL — mesh sutil ──────────────────────────
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 45% at 15% 20%, rgba(0, 200, 215, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 55% at 88% 75%, rgba(0, 169, 158, 0.05) 0%, transparent 70%);
 }
 
-.full-height {
-  height: 100%;
+// ─── SCROLLBAR ──────────────────────────────────────────
+// Chrome / Edge
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.text-center {
-  text-align: center;
+::-webkit-scrollbar-track {
+  background: $navy-800;
 }
 
-.text-right {
-  text-align: right;
+::-webkit-scrollbar-thumb {
+  background: $navy-600;
+  border-radius: 3px;
+
+  &:hover { background: $cyan-600; }
 }
 
-.text-left {
-  text-align: left;
+// Firefox
+* {
+  scrollbar-width: thin;
+  scrollbar-color: $navy-600 $navy-800;
 }
 
-// Margin utilities
+// ─── TIPOGRAFÍA ──────────────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-display;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: $text-primary;
+}
+
+.mono, .matricula, .timestamp {
+  font-family: $font-mono;
+  letter-spacing: 0.02em;
+}
+
+// ─── UTILIDADES ─────────────────────────────────────────
+.full-width  { width: 100%; }
+.full-height { height: 100%; }
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+
 .mt-1 { margin-top: $spacing-sm; }
 .mt-2 { margin-top: $spacing-md; }
 .mt-3 { margin-top: $spacing-lg; }
 .mt-4 { margin-top: $spacing-xl; }
-
 .mb-1 { margin-bottom: $spacing-sm; }
 .mb-2 { margin-bottom: $spacing-md; }
 .mb-3 { margin-bottom: $spacing-lg; }
 .mb-4 { margin-bottom: $spacing-xl; }
 
-.ml-1 { margin-left: $spacing-sm; }
-.ml-2 { margin-left: $spacing-md; }
-.ml-3 { margin-left: $spacing-lg; }
+.flex          { display: flex; }
+.flex-center   { @include flex-center; }
+.flex-column   { @include flex-column; }
+.flex-between  { @include flex-between; }
+.flex-1        { flex: 1; }
 
-.mr-1 { margin-right: $spacing-sm; }
-.mr-2 { margin-right: $spacing-md; }
-.mr-3 { margin-right: $spacing-lg; }
+// ═══════════════════════════════════════════════════════════
+// ANIMACIONES 2026
+// ═══════════════════════════════════════════════════════════
 
-// Padding utilities
-.p-1 { padding: $spacing-sm; }
-.p-2 { padding: $spacing-md; }
-.p-3 { padding: $spacing-lg; }
-.p-4 { padding: $spacing-xl; }
-
-// Flex utilities
-.flex {
-  display: flex;
-}
-
-.flex-center {
-  @include flex-center;
-}
-
-.flex-column {
-  @include flex-column;
-}
-
-.flex-between {
-  @include flex-between;
-}
-
-.flex-1 {
-  flex: 1;
-}
-
-// Animaciones globales
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideInUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 @keyframes slideInDown {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-20px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
 }
 
 @keyframes scaleIn {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 
 @keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px  rgba(0, 200, 215, 0.3); }
+  50%       { box-shadow: 0 0 20px rgba(0, 200, 215, 0.6); }
+}
+
+@keyframes scanLine {
+  0%   { top: 4px; opacity: 1; }
+  50%  { top: calc(100% - 6px); opacity: 1; }
+  100% { top: 4px; opacity: 1; }
+}
+
+// ── Shimmer para loading states ──
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+// ── Reveal suave con blur ──
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(4px);
   }
-  50% {
-    transform: scale(1.05);
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 
-// Clases de animación
-.fade-in {
-  animation: fadeIn $transition-normal;
+// ── Clases de animación ─────────────────────────────────
+.fade-in       { animation: fadeIn    $transition-normal both; }
+.slide-in-up   { animation: slideInUp $transition-normal both; }
+.slide-in-down { animation: slideInDown $transition-normal both; }
+.slide-in-left { animation: slideInLeft $transition-normal both; }
+.scale-in      { animation: scaleIn  $transition-normal both; }
+.pulse         { animation: pulse 2s ease-in-out infinite; }
+
+// ── Staggered reveal: usa --i para el delay ─────────────
+// Ejemplo: <div class="reveal" style="--i: 0"> ... <div class="reveal" style="--i: 1">
+.reveal {
+  animation: revealUp 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
 }
 
-.slide-in-up {
-  animation: slideInUp $transition-normal;
+// ─── GLASSMORPHISM ──────────────────────────────────────
+.glass {
+  background: rgba(13, 22, 38, 0.6);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid $border-subtle;
 }
 
-.slide-in-down {
-  animation: slideInDown $transition-normal;
-}
-
-.scale-in {
-  animation: scaleIn $transition-normal;
-}
-
-.pulse {
-  animation: pulse 1s infinite;
-}
-
-// Container responsive
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 $spacing-md;
-
-  @include respond-to($breakpoint-md) {
-    padding: 0 $spacing-lg;
-  }
-}
-
-// Card genérico
+// ─── CARD GENÉRICO ───────────────────────────────────────
 .card {
-  @include card;
-  
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  padding: $spacing-lg;
+
   &.card-hover {
-    transition: transform $transition-fast, box-shadow $transition-fast;
+    transition: border-color $transition-fast, box-shadow $transition-fast, transform $transition-fast;
     cursor: pointer;
-    
+
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: $shadow-lg;
+      border-color: $border-glow;
+      box-shadow: 0 0 32px rgba(0, 200, 215, 0.08);
+      transform: translateY(-2px);
     }
   }
 }
 
-// Botón primario custom
+// ─── BOTÓN PRIMARIO ──────────────────────────────────────
 .btn-primary {
-  background-color: $primary-color;
-  color: white;
-  padding: $spacing-sm $spacing-lg;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: linear-gradient(135deg, $cyan-500, $teal-500);
+  color: $navy-950;
+  padding: 10px $spacing-lg;
   border: none;
-  border-radius: $border-radius-sm;
-  font-size: 16px;
-  font-weight: 500;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all $transition-fast;
-  
+  box-shadow: $shadow-cyan;
+
   &:hover {
-    background-color: darken($primary-color, 10%);
     transform: translateY(-2px);
-    box-shadow: $shadow-md;
+    box-shadow: 0 6px 28px rgba(0, 200, 215, 0.35);
   }
-  
-  &:active {
-    transform: translateY(0);
-  }
-  
+
+  &:active { transform: translateY(0); }
+
   &:disabled {
-    background-color: lighten($primary-color, 20%);
+    opacity: 0.4;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 }
 
-// Scrollbar personalizado
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+// ─── CHIP ────────────────────────────────────────────────
+.chip-cyan {
+  font-family: $font-mono;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: rgba(0, 200, 215, 0.12);
+  color: $cyan-400;
+  border: 1px solid $border-glow;
+  letter-spacing: 0.5px;
 }
 
-::-webkit-scrollbar-track {
-  background: $bg-secondary;
-}
-
-::-webkit-scrollbar-thumb {
-  background: lighten($primary-color, 20%);
-  border-radius: $border-radius-sm;
-  
-  &:hover {
-    background: $primary-color;
-  }
-}
-
-// Loading spinner
+// ─── SPINNER ─────────────────────────────────────────────
 .spinner {
-  border: 3px solid $bg-secondary;
-  border-top: 3px solid $primary-color;
+  width: 36px;
+  height: 36px;
+  border: 3px solid $navy-600;
+  border-top-color: $cyan-500;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+// ─── SHIMMER PLACEHOLDER ─────────────────────────────────
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    $navy-800 25%,
+    $navy-700 50%,
+    $navy-800 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: $border-radius-sm;
 }
 
-// Overlay
+// ─── OVERLAY ─────────────────────────────────────────────
 .overlay {
   @include overlay;
   @include flex-center;
+  backdrop-filter: blur(4px);
 }
 
-// Estilos para pantalla completa (Scanner)
-.fullscreen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: $z-modal;
-  background: $bg-primary;
+// ═══════════════════════════════════════════════════════════
+// ANGULAR MATERIAL — DARK THEME OVERRIDES
+// ═══════════════════════════════════════════════════════════
+
+.mat-mdc-card {
+  background: $navy-800 !important;
+  border: 1px solid $border-subtle !important;
+  color: $text-primary !important;
+}
+
+.mat-mdc-form-field {
+  .mdc-text-field {
+    background-color: $navy-700 !important;
+    border-radius: $border-radius-sm !important;
+  }
+
+  .mdc-floating-label, .mat-mdc-input-element {
+    color: $text-primary !important;
+  }
+
+  .mdc-text-field--outlined .mdc-notched-outline__leading,
+  .mdc-text-field--outlined .mdc-notched-outline__notch,
+  .mdc-text-field--outlined .mdc-notched-outline__trailing {
+    border-color: $border-subtle !important;
+  }
+
+  &.mat-focused {
+    .mdc-text-field--outlined .mdc-notched-outline__leading,
+    .mdc-text-field--outlined .mdc-notched-outline__notch,
+    .mdc-text-field--outlined .mdc-notched-outline__trailing {
+      border-color: $cyan-500 !important;
+    }
+  }
+}
+
+// Tabs → dark theme
+.mat-mdc-tab-group {
+  .mat-mdc-tab-header {
+    border-bottom: 1px solid $border-subtle;
+    background: $navy-800;
+  }
+
+  .mat-mdc-tab {
+    color: $text-muted !important;
+
+    &.mdc-tab--active {
+      color: $cyan-400 !important;
+    }
+  }
+
+  .mdc-tab-indicator__content--underline {
+    border-color: $cyan-500 !important;
+  }
+
+  .mat-mdc-tab-body-wrapper {
+    background: $navy-800;
+  }
+}
+
+// Chips → dark theme
+.mat-mdc-chip {
+  background: $navy-700 !important;
+  color: $text-primary !important;
+  border: 1px solid $border-subtle !important;
+}
+
+// Table → dark theme
+.mat-mdc-table {
+  background: transparent !important;
+
+  .mat-mdc-header-row {
+    background: $navy-700 !important;
+  }
+
+  .mat-mdc-header-cell {
+    color: $text-secondary !important;
+    border-bottom-color: $border-subtle !important;
+    font-weight: 600;
+  }
+
+  .mat-mdc-row {
+    transition: background $transition-fast;
+
+    &:hover {
+      background: rgba(0, 200, 215, 0.04) !important;
+    }
+  }
+
+  .mat-mdc-cell {
+    color: $text-primary !important;
+    border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+  }
+}
+
+// Select panel
+.mat-mdc-select-panel {
+  background: $navy-700 !important;
+}
+
+.mat-mdc-option {
+  color: $text-primary !important;
+
+  &:hover {
+    background: rgba(0, 200, 215, 0.08) !important;
+  }
+
+  &.mdc-list-item--selected {
+    background: rgba(0, 200, 215, 0.12) !important;
+  }
+}
+
+// Datepicker
+.mat-datepicker-content {
+  background: $navy-800 !important;
+  color: $text-primary !important;
+}
+
+// Dialog
+.mat-mdc-dialog-container {
+  .mdc-dialog__surface {
+    background: $navy-800 !important;
+    border: 1px solid $border-subtle !important;
+    border-radius: $border-radius-lg !important;
+  }
+}
+
+// Snackbar
+.mat-mdc-snack-bar-container {
+  background: $navy-700 !important;
+  border: 1px solid $border-glow !important;
+  color: $text-primary !important;
+  border-radius: $border-radius-md !important;
+}
+
+// Tooltip
+.mat-mdc-tooltip {
+  .mdc-tooltip__surface {
+    background: $navy-700 !important;
+    color: $text-primary !important;
+    border: 1px solid $border-subtle !important;
+    font-family: $font-body;
+    font-size: 12px;
+  }
+}
+
+// Buttons mat-raised-button → dark friendly
+.mat-mdc-raised-button {
+  &.mat-primary {
+    background-color: $cyan-500 !important;
+    color: $navy-950 !important;
+  }
+
+  &.mat-accent {
+    background-color: $teal-500 !important;
+    color: $navy-950 !important;
+  }
+}
+
+.mat-mdc-icon-button {
+  color: $text-secondary !important;
+
+  &:hover {
+    background: rgba(0, 200, 215, 0.08) !important;
+  }
 }

@@ -1,0 +1,108 @@
+<!-- ==============================================================================
+     RUTA: src/app/features/gestion-motivos/gestion-motivos.component.html
+     Stenbrary v3.0 — Cyan Cube Dark Theme
+     ============================================================================== -->
+
+<div class="gestion-motivos-container">
+  
+  <!-- Header -->
+  <div class="header">
+    <button mat-icon-button class="back-button" (click)="volverDashboard()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="header-info">
+      <h1>Gestión de Motivos</h1>
+      <p class="subtitle">Administra los motivos de visita a la biblioteca</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="abrirDialogNuevo()">
+      <mat-icon>add</mat-icon>
+      Nuevo Motivo
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="cargando">
+    <mat-icon>hourglass_empty</mat-icon>
+    <p>Cargando motivos...</p>
+  </div>
+
+  <!-- Lista de Motivos -->
+  <div class="motivos-grid" *ngIf="!cargando && motivos.length > 0">
+    
+    <mat-card *ngFor="let motivo of motivos" class="motivo-card">
+      
+      <!-- Header del Card -->
+      <div class="motivo-header">
+        <div class="motivo-icono">
+          <mat-icon [style.color]="motivo.color">{{ motivo.icono }}</mat-icon>
+        </div>
+        <div class="motivo-info">
+          <h3>{{ motivo.nombre }}</h3>
+          <p class="motivo-prioridad">Prioridad: {{ motivo.orden }}</p>
+        </div>
+        <mat-chip [class.chip-activo]="motivo.activo" [class.chip-inactivo]="!motivo.activo">
+          {{ motivo.activo ? 'Activo' : 'Inactivo' }}
+        </mat-chip>
+      </div>
+
+      <!-- Acciones -->
+      <div class="motivo-acciones">
+        
+        <div class="orden-buttons">
+          <button 
+            mat-icon-button 
+            matTooltip="Subir prioridad"
+            [disabled]="motivo.orden === 1"
+            (click)="subirPrioridad(motivo)">
+            <mat-icon>arrow_upward</mat-icon>
+          </button>
+          <button 
+            mat-icon-button 
+            matTooltip="Bajar prioridad"
+            [disabled]="motivo.orden === motivos.length"
+            (click)="bajarPrioridad(motivo)">
+            <mat-icon>arrow_downward</mat-icon>
+          </button>
+        </div>
+
+        <button 
+          mat-icon-button 
+          color="primary"
+          matTooltip="Editar motivo"
+          (click)="abrirDialogEditar(motivo)">
+          <mat-icon>edit</mat-icon>
+        </button>
+
+        <button 
+          mat-icon-button 
+          [color]="motivo.activo ? 'warn' : 'accent'"
+          [matTooltip]="motivo.activo ? 'Desactivar' : 'Activar'"
+          (click)="cambiarEstado(motivo)">
+          <mat-icon>{{ motivo.activo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+        </button>
+
+        <button 
+          mat-icon-button 
+          color="warn"
+          matTooltip="Eliminar motivo"
+          (click)="eliminarMotivo(motivo)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+
+    </mat-card>
+
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!cargando && motivos.length === 0">
+    <mat-icon>label_off</mat-icon>
+    <h2>No hay motivos registrados</h2>
+    <p>Crea el primer motivo de visita para empezar</p>
+    <button mat-raised-button color="primary" (click)="abrirDialogNuevo()">
+      <mat-icon>add</mat-icon>
+      Crear Primer Motivo
+    </button>
+  </div>
+
+</div>

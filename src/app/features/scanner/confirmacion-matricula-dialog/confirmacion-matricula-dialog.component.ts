@@ -1,3 +1,9 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  confirmacion-matricula-dialog.component.ts          ║
+// ║  Stenbrary v2.0 — Cyan Cube                         ║
+// ║  Solo cambios de estilos. Lógica intacta.           ║
+// ╚══════════════════════════════════════════════════════╝
+
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -15,85 +21,178 @@ import { MatIconModule } from '@angular/material/icon';
   ],
   template: `
     <div class="dialog-container">
+
+      <!-- Ícono -->
       <div class="dialog-icon">
-        <mat-icon>qr_code_2</mat-icon>
+        <mat-icon>badge</mat-icon>
       </div>
-      
-      <h2 mat-dialog-title>¿Esta es tu matrícula?</h2>
-      
-      <mat-dialog-content>
-        <div class="matricula-display">
-          {{ data.matricula }}
-        </div>
-        <p class="dialog-message">
-          Por favor verifica que la matrícula sea correcta antes de continuar.
-        </p>
-      </mat-dialog-content>
-      
-      <mat-dialog-actions align="end">
-        <button mat-button (click)="cancelar()" color="warn">
+
+      <!-- Título -->
+      <h2 class="dialog-title">¿Esta es tu matrícula?</h2>
+
+      <!-- Matrícula destacada -->
+      <div class="matricula-display">
+        {{ data.matricula }}
+      </div>
+
+      <!-- Mensaje -->
+      <p class="dialog-message">
+        Verifica que el código sea correcto antes de continuar.
+      </p>
+
+      <!-- Acciones -->
+      <div class="dialog-actions">
+        <button class="btn-cancel" (click)="cancelar()">
           <mat-icon>close</mat-icon>
           Cancelar
         </button>
-        <button mat-raised-button (click)="confirmar()" color="primary">
+        <button class="btn-confirm" (click)="confirmar()">
           <mat-icon>check</mat-icon>
           Confirmar
         </button>
-      </mat-dialog-actions>
+      </div>
+
     </div>
   `,
   styles: [`
+    /* Tokens del design system — definidos inline para que el dialog
+       funcione correctamente dentro del CDK overlay sin depender
+       del SCSS externo */
+    :host {
+      --navy-800:   #0D1626;
+      --navy-700:   #142033;
+      --navy-600:   #1C2E47;
+      --cyan-500:   #00C8D7;
+      --cyan-400:   #22D4E1;
+      --teal-500:   #00A99E;
+      --border-subtle: rgba(0, 200, 215, 0.10);
+      --border-glow:   rgba(0, 200, 215, 0.32);
+      --text-primary:   #E8F4F8;
+      --text-secondary: rgba(200, 230, 240, 0.65);
+      --text-muted:     rgba(160, 200, 215, 0.40);
+      --font-display: 'Syne', sans-serif;
+      --font-body:    'DM Sans', sans-serif;
+      --font-mono:    'Space Mono', monospace;
+    }
+
     .dialog-container {
-      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 28px 24px 24px;
+      background: var(--navy-800);
+      color: var(--text-primary);
+      border-radius: 18px;
       text-align: center;
     }
 
     .dialog-icon {
-      margin-bottom: 16px;
-      
-      mat-icon {
-        font-size: 64px;
-        width: 64px;
-        height: 64px;
-        color: #3f51b5;
-      }
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg,
+        rgba(0, 200, 215, 0.15),
+        rgba(0, 169, 158, 0.10)
+      );
+      border: 1px solid var(--border-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(0, 200, 215, 0.12);
     }
 
-    h2 {
-      margin: 0 0 16px 0;
-      font-size: 1.5rem;
-      color: #333;
+    .dialog-icon mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+      color: var(--cyan-400);
+    }
+
+    .dialog-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      margin: 0;
     }
 
     .matricula-display {
-      background: #f5f5f5;
-      border: 2px solid #3f51b5;
-      border-radius: 8px;
-      padding: 24px;
-      margin: 16px 0;
-      font-size: 2rem;
+      width: 100%;
+      background: var(--navy-700);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      padding: 20px 24px;
+      font-family: var(--font-mono);
+      font-size: 22px;
       font-weight: 700;
-      color: #3f51b5;
-      letter-spacing: 2px;
+      color: var(--cyan-400);
+      letter-spacing: 3px;
+      box-shadow: inset 0 0 0 1px var(--border-subtle),
+                  0 0 20px rgba(0, 200, 215, 0.06);
     }
 
     .dialog-message {
-      color: #666;
-      margin: 16px 0;
-      font-size: 0.95rem;
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin: 0;
     }
 
-    mat-dialog-actions {
-      margin-top: 24px;
+    .dialog-actions {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      margin-top: 4px;
       padding-top: 16px;
-      border-top: 1px solid #e0e0e0;
-      gap: 8px;
-      
-      button {
-        mat-icon {
-          margin-right: 4px;
-        }
-      }
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .btn-cancel,
+    .btn-confirm {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 200ms ease;
+    }
+
+    .btn-cancel {
+      background: rgba(240, 82, 82, 0.10);
+      color: #FC8181;
+      border: 1px solid rgba(240, 82, 82, 0.25);
+    }
+
+    .btn-cancel:hover {
+      background: rgba(240, 82, 82, 0.20);
+    }
+
+    .btn-confirm {
+      background: linear-gradient(135deg, var(--cyan-500), var(--teal-500));
+      color: #04090F;
+      box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25);
+    }
+
+    .btn-confirm:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(0, 200, 215, 0.35);
+    }
+
+    .btn-cancel mat-icon,
+    .btn-confirm mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
     }
   `]
 })

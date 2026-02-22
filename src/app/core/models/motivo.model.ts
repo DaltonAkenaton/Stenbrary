@@ -1,8 +1,10 @@
 export interface Motivo {
-  id: string;
+  id?: string;
   nombre: string;
-  icono?: string;
+  descripcion?: string;
+  icono: string;
+  color?: string;
   orden: number;
   activo: boolean;
-  fechaCreacion: Date;
+  fechaCreacion?: Date;
 }

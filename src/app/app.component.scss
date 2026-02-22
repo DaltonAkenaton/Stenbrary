@@ -1,0 +1,395 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  app.component.scss                                  ║
+// ║  Shell: Sidebar + Topbar + Contenido                 ║
+// ║  Stenbrary v3.0 — Cyan Cube                         ║
+// ║                                                      ║
+// ║  FIXES v3.0:                                         ║
+// ║  - Hamburger button en móvil                         ║
+// ║  - Backdrop overlay para cerrar sidebar              ║
+// ║  - Sidebar slide-in suave en móvil                   ║
+// ║  - Micro-interacciones modernas                      ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../styles/variables';
+@import '../styles/mixins';
+
+// ─── SHELL PRINCIPAL ─────────────────────────────────────
+.app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// BACKDROP — overlay semitransparente (solo móvil)
+// ═══════════════════════════════════════════════════════════
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(#{$z-sidebar} - 1);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 250ms ease both;
+  cursor: pointer;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════════════
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: $sidebar-width;
+  min-height: 100vh;
+  background: $navy-950;
+  border-right: 1px solid $border-subtle;
+  z-index: $z-sidebar;
+  flex-shrink: 0;
+  transition: width $transition-normal;
+
+  &.expanded {
+    width: $sidebar-width-expanded;
+    align-items: flex-start;
+
+    .sidebar-logo { justify-content: flex-start; }
+    .nav-item     { justify-content: flex-start; }
+  }
+}
+
+// ─── LOGO / TOGGLE ───────────────────────────────────────
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 14px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  justify-content: center;
+  border-radius: 0;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: rgba(0, 200, 215, 0.06);
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: linear-gradient(135deg, $cyan-500, $teal-500);
+    color: $navy-950;
+    font-family: $font-mono;
+    font-size: 15px;
+    font-weight: 700;
+    @include flex-center;
+    box-shadow: 0 0 18px $cyan-glow;
+    transition: box-shadow $transition-normal, transform $transition-fast;
+  }
+
+  &:hover .logo-mark {
+    box-shadow: 0 0 28px rgba(0, 200, 215, 0.35);
+    transform: scale(1.05);
+  }
+
+  .logo-text {
+    font-family: $font-display;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: $text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    animation: fadeSlideRight 200ms ease both;
+  }
+}
+
+@keyframes fadeSlideRight {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+// ─── DIVISORES ───────────────────────────────────────────
+.sidebar-divider {
+  width: 32px;
+  height: 1px;
+  background: $border-subtle;
+  margin: 6px 0;
+  flex-shrink: 0;
+  transition: width $transition-normal, margin $transition-normal;
+
+  .expanded & {
+    width: calc(100% - 28px);
+    margin: 6px 14px;
+  }
+}
+
+// ─── NAV ITEMS ───────────────────────────────────────────
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  padding: 4px 0;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: $border-radius-md;
+  margin: 0 6px;
+  width: calc(100% - 12px);
+  cursor: pointer;
+  text-decoration: none;
+  color: $text-muted;
+  position: relative;
+  transition:
+    color $transition-fast,
+    background $transition-fast,
+    box-shadow $transition-fast;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    transition: color $transition-fast, transform $transition-fast;
+  }
+
+  .nav-label {
+    font-family: $font-body;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    animation: fadeSlideRight 200ms ease both;
+  }
+
+  &:hover {
+    background: $navy-700;
+    color: $text-secondary;
+
+    mat-icon { transform: scale(1.08); }
+  }
+
+  &.active {
+    background: rgba(0, 200, 215, 0.12);
+    color: $cyan-400;
+    box-shadow: inset 0 0 0 1px $border-glow;
+
+    mat-icon {
+      color: $cyan-500;
+      filter: drop-shadow(0 0 6px rgba(0, 200, 215, 0.5));
+    }
+
+    .nav-label { font-weight: 600; }
+  }
+}
+
+// ─── SPACER + FOOTER ─────────────────────────────────────
+.sidebar-spacer { flex: 1; }
+
+.sidebar-footer {
+  width: 100%;
+  padding: 4px 0 12px;
+
+  .nav-item.active {
+    background: rgba(245, 166, 35, 0.10);
+    color: $amber-color;
+    box-shadow: inset 0 0 0 1px rgba(245, 166, 35, 0.30);
+
+    mat-icon {
+      color: $amber-color;
+      filter: drop-shadow(0 0 6px rgba(245, 166, 35, 0.4));
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN AREA
+// ═══════════════════════════════════════════════════════════
+.main-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// ─── TOPBAR ──────────────────────────────────────────────
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  height: $topbar-height;
+  padding: 0 $spacing-lg;
+  flex-shrink: 0;
+  background: transparent;
+
+  .topbar-title {
+    font-family: $font-display;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: $text-primary;
+    flex: 1;
+  }
+
+  .topbar-end {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+  }
+}
+
+// ─── HAMBURGER (hidden en desktop, visible en móvil) ────
+.hamburger-btn {
+  display: none; // Se muestra solo en @media mobile
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  color: $text-primary;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all $transition-fast;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  &:hover {
+    background: $navy-700;
+    border-color: $border-glow;
+    color: $cyan-400;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// ─── SEPARADOR ───────────────────────────────────────────
+.topbar-separator {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    $border-subtle 20%,
+    $border-glow 50%,
+    $border-subtle 80%,
+    transparent 100%
+  );
+  flex-shrink: 0;
+}
+
+// ─── STATUS BADGE ────────────────────────────────────────
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: $font-mono;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &.status-online {
+    background: rgba(14, 176, 123, 0.12);
+    color: #68D391;
+    border: 1px solid rgba(14, 176, 123, 0.30);
+
+    .status-dot {
+      background: $success-color;
+      box-shadow: 0 0 6px $success-color;
+      animation: glowPulse 2.5s ease-in-out infinite;
+    }
+  }
+
+  &.status-offline {
+    background: rgba(245, 166, 35, 0.10);
+    color: $amber-color;
+    border: 1px solid rgba(245, 166, 35, 0.30);
+
+    .status-dot { background: $amber-color; }
+  }
+}
+
+// ─── CONTENT AREA ────────────────────────────────────────
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════
+@media (max-width: $breakpoint-sm) {
+  // Sidebar: fuera de pantalla, se desliza con expanded
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: $z-sidebar;
+    transform: translateX(-100%);
+    transition: transform $transition-normal;
+    box-shadow: none;
+    width: $sidebar-width-expanded; // En móvil siempre se abre expandido
+    align-items: flex-start;
+
+    .sidebar-logo { justify-content: flex-start; }
+    .nav-item     { justify-content: flex-start; }
+
+    .sidebar-divider {
+      width: calc(100% - 28px);
+      margin: 6px 14px;
+    }
+
+    // Label siempre visible en móvil cuando sidebar está abierto
+    .nav-label { display: inline; }
+
+    &.expanded {
+      transform: translateX(0);
+      box-shadow: 16px 0 48px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  // Main area ocupa todo
+  .main-area { width: 100%; }
+
+  // Hamburger visible
+  .hamburger-btn { display: flex; }
+
+  // Topbar más compacto
+  .topbar {
+    padding: 0 $spacing-md;
+  }
+}

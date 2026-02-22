@@ -1,0 +1,226 @@
+<div class="detalle-alumno-container">
+  
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="cargando">
+    <mat-icon>hourglass_empty</mat-icon>
+    <p>Cargando información del alumno...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" *ngIf="error && !cargando">
+    <mat-icon>error_outline</mat-icon>
+    <h2>{{ error }}</h2>
+    <button mat-raised-button color="primary" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver al Dashboard
+    </button>
+  </div>
+
+  <!-- Contenido Principal -->
+  <div *ngIf="alumno && !cargando" class="content">
+    
+    <!-- Header -->
+    <div class="header">
+      <button mat-icon-button class="back-button" (click)="volver()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-info">
+        <h1>Perfil del Alumno</h1>
+        <p class="subtitle">Información detallada y historial de accesos</p>
+      </div>
+    </div>
+
+    <!-- Información del Alumno -->
+    <mat-card class="info-card">
+      <div class="info-header">
+        <div class="alumno-avatar">
+          <mat-icon>account_circle</mat-icon>
+        </div>
+        <div class="alumno-info">
+          <h2>{{ obtenerNombreCompleto() }}</h2>
+          <p class="matricula">Matrícula: <strong>{{ alumno.matricula }}</strong></p>
+          <mat-chip [class]="alumno.activo ? 'chip-activo' : 'chip-inactivo'">
+            {{ alumno.activo ? 'Activo' : 'Inactivo' }}
+          </mat-chip>
+        </div>
+        <div class="actions">
+          <button mat-raised-button color="primary" (click)="abrirDialogEditar()"
+                  matTooltip="Editar información del alumno">
+            <mat-icon>edit</mat-icon>
+            Editar
+          </button>
+          <button mat-raised-button 
+                  [color]="alumno.activo ? 'warn' : 'accent'"
+                  (click)="alumno.activo ? desactivarAlumno() : reactivarAlumno()"
+                  [matTooltip]="alumno.activo ? 'Desactivar alumno' : 'Reactivar alumno'">
+            <mat-icon>{{ alumno.activo ? 'block' : 'check_circle' }}</mat-icon>
+            {{ alumno.activo ? 'Desactivar' : 'Reactivar' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <mat-icon>school</mat-icon>
+          <div>
+            <span class="label">Carrera</span>
+            <span class="value">{{ alumno.carrera }}</span>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <mat-icon>stairs</mat-icon>
+          <div>
+            <span class="label">Semestre</span>
+            <span class="value">{{ alumno.grado }}°</span>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <mat-icon>groups</mat-icon>
+          <div>
+            <span class="label">Grupo</span>
+            <span class="value">{{ alumno.grupo }}</span>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <mat-icon>schedule</mat-icon>
+          <div>
+            <span class="label">Turno</span>
+            <span class="value">{{ alumno.turno }}</span>
+          </div>
+        </div>
+
+        <div class="info-item" *ngIf="alumno.fechaRegistro">
+          <mat-icon>event</mat-icon>
+          <div>
+            <span class="label">Fecha de Registro</span>
+            <span class="value">{{ formatearFechaCorta(alumno.fechaRegistro) }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Estadísticas -->
+    <div class="stats-grid" *ngIf="estadisticas">
+      <mat-card class="stat-card">
+        <div class="stat-icon visitas">
+          <mat-icon>login</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ estadisticas.totalVisitas }}</h3>
+          <p>Visitas Totales</p>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-icon ultima">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3 *ngIf="estadisticas.ultimaVisita">
+            {{ formatearFechaCorta(estadisticas.ultimaVisita) }}
+          </h3>
+          <h3 *ngIf="!estadisticas.ultimaVisita">N/A</h3>
+          <p>Última Visita</p>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-icon motivo">
+          <mat-icon>star</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ estadisticas.motivoFrecuente }}</h3>
+          <p>Motivo Más Frecuente</p>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-icon promedio">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ estadisticas.promedioSemanal }}</h3>
+          <p>Promedio Semanal</p>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Distribución por Motivos -->
+    <mat-card class="motivos-card" *ngIf="estadisticas && estadisticas.visitasPorMotivo.length > 0">
+      <h3>
+        <mat-icon>pie_chart</mat-icon>
+        Distribución por Motivos
+      </h3>
+      <div class="motivos-lista">
+        <div class="motivo-item" *ngFor="let item of estadisticas.visitasPorMotivo">
+          <span class="motivo-nombre">{{ item.motivo }}</span>
+          <div class="motivo-bar">
+            <div class="motivo-fill" 
+                 [style.width.%]="(item.cantidad / estadisticas!.totalVisitas) * 100">
+            </div>
+          </div>
+          <span class="motivo-cantidad">{{ item.cantidad }}</span>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Historial de Registros -->
+    <mat-card class="historial-card">
+      <div class="historial-header">
+        <h3>
+          <mat-icon>history</mat-icon>
+          Historial de Accesos
+        </h3>
+        <mat-chip class="chip-count">{{ registros.length }} registros</mat-chip>
+      </div>
+
+      <div class="table-container" *ngIf="registros.length > 0">
+        <table mat-table [dataSource]="registros" class="historial-table">
+          
+          <ng-container matColumnDef="fechaHora">
+            <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
+            <td mat-cell *matCellDef="let registro">
+              <div class="fecha-cell">
+                <mat-icon>event</mat-icon>
+                <span>{{ formatearFecha(registro.fechaHora) }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="motivo">
+            <th mat-header-cell *matHeaderCellDef>Motivo</th>
+            <td mat-cell *matCellDef="let registro">
+              <mat-chip class="chip-motivo">
+                {{ registro.motivoNombre }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let registro">
+              <button mat-icon-button color="primary" 
+                      (click)="verRegistroDetalle(registro)"
+                      matTooltip="Ver detalles">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columnasRegistros"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnasRegistros;"></tr>
+        </table>
+      </div>
+
+      <div class="empty-state" *ngIf="registros.length === 0">
+        <mat-icon>event_note</mat-icon>
+        <p>Este alumno no tiene registros de acceso aún</p>
+      </div>
+    </mat-card>
+
+  </div>
+
+</div>

@@ -38,12 +38,34 @@ export class DatabaseService {
   private db: IDBPDatabase<StenbraryDB> | null = null;
   private readonly DB_NAME = 'stenbrary-db';
   private readonly DB_VERSION = 1;
+  private initializationPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initDatabase();
+    this.inicializar();
   }
 
   // ==================== INICIALIZACIÓN ====================
+
+  async inicializar(): Promise<void> {
+    // Si ya hay una inicialización en progreso, esperar a que termine
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    // Si ya está inicializada, retornar inmediatamente
+    if (this.db) {
+      return Promise.resolve();
+    }
+
+    // Crear nueva promesa de inicialización
+    this.initializationPromise = this.initDatabase();
+    
+    try {
+      await this.initializationPromise;
+    } finally {
+      this.initializationPromise = null;
+    }
+  }
 
   private async initDatabase(): Promise<void> {
     try {
@@ -84,6 +106,7 @@ export class DatabaseService {
       await this.crearMotivosDefault();
     } catch (error) {
       console.error('❌ Error al inicializar base de datos:', error);
+      throw error;
     }
   }
 
@@ -147,6 +170,7 @@ export class DatabaseService {
   // ==================== ALUMNOS ====================
 
   async crearAlumno(alumno: Omit<Alumno, 'id' | 'fechaRegistro'>): Promise<Alumno> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     const nuevoAlumno: Alumno = {
@@ -161,41 +185,22 @@ export class DatabaseService {
     return nuevoAlumno;
   }
 
-  async obtenerAlumnoPorMatricula(matricula: string): Promise<Alumno | undefined> {
-    if (!this.db) throw new Error('Base de datos no inicializada');
-    
-    return await this.db.getFromIndex('alumnos', 'by-matricula', matricula);
-  }
-
   async obtenerAlumnoPorId(id: string): Promise<Alumno | undefined> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
     
     return await this.db.get('alumnos', id);
   }
 
   async obtenerTodosLosAlumnos(): Promise<Alumno[]> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
     
     return await this.db.getAll('alumnos');
   }
 
-  async actualizarAlumno(id: string, cambios: Partial<Alumno>): Promise<void> {
-    if (!this.db) throw new Error('Base de datos no inicializada');
-
-    const alumno = await this.db.get('alumnos', id);
-    if (!alumno) throw new Error('Alumno no encontrado');
-
-    const alumnoActualizado: Alumno = {
-      ...alumno,
-      ...cambios,
-      fechaActualizacion: new Date()
-    };
-
-    await this.db.put('alumnos', alumnoActualizado);
-    console.log('✅ Alumno actualizado:', id);
-  }
-
   async eliminarAlumno(id: string): Promise<void> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
     
     await this.db.delete('alumnos', id);
@@ -205,6 +210,7 @@ export class DatabaseService {
   // ==================== REGISTROS ====================
 
   async crearRegistro(registro: Omit<Registro, 'id' | 'fechaHora' | 'sincronizado'>): Promise<Registro> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     const nuevoRegistro: Registro = {
@@ -220,6 +226,7 @@ export class DatabaseService {
   }
 
   async obtenerRegistrosDeHoy(): Promise<Registro[]> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     const hoy = new Date();
@@ -235,6 +242,7 @@ export class DatabaseService {
   }
 
   async obtenerTodosLosRegistros(): Promise<Registro[]> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
     
     const registros = await this.db.getAll('registros');
@@ -243,13 +251,8 @@ export class DatabaseService {
     );
   }
 
-  async obtenerRegistrosPorAlumno(alumnoId: string): Promise<Registro[]> {
-    if (!this.db) throw new Error('Base de datos no inicializada');
-    
-    return await this.db.getAllFromIndex('registros', 'by-alumno', alumnoId);
-  }
-
   async obtenerRegistrosPorFecha(fecha: Date): Promise<Registro[]> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     const inicio = new Date(fecha);
@@ -269,6 +272,7 @@ export class DatabaseService {
   // ==================== MOTIVOS ====================
 
   async obtenerMotivosActivos(): Promise<Motivo[]> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     const motivos = await this.db.getAll('motivos');
@@ -277,54 +281,20 @@ export class DatabaseService {
       .sort((a, b) => a.orden - b.orden);
   }
 
-  async obtenerTodosLosMotivos(): Promise<Motivo[]> {
-    if (!this.db) throw new Error('Base de datos no inicializada');
-    
-    const motivos = await this.db.getAll('motivos');
-    return motivos.sort((a, b) => a.orden - b.orden);
-  }
+ 
 
   async obtenerMotivoPorId(id: string): Promise<Motivo | undefined> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
     
     return await this.db.get('motivos', id);
   }
 
-  async crearMotivo(motivo: Omit<Motivo, 'id' | 'fechaCreacion'>): Promise<Motivo> {
-    if (!this.db) throw new Error('Base de datos no inicializada');
+  
 
-    const nuevoMotivo: Motivo = {
-      ...motivo,
-      id: uuidv4(),
-      fechaCreacion: new Date()
-    };
+ 
 
-    await this.db.add('motivos', nuevoMotivo);
-    console.log('✅ Motivo creado:', nuevoMotivo.nombre);
-    return nuevoMotivo;
-  }
-
-  async actualizarMotivo(id: string, cambios: Partial<Motivo>): Promise<void> {
-    if (!this.db) throw new Error('Base de datos no inicializada');
-
-    const motivo = await this.db.get('motivos', id);
-    if (!motivo) throw new Error('Motivo no encontrado');
-
-    const motivoActualizado: Motivo = {
-      ...motivo,
-      ...cambios
-    };
-
-    await this.db.put('motivos', motivoActualizado);
-    console.log('✅ Motivo actualizado:', id);
-  }
-
-  async eliminarMotivo(id: string): Promise<void> {
-    if (!this.db) throw new Error('Base de datos no inicializada');
-    
-    await this.db.delete('motivos', id);
-    console.log('✅ Motivo eliminado:', id);
-  }
+ 
 
   // ==================== ESTADÍSTICAS ====================
 
@@ -358,6 +328,7 @@ export class DatabaseService {
   // ==================== UTILIDADES ====================
 
   async limpiarTodosDatos(): Promise<void> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     await this.db.clear('alumnos');
@@ -375,6 +346,7 @@ export class DatabaseService {
     registros: number;
     motivos: number;
   }> {
+    await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     const [alumnos, registros, motivos] = await Promise.all([
@@ -385,4 +357,243 @@ export class DatabaseService {
 
     return { alumnos, registros, motivos };
   }
+
+  // ==================== GESTIÓN DE ALUMNOS ====================
+
+  /**
+   * Obtener registros de un alumno específico por matrícula
+   */
+  async obtenerRegistrosPorAlumno(matricula: string): Promise<Registro[]> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+      
+      const registros = await this.db.getAll('registros');
+      
+      // Filtrar registros del alumno y ordenar por fecha descendente
+      const registrosDelAlumno = registros
+        .filter((registro: Registro) => registro.matricula === matricula)
+        .sort((a: Registro, b: Registro) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
+      
+      console.log(`📋 Registros del alumno ${matricula}:`, registrosDelAlumno.length);
+      return registrosDelAlumno;
+    } catch (error) {
+      console.error('❌ Error al obtener registros del alumno:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener un alumno por su matrícula
+   */
+  async obtenerAlumnoPorMatricula(matricula: string): Promise<Alumno | null> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+      
+      // Buscar por índice de matrícula
+      const alumno = await this.db.getFromIndex('alumnos', 'by-matricula', matricula);
+      
+      if (alumno) {
+        console.log('✅ Alumno encontrado:', alumno);
+        return alumno;
+      }
+      
+      console.log('⚠️ Alumno no encontrado con matrícula:', matricula);
+      return null;
+    } catch (error) {
+      console.error('❌ Error al obtener alumno por matrícula:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar información de un alumno
+   */
+  async actualizarAlumno(id: string, alumnoActualizado: Alumno): Promise<void> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+      
+      // Asegurarse de que el ID esté presente
+      alumnoActualizado.id = id;
+      
+      await this.db.put('alumnos', alumnoActualizado);
+      
+      console.log('✅ Alumno actualizado exitosamente:', alumnoActualizado);
+    } catch (error) {
+      console.error('❌ Error al actualizar alumno:', error);
+      throw new Error('No se pudo actualizar el alumno');
+    }
+  }
+
+  /**
+   * Desactivar un alumno (soft delete)
+   */
+  async desactivarAlumno(id: string): Promise<void> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+      
+      const alumno = await this.db.get('alumnos', id);
+      
+      if (!alumno) {
+        throw new Error('Alumno no encontrado');
+      }
+      
+      alumno.activo = false;
+      await this.db.put('alumnos', alumno);
+      
+      console.log('✅ Alumno desactivado:', alumno);
+    } catch (error) {
+      console.error('❌ Error al desactivar alumno:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reactivar un alumno
+   */
+  async reactivarAlumno(id: string): Promise<void> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+      
+      const alumno = await this.db.get('alumnos', id);
+      
+      if (!alumno) {
+        throw new Error('Alumno no encontrado');
+      }
+      
+      alumno.activo = true;
+      await this.db.put('alumnos', alumno);
+      
+      console.log('✅ Alumno reactivado:', alumno);
+    } catch (error) {
+      console.error('❌ Error al reactivar alumno:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener estadísticas de un alumno
+   */
+  async obtenerEstadisticasAlumno(matricula: string): Promise<{
+    totalVisitas: number;
+    ultimaVisita: Date | null;
+    primeraVisita: Date | null;
+    motivoMasFrecuente: string;
+    visitasPorMotivo: Map<string, number>;
+  }> {
+    try {
+      const registros = await this.obtenerRegistrosPorAlumno(matricula);
+      
+      if (registros.length === 0) {
+        return {
+          totalVisitas: 0,
+          ultimaVisita: null,
+          primeraVisita: null,
+          motivoMasFrecuente: 'N/A',
+          visitasPorMotivo: new Map()
+        };
+      }
+      
+      // Calcular estadísticas
+      const totalVisitas = registros.length;
+      const ultimaVisita = new Date(registros[0].fechaHora);
+      const primeraVisita = new Date(registros[registros.length - 1].fechaHora);
+      
+      // Contar visitas por motivo
+      const visitasPorMotivo = new Map<string, number>();
+      registros.forEach((registro: Registro) => {
+        if (registro.motivoNombre) {
+          const count = visitasPorMotivo.get(registro.motivoNombre) || 0;
+          visitasPorMotivo.set(registro.motivoNombre, count + 1);
+        }
+      });
+      
+      // Encontrar motivo más frecuente
+      let motivoMasFrecuente = 'N/A';
+      let maxCount = 0;
+      visitasPorMotivo.forEach((count, motivo) => {
+        if (count > maxCount) {
+          maxCount = count;
+          motivoMasFrecuente = motivo;
+        }
+      });
+      
+      return {
+        totalVisitas,
+        ultimaVisita,
+        primeraVisita,
+        motivoMasFrecuente,
+        visitasPorMotivo
+      };
+    } catch (error) {
+      console.error('❌ Error al obtener estadísticas del alumno:', error);
+      throw error;
+    }
+  }
+
+
+
+// ==============================================================================
+// RUTA: src/app/core/services/database.service.ts
+// REEMPLAZAR LOS 4 MÉTODOS AL FINAL (líneas ~540-610)
+// ==============================================================================
+
+/**
+ * Obtener todos los motivos (activos e inactivos)
+ */
+async obtenerTodosLosMotivos(): Promise<Motivo[]> {
+  await this.inicializar();
+  if (!this.db) throw new Error('Base de datos no inicializada');
+
+  const motivos = await this.db.getAll('motivos');
+  // Ordenar por orden
+  return motivos.sort((a: Motivo, b: Motivo) => a.orden - b.orden);
+}
+
+/**
+ * Crear un nuevo motivo
+ */
+async crearMotivo(motivo: Omit<Motivo, 'id'>): Promise<Motivo> {
+  await this.inicializar();
+  if (!this.db) throw new Error('Base de datos no inicializada');
+
+  const nuevoMotivo: Motivo = {
+    ...motivo,
+    id: uuidv4(),
+    fechaCreacion: new Date()
+  };
+
+  await this.db.add('motivos', nuevoMotivo);
+  console.log('✅ Motivo creado:', nuevoMotivo);
+  return nuevoMotivo;
+}
+
+/**
+ * Actualizar un motivo existente
+ */
+async actualizarMotivo(id: string, motivo: Motivo): Promise<void> {
+  await this.inicializar();
+  if (!this.db) throw new Error('Base de datos no inicializada');
+
+  // Asegurar que el ID está presente
+  motivo.id = id;
+
+  await this.db.put('motivos', motivo);
+  console.log('✅ Motivo actualizado:', motivo);
+}
+
+/**
+ * Eliminar un motivo
+ */
+async eliminarMotivo(id: string): Promise<void> {
+  await this.inicializar();
+  if (!this.db) throw new Error('Base de datos no inicializada');
+
+  await this.db.delete('motivos', id);
+  console.log('✅ Motivo eliminado:', id);
+}
 }

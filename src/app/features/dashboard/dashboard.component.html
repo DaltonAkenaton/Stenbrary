@@ -1,0 +1,502 @@
+<!-- ==============================================================================
+     RUTA: src/app/features/dashboard/dashboard.component.html
+     Stenbrary v3.0 — Cyan Cube Dark Theme
+     
+     FIXES v3.0:
+     - Removidos emojis de tab labels (no profesional)
+     - Removido style inline del botón Gestión de Motivos
+     - Botones con clases CSS consistentes
+     - Header sin emoji en h1
+     ============================================================================== -->
+
+<div class="dashboard-container">
+  
+  <!-- Header -->
+  <div class="dashboard-header">
+    
+    <div class="header-content">
+      <button mat-icon-button class="back-button" (click)="volverScanner()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>Dashboard</h1>
+        <p class="subtitle">Sistema de Registro Stenbrary</p>
+      </div>
+    </div>
+    
+    <div class="header-actions">
+      <button mat-raised-button class="btn-gestion" (click)="irGestionMotivos()">
+        <mat-icon>settings</mat-icon>
+        Gestión de Motivos
+      </button>
+      
+      <button mat-raised-button class="btn-ejecutivo" (click)="irDashboardEjecutivo()">
+        <mat-icon>analytics</mat-icon>
+        Dashboard Ejecutivo
+      </button>
+
+      <button mat-raised-button color="primary" (click)="actualizarDatos()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+    
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="stats-grid">
+    <mat-card class="stat-card">
+      <div class="stat-icon alumnos">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3>{{ totalAlumnos }}</h3>
+        <p>Alumnos Registrados</p>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <div class="stat-icon registros-hoy">
+        <mat-icon>today</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3>{{ totalRegistrosHoy }}</h3>
+        <p>Registros de Hoy</p>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <div class="stat-icon registros-total">
+        <mat-icon>list_alt</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3>{{ totalRegistros }}</h3>
+        <p>Registros Totales</p>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Panel de Filtros -->
+  <mat-card class="filtros-card">
+    <div class="filtros-header">
+      <h3>
+        <mat-icon>filter_list</mat-icon>
+        Filtros de Búsqueda
+      </h3>
+      <button mat-button color="warn" (click)="limpiarFiltros()">
+        <mat-icon>clear</mat-icon>
+        Limpiar Filtros
+      </button>
+    </div>
+
+    <form [formGroup]="filtrosForm" class="filtros-grid">
+      
+      <!-- Búsqueda por texto -->
+      <mat-form-field appearance="outline" class="filtro-full">
+        <mat-label>Buscar por matrícula o nombre</mat-label>
+        <input matInput formControlName="busqueda" placeholder="Ej: 2024001 o Juan Pérez">
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+
+      <!-- Filtro por Carrera -->
+      <mat-form-field appearance="outline">
+        <mat-label>Carrera</mat-label>
+        <mat-select formControlName="carrera">
+          <mat-option [value]="null">Todas las carreras</mat-option>
+          <mat-option *ngFor="let carrera of carrerasUnicas" [value]="carrera">
+            {{ carrera }}
+          </mat-option>
+        </mat-select>
+        <mat-icon matPrefix>school</mat-icon>
+      </mat-form-field>
+
+      <!-- Filtro por Motivo -->
+      <mat-form-field appearance="outline">
+        <mat-label>Motivo</mat-label>
+        <mat-select formControlName="motivo">
+          <mat-option [value]="null">Todos los motivos</mat-option>
+          <mat-option *ngFor="let motivo of motivosUnicos" [value]="motivo">
+            {{ motivo }}
+          </mat-option>
+        </mat-select>
+        <mat-icon matPrefix>label</mat-icon>
+      </mat-form-field>
+
+      <!-- Fecha Inicio -->
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Inicio</mat-label>
+        <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio">
+        <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+        <mat-datepicker #pickerInicio></mat-datepicker>
+        <mat-icon matPrefix>event</mat-icon>
+      </mat-form-field>
+
+      <!-- Fecha Fin -->
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Fin</mat-label>
+        <input matInput [matDatepicker]="pickerFin" formControlName="fechaFin">
+        <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
+        <mat-datepicker #pickerFin></mat-datepicker>
+        <mat-icon matPrefix>event</mat-icon>
+      </mat-form-field>
+
+    </form>
+  </mat-card>
+
+  <!-- Tabs -->
+  <mat-tab-group class="dashboard-tabs">
+
+    <!-- Tab: Estadísticas -->
+    <mat-tab label="Estadísticas">
+      <div class="tab-content estadisticas-content">
+        
+        <div class="tab-header">
+          <h2>Análisis y Gráficas</h2>
+        </div>
+
+        <!-- Grid de Gráficas -->
+        <div class="graficas-grid">
+          
+          <!-- Gráfica: Registros por Día -->
+          <mat-card class="grafica-card grafica-wide">
+            <div class="chart-container">
+              <canvas #chartRegistrosPorDia></canvas>
+            </div>
+          </mat-card>
+
+          <!-- Gráfica: Distribución por Motivos -->
+          <mat-card class="grafica-card">
+            <div class="chart-container">
+              <canvas #chartMotivos></canvas>
+            </div>
+          </mat-card>
+
+          <!-- Gráfica: Top 5 Carreras -->
+          <mat-card class="grafica-card">
+            <div class="chart-container">
+              <canvas #chartCarreras></canvas>
+            </div>
+          </mat-card>
+
+        </div>
+
+        <!-- Estadísticas Numéricas -->
+        <div class="stats-numericas">
+          
+          <mat-card class="stat-numerica-card">
+            <h4>
+              <mat-icon>school</mat-icon>
+              Top 5 Carreras
+            </h4>
+            <div class="stat-lista">
+              <div class="stat-item" *ngFor="let item of topCarreras; let i = index">
+                <span class="stat-numero">{{ i + 1 }}.</span>
+                <span class="stat-nombre">{{ item.carrera }}</span>
+                <mat-chip class="stat-valor">{{ item.cantidad }} registros</mat-chip>
+              </div>
+              <div *ngIf="topCarreras.length === 0" class="empty-message">
+                <mat-icon>info</mat-icon>
+                <p>No hay datos suficientes</p>
+              </div>
+            </div>
+          </mat-card>
+
+          <mat-card class="stat-numerica-card">
+            <h4>
+              <mat-icon>label</mat-icon>
+              Distribución por Motivos
+            </h4>
+            <div class="stat-lista">
+              <div class="stat-item" *ngFor="let item of distribucionMotivos; let i = index">
+                <span class="stat-numero">{{ i + 1 }}.</span>
+                <span class="stat-nombre">{{ item.motivo }}</span>
+                <mat-chip class="stat-valor">{{ item.cantidad }} registros</mat-chip>
+              </div>
+              <div *ngIf="distribucionMotivos.length === 0" class="empty-message">
+                <mat-icon>info</mat-icon>
+                <p>No hay datos suficientes</p>
+              </div>
+            </div>
+          </mat-card>
+
+        </div>
+
+      </div>
+    </mat-tab>
+    
+    <!-- Tab: Alumnos -->
+    <mat-tab label="Alumnos Registrados">
+      <div class="tab-content">
+        
+        <div class="tab-header">
+          <h2>Lista de Alumnos</h2>
+          <div class="tab-actions">
+            <mat-chip class="chip-count">{{ alumnosFiltrados.length }} de {{ totalAlumnos }} alumnos</mat-chip>
+            
+            <button mat-raised-button color="accent" (click)="exportarCSV('alumnos')" 
+                    [disabled]="alumnosFiltrados.length === 0"
+                    matTooltip="Exportar a CSV">
+              <mat-icon>download</mat-icon>
+              CSV
+            </button>
+            <button mat-raised-button color="accent" (click)="exportarExcel('alumnos')"
+                    [disabled]="alumnosFiltrados.length === 0"
+                    matTooltip="Exportar a Excel">
+              <mat-icon>table_chart</mat-icon>
+              Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container" *ngIf="!cargando && alumnosFiltrados.length > 0">
+          <table mat-table [dataSource]="alumnosFiltrados" class="alumnos-table">
+            
+            <ng-container matColumnDef="matricula">
+              <th mat-header-cell *matHeaderCellDef>Matrícula</th>
+              <td mat-cell *matCellDef="let alumno">
+                <strong>{{ alumno.matricula }}</strong>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre Completo</th>
+              <td mat-cell *matCellDef="let alumno">
+                {{ obtenerNombreCompleto(alumno) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="carrera">
+              <th mat-header-cell *matHeaderCellDef>Carrera</th>
+              <td mat-cell *matCellDef="let alumno">
+                {{ alumno.carrera }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="grado">
+              <th mat-header-cell *matHeaderCellDef>Grado</th>
+              <td mat-cell *matCellDef="let alumno">
+                {{ alumno.grado }}°
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="grupo">
+              <th mat-header-cell *matHeaderCellDef>Grupo</th>
+              <td mat-cell *matCellDef="let alumno">
+                {{ alumno.grupo }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="turno">
+              <th mat-header-cell *matHeaderCellDef>Turno</th>
+              <td mat-cell *matCellDef="let alumno">
+                <mat-chip [class]="'chip-' + alumno.turno.toLowerCase()">
+                  {{ alumno.turno }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let alumno">
+                <button mat-icon-button color="primary" 
+                        matTooltip="Ver historial"
+                        (click)="verDetalleAlumno(alumno)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasAlumnos"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasAlumnos;"></tr>
+          </table>
+        </div>
+
+        <div class="empty-state" *ngIf="!cargando && alumnosFiltrados.length === 0 && alumnos.length > 0">
+          <mat-icon>search_off</mat-icon>
+          <p>No se encontraron alumnos con los filtros aplicados</p>
+          <button mat-raised-button (click)="limpiarFiltros()">Limpiar Filtros</button>
+        </div>
+
+        <div class="empty-state" *ngIf="!cargando && alumnos.length === 0">
+          <mat-icon>people_outline</mat-icon>
+          <p>No hay alumnos registrados aún</p>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- Tab: Registros de Hoy -->
+    <mat-tab label="Registros de Hoy">
+      <div class="tab-content">
+        
+        <div class="tab-header">
+          <h2>Registros del Día</h2>
+          <div class="tab-actions">
+            <mat-chip class="chip-count">{{ registrosHoyFiltrados.length }} de {{ totalRegistrosHoy }} registros</mat-chip>
+            
+            <button mat-raised-button color="accent" (click)="exportarCSV('registros-hoy')"
+                    [disabled]="registrosHoyFiltrados.length === 0"
+                    matTooltip="Exportar a CSV">
+              <mat-icon>download</mat-icon>
+              CSV
+            </button>
+            <button mat-raised-button color="accent" (click)="exportarExcel('registros-hoy')"
+                    [disabled]="registrosHoyFiltrados.length === 0"
+                    matTooltip="Exportar a Excel">
+              <mat-icon>table_chart</mat-icon>
+              Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container" *ngIf="!cargando && registrosHoyFiltrados.length > 0">
+          <table mat-table [dataSource]="registrosHoyFiltrados" class="registros-table">
+            
+            <ng-container matColumnDef="fechaHora">
+              <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
+              <td mat-cell *matCellDef="let registro">
+                {{ formatearFecha(registro.fechaHora) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="matricula">
+              <th mat-header-cell *matHeaderCellDef>Matrícula</th>
+              <td mat-cell *matCellDef="let registro">
+                <strong>{{ registro.matricula }}</strong>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Alumno</th>
+              <td mat-cell *matCellDef="let registro">
+                {{ registro.nombreCompleto }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="carrera">
+              <th mat-header-cell *matHeaderCellDef>Carrera</th>
+              <td mat-cell *matCellDef="let registro">
+                {{ obtenerCarreraDeRegistro(registro) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="motivo">
+              <th mat-header-cell *matHeaderCellDef>Motivo</th>
+              <td mat-cell *matCellDef="let registro">
+                <mat-chip class="chip-motivo">
+                  {{ registro.motivoNombre }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasRegistros"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasRegistros;"></tr>
+          </table>
+        </div>
+
+        <div class="empty-state" *ngIf="!cargando && registrosHoyFiltrados.length === 0 && totalRegistrosHoy > 0">
+          <mat-icon>search_off</mat-icon>
+          <p>No se encontraron registros con los filtros aplicados</p>
+          <button mat-raised-button (click)="limpiarFiltros()">Limpiar Filtros</button>
+        </div>
+
+        <div class="empty-state" *ngIf="!cargando && totalRegistrosHoy === 0">
+          <mat-icon>event_note</mat-icon>
+          <p>No hay registros el día de hoy</p>
+        </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- Tab: Todos los Registros -->
+    <mat-tab label="Todos los Registros">
+      <div class="tab-content">
+        
+        <div class="tab-header">
+          <h2>Historial Completo</h2>
+          <div class="tab-actions">
+            <mat-chip class="chip-count">{{ registrosFiltrados.length }} de {{ totalRegistros }} registros</mat-chip>
+            
+            <button mat-raised-button color="accent" (click)="exportarCSV('registros')"
+                    [disabled]="registrosFiltrados.length === 0"
+                    matTooltip="Exportar a CSV">
+              <mat-icon>download</mat-icon>
+              CSV
+            </button>
+            <button mat-raised-button color="accent" (click)="exportarExcel('registros')"
+                    [disabled]="registrosFiltrados.length === 0"
+                    matTooltip="Exportar a Excel">
+              <mat-icon>table_chart</mat-icon>
+              Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container" *ngIf="!cargando && registrosFiltrados.length > 0">
+          <table mat-table [dataSource]="registrosFiltrados" class="registros-table">
+            
+            <ng-container matColumnDef="fechaHora">
+              <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
+              <td mat-cell *matCellDef="let registro">
+                {{ formatearFecha(registro.fechaHora) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="matricula">
+              <th mat-header-cell *matHeaderCellDef>Matrícula</th>
+              <td mat-cell *matCellDef="let registro">
+                <strong>{{ registro.matricula }}</strong>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Alumno</th>
+              <td mat-cell *matCellDef="let registro">
+                {{ registro.nombreCompleto }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="carrera">
+              <th mat-header-cell *matHeaderCellDef>Carrera</th>
+              <td mat-cell *matCellDef="let registro">
+                {{ obtenerCarreraDeRegistro(registro) }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="motivo">
+              <th mat-header-cell *matHeaderCellDef>Motivo</th>
+              <td mat-cell *matCellDef="let registro">
+                <mat-chip class="chip-motivo">
+                  {{ registro.motivoNombre }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnasRegistros"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnasRegistros;"></tr>
+          </table>
+        </div>
+
+        <div class="empty-state" *ngIf="!cargando && registrosFiltrados.length === 0 && totalRegistros > 0">
+          <mat-icon>search_off</mat-icon>
+          <p>No se encontraron registros con los filtros aplicados</p>
+          <button mat-raised-button (click)="limpiarFiltros()">Limpiar Filtros</button>
+        </div>
+
+        <div class="empty-state" *ngIf="!cargando && totalRegistros === 0">
+          <mat-icon>history</mat-icon>
+          <p>No hay registros en el historial</p>
+        </div>
+
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+
+  <!-- Loading -->
+  <div class="loading-overlay" *ngIf="cargando">
+    <mat-icon>hourglass_empty</mat-icon>
+    <p>Cargando datos...</p>
+  </div>
+
+</div>
