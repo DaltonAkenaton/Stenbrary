@@ -2,7 +2,7 @@
   <!-- Header -->
   <div class="registro-header">
     <button mat-icon-button class="back-button" (click)="cancelar()">
-      <mat-icon>arrow_back</mat-icon>
+      <mat-icon>{{ vieneDelScanner ? 'arrow_back' : 'refresh' }}</mat-icon>
     </button>
     <h1>Registro de Nuevo Alumno</h1>
   </div>
@@ -15,13 +15,36 @@
           <mat-icon class="header-icon">person_add</mat-icon>
           <div>
             <mat-card-title>Datos del Alumno</mat-card-title>
-            <mat-card-subtitle>Matrícula: {{ matricula }}</mat-card-subtitle>
+            <mat-card-subtitle>
+              @if (matriculaBloqueada) {
+                Matrícula escaneada: {{ matricula }}
+              } @else {
+                Ingresa los datos del nuevo alumno
+              }
+            </mat-card-subtitle>
           </div>
         </div>
       </mat-card-header>
 
       <mat-card-content>
         <form [formGroup]="registroForm" class="registro-form">
+
+          <!-- Matrícula (editable si acceso directo, bloqueada si viene del scanner) -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Matrícula</mat-label>
+            <input 
+              matInput 
+              formControlName="matricula"
+              placeholder="Ej: a2299990002"
+              [class.input-error]="campoInvalido('matricula')">
+            <mat-icon matPrefix>fingerprint</mat-icon>
+            @if (matriculaBloqueada) {
+              <mat-icon matSuffix matTooltip="Matrícula escaneada — no se puede editar">lock</mat-icon>
+            }
+            <mat-error *ngIf="campoInvalido('matricula')">
+              {{ obtenerErrorCampo('matricula') }}
+            </mat-error>
+          </mat-form-field>
           
           <!-- Nombre -->
           <mat-form-field appearance="outline" class="full-width">
@@ -81,7 +104,6 @@
 
           <!-- Grado, Grupo, Turno en una fila -->
           <div class="form-row">
-            <!-- Grado -->
             <mat-form-field appearance="outline" class="form-col">
               <mat-label>Grado</mat-label>
               <mat-select formControlName="grado">
@@ -94,7 +116,6 @@
               </mat-error>
             </mat-form-field>
 
-            <!-- Grupo -->
             <mat-form-field appearance="outline" class="form-col">
               <mat-label>Grupo</mat-label>
               <mat-select formControlName="grupo">
@@ -107,7 +128,6 @@
               </mat-error>
             </mat-form-field>
 
-            <!-- Turno -->
             <mat-form-field appearance="outline" class="form-col">
               <mat-label>Turno</mat-label>
               <mat-select formControlName="turno">
@@ -134,8 +154,8 @@
               type="button"
               (click)="cancelar()"
               [disabled]="cargando">
-              <mat-icon>close</mat-icon>
-              Cancelar
+              <mat-icon>{{ vieneDelScanner ? 'close' : 'refresh' }}</mat-icon>
+              {{ vieneDelScanner ? 'Cancelar' : 'Limpiar' }}
             </button>
 
             <button 
@@ -146,7 +166,7 @@
               [disabled]="cargando">
               <mat-spinner *ngIf="cargando" diameter="20" class="button-spinner"></mat-spinner>
               <mat-icon *ngIf="!cargando">check</mat-icon>
-              {{ cargando ? 'Guardando...' : 'Registrar y Continuar' }}
+              {{ cargando ? 'Guardando...' : (vieneDelScanner ? 'Registrar y Continuar' : 'Registrar Alumno') }}
             </button>
           </div>
         </form>

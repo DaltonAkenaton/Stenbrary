@@ -1,49 +1,47 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  Stenbrary — Design System Variables                 ║
-// ║  Cyan Cube Color Identity — v2.0                     ║
+// ║  Cyan Cube Color Identity — v3.2                     ║
+// ║                                                      ║
+// ║  CAMBIOS v3.2:                                       ║
+// ║  - font-display: Space Grotesk (mejor números)       ║
+// ║  - text-muted: 0.40 → 0.52 (más legible)            ║
 // ╚══════════════════════════════════════════════════════╝
 
 // ─── PALETA BASE: Navy ───────────────────────────────────
-// Fondos principales. 950 = más oscuro (fondo de video/scanner),
-// 900 = fondo general, 800 = cards, 700 = elementos elevados.
 $navy-950:  #04090F;
-$navy-900:  #080E1A;   // bg-primary (antes blanco)
-$navy-800:  #0D1626;   // bg-secondary / cards
-$navy-700:  #142033;   // elementos elevados, hover states
-$navy-600:  #1C2E47;   // bordes visibles, separadores
-$navy-500:  #243A5E;   // bordes activos sutiles
+$navy-900:  #080E1A;
+$navy-800:  #0D1626;
+$navy-700:  #142033;
+$navy-600:  #1C2E47;
+$navy-500:  #243A5E;
 
 // ─── PALETA ACENTO: Cyan Cube ────────────────────────────
-// El color identitario del producto. Usar con generosidad
-// en iconos activos, bordes de foco, botones primarios y glows.
 $cyan-600:  #008A96;
-$cyan-500:  #00C8D7;   // ★ Primary accent — el cyan de Cyan Cube
-$cyan-400:  #22D4E1;   // Versión más clara para texto sobre fondos oscuros
+$cyan-500:  #00C8D7;
+$cyan-400:  #22D4E1;
 $cyan-300:  #5DE4EC;
 $cyan-200:  #A0F0F5;
-$cyan-glow: rgba(0, 200, 215, 0.18); // Para box-shadow / glow effects
+$cyan-glow: rgba(0, 200, 215, 0.18);
 
 // ─── PALETA COMPLEMENTARIA: Teal ─────────────────────────
-// Gradiente de botones primarios. Cyan → Teal.
 $teal-600:  #007A72;
 $teal-500:  #00A99E;
 $teal-400:  #0BC4B7;
 
 // ─── PALETA SEMÁNTICA ────────────────────────────────────
-$success-color: #0EB07B;   // Verde confirmación
-$warn-color:    #F05252;   // Rojo error / cancelar
-$amber-color:   #F5A623;   // Ámbar advertencia / offline
+$success-color: #0EB07B;
+$warn-color:    #F05252;
+$amber-color:   #F5A623;
 
-// Aliases para compatibilidad con componentes existentes
 $primary-color: $cyan-500;
 $accent-color:  $teal-400;
 
 // ─── TEXTO ───────────────────────────────────────────────
-$text-primary:   #E8F4F8;                   // Texto principal sobre navy
-$text-secondary: rgba(200, 230, 240, 0.65); // Subtítulos, labels
-$text-muted:     rgba(160, 200, 215, 0.40); // Placeholders, metadatos
+// Opacidades ajustadas para mejor legibilidad en dark theme
+$text-primary:   #E8F4F8;                   // Texto principal
+$text-secondary: rgba(200, 230, 240, 0.68); // Subtítulos, labels (era 0.65)
+$text-muted:     rgba(160, 200, 215, 0.52); // Placeholders, metadatos (era 0.40)
 
-// Aliases legacy
 $text-disabled: $text-muted;
 
 // ─── FONDOS ──────────────────────────────────────────────
@@ -52,14 +50,16 @@ $bg-secondary: $navy-800;
 $bg-dark:      $navy-950;
 
 // ─── BORDES ──────────────────────────────────────────────
-$border-subtle: rgba(0, 200, 215, 0.10); // Borde casi invisible
-$border-glow:   rgba(0, 200, 215, 0.32); // Borde con presencia (cards activas, foco)
+$border-subtle: rgba(0, 200, 215, 0.10);
+$border-glow:   rgba(0, 200, 215, 0.32);
 
 // ─── TIPOGRAFÍA ──────────────────────────────────────────
-// Syne: display / headings — carácter fuerte, tecnológico
+// Space Grotesk: display/headings — misma familia que Space Mono,
+//   excelentes números, moderno, tech. Reemplaza a Syne que tenía
+//   números ilegibles (el "1" era un palito, el "7" era raro).
 // DM Sans: body — legible, neutro, moderno
 // Space Mono: matrículas, fechas, timestamps, badges de código
-$font-display: 'Syne', 'Segoe UI', system-ui, sans-serif;
+$font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
 $font-body:    'DM Sans', 'Segoe UI', system-ui, sans-serif;
 $font-mono:    'Space Mono', 'Consolas', 'Courier New', monospace;
 
@@ -81,11 +81,11 @@ $border-radius-xl: 28px;
 $shadow-sm:   0 2px 8px rgba(0, 0, 0, 0.3);
 $shadow-md:   0 4px 16px rgba(0, 0, 0, 0.4);
 $shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.5);
-$shadow-cyan: 0 4px 24px rgba(0, 200, 215, 0.25); // Sombra de énfasis cian
+$shadow-cyan: 0 4px 24px rgba(0, 200, 215, 0.25);
 
 // ─── SIDEBAR ─────────────────────────────────────────────
-$sidebar-width:          64px;   // Sidebar colapsado (solo iconos)
-$sidebar-width-expanded: 220px;  // Sidebar expandido (con labels)
+$sidebar-width:          64px;
+$sidebar-width-expanded: 220px;
 $topbar-height:          56px;
 
 // ─── TRANSICIONES ────────────────────────────────────────

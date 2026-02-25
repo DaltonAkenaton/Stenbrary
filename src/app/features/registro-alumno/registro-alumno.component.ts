@@ -1,7 +1,12 @@
-// ==============================================================================
-// RUTA: src/app/features/registro-alumno/registro-alumno.component.ts
-// CAMBIOS: Agregados ToastService y LoadingService, reemplazados alerts
-// ==============================================================================
+// ╔══════════════════════════════════════════════════════╗
+// ║  registro-alumno.component.ts                        ║
+// ║  Stenbrary v3.2 — Acceso directo sin scanner         ║
+// ║                                                      ║
+// ║  CAMBIO v3.2: Ya no requiere sessionStorage para     ║
+// ║  funcionar. Si hay matriculaTemp del scanner, la     ║
+// ║  pre-llena y la bloquea. Si no hay (acceso directo), ║
+// ║  el campo matrícula es editable.                     ║
+// ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -16,8 +21,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatabaseService } from '../../core/services/database.service';
 import { Alumno } from '../../core/models';
-import { ToastService } from '../../core/services/toast.service';          // ← NUEVO
-import { LoadingService } from '../../core/services/loading.service';      // ← NUEVO
+import { ToastService } from '../../core/services/toast.service';
+import { LoadingService } from '../../core/services/loading.service';
 
 @Component({
   selector: 'app-registro-alumno',
@@ -40,9 +45,17 @@ export class RegistroAlumnoComponent implements OnInit {
   registroForm!: FormGroup;
   cargando = false;
   error: string | null = null;
+
+  /** Matrícula pre-llenada del scanner (si viene del flujo scanner) */
   matricula = '';
 
-  // Opciones para los selects
+  /** Si viene del scanner, la matrícula se bloquea (ya fue escaneada).
+   *  Si accede directo al componente, la matrícula es editable. */
+  matriculaBloqueada = false;
+
+  /** Si viene del scanner flow (hay sesión) */
+  vieneDelScanner = false;
+
   carreras = [
     'Contador Público',
     'Licenciatura en Administración',
@@ -62,26 +75,34 @@ export class RegistroAlumnoComponent implements OnInit {
     private fb: FormBuilder,
     private databaseService: DatabaseService,
     private router: Router,
-    private toastService: ToastService,      // ← NUEVO
-    private loadingService: LoadingService   // ← NUEVO
+    private toastService: ToastService,
+    private loadingService: LoadingService
   ) {}
 
   ngOnInit(): void {
-    // Obtener matrícula del sessionStorage
-    this.matricula = sessionStorage.getItem('matriculaTemp') || '';
-    
-    if (!this.matricula) {
-      console.error('❌ No hay matrícula temporal, redirigiendo...');
-      // ← NUEVO: Toast de error
-      this.toastService.error('No hay matrícula para registrar');
-      this.router.navigate(['/scanner']);
-      return;
+    // Intentar obtener matrícula del sessionStorage (flujo scanner)
+    const matriculaTemp = sessionStorage.getItem('matriculaTemp');
+
+    if (matriculaTemp) {
+      // Viene del scanner: matrícula pre-llenada y bloqueada
+      this.matricula = matriculaTemp;
+      this.matriculaBloqueada = true;
+      this.vieneDelScanner = true;
+      console.log('📝 Registrando alumno desde scanner, matrícula:', this.matricula);
+    } else {
+      // Acceso directo: matrícula editable
+      this.matricula = '';
+      this.matriculaBloqueada = false;
+      this.vieneDelScanner = false;
+      console.log('📝 Registro de alumno — acceso directo');
     }
 
-    console.log('📝 Registrando nuevo alumno con matrícula:', this.matricula);
-
-    // Inicializar formulario
+    // Inicializar formulario — matrícula siempre en el form
     this.registroForm = this.fb.group({
+      matricula: [
+        { value: this.matricula, disabled: this.matriculaBloqueada },
+        [Validators.required, Validators.minLength(5)]
+      ],
       nombre: ['', [Validators.required, Validators.minLength(2)]],
       apellidoPaterno: ['', [Validators.required, Validators.minLength(2)]],
       apellidoMaterno: ['', [Validators.required, Validators.minLength(2)]],
@@ -95,7 +116,6 @@ export class RegistroAlumnoComponent implements OnInit {
   async registrarAlumno(): Promise<void> {
     if (this.registroForm.invalid) {
       this.error = 'Por favor completa todos los campos correctamente';
-      // ← NUEVO: Toast de warning en lugar de solo mostrar error
       this.toastService.warning('Por favor completa todos los campos correctamente');
       this.marcarCamposComoTocados();
       return;
@@ -104,15 +124,15 @@ export class RegistroAlumnoComponent implements OnInit {
     try {
       this.cargando = true;
       this.error = null;
-      
-      // ← NUEVO: Loading mientras guarda
       this.loadingService.show('Registrando alumno...');
 
-      const formValue = this.registroForm.value;
+      const formValue = this.registroForm.getRawValue(); // getRawValue incluye campos disabled
 
-      // Crear objeto alumno
+      // Usar la matrícula del form (puede ser pre-llenada o manual)
+      const matriculaFinal = this.matriculaBloqueada ? this.matricula : formValue.matricula.trim();
+
       const nuevoAlumno: Omit<Alumno, 'id' | 'fechaRegistro'> = {
-        matricula: this.matricula,
+        matricula: matriculaFinal,
         nombre: formValue.nombre.trim(),
         apellidoPaterno: formValue.apellidoPaterno.trim(),
         apellidoMaterno: formValue.apellidoMaterno.trim(),
@@ -123,55 +143,50 @@ export class RegistroAlumnoComponent implements OnInit {
         activo: true
       };
 
-      // Guardar en la base de datos
       const alumnoCreado = await this.databaseService.crearAlumno(nuevoAlumno);
 
-      console.log('✅ Alumno registrado exitosamente:', alumnoCreado);
-      
-      // ← NUEVO: Ocultar loading
+      console.log('✅ Alumno registrado:', alumnoCreado);
       this.loadingService.hide();
-      
-      // ← NUEVO: Toast de éxito con nombre del alumno
       this.toastService.success(`Alumno ${formValue.nombre} ${formValue.apellidoPaterno} registrado exitosamente`);
 
-      // Guardar en sessionStorage para el siguiente componente
-      sessionStorage.setItem('alumnoActual', JSON.stringify(alumnoCreado));
-      
-      // Limpiar matrícula temporal
-      sessionStorage.removeItem('matriculaTemp');
-
-      // Navegar a selección de motivo
-      this.router.navigate(['/seleccion-motivo']);
+      if (this.vieneDelScanner) {
+        // Flujo scanner: continuar a selección de motivo
+        sessionStorage.setItem('alumnoActual', JSON.stringify(alumnoCreado));
+        sessionStorage.removeItem('matriculaTemp');
+        this.router.navigate(['/seleccion-motivo']);
+      } else {
+        // Acceso directo: limpiar formulario para otro registro
+        this.registroForm.reset();
+        this.toastService.info('Puedes registrar otro alumno');
+      }
 
     } catch (error: any) {
       console.error('❌ Error al registrar alumno:', error);
-      
-      // ← NUEVO: Ocultar loading en caso de error
       this.loadingService.hide();
-      
+
       if (error.message && error.message.includes('already exists')) {
         this.error = 'Esta matrícula ya está registrada';
-        // ← NUEVO: Toast de error específico
         this.toastService.error('Esta matrícula ya está registrada');
       } else {
         this.error = 'Error al registrar el alumno. Intenta de nuevo.';
-        // ← NUEVO: Toast de error genérico
         this.toastService.error('Error al registrar el alumno. Intenta de nuevo.');
       }
-      
+
       this.cargando = false;
     }
   }
 
   cancelar(): void {
-    // Limpiar sessionStorage
     sessionStorage.removeItem('matriculaTemp');
-    
-    // ← NUEVO: Toast informativo
-    this.toastService.info('Registro cancelado');
-    
-    // Volver al scanner
-    this.router.navigate(['/scanner']);
+
+    if (this.vieneDelScanner) {
+      this.toastService.info('Registro cancelado');
+      this.router.navigate(['/scanner']);
+    } else {
+      // Acceso directo: solo limpiar el formulario
+      this.registroForm.reset();
+      this.toastService.info('Formulario limpiado');
+    }
   }
 
   private marcarCamposComoTocados(): void {
@@ -181,18 +196,18 @@ export class RegistroAlumnoComponent implements OnInit {
     });
   }
 
-  // Helpers para validación en template
   obtenerErrorCampo(campo: string): string {
     const control = this.registroForm.get(campo);
-    
+
     if (control?.hasError('required')) {
       return 'Este campo es obligatorio';
     }
-    
+
     if (control?.hasError('minlength')) {
-      return 'Mínimo 2 caracteres';
+      const minLen = campo === 'matricula' ? 5 : 2;
+      return `Mínimo ${minLen} caracteres`;
     }
-    
+
     return '';
   }
 

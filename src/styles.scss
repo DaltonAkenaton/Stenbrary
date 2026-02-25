@@ -1,14 +1,12 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  Stenbrary — Global Styles                           ║
-// ║  Cyan Cube Design System — v3.0                      ║
+// ║  Cyan Cube Design System — v3.2                      ║
 // ║                                                      ║
-// ║  MEJORAS v3.0:                                       ║
-// ║  - Staggered card reveals (CSS vars)                 ║
-// ║  - Glassmorphism utilities                           ║
-// ║  - Micro-interactions en hover globales              ║
-// ║  - Route transition animation                        ║
-// ║  - Fix scrollbar Firefox                             ║
-// ║  - Dark theme consistency en Material overrides      ║
+// ║  FIXES v3.2:                                         ║
+// ║  - mat-tab labels: visible text on dark bg            ║
+// ║  - mat-dialog: dark background, visible title         ║
+// ║  - mat-select: dark dropdown panel                    ║
+// ║  - mat-chip: dark themed                              ║
 // ╚══════════════════════════════════════════════════════╝
 
 @use '@angular/material' as mat;
@@ -36,7 +34,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-// ─── FONDO GLOBAL — mesh sutil ──────────────────────────
+// ─── FONDO GLOBAL CON MESH SUTIL ─────────────────────────
 body::before {
   content: '';
   position: fixed;
@@ -48,8 +46,7 @@ body::before {
     radial-gradient(ellipse 35% 55% at 88% 75%, rgba(0, 169, 158, 0.05) 0%, transparent 70%);
 }
 
-// ─── SCROLLBAR ──────────────────────────────────────────
-// Chrome / Edge
+// ─── SCROLLBAR PERSONALIZADO ─────────────────────────────
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -63,10 +60,12 @@ body::before {
   background: $navy-600;
   border-radius: 3px;
 
-  &:hover { background: $cyan-600; }
+  &:hover {
+    background: $cyan-600;
+  }
 }
 
-// Firefox
+// Firefox scrollbar
 * {
   scrollbar-width: thin;
   scrollbar-color: $navy-600 $navy-800;
@@ -85,7 +84,7 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.02em;
 }
 
-// ─── UTILIDADES ─────────────────────────────────────────
+// ─── UTILIDADES GLOBALES ─────────────────────────────────
 .full-width  { width: 100%; }
 .full-height { height: 100%; }
 .text-center { text-align: center; }
@@ -106,28 +105,20 @@ h1, h2, h3, h4, h5, h6 {
 .flex-between  { @include flex-between; }
 .flex-1        { flex: 1; }
 
-// ═══════════════════════════════════════════════════════════
-// ANIMACIONES 2026
-// ═══════════════════════════════════════════════════════════
-
+// ─── ANIMACIONES GLOBALES ────────────────────────────────
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
 @keyframes slideInUp {
-  from { transform: translateY(20px); opacity: 0; }
+  from { transform: translateY(16px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
 
 @keyframes slideInDown {
-  from { transform: translateY(-20px); opacity: 0; }
+  from { transform: translateY(-16px); opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
-}
-
-@keyframes slideInLeft {
-  from { transform: translateX(-20px); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
 }
 
 @keyframes scaleIn {
@@ -156,48 +147,11 @@ h1, h2, h3, h4, h5, h6 {
   100% { top: 4px; opacity: 1; }
 }
 
-// ── Shimmer para loading states ──
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-// ── Reveal suave con blur ──
-@keyframes revealUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-    filter: blur(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-// ── Clases de animación ─────────────────────────────────
-.fade-in       { animation: fadeIn    $transition-normal both; }
-.slide-in-up   { animation: slideInUp $transition-normal both; }
-.slide-in-down { animation: slideInDown $transition-normal both; }
-.slide-in-left { animation: slideInLeft $transition-normal both; }
-.scale-in      { animation: scaleIn  $transition-normal both; }
-.pulse         { animation: pulse 2s ease-in-out infinite; }
-
-// ── Staggered reveal: usa --i para el delay ─────────────
-// Ejemplo: <div class="reveal" style="--i: 0"> ... <div class="reveal" style="--i: 1">
-.reveal {
-  animation: revealUp 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(var(--i, 0) * 80ms);
-}
-
-// ─── GLASSMORPHISM ──────────────────────────────────────
-.glass {
-  background: rgba(13, 22, 38, 0.6);
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
-  border: 1px solid $border-subtle;
-}
+.fade-in      { animation: fadeIn    $transition-normal both; }
+.slide-in-up  { animation: slideInUp $transition-normal both; }
+.slide-in-down{ animation: slideInDown $transition-normal both; }
+.scale-in     { animation: scaleIn   $transition-normal both; }
+.pulse        { animation: pulse 2s ease-in-out infinite; }
 
 // ─── CARD GENÉRICO ───────────────────────────────────────
 .card {
@@ -250,7 +204,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-// ─── CHIP ────────────────────────────────────────────────
+// ─── CHIP / BADGE ────────────────────────────────────────
 .chip-cyan {
   font-family: $font-mono;
   font-size: 11px;
@@ -262,7 +216,7 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.5px;
 }
 
-// ─── SPINNER ─────────────────────────────────────────────
+// ─── LOADING SPINNER ─────────────────────────────────────
 .spinner {
   width: 36px;
   height: 36px;
@@ -272,19 +226,6 @@ h1, h2, h3, h4, h5, h6 {
   animation: spin 0.8s linear infinite;
 }
 
-// ─── SHIMMER PLACEHOLDER ─────────────────────────────────
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    $navy-800 25%,
-    $navy-700 50%,
-    $navy-800 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-  border-radius: $border-radius-sm;
-}
-
 // ─── OVERLAY ─────────────────────────────────────────────
 .overlay {
   @include overlay;
@@ -292,133 +233,175 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(4px);
 }
 
+
 // ═══════════════════════════════════════════════════════════
 // ANGULAR MATERIAL — DARK THEME OVERRIDES
+// Overrides completos para que TODOS los componentes
+// de Material respeten la paleta navy/cyan.
 // ═══════════════════════════════════════════════════════════
 
+// ─── CARDS ───────────────────────────────────────────────
 .mat-mdc-card {
   background: $navy-800 !important;
   border: 1px solid $border-subtle !important;
   color: $text-primary !important;
 }
 
+// ─── FORM FIELDS ────────────────────────────────────────
 .mat-mdc-form-field {
   .mdc-text-field {
     background-color: $navy-700 !important;
     border-radius: $border-radius-sm !important;
   }
 
-  .mdc-floating-label, .mat-mdc-input-element {
+  .mdc-floating-label,
+  .mat-mdc-input-element,
+  .mat-mdc-select-value {
     color: $text-primary !important;
   }
 
+  // Placeholder text
+  .mat-mdc-input-element::placeholder {
+    color: $text-muted !important;
+  }
+
+  // Outline borders
   .mdc-text-field--outlined .mdc-notched-outline__leading,
   .mdc-text-field--outlined .mdc-notched-outline__notch,
   .mdc-text-field--outlined .mdc-notched-outline__trailing {
     border-color: $border-subtle !important;
   }
 
+  // Focused state
   &.mat-focused {
     .mdc-text-field--outlined .mdc-notched-outline__leading,
     .mdc-text-field--outlined .mdc-notched-outline__notch,
     .mdc-text-field--outlined .mdc-notched-outline__trailing {
       border-color: $cyan-500 !important;
     }
+
+    .mdc-floating-label {
+      color: $cyan-400 !important;
+    }
+  }
+
+  // Hint text
+  .mat-mdc-form-field-hint {
+    color: $text-muted !important;
+  }
+
+  // Prefix/suffix icons
+  .mat-mdc-form-field-icon-prefix,
+  .mat-mdc-form-field-icon-suffix {
+    color: $text-muted !important;
   }
 }
 
-// Tabs → dark theme
+// ─── TABS — CRITICAL FIX ─────────────────────────────────
+// El texto de los tabs era invisible porque el color heredado
+// de Material era oscuro sobre fondo oscuro.
 .mat-mdc-tab-group {
   .mat-mdc-tab-header {
     border-bottom: 1px solid $border-subtle;
     background: $navy-800;
   }
 
-  .mat-mdc-tab {
-    color: $text-muted !important;
-
-    &.mdc-tab--active {
-      color: $cyan-400 !important;
-    }
-  }
-
-  .mdc-tab-indicator__content--underline {
-    border-color: $cyan-500 !important;
-  }
-
-  .mat-mdc-tab-body-wrapper {
-    background: $navy-800;
-  }
-}
-
-// Chips → dark theme
-.mat-mdc-chip {
-  background: $navy-700 !important;
-  color: $text-primary !important;
-  border: 1px solid $border-subtle !important;
-}
-
-// Table → dark theme
-.mat-mdc-table {
-  background: transparent !important;
-
-  .mat-mdc-header-row {
-    background: $navy-700 !important;
-  }
-
-  .mat-mdc-header-cell {
+  // Label text — THE FIX
+  .mat-mdc-tab .mdc-tab__text-label {
     color: $text-secondary !important;
-    border-bottom-color: $border-subtle !important;
+    font-family: $font-body;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  // Active tab
+  .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
+    color: $cyan-400 !important;
     font-weight: 600;
   }
 
-  .mat-mdc-row {
-    transition: background $transition-fast;
-
-    &:hover {
-      background: rgba(0, 200, 215, 0.04) !important;
-    }
+  // Tab indicator (underline)
+  .mat-mdc-tab-header .mdc-tab-indicator__content--underline {
+    border-color: $cyan-500 !important;
   }
 
-  .mat-mdc-cell {
+  // Ripple
+  .mat-mdc-tab .mat-ripple-element {
+    background-color: rgba(0, 200, 215, 0.08) !important;
+  }
+
+  // Hover
+  .mat-mdc-tab:hover .mdc-tab__text-label {
     color: $text-primary !important;
-    border-bottom-color: rgba(255, 255, 255, 0.04) !important;
   }
 }
 
-// Select panel
-.mat-mdc-select-panel {
-  background: $navy-700 !important;
-}
-
-.mat-mdc-option {
-  color: $text-primary !important;
-
-  &:hover {
-    background: rgba(0, 200, 215, 0.08) !important;
-  }
-
-  &.mdc-list-item--selected {
-    background: rgba(0, 200, 215, 0.12) !important;
-  }
-}
-
-// Datepicker
-.mat-datepicker-content {
-  background: $navy-800 !important;
-  color: $text-primary !important;
-}
-
-// Dialog
+// ─── DIALOGS ─────────────────────────────────────────────
 .mat-mdc-dialog-container {
   .mdc-dialog__surface {
     background: $navy-800 !important;
     border: 1px solid $border-subtle !important;
     border-radius: $border-radius-lg !important;
+    color: $text-primary !important;
+  }
+
+  // Dialog title
+  .mat-mdc-dialog-title {
+    color: $text-primary !important;
+    font-family: $font-display !important;
+
+    // Fix: prevent title from being clipped
+    &::before {
+      display: none !important;
+    }
+  }
+
+  // Dialog actions
+  .mat-mdc-dialog-actions {
+    border-top: 1px solid $border-subtle;
+    padding: $spacing-md $spacing-lg !important;
   }
 }
 
-// Snackbar
+// ─── SELECT DROPDOWN ─────────────────────────────────────
+.mat-mdc-select-panel {
+  background: $navy-700 !important;
+  border: 1px solid $border-subtle !important;
+  border-radius: $border-radius-md !important;
+
+  .mat-mdc-option {
+    color: $text-primary !important;
+
+    &:hover {
+      background: rgba(0, 200, 215, 0.08) !important;
+    }
+
+    &.mat-mdc-option-active,
+    &.mdc-list-item--selected {
+      background: rgba(0, 200, 215, 0.12) !important;
+      color: $cyan-400 !important;
+    }
+  }
+}
+
+// ─── BUTTONS ─────────────────────────────────────────────
+.mat-mdc-raised-button.mat-primary {
+  background: linear-gradient(135deg, $cyan-500, $teal-400) !important;
+  color: $navy-950 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25) !important;
+}
+
+.mat-mdc-outlined-button,
+.mat-mdc-button {
+  color: $text-secondary !important;
+
+  &:hover {
+    background: rgba(0, 200, 215, 0.06) !important;
+  }
+}
+
+// ─── SNACK BAR ───────────────────────────────────────────
 .mat-mdc-snack-bar-container {
   background: $navy-700 !important;
   border: 1px solid $border-glow !important;
@@ -426,34 +409,49 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: $border-radius-md !important;
 }
 
-// Tooltip
-.mat-mdc-tooltip {
-  .mdc-tooltip__surface {
+// ─── TOOLTIP ─────────────────────────────────────────────
+.mat-mdc-tooltip .mdc-tooltip__surface {
+  background: $navy-700 !important;
+  color: $text-primary !important;
+  border: 1px solid $border-subtle !important;
+  font-family: $font-body !important;
+  font-size: 12px !important;
+}
+
+// ─── PROGRESS SPINNER ────────────────────────────────────
+.mat-mdc-progress-spinner circle {
+  stroke: $cyan-500 !important;
+}
+
+// ─── CHIPS ───────────────────────────────────────────────
+.mat-mdc-chip {
+  background: rgba(0, 200, 215, 0.10) !important;
+  color: $cyan-400 !important;
+  border: 1px solid $border-subtle !important;
+}
+
+// ─── TABLE ───────────────────────────────────────────────
+.mat-mdc-table {
+  background: transparent !important;
+
+  .mat-mdc-header-cell {
     background: $navy-700 !important;
     color: $text-primary !important;
-    border: 1px solid $border-subtle !important;
-    font-family: $font-body;
-    font-size: 12px;
+    border-bottom-color: $border-subtle !important;
+  }
+
+  .mat-mdc-cell {
+    color: $text-secondary !important;
+    border-bottom-color: $border-subtle !important;
+  }
+
+  .mat-mdc-row:hover {
+    background: rgba(0, 200, 215, 0.04) !important;
   }
 }
 
-// Buttons mat-raised-button → dark friendly
-.mat-mdc-raised-button {
-  &.mat-primary {
-    background-color: $cyan-500 !important;
-    color: $navy-950 !important;
-  }
-
-  &.mat-accent {
-    background-color: $teal-500 !important;
-    color: $navy-950 !important;
-  }
-}
-
-.mat-mdc-icon-button {
+// ─── PAGINATOR ───────────────────────────────────────────
+.mat-mdc-paginator {
+  background: transparent !important;
   color: $text-secondary !important;
-
-  &:hover {
-    background: rgba(0, 200, 215, 0.08) !important;
-  }
 }

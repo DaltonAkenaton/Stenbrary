@@ -1,14 +1,12 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  dashboard.component.scss                            ║
-// ║  Stenbrary v3.0 — Cyan Cube Dark Theme               ║
+// ║  Stenbrary v3.2 — Dark Theme (Cyan Cube)             ║
 // ║                                                      ║
-// ║  FIXES v3.0:                                         ║
-// ║  - Removido background:white de tabs y botones       ║
-// ║  - Removido border #e0e0e0 (tema claro)              ║
-// ║  - Cards con glow hover consistente                  ║
-// ║  - Stat icons con colores del design system          ║
-// ║  - Chips adaptados al tema oscuro                    ║
-// ║  - Header sin emojis ni estilos inline               ║
+// ║  FIXES v3.2: Removed ALL light theme remnants        ║
+// ║  - background: white → $navy-800                     ║
+// ║  - #667eea/#764ba2 gradients → cyan/teal             ║
+// ║  - Light chips → dark themed                         ║
+// ║  - #e0e0e0 borders → $border-subtle                  ║
 // ╚══════════════════════════════════════════════════════╝
 
 @import '../../../styles/variables';
@@ -17,105 +15,50 @@
 .dashboard-container {
   min-height: 100vh;
   height: auto;
-  background: transparent; // El fondo ya lo da body
+  background: $bg-secondary;
   padding: $spacing-lg;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-// ═══════════════════════════════════════════════════
-// HEADER
-// ═══════════════════════════════════════════════════
+// ==================== HEADER ====================
 
 .dashboard-header {
   @include flex-between;
   margin-bottom: $spacing-xl;
-
+  
   .header-content {
     display: flex;
     align-items: center;
     gap: $spacing-md;
-
+    
     .back-button {
       background: $navy-700;
-      color: $text-primary;
       border: 1px solid $border-subtle;
+      color: $text-primary;
       box-shadow: none;
-      transition: all $transition-fast;
 
       &:hover {
         background: $navy-600;
         border-color: $border-glow;
       }
     }
-
+    
     h1 {
       margin: 0;
-      font-size: 1.75rem;
-      font-weight: 800;
+      font-size: 2rem;
+      font-weight: 700;
       color: $text-primary;
     }
-
+    
     .subtitle {
       margin: $spacing-xs 0 0;
       color: $text-secondary;
-      font-size: 0.85rem;
     }
   }
 }
 
-.header-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-
-  // Todos los botones del header con estilo consistente
-  button {
-    font-family: $font-body;
-    font-weight: 600;
-    font-size: 13px;
-    border-radius: $border-radius-md;
-    transition: all $transition-fast;
-
-    mat-icon {
-      margin-right: 4px;
-    }
-
-    &:hover {
-      transform: translateY(-1px);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
-}
-
-// Botón gestión motivos
-.btn-gestion {
-  background: $navy-700 !important;
-  color: $text-primary !important;
-  border: 1px solid $border-subtle !important;
-
-  &:hover {
-    border-color: $border-glow !important;
-    box-shadow: 0 4px 16px rgba(0, 200, 215, 0.15);
-  }
-}
-
-// Botón dashboard ejecutivo
-.btn-ejecutivo {
-  background: linear-gradient(135deg, $cyan-600, $teal-600) !important;
-  color: white !important;
-
-  &:hover {
-    box-shadow: 0 4px 20px rgba(0, 200, 215, 0.3);
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// STATS GRID
-// ═══════════════════════════════════════════════════
+// ==================== ESTADÍSTICAS ====================
 
 .stats-grid {
   display: grid;
@@ -129,108 +72,103 @@
   align-items: center;
   gap: $spacing-lg;
   padding: $spacing-lg;
-  background: $navy-800 !important;
-  border: 1px solid $border-subtle !important;
-  border-radius: $border-radius-lg !important;
-  transition: all $transition-fast;
-
+  transition: transform $transition-fast;
+  
   &:hover {
-    transform: translateY(-3px);
-    border-color: $border-glow !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 24px rgba(0, 200, 215, 0.06);
+    transform: translateY(-4px);
   }
-
+  
   .stat-icon {
     @include flex-center;
-    width: 56px;
-    height: 56px;
+    width: 60px;
+    height: 60px;
     border-radius: $border-radius-md;
-    flex-shrink: 0;
-
+    
     mat-icon {
-      font-size: 28px;
-      width: 28px;
-      height: 28px;
-      color: white;
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: $navy-950;
     }
-
+    
     &.alumnos {
-      background: linear-gradient(135deg, $cyan-500, $cyan-600);
+      background: linear-gradient(135deg, $cyan-500, $teal-400);
       box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25);
     }
-
+    
     &.registros-hoy {
-      background: linear-gradient(135deg, $teal-400, $teal-600);
-      box-shadow: 0 4px 16px rgba(0, 169, 158, 0.25);
+      background: linear-gradient(135deg, $teal-400, $success-color);
+      box-shadow: 0 4px 16px rgba(11, 196, 183, 0.25);
     }
-
+    
     &.registros-total {
-      background: linear-gradient(135deg, $cyan-400, $teal-400);
-      box-shadow: 0 4px 16px rgba(0, 200, 215, 0.2);
+      background: linear-gradient(135deg, $cyan-400, $cyan-200);
+      box-shadow: 0 4px 16px rgba(0, 200, 215, 0.20);
     }
   }
-
+  
   .stat-content {
     h3 {
       margin: 0;
-      font-size: 1.75rem;
-      font-weight: 800;
+      font-size: 2rem;
+      font-weight: 700;
       color: $text-primary;
       font-family: $font-display;
     }
-
+    
     p {
       margin: $spacing-xs 0 0;
       color: $text-secondary;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
     }
   }
 }
 
-// ═══════════════════════════════════════════════════
-// FILTROS
-// ═══════════════════════════════════════════════════
+// ==================== FILTROS ====================
 
 .filtros-card {
   margin-bottom: $spacing-xl;
   padding: $spacing-lg;
-  background: $navy-800 !important;
-  border-radius: $border-radius-lg !important;
-
+  
   .filtros-header {
     @include flex-between;
     margin-bottom: $spacing-lg;
-
+    
     h3 {
       margin: 0;
       display: flex;
       align-items: center;
       gap: $spacing-sm;
       color: $text-primary;
-      font-size: 1.1rem;
-
-      mat-icon { color: $cyan-500; }
+      font-size: 1.2rem;
+      
+      mat-icon {
+        color: $primary-color;
+      }
     }
   }
-
+  
   .filtros-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: $spacing-md;
-
-    .filtro-full { grid-column: 1 / -1; }
-    mat-form-field { width: 100%; }
+    
+    .filtro-full {
+      grid-column: 1 / -1;
+    }
+    
+    mat-form-field {
+      width: 100%;
+    }
   }
 }
 
-// ═══════════════════════════════════════════════════
-// TABS — Dark theme
-// ═══════════════════════════════════════════════════
+// ==================== TABS ====================
 
 .dashboard-tabs {
   background: $navy-800;
   border: 1px solid $border-subtle;
-  border-radius: $border-radius-lg;
+  border-radius: $border-radius-md;
   overflow: hidden;
 }
 
@@ -244,33 +182,35 @@
   margin-bottom: $spacing-lg;
   flex-wrap: wrap;
   gap: $spacing-md;
-
+  
   h2 {
     margin: 0;
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     color: $text-primary;
   }
-
+  
   .tab-actions {
     display: flex;
     align-items: center;
     gap: $spacing-sm;
     flex-wrap: wrap;
-
+    
     .chip-count {
-      background: rgba(0, 200, 215, 0.15) !important;
-      color: $cyan-400 !important;
-      border: 1px solid $border-glow !important;
+      background: rgba($primary-color, 0.15);
+      color: $cyan-400;
+      border: 1px solid $border-glow;
       font-weight: 600;
-      font-family: $font-mono;
-      font-size: 12px;
+    }
+    
+    button {
+      mat-icon {
+        margin-right: $spacing-xs;
+      }
     }
   }
 }
 
-// ═══════════════════════════════════════════════════
-// GRÁFICAS
-// ═══════════════════════════════════════════════════
+// ==================== GRÁFICAS ====================
 
 .estadisticas-content {
   min-height: 600px;
@@ -285,18 +225,22 @@
 
 .grafica-card {
   padding: $spacing-lg;
-
-  &.grafica-wide { grid-column: 1 / -1; }
-
+  
+  &.grafica-wide {
+    grid-column: 1 / -1;
+  }
+  
   .chart-container {
     position: relative;
     height: 300px;
-
-    canvas { max-height: 100%; }
+    
+    canvas {
+      max-height: 100%;
+    }
   }
 }
 
-// Estadísticas numéricas
+// Estadísticas Numéricas
 .stats-numericas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -305,68 +249,67 @@
 
 .stat-numerica-card {
   padding: $spacing-lg;
-
+  
   h4 {
     margin: 0 0 $spacing-md 0;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     color: $text-primary;
     display: flex;
     align-items: center;
     gap: $spacing-sm;
-
-    mat-icon { color: $cyan-500; }
+    
+    mat-icon {
+      color: $primary-color;
+    }
   }
-
+  
   .stat-lista {
     display: flex;
     flex-direction: column;
     gap: $spacing-sm;
   }
-
+  
   .stat-item {
     display: flex;
     align-items: center;
     gap: $spacing-md;
-    padding: $spacing-sm $spacing-md;
+    padding: $spacing-sm;
     border-radius: $border-radius-sm;
     background: $navy-700;
-    border: 1px solid transparent;
-    transition: all $transition-fast;
-
+    transition: transform $transition-fast;
+    
     &:hover {
       transform: translateX(4px);
-      border-color: $border-subtle;
-      background: rgba(0, 200, 215, 0.05);
+      background: rgba($primary-color, 0.08);
     }
-
+    
     .stat-numero {
       font-weight: 700;
-      color: $cyan-400;
+      color: $primary-color;
       min-width: 24px;
-      font-family: $font-mono;
     }
-
+    
     .stat-nombre {
       flex: 1;
       color: $text-primary;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
-
+    
     .stat-valor {
-      background: rgba(0, 200, 215, 0.15) !important;
-      color: $cyan-400 !important;
-      border: 1px solid $border-glow !important;
-      font-size: 0.8rem;
+      background: rgba($primary-color, 0.15);
+      color: $cyan-400;
+      border: 1px solid $border-glow;
+      font-size: 0.85rem;
       font-weight: 600;
     }
   }
-
+  
   .empty-message {
     @include flex-center;
     flex-direction: column;
     padding: $spacing-xl;
-    color: $text-muted;
-
+    color: $text-secondary;
+    
     mat-icon {
       font-size: 3rem;
       width: 3rem;
@@ -374,118 +317,147 @@
       opacity: 0.3;
       margin-bottom: $spacing-sm;
     }
+    
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
   }
 }
 
-// ═══════════════════════════════════════════════════
-// TABLAS — Dark theme
-// ═══════════════════════════════════════════════════
+// ==================== TABLAS ====================
 
 .table-container {
   overflow-x: auto;
-  border-radius: $border-radius-md;
+  border-radius: $border-radius-sm;
   border: 1px solid $border-subtle;
 }
 
 .alumnos-table,
 .registros-table {
   width: 100%;
-
+  
   th {
     background: $navy-700;
     font-weight: 600;
+    color: $text-primary;
+  }
+  
+  td {
     color: $text-secondary;
   }
-
-  td { color: $text-primary; }
-
+  
   tr:hover {
-    background: rgba(0, 200, 215, 0.04);
+    background: rgba($primary-color, 0.05);
   }
 }
 
-// Chips de turno → dark theme
+// Chips — dark theme
 .chip-matutino {
-  background: rgba(66, 165, 245, 0.15) !important;
-  color: #64B5F6 !important;
-  border: 1px solid rgba(66, 165, 245, 0.30) !important;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .chip-vespertino {
-  background: rgba(255, 167, 38, 0.15) !important;
-  color: #FFB74D !important;
-  border: 1px solid rgba(255, 167, 38, 0.30) !important;
+  background: rgba(245, 166, 35, 0.12);
+  color: $amber-color;
+  border: 1px solid rgba(245, 166, 35, 0.25);
 }
 
 .chip-mixto {
-  background: rgba(171, 71, 188, 0.15) !important;
-  color: #CE93D8 !important;
-  border: 1px solid rgba(171, 71, 188, 0.30) !important;
+  background: rgba(168, 85, 247, 0.12);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.25);
 }
 
 .chip-motivo {
-  background: $navy-700 !important;
-  color: $text-primary !important;
-  border: 1px solid $border-subtle !important;
+  background: rgba(0, 200, 215, 0.10);
+  color: $cyan-400;
+  border: 1px solid $border-subtle;
 }
 
-// ═══════════════════════════════════════════════════
-// EMPTY STATE
-// ═══════════════════════════════════════════════════
+// ==================== EMPTY STATE ====================
 
 .empty-state {
   @include flex-center;
   flex-direction: column;
   padding: $spacing-xxl;
-  color: $text-muted;
-
+  color: $text-secondary;
+  
   mat-icon {
-    font-size: 3.5rem;
-    width: 3.5rem;
-    height: 3.5rem;
-    opacity: 0.3;
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    opacity: 0.5;
     margin-bottom: $spacing-md;
-    color: $cyan-500;
   }
-
+  
   p {
-    font-size: 1rem;
+    font-size: 1.1rem;
     margin-bottom: $spacing-md;
-    color: $text-secondary;
   }
-
+  
   button {
-    margin-top: $spacing-sm;
+    margin-top: $spacing-md;
   }
 }
 
-// ═══════════════════════════════════════════════════
-// LOADING
-// ═══════════════════════════════════════════════════
+// ==================== LOADING ====================
 
 .loading-overlay {
   @include flex-center;
   flex-direction: column;
   padding: $spacing-xxl;
   color: $text-secondary;
-
+  
   mat-icon {
-    font-size: 2.5rem;
-    width: 2.5rem;
-    height: 2.5rem;
-    color: $cyan-500;
-    animation: spin 1.5s linear infinite;
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    animation: spin 2s linear infinite;
   }
-
+  
   p {
     margin-top: $spacing-md;
-    font-size: 0.95rem;
+    font-size: 1.1rem;
   }
 }
 
-// ═══════════════════════════════════════════════════
-// RESPONSIVE
-// ═══════════════════════════════════════════════════
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ==================== HEADER ACTIONS ====================
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-ejecutivo {
+  background: linear-gradient(135deg, $cyan-500, $teal-400) !important;
+  color: $navy-950 !important;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  
+  mat-icon {
+    margin-right: 8px;
+  }
+  
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 200, 215, 0.35);
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ==================== RESPONSIVE ====================
 
 @media (max-width: $breakpoint-md) {
   .dashboard-header {
@@ -493,21 +465,31 @@
     align-items: flex-start;
     gap: $spacing-md;
   }
-
-  .stats-grid { grid-template-columns: 1fr; }
-
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .filtros-grid {
     grid-template-columns: 1fr;
-    .filtro-full { grid-column: 1; }
+    
+    .filtro-full {
+      grid-column: 1;
+    }
   }
-
-  .graficas-grid { grid-template-columns: 1fr; }
-  .stats-numericas { grid-template-columns: 1fr; }
-
+  
+  .graficas-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-numericas {
+    grid-template-columns: 1fr;
+  }
+  
   .tab-header {
     flex-direction: column;
     align-items: flex-start;
-
+    
     .tab-actions {
       width: 100%;
       justify-content: space-between;
@@ -519,25 +501,26 @@
   .dashboard-container {
     padding: $spacing-md;
   }
-
-  .header-actions {
-    width: 100%;
-
-    button {
-      flex: 1;
-      min-width: 0;
-      font-size: 12px;
-    }
-  }
-
+  
   .tab-actions {
     flex-direction: column;
     width: 100%;
-
-    button { width: 100%; }
+    
+    button {
+      width: 100%;
+    }
   }
-
+  
   .grafica-card .chart-container {
     height: 250px;
+  }
+
+  .header-actions {
+    width: 100%;
+    
+    button {
+      flex: 1;
+      min-width: 0;
+    }
   }
 }

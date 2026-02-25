@@ -1,11 +1,11 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  seleccion-motivo.component.ts                       ║
-// ║  Stenbrary v3.1 — Two-Step Confirmation Flow         ║
+// ║  Stenbrary v3.2 — Two-Step + Toggle + Guest          ║
 // ║                                                      ║
-// ║  CAMBIO MAYOR: El clic en un motivo ya NO registra   ║
-// ║  automáticamente. Ahora selecciona y muestra panel   ║
-// ║  de confirmación. El registro solo ocurre al pulsar  ║
-// ║  "Registrar Actividad".                              ║
+// ║  CAMBIOS v3.2:                                       ║
+// ║  - Toggle: clic en mismo motivo = deseleccionar      ║
+// ║  - Soporte para invitados (esInvitado flag)          ║
+// ║  - "Matrícula incorrecta" siempre visible            ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit } from '@angular/core';
@@ -41,8 +41,11 @@ export class SeleccionMotivoComponent implements OnInit {
   alumno: Alumno | null = null;
   motivos: Motivo[] = [];
 
-  /** Motivo que el usuario ha seleccionado (pero aún no confirmado) */
+  /** Motivo seleccionado (pero aún no confirmado) */
   motivoSeleccionado: Motivo | null = null;
+
+  /** Si el usuario es un invitado (sin matrícula) */
+  esInvitado = false;
 
   cargandoMotivos = true;
   registrando = false;
@@ -69,7 +72,10 @@ export class SeleccionMotivoComponent implements OnInit {
       return;
     }
 
-    this.alumno = JSON.parse(alumnoData);
+    const parsed = JSON.parse(alumnoData);
+    this.alumno = parsed;
+    this.esInvitado = parsed.esInvitado === true;
+
     await this.cargarMotivos();
   }
 
@@ -96,20 +102,27 @@ export class SeleccionMotivoComponent implements OnInit {
   }
 
   // ═══════════════════════════════════════════════
-  // SELECCIÓN (paso 1 — sin registro)
+  // SELECCIÓN (paso 1 — toggle behavior)
   // ═══════════════════════════════════════════════
 
   /**
-   * Selecciona un motivo para mostrar en el panel de confirmación.
-   * NO ejecuta el registro — solo visual.
+   * Toggle: si el motivo ya está seleccionado, deselecciona.
+   * Si es otro, lo selecciona.
    */
   seleccionarMotivo(motivo: Motivo): void {
     if (this.registrando) return;
-    this.motivoSeleccionado = motivo;
+
+    if (this.motivoSeleccionado?.id === motivo.id) {
+      // Toggle off — deseleccionar
+      this.motivoSeleccionado = null;
+    } else {
+      // Seleccionar nuevo
+      this.motivoSeleccionado = motivo;
+    }
   }
 
   /**
-   * Deselecciona el motivo actual (volver a elegir).
+   * Deselecciona el motivo actual.
    */
   deseleccionarMotivo(): void {
     if (this.registrando) return;
@@ -120,17 +133,15 @@ export class SeleccionMotivoComponent implements OnInit {
   // CONFIRMACIÓN (paso 2 — ejecuta el registro)
   // ═══════════════════════════════════════════════
 
-  /**
-   * Confirma y ejecuta el registro de acceso.
-   * Solo se llama al presionar "Registrar Actividad".
-   */
   async confirmarRegistro(): Promise<void> {
     if (!this.alumno || !this.motivoSeleccionado || this.registrando) return;
 
     try {
       this.registrando = true;
 
-      const nombreCompleto = `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
+      const nombreCompleto = this.esInvitado
+        ? 'Visitante Externo'
+        : `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
 
       const nuevoRegistro: Omit<Registro, 'id' | 'fechaHora' | 'sincronizado'> = {
         alumnoId: this.alumno.id!,
@@ -143,10 +154,11 @@ export class SeleccionMotivoComponent implements OnInit {
 
       await this.databaseService.crearRegistro(nuevoRegistro);
 
-      console.log('🎉 Registro completado:', this.alumno.nombre, '-', this.motivoSeleccionado.nombre);
+      const displayName = this.esInvitado ? 'Visitante' : this.alumno.nombre;
+      console.log('🎉 Registro completado:', displayName, '-', this.motivoSeleccionado.nombre);
 
       this.toastService.success(
-        `¡Registro exitoso! ${this.alumno.nombre} — ${this.motivoSeleccionado.nombre}`
+        `¡Registro exitoso! ${displayName} — ${this.motivoSeleccionado.nombre}`
       );
 
       // Feedback háptico
@@ -154,10 +166,7 @@ export class SeleccionMotivoComponent implements OnInit {
         navigator.vibrate([80, 40, 80]);
       }
 
-      // Mostrar éxito
       this.registroExitoso = true;
-
-      // Limpiar sessionStorage
       sessionStorage.removeItem('alumnoActual');
 
       // Redirect rápido (1.5s)
@@ -176,18 +185,12 @@ export class SeleccionMotivoComponent implements OnInit {
   // NAVEGACIÓN
   // ═══════════════════════════════════════════════
 
-  /**
-   * Volver al scanner (matrícula incorrecta o cancelar).
-   */
   volverAEscanear(): void {
     sessionStorage.removeItem('alumnoActual');
     this.toastService.info('Vuelve a escanear tu credencial');
     this.router.navigate(['/scanner']);
   }
 
-  /**
-   * Cancelar registro completo.
-   */
   cancelar(): void {
     sessionStorage.removeItem('alumnoActual');
     this.toastService.info('Registro cancelado');
@@ -200,11 +203,13 @@ export class SeleccionMotivoComponent implements OnInit {
 
   obtenerNombreCorto(): string {
     if (!this.alumno) return '';
+    if (this.esInvitado) return 'Visitante Externo';
     return `${this.alumno.nombre} ${this.alumno.apellidoPaterno}`;
   }
 
   obtenerNombreCompleto(): string {
     if (!this.alumno) return '';
+    if (this.esInvitado) return 'Visitante Externo';
     return `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
   }
 }

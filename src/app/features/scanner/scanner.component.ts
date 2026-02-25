@@ -1,6 +1,6 @@
 // ==============================================================================
 // RUTA: src/app/features/scanner/scanner.component.ts
-// v3.1 — Motor de detección DEFINITIVO
+// v3.2 — Motor de detección DEFINITIVO + Acceso invitados
 //
 // BUG RESUELTO: RGBLuminanceSource de @zxing/library espera 1 byte/pixel
 // (luminancia pura), pero le pasábamos 4 bytes/pixel (RGBA del canvas).
@@ -570,6 +570,28 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   irAlDashboard(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  /**
+   * Acceso sin credencial — para visitantes, ponentes, personal externo.
+   * Crea un alumno "invitado" temporal en sessionStorage y navega
+   * a selección de motivo. El registro se crea con matricula 'INVITADO'.
+   */
+  accederComoInvitado(): void {
+    const invitado = {
+      id: 'invitado-' + Date.now(),
+      matricula: 'INVITADO',
+      nombre: 'Visitante',
+      apellidoPaterno: 'Externo',
+      apellidoMaterno: '',
+      carrera: 'Visitante',
+      activo: true,
+      esInvitado: true
+    };
+
+    sessionStorage.setItem('alumnoActual', JSON.stringify(invitado));
+    this.toastService.info('Acceso como invitado — selecciona tu actividad');
+    this.router.navigate(['/seleccion-motivo']);
   }
 
   private interpretarErrorCamara(err: any): string {

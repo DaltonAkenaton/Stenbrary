@@ -1,22 +1,35 @@
 <!-- ╔══════════════════════════════════════════════════════╗
      ║  seleccion-motivo.component.html                     ║
-     ║  Stenbrary v3.1 — Two-Panel Confirmation Layout      ║
+     ║  Stenbrary v3.2 — Two-Panel + Toggle + Guest         ║
      ║                                                      ║
-     ║  Desktop: Panel izq (info+confirm) | Panel der (grid)║
-     ║  Mobile:  Grid arriba + bottom-sheet de confirmación  ║
+     ║  CAMBIOS v3.2:                                       ║
+     ║  - "Matrícula incorrecta" siempre visible            ║
+     ║  - Toggle: clic en mismo motivo deselecciona         ║
+     ║  - Badge de invitado                                 ║
+     ║  - Descripción visible en cards                      ║
+     ║  - Animación de éxito mejorada con lottie-like CSS   ║
      ╚══════════════════════════════════════════════════════╝ -->
 
 <div class="seleccion-container" [class.exito-mode]="registroExitoso">
 
   <!-- ═══════════════════════════════════════════════════
-       PANTALLA DE ÉXITO (overlay)
+       PANTALLA DE ÉXITO (overlay animado)
   ═══════════════════════════════════════════════════ -->
   @if (registroExitoso) {
     <div class="exito-overlay">
       <div class="exito-content">
 
-        <div class="exito-check">
-          <mat-icon>check</mat-icon>
+        <!-- Rings animados -->
+        <div class="exito-rings">
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="ring ring-3"></div>
+          <div class="exito-check">
+            <svg viewBox="0 0 52 52" class="checkmark-svg">
+              <circle class="checkmark-circle" cx="26" cy="26" r="24" fill="none"/>
+              <path class="checkmark-path" fill="none" d="M14 27l8 8 16-16"/>
+            </svg>
+          </div>
         </div>
 
         <h1 class="exito-titulo">¡Registro Exitoso!</h1>
@@ -24,12 +37,17 @@
         <div class="exito-info" *ngIf="alumno">
           <p class="exito-nombre">{{ obtenerNombreCorto() }}</p>
           <p class="exito-detalle">
-            {{ alumno.matricula }} · {{ motivoSeleccionado?.nombre }}
+            @if (!esInvitado) {
+              {{ alumno.matricula }} ·
+            }
+            {{ motivoSeleccionado?.nombre }}
           </p>
         </div>
 
         <div class="exito-loader">
-          <div class="exito-spinner"></div>
+          <div class="exito-progress-bar">
+            <div class="exito-progress-fill"></div>
+          </div>
           <span>Redirigiendo al scanner...</span>
         </div>
       </div>
@@ -49,15 +67,27 @@
 
         <!-- Tarjeta del alumno -->
         <div class="student-card" *ngIf="alumno">
-          <div class="student-avatar">
-            <mat-icon>person</mat-icon>
+          <div class="student-avatar" [class.guest]="esInvitado">
+            <mat-icon>{{ esInvitado ? 'person_outline' : 'person' }}</mat-icon>
           </div>
           <div class="student-details">
             <h3 class="student-name">{{ obtenerNombreCorto() }}</h3>
-            <span class="student-matricula">{{ alumno.matricula }}</span>
-            <span class="student-carrera">{{ alumno.carrera }}</span>
+            @if (!esInvitado) {
+              <span class="student-matricula">{{ alumno.matricula }}</span>
+              <span class="student-carrera">{{ alumno.carrera }}</span>
+            } @else {
+              <span class="student-guest-badge">Visitante sin credencial</span>
+            }
           </div>
         </div>
+
+        <!-- Link: matrícula incorrecta — SIEMPRE visible (sin necesidad de seleccionar) -->
+        @if (!esInvitado) {
+          <button class="link-rescan" (click)="volverAEscanear()" [disabled]="registrando">
+            <mat-icon>qr_code_scanner</mat-icon>
+            <span>¿Matrícula incorrecta? Volver a escanear</span>
+          </button>
+        }
 
         <!-- Estado: Esperando selección -->
         @if (!motivoSeleccionado && !cargandoMotivos) {
@@ -65,7 +95,7 @@
             <div class="waiting-icon">
               <mat-icon>touch_app</mat-icon>
             </div>
-            <p class="waiting-text">Selecciona una actividad de la lista</p>
+            <p class="waiting-text">Selecciona una actividad</p>
             <p class="waiting-hint">Tu acceso se registrará al confirmar</p>
           </div>
         }
@@ -93,8 +123,9 @@
             <div class="confirm-question">
               <mat-icon>help_outline</mat-icon>
               <span>
-                ¿Estás seguro de que la actividad que vas a realizar es 
-                <strong>"{{ motivoSeleccionado.nombre }}"</strong>?
+                ¿Registrar actividad
+                <strong>"{{ motivoSeleccionado.nombre }}"</strong>
+                para <strong>{{ obtenerNombreCorto() }}</strong>?
               </span>
             </div>
 
@@ -113,17 +144,10 @@
             </button>
 
             <!-- Links secundarios -->
-            <div class="confirm-links">
-              <button class="link-action" (click)="deseleccionarMotivo()" [disabled]="registrando">
-                <mat-icon>swap_horiz</mat-icon>
-                Cambiar actividad
-              </button>
-
-              <button class="link-action warn" (click)="volverAEscanear()" [disabled]="registrando">
-                <mat-icon>qr_code_scanner</mat-icon>
-                ¿Matrícula incorrecta? Volver a escanear
-              </button>
-            </div>
+            <button class="link-action" (click)="deseleccionarMotivo()" [disabled]="registrando">
+              <mat-icon>swap_horiz</mat-icon>
+              Cambiar actividad
+            </button>
 
           </div>
         }
@@ -153,6 +177,14 @@
             </p>
           </div>
         </div>
+
+        <!-- Mobile: link de matrícula incorrecta -->
+        @if (!esInvitado) {
+          <button class="mobile-rescan-link" (click)="volverAEscanear()" [disabled]="registrando">
+            <mat-icon>qr_code_scanner</mat-icon>
+            ¿Matrícula incorrecta? Volver a escanear
+          </button>
+        }
 
         <!-- Loading -->
         @if (cargandoMotivos) {
@@ -214,7 +246,6 @@
 
     <!-- ─────────────────────────────────────────────
          MOBILE: Bottom sheet de confirmación
-         (Solo visible en mobile cuando hay selección)
     ───────────────────────────────────────────── -->
     @if (motivoSeleccionado) {
       <div class="mobile-backdrop" (click)="deseleccionarMotivo()"></div>
@@ -256,9 +287,11 @@
           </button>
         </div>
 
-        <button class="sheet-link" (click)="volverAEscanear()" [disabled]="registrando">
-          ¿Matrícula incorrecta? Volver a escanear
-        </button>
+        @if (!esInvitado) {
+          <button class="sheet-link" (click)="volverAEscanear()" [disabled]="registrando">
+            ¿Matrícula incorrecta? Volver a escanear
+          </button>
+        }
       </div>
     }
   }

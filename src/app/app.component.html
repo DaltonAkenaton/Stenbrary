@@ -1,22 +1,16 @@
 <!--
   app.component.html
-  Shell de la aplicación — Stenbrary v3.0
-  - Hamburger button en móvil
-  - Backdrop clickable para cerrar sidebar
-  - Animaciones suaves de sidebar
+  Shell de la aplicación: Sidebar + Topbar + Área de contenido
+  Stenbrary v3.1 — Cyan Cube
+
+  NUEVO: Badge de estado reactivo (online/offline)
 -->
 
 <div class="app-shell" [class.sidebar-expanded]="isSidebarExpanded()">
 
   <!-- ══════════════════════════════════════════════════════
-       BACKDROP — Oscurece contenido cuando sidebar está abierto (móvil)
-  ══════════════════════════════════════════════════════ -->
-  @if (isMobile() && isSidebarExpanded()) {
-    <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
-  }
-
-  <!-- ══════════════════════════════════════════════════════
-       SIDEBAR
+       SIDEBAR — Navegación lateral persistente
+       64px colapsado / 220px expandido (via toggle del logo)
   ══════════════════════════════════════════════════════ -->
   <aside class="sidebar" [class.expanded]="isSidebarExpanded()">
 
@@ -33,9 +27,10 @@
       }
     </button>
 
+    <!-- Línea divisora después del logo -->
     <div class="sidebar-divider"></div>
 
-    <!-- Nav items -->
+    <!-- Nav items principales -->
     <nav class="sidebar-nav" aria-label="Navegación principal">
       @for (item of navItems; track item.route) {
         <a
@@ -56,10 +51,13 @@
       }
     </nav>
 
+    <!-- Spacer empuja el footer hacia abajo -->
     <div class="sidebar-spacer"></div>
+
+    <!-- Línea divisora antes del footer -->
     <div class="sidebar-divider"></div>
 
-    <!-- Footer -->
+    <!-- Footer del sidebar (alertas, etc.) -->
     <div class="sidebar-footer">
       <a
         class="nav-item"
@@ -80,34 +78,41 @@
   </aside>
 
   <!-- ══════════════════════════════════════════════════════
-       ÁREA PRINCIPAL
+       ÁREA PRINCIPAL — Topbar + Contenido de ruta
   ══════════════════════════════════════════════════════ -->
   <div class="main-area">
 
     <!-- Topbar -->
     <header class="topbar">
-      <!-- Hamburger (solo en móvil) -->
-      <button
-        class="hamburger-btn"
-        (click)="toggleSidebar()"
-        aria-label="Abrir menú"
-        matRipple
-        matRippleColor="rgba(0, 200, 215, 0.15)">
-        <mat-icon>menu</mat-icon>
-      </button>
-
       <h1 class="topbar-title">{{ currentPageTitle }}</h1>
-
       <div class="topbar-end">
-        <span class="status-badge status-online">
-          <span class="status-dot"></span>
-          Online
-        </span>
+        <!-- Badge de estado — reactivo a navigator.onLine -->
+        @if (isOnline()) {
+          <span
+            class="status-badge status-online"
+            matTooltip="Conectado a internet — los datos se sincronizarán"
+            matTooltipPosition="below">
+            <span class="status-dot"></span>
+            <mat-icon class="status-icon">wifi</mat-icon>
+            Online
+          </span>
+        } @else {
+          <span
+            class="status-badge status-offline"
+            matTooltip="Sin conexión — los registros se guardan localmente y se sincronizarán al reconectar"
+            matTooltipPosition="below">
+            <span class="status-dot"></span>
+            <mat-icon class="status-icon">wifi_off</mat-icon>
+            Offline
+          </span>
+        }
       </div>
     </header>
 
+    <!-- Separador del topbar -->
     <div class="topbar-separator"></div>
 
+    <!-- Contenido dinámico de cada ruta -->
     <main class="content-area">
       <router-outlet />
     </main>

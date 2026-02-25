@@ -1,13 +1,7 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  app.component.scss                                  ║
-// ║  Shell: Sidebar + Topbar + Contenido                 ║
-// ║  Stenbrary v3.0 — Cyan Cube                         ║
-// ║                                                      ║
-// ║  FIXES v3.0:                                         ║
-// ║  - Hamburger button en móvil                         ║
-// ║  - Backdrop overlay para cerrar sidebar              ║
-// ║  - Sidebar slide-in suave en móvil                   ║
-// ║  - Micro-interacciones modernas                      ║
+// ║  Shell: Sidebar + Topbar + Área de contenido         ║
+// ║  Stenbrary v3.1 — Cyan Cube                         ║
 // ╚══════════════════════════════════════════════════════╝
 
 @import '../styles/variables';
@@ -24,20 +18,6 @@
 }
 
 // ═══════════════════════════════════════════════════════════
-// BACKDROP — overlay semitransparente (solo móvil)
-// ═══════════════════════════════════════════════════════════
-.sidebar-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: calc(#{$z-sidebar} - 1);
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  animation: fadeIn 250ms ease both;
-  cursor: pointer;
-}
-
-// ═══════════════════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════════════════
 .sidebar {
@@ -50,7 +30,10 @@
   border-right: 1px solid $border-subtle;
   z-index: $z-sidebar;
   flex-shrink: 0;
-  transition: width $transition-normal;
+
+  transition:
+    width $transition-normal,
+    align-items $transition-fast;
 
   &.expanded {
     width: $sidebar-width-expanded;
@@ -89,14 +72,15 @@
     font-family: $font-mono;
     font-size: 15px;
     font-weight: 700;
-    @include flex-center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     box-shadow: 0 0 18px $cyan-glow;
-    transition: box-shadow $transition-normal, transform $transition-fast;
+    transition: box-shadow $transition-normal;
   }
 
   &:hover .logo-mark {
     box-shadow: 0 0 28px rgba(0, 200, 215, 0.35);
-    transform: scale(1.05);
   }
 
   .logo-text {
@@ -107,13 +91,7 @@
     color: $text-primary;
     white-space: nowrap;
     overflow: hidden;
-    animation: fadeSlideRight 200ms ease both;
   }
-}
-
-@keyframes fadeSlideRight {
-  from { opacity: 0; transform: translateX(-8px); }
-  to   { opacity: 1; transform: translateX(0); }
 }
 
 // ─── DIVISORES ───────────────────────────────────────────
@@ -123,7 +101,7 @@
   background: $border-subtle;
   margin: 6px 0;
   flex-shrink: 0;
-  transition: width $transition-normal, margin $transition-normal;
+  transition: width $transition-normal;
 
   .expanded & {
     width: calc(100% - 28px);
@@ -146,6 +124,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
+  width: 100%;
   min-height: 44px;
   padding: 0 12px;
   border-radius: $border-radius-md;
@@ -154,7 +133,6 @@
   cursor: pointer;
   text-decoration: none;
   color: $text-muted;
-  position: relative;
   transition:
     color $transition-fast,
     background $transition-fast,
@@ -165,7 +143,7 @@
     width: 22px;
     height: 22px;
     flex-shrink: 0;
-    transition: color $transition-fast, transform $transition-fast;
+    transition: color $transition-fast;
   }
 
   .nav-label {
@@ -175,14 +153,11 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    animation: fadeSlideRight 200ms ease both;
   }
 
   &:hover {
     background: $navy-700;
     color: $text-secondary;
-
-    mat-icon { transform: scale(1.08); }
   }
 
   &.active {
@@ -195,12 +170,16 @@
       filter: drop-shadow(0 0 6px rgba(0, 200, 215, 0.5));
     }
 
-    .nav-label { font-weight: 600; }
+    .nav-label {
+      font-weight: 600;
+    }
   }
 }
 
 // ─── SPACER + FOOTER ─────────────────────────────────────
-.sidebar-spacer { flex: 1; }
+.sidebar-spacer {
+  flex: 1;
+}
 
 .sidebar-footer {
   width: 100%;
@@ -219,7 +198,7 @@
 }
 
 // ═══════════════════════════════════════════════════════════
-// MAIN AREA
+// MAIN AREA — Topbar + Contenido
 // ═══════════════════════════════════════════════════════════
 .main-area {
   display: flex;
@@ -234,7 +213,7 @@
 .topbar {
   display: flex;
   align-items: center;
-  gap: $spacing-md;
+  justify-content: space-between;
   height: $topbar-height;
   padding: 0 $spacing-lg;
   flex-shrink: 0;
@@ -246,44 +225,12 @@
     font-weight: 800;
     letter-spacing: -0.5px;
     color: $text-primary;
-    flex: 1;
   }
 
   .topbar-end {
     display: flex;
     align-items: center;
     gap: $spacing-md;
-  }
-}
-
-// ─── HAMBURGER (hidden en desktop, visible en móvil) ────
-.hamburger-btn {
-  display: none; // Se muestra solo en @media mobile
-  @include flex-center;
-  width: 40px;
-  height: 40px;
-  background: $navy-800;
-  border: 1px solid $border-subtle;
-  border-radius: $border-radius-md;
-  color: $text-primary;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all $transition-fast;
-
-  mat-icon {
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
-  }
-
-  &:hover {
-    background: $navy-700;
-    border-color: $border-glow;
-    color: $cyan-400;
-  }
-
-  &:active {
-    transform: scale(0.95);
   }
 }
 
@@ -305,17 +252,26 @@
 .status-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: $font-mono;
   font-size: 11px;
   letter-spacing: 0.5px;
   padding: 4px 10px;
   border-radius: 100px;
+  cursor: default;
+  transition: all 300ms ease;
 
   .status-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
     flex-shrink: 0;
   }
 
@@ -329,6 +285,10 @@
       box-shadow: 0 0 6px $success-color;
       animation: glowPulse 2.5s ease-in-out infinite;
     }
+
+    .status-icon {
+      color: $success-color;
+    }
   }
 
   &.status-offline {
@@ -336,8 +296,20 @@
     color: $amber-color;
     border: 1px solid rgba(245, 166, 35, 0.30);
 
-    .status-dot { background: $amber-color; }
+    .status-dot {
+      background: $amber-color;
+      animation: glowPulseAmber 2s ease-in-out infinite;
+    }
+
+    .status-icon {
+      color: $amber-color;
+    }
   }
+}
+
+@keyframes glowPulseAmber {
+  0%, 100% { box-shadow: 0 0 4px rgba(245, 166, 35, 0.3); }
+  50%      { box-shadow: 0 0 10px rgba(245, 166, 35, 0.6); }
 }
 
 // ─── CONTENT AREA ────────────────────────────────────────
@@ -352,7 +324,6 @@
 // RESPONSIVE
 // ═══════════════════════════════════════════════════════════
 @media (max-width: $breakpoint-sm) {
-  // Sidebar: fuera de pantalla, se desliza con expanded
   .sidebar {
     position: fixed;
     left: 0;
@@ -361,34 +332,17 @@
     z-index: $z-sidebar;
     transform: translateX(-100%);
     transition: transform $transition-normal;
-    box-shadow: none;
-    width: $sidebar-width-expanded; // En móvil siempre se abre expandido
-    align-items: flex-start;
-
-    .sidebar-logo { justify-content: flex-start; }
-    .nav-item     { justify-content: flex-start; }
-
-    .sidebar-divider {
-      width: calc(100% - 28px);
-      margin: 6px 14px;
-    }
-
-    // Label siempre visible en móvil cuando sidebar está abierto
-    .nav-label { display: inline; }
+    box-shadow: $shadow-lg;
 
     &.expanded {
       transform: translateX(0);
-      box-shadow: 16px 0 48px rgba(0, 0, 0, 0.4);
     }
   }
 
-  // Main area ocupa todo
-  .main-area { width: 100%; }
+  .main-area {
+    width: 100%;
+  }
 
-  // Hamburger visible
-  .hamburger-btn { display: flex; }
-
-  // Topbar más compacto
   .topbar {
     padding: 0 $spacing-md;
   }

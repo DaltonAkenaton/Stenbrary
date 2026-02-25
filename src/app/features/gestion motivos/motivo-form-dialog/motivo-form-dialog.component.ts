@@ -1,9 +1,12 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  motivo-form-dialog.component.ts                     ║
-// ║  Stenbrary v3.1 — Con campo de Descripción           ║
+// ║  Stenbrary v3.2 — Dialog mejorado                    ║
 // ║                                                      ║
-// ║  NUEVO: Campo 'descripcion' para que la coordinadora ║
-// ║  pueda explicar qué es cada actividad/motivo.        ║
+// ║  FIXES v3.2:                                         ║
+// ║  - Title: padding-top para evitar clipping           ║
+// ║  - 12 colores disponibles (antes 7)                  ║
+// ║  - Color swatches visuales en vez de dropdown        ║
+// ║  - Preview con glow del color seleccionado           ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, Inject, OnInit } from '@angular/core';
@@ -16,6 +19,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatabaseService } from '../../../core/services/database.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Motivo } from '../../../core/models';
@@ -23,7 +27,12 @@ import { Motivo } from '../../../core/models';
 interface IconoOpcion {
   nombre: string;
   icono: string;
-  color: string;
+  categoria: string;
+}
+
+interface ColorOpcion {
+  nombre: string;
+  valor: string;
 }
 
 @Component({
@@ -38,14 +47,22 @@ interface IconoOpcion {
     MatInputModule,
     MatIconModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatTooltipModule
   ],
   template: `
-    <div class="dialog-container">
-      <h2 mat-dialog-title>
-        <mat-icon>{{ esNuevo ? 'add_circle' : 'edit' }}</mat-icon>
-        {{ esNuevo ? 'Nueva Actividad' : 'Editar Actividad' }}
-      </h2>
+    <div class="dialog-wrapper">
+
+      <!-- Header con icono decorativo -->
+      <div class="dialog-header">
+        <div class="header-icon" [class.editing]="!esNuevo">
+          <mat-icon>{{ esNuevo ? 'add_circle' : 'edit' }}</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>{{ esNuevo ? 'Nueva Actividad' : 'Editar Actividad' }}</h2>
+          <p>{{ esNuevo ? 'Agrega una actividad disponible para los alumnos' : 'Modifica los datos de esta actividad' }}</p>
+        </div>
+      </div>
 
       <mat-dialog-content>
         <form [formGroup]="motivoForm">
@@ -70,13 +87,13 @@ interface IconoOpcion {
             </mat-error>
           </mat-form-field>
 
-          <!-- Descripción (NUEVO) -->
+          <!-- Descripción -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Descripción (opcional)</mat-label>
             <textarea 
               matInput 
               formControlName="descripcion"
-              placeholder="Ej: Evento de reclutamiento de Caterpillar con dinámicas y talleres"
+              placeholder="Ej: Evento de reclutamiento con dinámicas y talleres"
               [maxlength]="200"
               rows="3"
               cdkTextareaAutosize
@@ -84,9 +101,7 @@ interface IconoOpcion {
               cdkAutosizeMaxRows="4">
             </textarea>
             <mat-icon matPrefix>description</mat-icon>
-            <mat-hint align="start">
-              Se mostrará al alumno antes de confirmar su registro
-            </mat-hint>
+            <mat-hint>Se mostrará al alumno antes de confirmar su registro</mat-hint>
             <mat-hint align="end">
               {{ motivoForm.get('descripcion')?.value?.length || 0 }}/200
             </mat-hint>
@@ -96,66 +111,59 @@ interface IconoOpcion {
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Icono</mat-label>
             <mat-select formControlName="icono">
-              <mat-option *ngFor="let opcion of iconosDisponibles" [value]="opcion.icono">
-                <mat-icon [style.color]="opcion.color">{{ opcion.icono }}</mat-icon>
-                <span class="icono-nombre">{{ opcion.nombre }}</span>
-              </mat-option>
+              @for (opcion of iconosDisponibles; track opcion.icono) {
+                <mat-option [value]="opcion.icono">
+                  <mat-icon [style.color]="motivoForm.get('color')?.value || '#00C8D7'">
+                    {{ opcion.icono }}
+                  </mat-icon>
+                  <span class="icono-nombre">{{ opcion.nombre }}</span>
+                </mat-option>
+              }
             </mat-select>
             <mat-icon matPrefix>insert_emoticon</mat-icon>
           </mat-form-field>
 
-          <!-- Color -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Color</mat-label>
-            <mat-select formControlName="color">
-              <mat-option value="#00C8D7">
-                <span class="color-preview" style="background: #00C8D7;"></span>
-                Cyan
-              </mat-option>
-              <mat-option value="#0BC4B7">
-                <span class="color-preview" style="background: #0BC4B7;"></span>
-                Teal
-              </mat-option>
-              <mat-option value="#0EB07B">
-                <span class="color-preview" style="background: #0EB07B;"></span>
-                Verde
-              </mat-option>
-              <mat-option value="#F5A623">
-                <span class="color-preview" style="background: #F5A623;"></span>
-                Ámbar
-              </mat-option>
-              <mat-option value="#F05252">
-                <span class="color-preview" style="background: #F05252;"></span>
-                Rojo
-              </mat-option>
-              <mat-option value="#5DE4EC">
-                <span class="color-preview" style="background: #5DE4EC;"></span>
-                Celeste
-              </mat-option>
-              <mat-option value="#A0F0F5">
-                <span class="color-preview" style="background: #A0F0F5;"></span>
-                Hielo
-              </mat-option>
-            </mat-select>
-            <mat-icon matPrefix>palette</mat-icon>
-          </mat-form-field>
+          <!-- Color — Swatches visuales -->
+          <div class="color-section">
+            <label class="color-label">Color</label>
+            <div class="color-swatches">
+              @for (color of coloresDisponibles; track color.valor) {
+                <button
+                  type="button"
+                  class="color-swatch"
+                  [class.active]="motivoForm.get('color')?.value === color.valor"
+                  [style.background]="color.valor"
+                  [matTooltip]="color.nombre"
+                  (click)="seleccionarColor(color.valor)">
+                  @if (motivoForm.get('color')?.value === color.valor) {
+                    <mat-icon>check</mat-icon>
+                  }
+                </button>
+              }
+            </div>
+          </div>
 
           <!-- Preview -->
-          <div class="preview-container">
-            <h4>Vista Previa</h4>
-            <div class="preview-motivo">
-              <div class="preview-icon">
-                <mat-icon [style.color]="motivoForm.get('color')?.value">
+          <div class="preview-section">
+            <span class="preview-label">Vista previa</span>
+            <div class="preview-card"
+              [style.border-color]="(motivoForm.get('color')?.value || '#00C8D7') + '40'">
+              <div class="preview-icon-wrap"
+                [style.background]="(motivoForm.get('color')?.value || '#00C8D7') + '18'"
+                [style.border-color]="(motivoForm.get('color')?.value || '#00C8D7') + '35'">
+                <mat-icon [style.color]="motivoForm.get('color')?.value || '#00C8D7'">
                   {{ motivoForm.get('icono')?.value || 'label' }}
                 </mat-icon>
               </div>
-              <div class="preview-info">
+              <div class="preview-text">
                 <span class="preview-name">
                   {{ motivoForm.get('nombre')?.value || 'Nombre de la actividad' }}
                 </span>
-                <span class="preview-desc" *ngIf="motivoForm.get('descripcion')?.value">
-                  {{ motivoForm.get('descripcion')?.value }}
-                </span>
+                @if (motivoForm.get('descripcion')?.value) {
+                  <span class="preview-desc">
+                    {{ motivoForm.get('descripcion')?.value }}
+                  </span>
+                }
               </div>
             </div>
           </div>
@@ -164,46 +172,88 @@ interface IconoOpcion {
       </mat-dialog-content>
 
       <mat-dialog-actions align="end">
-        <button mat-button (click)="cancelar()" [disabled]="guardando">
+        <button mat-button class="btn-cancel" (click)="cancelar()" [disabled]="guardando">
           Cancelar
         </button>
         <button 
-          mat-raised-button 
-          color="primary" 
+          class="btn-save"
           (click)="guardar()"
           [disabled]="motivoForm.invalid || guardando">
-          <mat-icon *ngIf="!guardando">save</mat-icon>
-          <mat-spinner diameter="20" *ngIf="guardando"></mat-spinner>
-          {{ guardando ? 'Guardando...' : 'Guardar' }}
+          @if (!guardando) {
+            <mat-icon>save</mat-icon>
+            <span>Guardar</span>
+          } @else {
+            <mat-spinner diameter="18"></mat-spinner>
+            <span>Guardando...</span>
+          }
         </button>
       </mat-dialog-actions>
     </div>
   `,
   styles: [`
-    .dialog-container {
-      min-width: 420px;
+    .dialog-wrapper {
+      min-width: 460px;
+      max-width: 520px;
     }
 
-    h2 {
+    /* ── Header ── */
+    .dialog-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin: 0;
-      font-size: 1.4rem;
-      color: #E8F4F8;
+      gap: 16px;
+      padding: 8px 0 16px;
+    }
+
+    .header-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      background: rgba(0, 200, 215, 0.10);
+      border: 1px solid rgba(0, 200, 215, 0.25);
+      border-radius: 14px;
+      flex-shrink: 0;
 
       mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
         color: #00C8D7;
+      }
+
+      &.editing {
+        background: rgba(245, 166, 35, 0.10);
+        border-color: rgba(245, 166, 35, 0.25);
+
+        mat-icon { color: #F5A623; }
+      }
+    }
+
+    .header-text {
+      h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #E8F4F8;
+        line-height: 1.3;
+      }
+
+      p {
+        margin: 2px 0 0;
+        font-size: 0.78rem;
+        color: rgba(200, 230, 240, 0.55);
       }
     }
 
     mat-dialog-content {
-      padding: 24px 0;
+      padding: 8px 0 0;
+      max-height: 60vh;
     }
 
     .full-width {
       width: 100%;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .icono-nombre {
@@ -211,98 +261,177 @@ interface IconoOpcion {
       vertical-align: middle;
     }
 
-    .color-preview {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border-radius: 4px;
-      margin-right: 8px;
-      vertical-align: middle;
-      border: 1px solid rgba(0, 200, 215, 0.3);
+    /* ── Color Swatches ── */
+    .color-section {
+      margin-bottom: 16px;
     }
 
-    .preview-container {
+    .color-label {
+      display: block;
+      font-size: 0.78rem;
+      color: rgba(200, 230, 240, 0.55);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .color-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .color-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 200ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        color: #04090F;
+        font-weight: bold;
+      }
+
+      &:hover {
+        transform: scale(1.12);
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+      }
+
+      &.active {
+        border-color: #E8F4F8;
+        transform: scale(1.12);
+        box-shadow: 0 0 16px currentColor;
+      }
+    }
+
+    /* ── Preview ── */
+    .preview-section {
       margin-top: 16px;
-      padding: 16px;
+      padding: 14px;
       background: #0D1626;
-      border: 1px solid rgba(0, 200, 215, 0.10);
+      border: 1px solid rgba(0, 200, 215, 0.08);
+      border-radius: 14px;
+    }
+
+    .preview-label {
+      display: block;
+      font-size: 0.7rem;
+      color: rgba(160, 200, 215, 0.45);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      font-family: 'Space Mono', monospace;
+      margin-bottom: 10px;
+    }
+
+    .preview-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      background: #142033;
       border-radius: 12px;
-      
-      h4 {
-        margin: 0 0 12px 0;
-        font-size: 0.8rem;
-        color: rgba(160, 200, 215, 0.40);
-        text-transform: uppercase;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        font-family: 'Space Mono', monospace;
-      }
-      
-      .preview-motivo {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 14px 16px;
-        background: #142033;
-        border-radius: 12px;
-        border: 1px solid rgba(0, 200, 215, 0.10);
-      }
+      border: 1px solid rgba(0, 200, 215, 0.10);
+      transition: border-color 300ms;
+    }
 
-      .preview-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 44px;
-        height: 44px;
-        background: rgba(0, 200, 215, 0.08);
-        border: 1px solid rgba(0, 200, 215, 0.20);
-        border-radius: 10px;
-        flex-shrink: 0;
+    .preview-icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid;
+      flex-shrink: 0;
+      transition: all 300ms;
 
-        mat-icon {
-          font-size: 24px;
-          width: 24px;
-          height: 24px;
-        }
-      }
-
-      .preview-info {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 0;
-      }
-        
-      .preview-name {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #E8F4F8;
-      }
-
-      .preview-desc {
-        font-size: 0.75rem;
-        color: rgba(200, 230, 240, 0.55);
-        line-height: 1.4;
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
       }
     }
 
+    .preview-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .preview-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #E8F4F8;
+    }
+
+    .preview-desc {
+      font-size: 0.72rem;
+      color: rgba(200, 230, 240, 0.55);
+      line-height: 1.4;
+    }
+
+    /* ── Actions ── */
     mat-dialog-actions {
-      padding: 16px 0 0 0;
+      padding: 16px 0 4px;
       margin: 0;
-      
-      button {
-        margin-left: 8px;
-      }
+      gap: 8px;
     }
 
-    mat-spinner {
-      display: inline-block;
-      margin-right: 8px;
+    .btn-cancel {
+      color: rgba(200, 230, 240, 0.6) !important;
+      font-weight: 500;
+    }
+
+    .btn-save {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, #00C8D7, #0BC4B7);
+      color: #04090F;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 200ms;
+      box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25);
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0, 200, 215, 0.35);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      mat-spinner { display: inline-block; }
     }
 
     @media (max-width: 768px) {
-      .dialog-container {
+      .dialog-wrapper {
         min-width: auto;
+        max-width: 100%;
       }
     }
   `]
@@ -312,26 +441,45 @@ export class MotivoFormDialogComponent implements OnInit {
   guardando = false;
   esNuevo = true;
 
+  // ── Iconos disponibles (ampliado) ──
   iconosDisponibles: IconoOpcion[] = [
-    { nombre: 'Libro', icono: 'menu_book', color: '#00C8D7' },
-    { nombre: 'Estudiar', icono: 'school', color: '#00C8D7' },
-    { nombre: 'Investigar', icono: 'science', color: '#0BC4B7' },
-    { nombre: 'Leer', icono: 'auto_stories', color: '#5DE4EC' },
-    { nombre: 'Computadora', icono: 'computer', color: '#00C8D7' },
-    { nombre: 'Escribir', icono: 'create', color: '#0EB07B' },
-    { nombre: 'Buscar', icono: 'search', color: '#0BC4B7' },
-    { nombre: 'Grupos', icono: 'groups', color: '#F5A623' },
-    { nombre: 'Tareas', icono: 'assignment', color: '#F5A623' },
-    { nombre: 'Proyecto', icono: 'work', color: '#00C8D7' },
-    { nombre: 'Examen', icono: 'quiz', color: '#F05252' },
-    { nombre: 'Imprimir', icono: 'print', color: '#0BC4B7' },
-    { nombre: 'WiFi', icono: 'wifi', color: '#0EB07B' },
-    { nombre: 'Navegar', icono: 'language', color: '#0BC4B7' },
-    { nombre: 'Consulta', icono: 'help', color: '#5DE4EC' },
-    { nombre: 'Evento', icono: 'event', color: '#F5A623' },
-    { nombre: 'Presentación', icono: 'slideshow', color: '#00C8D7' },
-    { nombre: 'Reunión', icono: 'meeting_room', color: '#0BC4B7' },
-    { nombre: 'Otro', icono: 'more_horiz', color: '#A0F0F5' }
+    { nombre: 'Libro', icono: 'menu_book', categoria: 'Lectura' },
+    { nombre: 'Estudiar', icono: 'school', categoria: 'Académico' },
+    { nombre: 'Investigar', icono: 'science', categoria: 'Académico' },
+    { nombre: 'Leer', icono: 'auto_stories', categoria: 'Lectura' },
+    { nombre: 'Computadora', icono: 'computer', categoria: 'Tecnología' },
+    { nombre: 'Escribir', icono: 'create', categoria: 'Académico' },
+    { nombre: 'Buscar', icono: 'search', categoria: 'General' },
+    { nombre: 'Grupos', icono: 'groups', categoria: 'Social' },
+    { nombre: 'Tareas', icono: 'assignment', categoria: 'Académico' },
+    { nombre: 'Proyecto', icono: 'work', categoria: 'Profesional' },
+    { nombre: 'Examen', icono: 'quiz', categoria: 'Académico' },
+    { nombre: 'Imprimir', icono: 'print', categoria: 'Servicio' },
+    { nombre: 'WiFi', icono: 'wifi', categoria: 'Servicio' },
+    { nombre: 'Navegar', icono: 'language', categoria: 'Tecnología' },
+    { nombre: 'Consulta', icono: 'help', categoria: 'General' },
+    { nombre: 'Evento', icono: 'event', categoria: 'Evento' },
+    { nombre: 'Presentación', icono: 'slideshow', categoria: 'Evento' },
+    { nombre: 'Reunión', icono: 'meeting_room', categoria: 'Social' },
+    { nombre: 'Pedir Libro', icono: 'bookmark', categoria: 'Lectura' },
+    { nombre: 'Trabajo', icono: 'engineering', categoria: 'Profesional' },
+    { nombre: 'Otro', icono: 'more_horiz', categoria: 'General' }
+  ];
+
+  // ── 12 colores (ampliado de 7 a 12) ──
+  coloresDisponibles: ColorOpcion[] = [
+    { nombre: 'Cyan', valor: '#00C8D7' },
+    { nombre: 'Teal', valor: '#0BC4B7' },
+    { nombre: 'Verde', valor: '#0EB07B' },
+    { nombre: 'Esmeralda', valor: '#34D399' },
+    { nombre: 'Azul', valor: '#3B82F6' },
+    { nombre: 'Índigo', valor: '#6366F1' },
+    { nombre: 'Violeta', valor: '#8B5CF6' },
+    { nombre: 'Rosa', valor: '#EC4899' },
+    { nombre: 'Rojo', valor: '#F05252' },
+    { nombre: 'Naranja', valor: '#F97316' },
+    { nombre: 'Ámbar', valor: '#F5A623' },
+    { nombre: 'Celeste', valor: '#5DE4EC' },
   ];
 
   constructor(
@@ -365,6 +513,10 @@ export class MotivoFormDialogComponent implements OnInit {
     });
   }
 
+  seleccionarColor(color: string): void {
+    this.motivoForm.get('color')?.setValue(color);
+  }
+
   async guardar(): Promise<void> {
     if (this.motivoForm.invalid) return;
 
@@ -389,7 +541,7 @@ export class MotivoFormDialogComponent implements OnInit {
         };
 
         await this.databaseService.crearMotivo(nuevoMotivo);
-        this.toastService.success(`Actividad "${formValue.nombre}" creada exitosamente`);
+        this.toastService.success(`Actividad "${formValue.nombre}" creada`);
       } else {
         const motivoActualizado: Motivo = {
           ...this.data.motivo!,
@@ -400,7 +552,7 @@ export class MotivoFormDialogComponent implements OnInit {
         };
 
         await this.databaseService.actualizarMotivo(this.data.motivo!.id!, motivoActualizado);
-        this.toastService.success(`Actividad "${formValue.nombre}" actualizada exitosamente`);
+        this.toastService.success(`Actividad "${formValue.nombre}" actualizada`);
       }
 
       this.guardando = false;
@@ -408,7 +560,7 @@ export class MotivoFormDialogComponent implements OnInit {
     } catch (error) {
       console.error('❌ Error al guardar motivo:', error);
       this.guardando = false;
-      this.toastService.error('Error al guardar la actividad. Intenta de nuevo.');
+      this.toastService.error('Error al guardar. Intenta de nuevo.');
     }
   }
 

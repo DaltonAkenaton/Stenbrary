@@ -1,9 +1,9 @@
 <!--
   scanner.component.html
-  Stenbrary v3.1 — Definitive Scanner
+  Stenbrary v3.2 — Scanner con acceso de invitados
 
-  IMPORTANTE: El <canvas #canvas> DEBE existir siempre que el scanner
-  esté activo, ya que @zxing/browser.decodeFromCanvas() lo necesita.
+  NUEVO: Sección "Acceso sin credencial" al final,
+  para que visitantes externos puedan registrar su entrada.
 -->
 
 <div class="scanner-container">
@@ -82,6 +82,36 @@
 
       </div>
 
+      <!-- Separador para invitados -->
+      <div class="section-divider">
+        <span class="divider-label">¿No eres alumno?</span>
+      </div>
+
+      <!-- Tarjeta: Acceso sin credencial (invitados) -->
+      <div class="action-card guest-card">
+
+        <div class="card-body">
+          <div class="guest-header">
+            <mat-icon class="guest-icon">person_outline</mat-icon>
+            <div>
+              <h2 class="card-title">Acceso sin credencial</h2>
+              <p class="card-desc">
+                Para visitantes, ponentes o personal externo
+              </p>
+            </div>
+          </div>
+
+          <button
+            class="btn-guest"
+            (click)="accederComoInvitado()"
+            [disabled]="cargando">
+            <mat-icon>login</mat-icon>
+            Continuar como invitado
+          </button>
+        </div>
+
+      </div>
+
     </div>
   }
 
@@ -91,14 +121,8 @@
   @if (escaneando) {
     <div class="video-wrapper fade-in">
 
-      <!-- Video: muestra la cámara al usuario -->
       <video #video autoplay playsinline class="scanner-video"></video>
 
-      <!--
-        Canvas oculto: usado por @zxing/browser.decodeFromCanvas()
-        Se dibuja el frame del video aquí con preprocesamiento,
-        luego ZXing lo decodifica. El usuario nunca lo ve.
-      -->
       <canvas #canvas class="scanner-canvas-hidden"></canvas>
 
       <!-- Overlay visual con frame de código de barras -->

@@ -1,16 +1,22 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  app.component.ts                                    ║
-// ║  Shell principal — Sidebar + Topbar + Contenido      ║
-// ║  Stenbrary v3.0 — Cyan Cube                         ║
+// ║  Shell principal con sidebar de navegación           ║
+// ║  Stenbrary v3.2 — Cyan Cube                         ║
+// ║                                                      ║
+// ║  Sidebar reorganizado:                               ║
+// ║  - Scanner (flujo principal)                         ║
+// ║  - Registrar Alumno (acceso directo)                 ║
+// ║  - Dashboard (registros + alumnos + estadísticas)    ║
+// ║  - Dashboard Ejecutivo (gráficas avanzadas)          ║
+// ║  - Gestión de Motivos                                ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, signal, HostListener } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatRippleModule } from '@angular/material/core';
-import { filter } from 'rxjs/operators';
 
 interface NavItem {
   icon: string;
@@ -34,16 +40,59 @@ interface NavItem {
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent {
+export class AppComponent implements OnInit, OnDestroy {
 
+  // ─── ESTADO DEL SIDEBAR ──────────────────────────────────
   isSidebarExpanded = signal(false);
-  isMobile = signal(false);
 
+  toggleSidebar(): void {
+    this.isSidebarExpanded.update(v => !v);
+  }
+
+  // ─── ESTADO DE CONEXIÓN ─────────────────────────────────
+  isOnline = signal(navigator.onLine);
+
+  private onlineHandler = () => this.isOnline.set(true);
+  private offlineHandler = () => this.isOnline.set(false);
+
+  ngOnInit(): void {
+    window.addEventListener('online', this.onlineHandler);
+    window.addEventListener('offline', this.offlineHandler);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('online', this.onlineHandler);
+    window.removeEventListener('offline', this.offlineHandler);
+  }
+
+  // ─── ITEMS DE NAVEGACIÓN ─────────────────────────────────
   readonly navItems: NavItem[] = [
-    { icon: 'qr_code_scanner',  label: 'Escáner',             route: '/scanner',          exact: true },
-    { icon: 'person_add',       label: 'Registrar Alumno',    route: '/registro-alumno'   },
-    { icon: 'check_circle',     label: 'Selección Actividad', route: '/seleccion-motivo'  },
-    { icon: 'dashboard',        label: 'Dashboard',           route: '/dashboard'         },
+    {
+      icon: 'qr_code_scanner',
+      label: 'Registro de Actividad',
+      route: '/scanner',
+      exact: true,
+    },
+    {
+      icon: 'person_add',
+      label: 'Registrar Alumno',
+      route: '/registro-alumno',
+    },
+    {
+      icon: 'list_alt',
+      label: 'Dashboard',
+      route: '/dashboard',
+    },
+    {
+      icon: 'bar_chart',
+      label: 'Dashboard Ejecutivo',
+      route: '/dashboard-ejecutivo',
+    },
+    {
+      icon: 'category',
+      label: 'Gestión de Motivos',
+      route: '/gestion-motivos',
+    },
   ];
 
   readonly alertNavItem: NavItem = {
@@ -52,50 +101,21 @@ export class AppComponent {
     route: '/alertas',
   };
 
-  constructor(private router: Router) {
-    this.checkMobile();
-
-    // Auto-cerrar sidebar en navegación (móvil)
-    this.router.events.pipe(
-      filter(e => e instanceof NavigationEnd)
-    ).subscribe(() => {
-      if (this.isMobile()) {
-        this.isSidebarExpanded.set(false);
-      }
-    });
-  }
-
-  @HostListener('window:resize')
-  onResize(): void { this.checkMobile(); }
-
-  private checkMobile(): void {
-    this.isMobile.set(window.innerWidth <= 768);
-    if (this.isMobile()) {
-      this.isSidebarExpanded.set(false);
-    }
-  }
-
-  toggleSidebar(): void {
-    this.isSidebarExpanded.update(v => !v);
-  }
-
-  closeSidebar(): void {
-    this.isSidebarExpanded.set(false);
-  }
+  // ─── TOPBAR ──────────────────────────────────────────────
+  constructor(private router: Router) {}
 
   get currentPageTitle(): string {
     const map: Record<string, string> = {
-      '/scanner':               'Registro de Actividad',
-      '/registro-alumno':       'Registrar Alumno',
-      '/seleccion-motivo':      'Seleccionar Actividad',
-      '/dashboard':             'Dashboard',
-      '/dashboard-ejecutivo':   'Dashboard Ejecutivo',
-      '/gestion-motivos':       'Gestión de Motivos',
-      '/alertas':               'Alertas',
+      '/scanner':             'Registro de Actividad',
+      '/registro-alumno':     'Registrar Alumno',
+      '/seleccion-motivo':    'Seleccionar Actividad',
+      '/dashboard':           'Dashboard',
+      '/dashboard-ejecutivo': 'Dashboard Ejecutivo',
+      '/gestion-motivos':     'Gestión de Motivos',
+      '/alertas':             'Alertas',
     };
     const url = this.router.url.split('?')[0];
-    // Manejar rutas con params como /detalle-alumno/:id
-    if (url.startsWith('/detalle-alumno')) return 'Detalle Alumno';
+    if (url.startsWith('/detalle-alumno')) return 'Detalle del Alumno';
     return map[url] ?? 'Stenbrary';
   }
 }
