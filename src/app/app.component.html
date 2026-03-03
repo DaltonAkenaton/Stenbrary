@@ -1,9 +1,10 @@
 <!--
-  app.component.html
+  RUTA: src/app/app.component.html
   Shell de la aplicación: Sidebar + Topbar + Área de contenido
-  Stenbrary v3.1 — Cyan Cube
+  Stenbrary v3.4 — Sin alertas fantasma
 
-  NUEVO: Badge de estado reactivo (online/offline)
+  FIX v3.4: Eliminado footer del sidebar con enlace a /alertas
+  (ruta no implementada, causaba redirección silenciosa)
 -->
 
 <div class="app-shell" [class.sidebar-expanded]="isSidebarExpanded()">
@@ -53,27 +54,6 @@
 
     <!-- Spacer empuja el footer hacia abajo -->
     <div class="sidebar-spacer"></div>
-
-    <!-- Línea divisora antes del footer -->
-    <div class="sidebar-divider"></div>
-
-    <!-- Footer del sidebar (alertas, etc.) -->
-    <div class="sidebar-footer">
-      <a
-        class="nav-item"
-        [routerLink]="alertNavItem.route"
-        routerLinkActive="active"
-        [attr.aria-label]="alertNavItem.label"
-        [matTooltip]="!isSidebarExpanded() ? alertNavItem.label : ''"
-        matTooltipPosition="right"
-        matRipple
-        matRippleColor="rgba(0, 200, 215, 0.10)">
-        <mat-icon>{{ alertNavItem.icon }}</mat-icon>
-        @if (isSidebarExpanded()) {
-          <span class="nav-label">{{ alertNavItem.label }}</span>
-        }
-      </a>
-    </div>
 
   </aside>
 

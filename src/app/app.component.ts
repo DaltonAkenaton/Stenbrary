@@ -1,14 +1,11 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  app.component.ts                                    ║
+// ║  RUTA: src/app/app.component.ts                     ║
 // ║  Shell principal con sidebar de navegación           ║
-// ║  Stenbrary v3.2 — Cyan Cube                         ║
+// ║  Stenbrary v3.4 — Con Configuración                  ║
 // ║                                                      ║
-// ║  Sidebar reorganizado:                               ║
-// ║  - Scanner (flujo principal)                         ║
-// ║  - Registrar Alumno (acceso directo)                 ║
-// ║  - Dashboard (registros + alumnos + estadísticas)    ║
-// ║  - Dashboard Ejecutivo (gráficas avanzadas)          ║
-// ║  - Gestión de Motivos                                ║
+// ║  CAMBIO v3.4:                                        ║
+// ║  - Eliminado "Alertas" (no implementado)             ║
+// ║  - Agregado "Configuración" en sección Admin         ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, signal, OnInit, OnDestroy } from '@angular/core';
@@ -23,6 +20,11 @@ interface NavItem {
   label: string;
   route: string;
   exact?: boolean;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
 }
 
 @Component({
@@ -65,54 +67,85 @@ export class AppComponent implements OnInit, OnDestroy {
     window.removeEventListener('offline', this.offlineHandler);
   }
 
-  // ─── ITEMS DE NAVEGACIÓN ─────────────────────────────────
-  readonly navItems: NavItem[] = [
+  // ─── NAVEGACIÓN POR SECCIONES ────────────────────────────
+  readonly navSections: NavSection[] = [
     {
-      icon: 'qr_code_scanner',
-      label: 'Registro de Actividad',
-      route: '/scanner',
-      exact: true,
+      title: 'Operación',
+      items: [
+        {
+          icon: 'qr_code_scanner',
+          label: 'Registro de Actividad',
+          route: '/scanner',
+          exact: true,
+        },
+        {
+          icon: 'person_add',
+          label: 'Registrar Alumno',
+          route: '/registro-alumno',
+        },
+      ],
     },
     {
-      icon: 'person_add',
-      label: 'Registrar Alumno',
-      route: '/registro-alumno',
+      title: 'Consulta',
+      items: [
+        {
+          icon: 'dashboard',
+          label: 'Resumen',
+          route: '/dashboard',
+        },
+        {
+          icon: 'groups',
+          label: 'Alumnos',
+          route: '/alumnos',
+        },
+        {
+          icon: 'history',
+          label: 'Registros',
+          route: '/registros',
+        },
+        {
+          icon: 'bar_chart',
+          label: 'Estadísticas',
+          route: '/estadisticas',
+        },
+      ],
     },
     {
-      icon: 'list_alt',
-      label: 'Dashboard',
-      route: '/dashboard',
-    },
-    {
-      icon: 'bar_chart',
-      label: 'Dashboard Ejecutivo',
-      route: '/dashboard-ejecutivo',
-    },
-    {
-      icon: 'category',
-      label: 'Gestión de Motivos',
-      route: '/gestion-motivos',
+      title: 'Administración',
+      items: [
+        {
+          icon: 'category',
+          label: 'Gestión de Motivos',
+          route: '/gestion-motivos',
+        },
+        {
+          icon: 'settings',
+          label: 'Configuración',
+          route: '/configuracion',
+        },
+      ],
     },
   ];
 
-  readonly alertNavItem: NavItem = {
-    icon: 'notifications',
-    label: 'Alertas',
-    route: '/alertas',
-  };
+  // Flat list for template
+  get navItems(): NavItem[] {
+    return this.navSections.flatMap(s => s.items);
+  }
 
   // ─── TOPBAR ──────────────────────────────────────────────
   constructor(private router: Router) {}
 
   get currentPageTitle(): string {
     const map: Record<string, string> = {
-      '/scanner':             'Registro de Actividad',
-      '/registro-alumno':     'Registrar Alumno',
-      '/seleccion-motivo':    'Seleccionar Actividad',
-      '/dashboard':           'Dashboard',
-      '/dashboard-ejecutivo': 'Dashboard Ejecutivo',
-      '/gestion-motivos':     'Gestión de Motivos',
-      '/alertas':             'Alertas',
+      '/scanner':           'Registro de Actividad',
+      '/registro-alumno':   'Registrar Alumno',
+      '/seleccion-motivo':  'Seleccionar Actividad',
+      '/dashboard':         'Resumen',
+      '/alumnos':           'Alumnos',
+      '/registros':         'Registros',
+      '/estadisticas':      'Estadísticas',
+      '/gestion-motivos':   'Gestión de Motivos',
+      '/configuracion':     'Configuración',
     };
     const url = this.router.url.split('?')[0];
     if (url.startsWith('/detalle-alumno')) return 'Detalle del Alumno';

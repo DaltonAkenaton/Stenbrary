@@ -1,0 +1,203 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  registros.component.html — Stenbrary v3.3          ║ -->
+<!-- ║  Vista dedicada de historial de registros            ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<div class="registros-container">
+
+  <!-- ── HEADER ── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>history</mat-icon>
+      </div>
+      <div>
+        <h1>Registros</h1>
+        <p class="header-subtitle">
+          {{ etiquetaRango }}: {{ registrosFiltrados.length }} registros
+        </p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-outline" (click)="exportarCSV()" matTooltip="Exportar a CSV">
+        <mat-icon>download</mat-icon>
+        <span class="btn-text">Exportar</span>
+      </button>
+      <button class="btn-outline" (click)="cargarDatos()" matTooltip="Actualizar">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── RANGO DE FECHA (TABS) ── -->
+  <div class="rango-tabs">
+    @for (rango of [
+      { key: 'hoy', label: 'Hoy', icon: 'today' },
+      { key: 'semana', label: '7 días', icon: 'date_range' },
+      { key: 'mes', label: '30 días', icon: 'calendar_month' },
+      { key: 'todo', label: 'Todo', icon: 'all_inclusive' }
+    ]; track rango.key) {
+      <button
+        class="rango-tab"
+        [class.active]="filtros().rangoFecha === rango.key"
+        (click)="actualizarFiltro('rangoFecha', rango.key)">
+        <mat-icon>{{ rango.icon }}</mat-icon>
+        <span>{{ rango.label }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- ── FILTROS ── -->
+  <div class="filtros-panel">
+    <div class="search-bar">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Buscar por nombre o matrícula..."
+        [ngModel]="filtros().busqueda"
+        (ngModelChange)="actualizarFiltro('busqueda', $event)">
+      @if (filtros().busqueda) {
+        <button class="clear-btn" (click)="actualizarFiltro('busqueda', '')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div class="filtros-row">
+      <mat-form-field appearance="outline" class="filtro-field">
+        <mat-label>Actividad</mat-label>
+        <mat-select
+          [ngModel]="filtros().motivo"
+          (ngModelChange)="actualizarFiltro('motivo', $event)">
+          <mat-option value="">Todas</mat-option>
+          @for (m of motivos; track m.id) {
+            <mat-option [value]="m.nombre">{{ m.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filtro-field">
+        <mat-label>Carrera</mat-label>
+        <mat-select
+          [ngModel]="filtros().carrera"
+          (ngModelChange)="actualizarFiltro('carrera', $event)">
+          <mat-option value="">Todas</mat-option>
+          @for (c of carrerasUnicas(); track c) {
+            <mat-option [value]="c">{{ c }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (hayFiltrosActivos) {
+        <button class="btn-clear-filters" (click)="limpiarFiltros()">
+          <mat-icon>filter_alt_off</mat-icon>
+          Limpiar
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── LOADING ── -->
+  @if (cargando) {
+    <div class="loading-state">
+      <mat-spinner diameter="36"></mat-spinner>
+      <p>Cargando registros...</p>
+    </div>
+  }
+
+  <!-- ── TABLA ── -->
+  @if (!cargando && registrosFiltrados.length > 0) {
+    <div class="tabla-container">
+      <table mat-table [dataSource]="registrosPaginados" class="registros-table">
+
+        <!-- Fecha y Hora -->
+        <ng-container matColumnDef="fechaHora">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let r">
+            <div class="fecha-cell">
+              <span class="fecha-date">{{ formatearFecha(r.fechaHora).split(',')[0] || formatearFecha(r.fechaHora) }}</span>
+              <span class="fecha-time mono">{{ formatearHora(r.fechaHora) }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Matrícula -->
+        <ng-container matColumnDef="matricula">
+          <th mat-header-cell *matHeaderCellDef>Matrícula</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="mono matricula-badge">{{ r.matricula }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Nombre -->
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Alumno</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="nombre-cell">{{ r.nombreCompleto }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Carrera -->
+        <ng-container matColumnDef="carrera">
+          <th mat-header-cell *matHeaderCellDef>Carrera</th>
+          <td mat-cell *matCellDef="let r">{{ r.carrera }}</td>
+        </ng-container>
+
+        <!-- Motivo -->
+        <ng-container matColumnDef="motivo">
+          <th mat-header-cell *matHeaderCellDef>Actividad</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="motivo-chip">{{ r.motivoNombre }}</span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+      </table>
+
+      <!-- Paginación -->
+      @if (totalPaginas > 1) {
+        <div class="paginacion">
+          <span class="pag-info mono">
+            {{ paginaActual() * filasPorPagina + 1 }}–{{ 
+              finPagina 
+            }} de {{ registrosFiltrados.length }}
+          </span>
+          <div class="pag-controls">
+            <button mat-icon-button
+              [disabled]="paginaActual() === 0"
+              (click)="paginaAnterior()">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <span class="pag-current mono">{{ paginaActual() + 1 }} / {{ totalPaginas }}</span>
+            <button mat-icon-button
+              [disabled]="paginaActual() >= totalPaginas - 1"
+              (click)="paginaSiguiente()">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── EMPTY ── -->
+  @if (!cargando && registrosFiltrados.length === 0) {
+    <div class="empty-state">
+      @if (hayFiltrosActivos) {
+        <mat-icon>search_off</mat-icon>
+        <h3>Sin resultados</h3>
+        <p>No se encontraron registros con los filtros aplicados</p>
+        <button class="btn-outline" (click)="limpiarFiltros()">
+          <mat-icon>filter_alt_off</mat-icon>
+          Limpiar filtros
+        </button>
+      } @else {
+        <mat-icon>event_note</mat-icon>
+        <h3>No hay registros {{ filtros().rangoFecha === 'hoy' ? 'hoy' : 'en este periodo' }}</h3>
+        <p>Los registros aparecerán aquí cuando los alumnos escaneen su credencial</p>
+      }
+    </div>
+  }
+
+</div>

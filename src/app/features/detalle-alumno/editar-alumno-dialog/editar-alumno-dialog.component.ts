@@ -1,3 +1,14 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  RUTA: src/app/features/detalle-alumno/              ║
+// ║        editar-alumno-dialog/                         ║
+// ║        editar-alumno-dialog.component.ts             ║
+// ║  Stenbrary v3.4 — Catálogo unificado + responsive    ║
+// ║                                                      ║
+// ║  FIX v3.4:                                           ║
+// ║  - Carreras importadas desde catalogos.constants.ts  ║
+// ║  - Responsive: min-width removido en mobile          ║
+// ╚══════════════════════════════════════════════════════╝
+
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -10,6 +21,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatabaseService } from '../../../core/services/database.service';
 import { Alumno } from '../../../core/models';
+import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalogos.constants';
 
 @Component({
   selector: 'app-editar-alumno-dialog',
@@ -23,7 +35,7 @@ import { Alumno } from '../../../core/models';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   template: `
     <h2 mat-dialog-title>
@@ -139,7 +151,7 @@ import { Alumno } from '../../../core/models';
       flex-direction: column;
       gap: 16px;
       padding: 16px 0;
-      min-width: 500px;
+      min-width: 400px;
     }
 
     .full-width {
@@ -199,33 +211,24 @@ import { Alumno } from '../../../core/models';
         grid-template-columns: 1fr;
       }
     }
-  `]
+  `],
 })
 export class EditarAlumnoDialogComponent implements OnInit {
   editarForm!: FormGroup;
   guardando = false;
   error: string | null = null;
 
-  carreras = [
-    'Contador Público',
-    'Licenciatura en Administración',
-    'Licenciatura en Autotransporte de Carga',
-    'Licenciatura en Comercio Exterior',
-    'Licenciatura en Derecho',
-    'Licenciatura en Enfermería',
-    'Licenciatura en Psicología',
-    'Licenciatura en Tecnologías de la Información'
-  ];
-
-  grados = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  grupos = ['A', 'B', 'C', 'D', 'E', 'F'];
-  turnos: ('Matutino' | 'Vespertino' | 'Mixto')[] = ['Matutino', 'Vespertino', 'Mixto'];
+  // FIX v3.4: Catálogos centralizados (fuente única de verdad)
+  carreras = CARRERAS;
+  grados = GRADOS;
+  grupos = GRUPOS;
+  turnos = TURNOS;
 
   constructor(
     private fb: FormBuilder,
     private databaseService: DatabaseService,
     private dialogRef: MatDialogRef<EditarAlumnoDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { alumno: Alumno }
+    @Inject(MAT_DIALOG_DATA) public data: { alumno: Alumno },
   ) {}
 
   ngOnInit(): void {
@@ -236,7 +239,7 @@ export class EditarAlumnoDialogComponent implements OnInit {
       carrera: [this.data.alumno.carrera, Validators.required],
       grado: [this.data.alumno.grado, Validators.required],
       grupo: [this.data.alumno.grupo, Validators.required],
-      turno: [this.data.alumno.turno, Validators.required]
+      turno: [this.data.alumno.turno, Validators.required],
     });
   }
 
@@ -261,14 +264,13 @@ export class EditarAlumnoDialogComponent implements OnInit {
         carrera: formValue.carrera,
         grado: Number(formValue.grado),
         grupo: formValue.grupo,
-        turno: formValue.turno
+        turno: formValue.turno,
       };
 
       await this.databaseService.actualizarAlumno(this.data.alumno.id!, alumnoActualizado);
 
       console.log('✅ Alumno actualizado exitosamente');
       this.dialogRef.close(true);
-
     } catch (error: any) {
       console.error('❌ Error al actualizar alumno:', error);
       this.error = 'Error al guardar los cambios. Intenta de nuevo.';

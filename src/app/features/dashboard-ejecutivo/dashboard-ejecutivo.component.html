@@ -1,5 +1,15 @@
+<!--
+  RUTA: src/app/features/dashboard-ejecutivo/dashboard-ejecutivo.component.html
+  Stenbrary v3.5 — Con gráficas Chart.js
+
+  NUEVO v3.5:
+  - Canvas para gráfica de barras diaria
+  - Canvas para dona de motivos
+  - Canvas para barras horizontales de carreras
+-->
+
 <div class="dashboard-ejecutivo-container">
-  
+
   <!-- Header -->
   <div class="header">
     <button mat-icon-button class="back-button" (click)="volverDashboard()">
@@ -22,8 +32,8 @@
 
     <!-- Insights Automáticos -->
     <div class="insights-grid" *ngIf="insights.length > 0">
-      <mat-card 
-        *ngFor="let insight of insights" 
+      <mat-card
+        *ngFor="let insight of insights"
         class="insight-card"
         [class.insight-success]="insight.tipo === 'success'"
         [class.insight-warning]="insight.tipo === 'warning'"
@@ -38,31 +48,84 @@
       </mat-card>
     </div>
 
+    <!-- ═══════════════════════════════════════════
+         GRÁFICAS (NUEVO v3.5)
+    ═══════════════════════════════════════════ -->
+
+    <!-- Fila 1: Barras diarias + Dona motivos -->
+    <div class="charts-row">
+
+      <!-- Gráfica: Registros por día -->
+      <mat-card class="chart-card chart-wide">
+        <div class="chart-header">
+          <h2>
+            <mat-icon>bar_chart</mat-icon>
+            Registros — Últimos 7 días
+          </h2>
+        </div>
+        <div class="chart-wrapper">
+          <canvas #chartDiario></canvas>
+        </div>
+      </mat-card>
+
+      <!-- Gráfica: Distribución por motivos -->
+      <mat-card class="chart-card chart-narrow">
+        <div class="chart-header">
+          <h2>
+            <mat-icon>pie_chart</mat-icon>
+            Motivos (30 días)
+          </h2>
+        </div>
+        <div class="chart-wrapper chart-doughnut">
+          <canvas #chartMotivos></canvas>
+        </div>
+      </mat-card>
+
+    </div>
+
+    <!-- Fila 2: Carreras -->
+    <mat-card class="chart-card" *ngIf="datosCarreras.length > 0">
+      <div class="chart-header">
+        <h2>
+          <mat-icon>school</mat-icon>
+          Visitas por Carrera
+        </h2>
+      </div>
+      <div class="chart-wrapper chart-carreras"
+           [style.height.px]="alturaGraficaCarreras">
+        <canvas #chartCarreras></canvas>
+      </div>
+    </mat-card>
+
+    <!-- ═══════════════════════════════════════════
+         SECCIONES EXISTENTES
+    ═══════════════════════════════════════════ -->
+
     <!-- Tendencia Semanal -->
     <mat-card class="tendencia-card" *ngIf="tendenciaSemanal">
       <h2>
         <mat-icon>timeline</mat-icon>
         Tendencia Semanal
       </h2>
-      
+
       <div class="tendencia-grid">
         <div class="tendencia-stat">
           <span class="tendencia-label">Esta Semana</span>
           <span class="tendencia-valor grande">{{ tendenciaSemanal.actual }}</span>
           <span class="tendencia-sublabel">registros</span>
         </div>
-        
+
         <div class="tendencia-icono" [class]="obtenerColorTendencia()">
           <mat-icon>{{ obtenerIconoTendencia() }}</mat-icon>
         </div>
-        
+
         <div class="tendencia-stat">
           <span class="tendencia-label">Semana Anterior</span>
           <span class="tendencia-valor">{{ tendenciaSemanal.anterior }}</span>
           <span class="tendencia-sublabel">registros</span>
         </div>
       </div>
-      
+
       <div class="tendencia-texto" [class]="obtenerColorTendencia()">
         {{ obtenerTextoTendencia() }}
       </div>
@@ -101,17 +164,15 @@
 
       <div class="heatmap-container">
         <div class="heatmap-grid">
-          <!-- Header con horas -->
           <div class="heatmap-corner"></div>
           <div *ngFor="let hora of horasDelDia" class="heatmap-hora">
             {{ hora }}:00
           </div>
 
-          <!-- Filas por día -->
           <ng-container *ngFor="let dia of diasSemana">
             <div class="heatmap-dia">{{ dia }}</div>
-            <div 
-              *ngFor="let hora of horasDelDia" 
+            <div
+              *ngFor="let hora of horasDelDia"
               class="heatmap-cell"
               [class]="obtenerClaseIntensidad(obtenerCantidadHeatmap(dia, hora))"
               [matTooltip]="dia + ' ' + hora + ':00 — ' + obtenerCantidadHeatmap(dia, hora) + ' visitas'">
@@ -137,11 +198,11 @@
       </h2>
 
       <div class="top-alumnos-lista" *ngIf="topAlumnos.length > 0">
-        <div 
-          *ngFor="let item of topAlumnos; let i = index" 
+        <div
+          *ngFor="let item of topAlumnos; let i = index"
           class="top-alumno-item"
           (click)="verDetalleAlumno(item)">
-          
+
           <div class="alumno-ranking">
             <span class="ranking-numero" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
               {{ i + 1 }}

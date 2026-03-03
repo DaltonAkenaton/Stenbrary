@@ -1,0 +1,221 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  RUTA: src/app/features/registros/                   ║
+// ║        registros.component.ts                        ║
+// ║  Stenbrary v3.4 — Fix exportación CSV                ║
+// ║                                                      ║
+// ║  FIX v3.4:                                           ║
+// ║  - exportarCSV() escapa campos con comas/comillas    ║
+// ╚══════════════════════════════════════════════════════╝
+
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { DatabaseService } from '../../core/services/database.service';
+import { ToastService } from '../../core/services/toast.service';
+import { Registro, Alumno, Motivo } from '../../core/models';
+import { ExportService } from '../../core/services/export.service';
+
+type RangoFecha = 'hoy' | 'semana' | 'mes' | 'todo';
+
+@Component({
+  selector: 'app-registros',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatTableModule,
+    MatTooltipModule,
+    MatProgressSpinnerModule,
+  ],
+  templateUrl: './registros.component.html',
+  styleUrl: './registros.component.scss',
+})
+export class RegistrosComponent implements OnInit {
+
+  // ─── DATA ──────────────────────────────────────────────
+  todosRegistros: Registro[] = [];
+  todosAlumnos: Alumno[] = [];
+  motivos: Motivo[] = [];
+  cargando = true;
+
+  // ─── FILTROS ───────────────────────────────────────────
+  filtros = signal({
+    busqueda: '',
+    rangoFecha: 'hoy' as RangoFecha,
+    motivo: '',
+    carrera: '',
+  });
+
+  carrerasUnicas = signal<string[]>([]);
+
+  // ─── PAGINACIÓN ────────────────────────────────────────
+  paginaActual = signal(0);
+  filasPorPagina = 30;
+
+  // ─── TABLA ─────────────────────────────────────────────
+  columnas: string[] = ['fechaHora', 'matricula', 'nombre', 'carrera', 'motivo'];
+
+  constructor(
+  private databaseService: DatabaseService,
+  private toastService: ToastService,
+  private exportService: ExportService,   
+  private router: Router,
+) {}
+
+  async ngOnInit(): Promise<void> {
+    await this.cargarDatos();
+  }
+
+  // ─── CARGA ─────────────────────────────────────────────
+  async cargarDatos(): Promise<void> {
+    try {
+      this.cargando = true;
+
+      const [registros, alumnos, motivos] = await Promise.all([
+        this.databaseService.obtenerTodosLosRegistros(),
+        this.databaseService.obtenerTodosLosAlumnos(),
+        this.databaseService.obtenerMotivosActivos(),
+      ]);
+
+      this.todosRegistros = registros;
+      this.todosAlumnos = alumnos;
+      this.motivos = motivos;
+
+      const carreras = new Set<string>();
+      alumnos.forEach(a => { if (a.carrera) carreras.add(a.carrera); });
+      this.carrerasUnicas.set([...carreras].sort());
+
+      this.cargando = false;
+    } catch (error) {
+      console.error('Error al cargar registros:', error);
+      this.cargando = false;
+    }
+  }
+
+  // ─── FILTRADO ──────────────────────────────────────────
+  get registrosFiltrados(): Registro[] {
+    const f = this.filtros();
+    let resultado = [...this.todosRegistros];
+
+    const ahora = new Date();
+    const inicioHoy = new Date(ahora);
+    inicioHoy.setHours(0, 0, 0, 0);
+
+    if (f.rangoFecha === 'hoy') {
+      resultado = resultado.filter(r => new Date(r.fechaHora) >= inicioHoy);
+    } else if (f.rangoFecha === 'semana') {
+      const inicioSemana = new Date(inicioHoy);
+      inicioSemana.setDate(inicioSemana.getDate() - 7);
+      resultado = resultado.filter(r => new Date(r.fechaHora) >= inicioSemana);
+    } else if (f.rangoFecha === 'mes') {
+      const inicioMes = new Date(inicioHoy);
+      inicioMes.setDate(inicioMes.getDate() - 30);
+      resultado = resultado.filter(r => new Date(r.fechaHora) >= inicioMes);
+    }
+
+    if (f.busqueda.trim()) {
+      const termino = f.busqueda.toLowerCase().trim();
+      resultado = resultado.filter(r =>
+        r.matricula.toLowerCase().includes(termino) ||
+        r.nombreCompleto.toLowerCase().includes(termino)
+      );
+    }
+
+    if (f.motivo) resultado = resultado.filter(r => r.motivoNombre === f.motivo);
+    if (f.carrera) resultado = resultado.filter(r => r.carrera === f.carrera);
+
+    return resultado;
+  }
+
+  get registrosPaginados(): Registro[] {
+    const inicio = this.paginaActual() * this.filasPorPagina;
+    return this.registrosFiltrados.slice(inicio, inicio + this.filasPorPagina);
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.registrosFiltrados.length / this.filasPorPagina);
+  }
+
+  get finPagina(): number {
+    return Math.min((this.paginaActual() + 1) * this.filasPorPagina, this.registrosFiltrados.length);
+  }
+
+  get hayFiltrosActivos(): boolean {
+    const f = this.filtros();
+    return !!(f.busqueda || f.motivo || f.carrera);
+  }
+
+  // ─── ACCIONES ──────────────────────────────────────────
+  actualizarFiltro(campo: string, valor: string): void {
+    this.filtros.update(f => ({ ...f, [campo]: valor }));
+    this.paginaActual.set(0);
+  }
+
+  limpiarFiltros(): void {
+    this.filtros.set({ busqueda: '', rangoFecha: 'hoy', motivo: '', carrera: '' });
+    this.paginaActual.set(0);
+  }
+
+  paginaAnterior(): void {
+    if (this.paginaActual() > 0) this.paginaActual.update(p => p - 1);
+  }
+
+  paginaSiguiente(): void {
+    if (this.paginaActual() < this.totalPaginas - 1) this.paginaActual.update(p => p + 1);
+  }
+
+  // ─── FORMATO ───────────────────────────────────────────
+  formatearFecha(fecha: Date): string {
+    return new Date(fecha).toLocaleString('es-MX', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  formatearHora(fecha: Date): string {
+    return new Date(fecha).toLocaleString('es-MX', {
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  get etiquetaRango(): string {
+    const map: Record<RangoFecha, string> = {
+      hoy: 'Hoy',
+      semana: 'Últimos 7 días',
+      mes: 'Últimos 30 días',
+      todo: 'Todo el historial',
+    };
+    return map[this.filtros().rangoFecha];
+  }
+
+  // ─── EXPORTAR CSV (FIX v3.4: escapar campos) ──────────
+  exportarCSV(): void {
+    const datos = this.registrosFiltrados;
+    if (datos.length === 0) {
+      this.toastService.warning('No hay datos para exportar');
+      return;
+    }
+    this.exportService.exportarRegistrosXLSX(datos);
+    this.toastService.success(`${datos.length} registros exportados a Excel`);
+  }
+
+
+
+
+}

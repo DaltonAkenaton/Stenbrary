@@ -1,11 +1,11 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  registro-alumno.component.ts                        ║
-// ║  Stenbrary v3.2 — Acceso directo sin scanner         ║
+// ║  RUTA: src/app/features/registro-alumno/             ║
+// ║        registro-alumno.component.ts                  ║
+// ║  Stenbrary v3.4 — Catálogo unificado                 ║
 // ║                                                      ║
-// ║  CAMBIO v3.2: Ya no requiere sessionStorage para     ║
-// ║  funcionar. Si hay matriculaTemp del scanner, la     ║
-// ║  pre-llena y la bloquea. Si no hay (acceso directo), ║
-// ║  el campo matrícula es editable.                     ║
+// ║  FIX v3.4:                                           ║
+// ║  - Carreras, grados, grupos y turnos importados      ║
+// ║    desde catalogos.constants.ts (fuente única)       ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit } from '@angular/core';
@@ -23,6 +23,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { Alumno } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
+import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../core/constants/catalogos.constants';
 
 @Component({
   selector: 'app-registro-alumno',
@@ -36,72 +37,53 @@ import { LoadingService } from '../../core/services/loading.service';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './registro-alumno.component.html',
-  styleUrl: './registro-alumno.component.scss'
+  styleUrl: './registro-alumno.component.scss',
 })
 export class RegistroAlumnoComponent implements OnInit {
   registroForm!: FormGroup;
   cargando = false;
   error: string | null = null;
 
-  /** Matrícula pre-llenada del scanner (si viene del flujo scanner) */
   matricula = '';
-
-  /** Si viene del scanner, la matrícula se bloquea (ya fue escaneada).
-   *  Si accede directo al componente, la matrícula es editable. */
   matriculaBloqueada = false;
-
-  /** Si viene del scanner flow (hay sesión) */
   vieneDelScanner = false;
 
-  carreras = [
-    'Contador Público',
-    'Licenciatura en Administración',
-    'Ingeniería en Autotransporte de Carga',
-    'Comercio Exterior',
-    'Licenciatura en Derecho',
-    'Licenciatura en Enfermería',
-    'Licenciatura en Psicología',
-    'Ingeniería en Tecnologías de la Información'
-  ];
-
-  grados = [1, 2, 3, 4, 5, 6, 7, 8];
-  grupos = ['A', 'B', 'C', 'D', 'E', 'F'];
-  turnos: ('Matutino' | 'Vespertino' | 'Mixto')[] = ['Matutino', 'Vespertino', 'Mixto'];
+  // FIX v3.4: Catálogos centralizados (fuente única de verdad)
+  carreras = CARRERAS;
+  grados = GRADOS;
+  grupos = GRUPOS;
+  turnos = TURNOS;
 
   constructor(
     private fb: FormBuilder,
     private databaseService: DatabaseService,
     private router: Router,
     private toastService: ToastService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
   ) {}
 
   ngOnInit(): void {
-    // Intentar obtener matrícula del sessionStorage (flujo scanner)
     const matriculaTemp = sessionStorage.getItem('matriculaTemp');
 
     if (matriculaTemp) {
-      // Viene del scanner: matrícula pre-llenada y bloqueada
       this.matricula = matriculaTemp;
       this.matriculaBloqueada = true;
       this.vieneDelScanner = true;
       console.log('📝 Registrando alumno desde scanner, matrícula:', this.matricula);
     } else {
-      // Acceso directo: matrícula editable
       this.matricula = '';
       this.matriculaBloqueada = false;
       this.vieneDelScanner = false;
       console.log('📝 Registro de alumno — acceso directo');
     }
 
-    // Inicializar formulario — matrícula siempre en el form
     this.registroForm = this.fb.group({
       matricula: [
         { value: this.matricula, disabled: this.matriculaBloqueada },
-        [Validators.required, Validators.minLength(5)]
+        [Validators.required, Validators.minLength(5)],
       ],
       nombre: ['', [Validators.required, Validators.minLength(2)]],
       apellidoPaterno: ['', [Validators.required, Validators.minLength(2)]],
@@ -109,7 +91,7 @@ export class RegistroAlumnoComponent implements OnInit {
       carrera: ['', Validators.required],
       grado: ['', Validators.required],
       grupo: ['', Validators.required],
-      turno: ['', Validators.required]
+      turno: ['', Validators.required],
     });
   }
 
@@ -126,9 +108,7 @@ export class RegistroAlumnoComponent implements OnInit {
       this.error = null;
       this.loadingService.show('Registrando alumno...');
 
-      const formValue = this.registroForm.getRawValue(); // getRawValue incluye campos disabled
-
-      // Usar la matrícula del form (puede ser pre-llenada o manual)
+      const formValue = this.registroForm.getRawValue();
       const matriculaFinal = this.matriculaBloqueada ? this.matricula : formValue.matricula.trim();
 
       const nuevoAlumno: Omit<Alumno, 'id' | 'fechaRegistro'> = {
@@ -140,7 +120,7 @@ export class RegistroAlumnoComponent implements OnInit {
         grado: Number(formValue.grado),
         grupo: formValue.grupo,
         turno: formValue.turno,
-        activo: true
+        activo: true,
       };
 
       const alumnoCreado = await this.databaseService.crearAlumno(nuevoAlumno);
@@ -150,16 +130,13 @@ export class RegistroAlumnoComponent implements OnInit {
       this.toastService.success(`Alumno ${formValue.nombre} ${formValue.apellidoPaterno} registrado exitosamente`);
 
       if (this.vieneDelScanner) {
-        // Flujo scanner: continuar a selección de motivo
         sessionStorage.setItem('alumnoActual', JSON.stringify(alumnoCreado));
         sessionStorage.removeItem('matriculaTemp');
         this.router.navigate(['/seleccion-motivo']);
       } else {
-        // Acceso directo: limpiar formulario para otro registro
         this.registroForm.reset();
         this.toastService.info('Puedes registrar otro alumno');
       }
-
     } catch (error: any) {
       console.error('❌ Error al registrar alumno:', error);
       this.loadingService.hide();
@@ -183,7 +160,6 @@ export class RegistroAlumnoComponent implements OnInit {
       this.toastService.info('Registro cancelado');
       this.router.navigate(['/scanner']);
     } else {
-      // Acceso directo: solo limpiar el formulario
       this.registroForm.reset();
       this.toastService.info('Formulario limpiado');
     }
@@ -198,16 +174,11 @@ export class RegistroAlumnoComponent implements OnInit {
 
   obtenerErrorCampo(campo: string): string {
     const control = this.registroForm.get(campo);
-
-    if (control?.hasError('required')) {
-      return 'Este campo es obligatorio';
-    }
-
+    if (control?.hasError('required')) return 'Este campo es obligatorio';
     if (control?.hasError('minlength')) {
       const minLen = campo === 'matricula' ? 5 : 2;
       return `Mínimo ${minLen} caracteres`;
     }
-
     return '';
   }
 

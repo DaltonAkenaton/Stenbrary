@@ -1,7 +1,7 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  app.component.scss                                  ║
 // ║  Shell: Sidebar + Topbar + Área de contenido         ║
-// ║  Stenbrary v3.1 — Cyan Cube                         ║
+// ║  Stenbrary v3.3 — Navegación por secciones           ║
 // ╚══════════════════════════════════════════════════════╝
 
 @import '../styles/variables';
@@ -109,6 +109,30 @@
   }
 }
 
+// ─── NAV SECTION TITLES ─────────────────────────────────
+.nav-section-title {
+  display: block;
+  font-family: $font-mono;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-muted;
+  padding: 12px 18px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+// When collapsed, show a small dot as section separator
+.nav-section-dot {
+  width: 4px;
+  height: 4px;
+  background: $border-subtle;
+  border-radius: 50%;
+  margin: 8px auto;
+  flex-shrink: 0;
+}
+
 // ─── NAV ITEMS ───────────────────────────────────────────
 .sidebar-nav {
   display: flex;
@@ -117,6 +141,9 @@
   width: 100%;
   padding: 4px 0;
   gap: 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
 }
 
 .nav-item {
@@ -124,12 +151,11 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  width: 100%;
-  min-height: 44px;
+  width: calc(100% - 12px);
+  min-height: 42px;
   padding: 0 12px;
   border-radius: $border-radius-md;
   margin: 0 6px;
-  width: calc(100% - 12px);
   cursor: pointer;
   text-decoration: none;
   color: $text-muted;
@@ -139,9 +165,9 @@
     box-shadow $transition-fast;
 
   mat-icon {
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
+    font-size: 21px;
+    width: 21px;
+    height: 21px;
     flex-shrink: 0;
     transition: color $transition-fast;
   }
@@ -286,9 +312,7 @@
       animation: glowPulse 2.5s ease-in-out infinite;
     }
 
-    .status-icon {
-      color: $success-color;
-    }
+    .status-icon { color: $success-color; }
   }
 
   &.status-offline {
@@ -301,9 +325,7 @@
       animation: glowPulseAmber 2s ease-in-out infinite;
     }
 
-    .status-icon {
-      color: $amber-color;
-    }
+    .status-icon { color: $amber-color; }
   }
 }
 
