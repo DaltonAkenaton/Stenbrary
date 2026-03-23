@@ -1,12 +1,17 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  RUTA: src/app/features/configuracion/               ║
-// ║        configuracion.component.ts                    ║
-// ║  Stenbrary v3.4.1 — Fix padding + limpiar duplicados ║
+// ║  configuracion.component.ts                          ║
+// ║  Stenbrary v3.6.2 — Configuración completa           ║
 // ║                                                      ║
-// ║  FIX v3.4.1:                                         ║
-// ║  - Padding/margin corregidos en layout               ║
-// ║  - Botón "Limpiar duplicados" en mantenimiento       ║
-// ║  - Info card con conteo de duplicados si existen     ║
+// ║  NUEVO v3.6.2:                                       ║
+// ║  - Sección de sonido de confirmación (toggle on/off) ║
+// ║  - Eliminación masiva (LimpiezaRegistrosComponent)   ║
+// ║  - confirm() → ConfirmDialogComponent                ║
+// ║                                                      ║
+// ║  PRESERVADO de v3.4.1:                               ║
+// ║  - Info del sistema con conteos y almacenamiento     ║
+// ║  - Backup/Restore con preview y merge/replace        ║
+// ║  - Limpieza de motivos duplicados                    ║
+// ║  - Zona peligrosa (eliminar todo)                    ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit } from '@angular/core';
@@ -17,14 +22,18 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
+import { SoundService } from '../../core/services/sound.service';
 import {
   BackupService,
   BackupData,
   ResultadoImportacion,
 } from '../../core/services/backup.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
 
 @Component({
   selector: 'app-configuracion',
@@ -37,6 +46,8 @@ import {
     MatTooltipModule,
     MatProgressSpinnerModule,
     MatChipsModule,
+    MatDialogModule,
+    LimpiezaRegistrosComponent,
   ],
   template: `
     <div class="config-container">
@@ -78,7 +89,6 @@ import {
           </div>
         </div>
 
-        <!-- Alerta de duplicados -->
         <div class="alert-duplicates" *ngIf="motivosDuplicados > 0">
           <mat-icon>warning</mat-icon>
           <span>
@@ -92,7 +102,7 @@ import {
         <div class="info-meta">
           <span class="meta-chip">
             <mat-icon>code</mat-icon>
-            Stenbrary v3.4
+            Stenbrary v3.6.2
           </span>
           <span class="meta-chip">
             <mat-icon>storage</mat-icon>
@@ -105,6 +115,33 @@ import {
         </div>
       </mat-card>
 
+      <!-- ═══ SONIDO DE CONFIRMACIÓN ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>volume_up</mat-icon>
+          <h2>Sonido de Confirmación</h2>
+        </div>
+        <p class="section-desc">
+          Reproduce un sonido al registrar accesos y salidas.
+          Útil en ambientes ruidosos donde no siempre se ve la pantalla.
+        </p>
+        <div class="sound-toggle">
+          <span class="sound-status">
+            {{ soundService.habilitado ? 'Activado' : 'Desactivado' }}
+          </span>
+          <button class="btn-inline"
+            [class.btn-inline-active]="soundService.habilitado"
+            (click)="toggleSonido()">
+            <mat-icon>{{ soundService.habilitado ? 'volume_up' : 'volume_off' }}</mat-icon>
+            {{ soundService.habilitado ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+        <button class="btn-action btn-restore" (click)="probarSonido()">
+          <mat-icon>play_arrow</mat-icon>
+          <span>Probar sonido</span>
+        </button>
+      </mat-card>
+
       <!-- ═══ BACKUP ═══ -->
       <mat-card class="section-card">
         <div class="section-header">
@@ -113,7 +150,7 @@ import {
         </div>
         <p class="section-desc">
           Descarga un archivo JSON con todos tus datos (alumnos, registros y motivos).
-          Guárdalo en un lugar seguro. Podrás restaurarlo en cualquier momento.
+          Guárdalo en un lugar seguro.
         </p>
         <button class="btn-action btn-backup"
                 (click)="exportarBackup()"
@@ -138,11 +175,8 @@ import {
           Los datos nuevos se agregarán sin borrar los existentes (duplicados se omiten).
         </p>
 
-        <input type="file"
-               #fileInput
-               accept=".json"
-               (change)="onArchivoSeleccionado($event)"
-               style="display: none">
+        <input type="file" #fileInput accept=".json"
+               (change)="onArchivoSeleccionado($event)" style="display: none">
 
         <div class="restore-actions">
           <button class="btn-action btn-restore"
@@ -153,7 +187,6 @@ import {
           </button>
         </div>
 
-        <!-- Preview del archivo -->
         <div class="restore-preview" *ngIf="backupPreview">
           <div class="preview-header">
             <mat-icon>description</mat-icon>
@@ -198,7 +231,6 @@ import {
           </div>
         </div>
 
-        <!-- Resultado -->
         <div class="import-result" *ngIf="resultadoImportacion"
              [class.success]="resultadoImportacion.exitoso">
           <mat-icon>{{ resultadoImportacion.exitoso ? 'check_circle' : 'error' }}</mat-icon>
@@ -209,14 +241,19 @@ import {
               {{ resultadoImportacion.registrosImportados }} registros,
               {{ resultadoImportacion.motivosImportados }} motivos importados
               <span *ngIf="resultadoImportacion.alumnosOmitidos > 0">
-                · {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos (duplicados)
+                · {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos
               </span>
               <span *ngIf="resultadoImportacion.motivosOmitidos > 0">
-                · {{ resultadoImportacion.motivosOmitidos }} motivos omitidos (duplicados)
+                · {{ resultadoImportacion.motivosOmitidos }} motivos omitidos
               </span>
             </span>
           </div>
         </div>
+      </mat-card>
+
+      <!-- ═══ ELIMINACIÓN MASIVA DE REGISTROS ═══ -->
+      <mat-card class="section-card">
+        <app-limpieza-registros />
       </mat-card>
 
       <!-- ═══ MANTENIMIENTO ═══ -->
@@ -260,134 +297,66 @@ import {
     </div>
   `,
   styles: [`
-    /* ── Container ── */
-   .config-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px 16px 48px;
-}
+    .config-container {
+      display: flex; flex-direction: column; gap: 24px;
+      max-width: 800px; margin: 0 auto; padding: 16px 16px 48px;
+    }
 
-    /* ── Page Header ── */
-   .page-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
-  padding-top: 4px;
-}
+    .page-header {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 12px; padding-top: 4px;
+    }
 
     .header-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 52px;
-      height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px;
       background: rgba(0, 200, 215, 0.10);
       border: 1px solid rgba(0, 200, 215, 0.25);
-      border-radius: 16px;
-      flex-shrink: 0;
-
-      mat-icon {
-        font-size: 28px;
-        width: 28px;
-        height: 28px;
-        color: #00C8D7;
-      }
+      border-radius: 16px; flex-shrink: 0;
+      mat-icon { font-size: 28px; width: 28px; height: 28px; color: #00C8D7; }
     }
 
-    h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #E8F4F8;
-    }
+    h1 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #E8F4F8; }
+    .subtitle { margin: 2px 0 0; font-size: 0.85rem; color: rgba(200, 230, 240, 0.5); }
 
-    .subtitle {
-      margin: 2px 0 0;
-      font-size: 0.85rem;
-      color: rgba(200, 230, 240, 0.5);
-    }
-
-    /* ── Section Cards ── */
     .section-card {
       background: #101c2c !important;
       border: 1px solid rgba(0, 200, 215, 0.08);
-      border-radius: 16px;
-      padding: 28px;
+      border-radius: 16px; padding: 28px;
     }
 
     .section-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-
-      mat-icon {
-        color: #00C8D7;
-        font-size: 22px;
-        width: 22px;
-        height: 22px;
-      }
-
-      h2 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #E8F4F8;
-      }
-
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+      mat-icon { color: #00C8D7; font-size: 22px; width: 22px; height: 22px; }
+      h2 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #E8F4F8; }
       &.danger mat-icon { color: #F05252; }
       &.danger h2 { color: #F05252; }
     }
 
     .section-desc {
-      margin: 0 0 20px;
-      font-size: 0.85rem;
-      color: rgba(200, 230, 240, 0.55);
-      line-height: 1.5;
+      margin: 0 0 20px; font-size: 0.85rem;
+      color: rgba(200, 230, 240, 0.55); line-height: 1.5;
     }
 
     .section-hint {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin: 14px 0 0;
-      font-size: 0.78rem;
-      color: rgba(200, 230, 240, 0.35);
-
-      mat-icon {
-        font-size: 14px;
-        width: 14px;
-        height: 14px;
-      }
+      display: flex; align-items: center; gap: 6px;
+      margin: 14px 0 0; font-size: 0.78rem; color: rgba(200, 230, 240, 0.35);
+      mat-icon { font-size: 14px; width: 14px; height: 14px; }
     }
 
-    /* ── Info Grid ── */
     .info-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 20px;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 20px;
     }
 
     .info-stat {
-      background: #0a1420;
-      border: 1px solid rgba(0, 200, 215, 0.08);
-      border-radius: 12px;
-      padding: 18px 14px;
-      text-align: center;
+      background: #0a1420; border: 1px solid rgba(0, 200, 215, 0.08);
+      border-radius: 12px; padding: 18px 14px; text-align: center;
     }
 
     .stat-value {
-      font-size: 1.8rem;
-      font-weight: 800;
-      font-family: 'Space Mono', monospace;
-      line-height: 1;
-      margin-bottom: 6px;
-
+      font-size: 1.8rem; font-weight: 800;
+      font-family: 'Space Mono', monospace; line-height: 1; margin-bottom: 6px;
       &.cyan { color: #00C8D7; }
       &.teal { color: #0BC4B7; }
       &.amber { color: #F5A623; }
@@ -395,307 +364,154 @@ import {
     }
 
     .stat-label {
-      font-size: 0.72rem;
-      color: rgba(200, 230, 240, 0.45);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-size: 0.72rem; color: rgba(200, 230, 240, 0.45);
+      text-transform: uppercase; letter-spacing: 0.04em;
     }
 
-    /* ── Duplicates Alert ── */
     .alert-duplicates {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; margin-bottom: 16px;
       background: rgba(245, 166, 35, 0.08);
       border: 1px solid rgba(245, 166, 35, 0.2);
-      border-radius: 12px;
-      font-size: 0.85rem;
-      color: #F5A623;
-
-      mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-        flex-shrink: 0;
-      }
-
-      strong {
-        font-weight: 700;
-      }
+      border-radius: 12px; font-size: 0.85rem; color: #F5A623;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+      strong { font-weight: 700; }
     }
 
     .btn-inline {
-      background: rgba(245, 166, 35, 0.15);
-      color: #F5A623;
-      border: 1px solid rgba(245, 166, 35, 0.3);
-      border-radius: 8px;
-      padding: 4px 12px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      font-family: 'DM Sans', sans-serif;
-      transition: background 200ms;
-
-      &:hover:not(:disabled) {
-        background: rgba(245, 166, 35, 0.25);
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
+      background: rgba(245, 166, 35, 0.15); color: #F5A623;
+      border: 1px solid rgba(245, 166, 35, 0.3); border-radius: 8px;
+      padding: 4px 12px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      font-family: 'DM Sans', sans-serif; transition: background 200ms;
+      display: inline-flex; align-items: center; gap: 4px;
+      mat-icon { font-size: 14px; width: 14px; height: 14px; }
+      &:hover:not(:disabled) { background: rgba(245, 166, 35, 0.25); }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
     }
 
-    .info-meta {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+    .btn-inline-active {
+      background: rgba(0, 200, 215, 0.15); color: #00C8D7;
+      border-color: rgba(0, 200, 215, 0.3);
+      &:hover:not(:disabled) { background: rgba(0, 200, 215, 0.25); }
     }
+
+    .info-meta { display: flex; gap: 10px; flex-wrap: wrap; }
 
     .meta-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 12px;
-      background: rgba(0, 200, 215, 0.06);
-      border: 1px solid rgba(0, 200, 215, 0.12);
-      border-radius: 20px;
-      font-size: 0.72rem;
-      color: rgba(200, 230, 240, 0.6);
-      font-weight: 500;
-
-      mat-icon {
-        font-size: 13px;
-        width: 13px;
-        height: 13px;
-        color: #00C8D7;
-      }
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; background: rgba(0, 200, 215, 0.06);
+      border: 1px solid rgba(0, 200, 215, 0.12); border-radius: 20px;
+      font-size: 0.72rem; color: rgba(200, 230, 240, 0.6); font-weight: 500;
+      mat-icon { font-size: 13px; width: 13px; height: 13px; color: #00C8D7; }
     }
 
-    /* ── Action Buttons ── */
+    .sound-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; background: #0a1420;
+      border: 1px solid rgba(0, 200, 215, 0.08);
+      border-radius: 12px; margin-bottom: 14px;
+    }
+
+    .sound-status { font-size: 0.88rem; color: rgba(200, 230, 240, 0.65); }
+
     .btn-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 22px;
-      border: none;
-      border-radius: 12px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 200ms;
-
-      mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
-
-      &:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        transform: none !important;
-        box-shadow: none !important;
-      }
-
-      &:hover:not(:disabled) {
-        transform: translateY(-1px);
-      }
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+      font-weight: 600; cursor: pointer; transition: all 200ms;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      &:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+      &:hover:not(:disabled) { transform: translateY(-1px); }
     }
 
     .btn-backup {
-      background: linear-gradient(135deg, #00C8D7, #0BC4B7);
-      color: #04090F;
+      background: linear-gradient(135deg, #00C8D7, #0BC4B7); color: #04090F;
       box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25);
-
-      &:hover:not(:disabled) {
-        box-shadow: 0 6px 24px rgba(0, 200, 215, 0.35);
-      }
+      &:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(0, 200, 215, 0.35); }
     }
 
     .btn-restore {
-      background: rgba(0, 200, 215, 0.10);
-      color: #00C8D7;
+      background: rgba(0, 200, 215, 0.10); color: #00C8D7;
       border: 1px solid rgba(0, 200, 215, 0.25);
-
-      &:hover:not(:disabled) {
-        background: rgba(0, 200, 215, 0.18);
-      }
+      &:hover:not(:disabled) { background: rgba(0, 200, 215, 0.18); }
     }
 
     .btn-merge {
-      background: linear-gradient(135deg, #0BC4B7, #0EB07B);
-      color: #04090F;
+      background: linear-gradient(135deg, #0BC4B7, #0EB07B); color: #04090F;
       box-shadow: 0 4px 12px rgba(11, 196, 183, 0.2);
     }
 
     .btn-replace {
-      background: rgba(245, 166, 35, 0.12);
-      color: #F5A623;
+      background: rgba(245, 166, 35, 0.12); color: #F5A623;
       border: 1px solid rgba(245, 166, 35, 0.3);
     }
 
     .btn-cancel-preview {
-      background: rgba(200, 230, 240, 0.06);
-      color: rgba(200, 230, 240, 0.5);
+      background: rgba(200, 230, 240, 0.06); color: rgba(200, 230, 240, 0.5);
       border: 1px solid rgba(200, 230, 240, 0.1);
     }
 
     .btn-maintenance {
-      background: rgba(99, 102, 241, 0.10);
-      color: #6366F1;
+      background: rgba(99, 102, 241, 0.10); color: #6366F1;
       border: 1px solid rgba(99, 102, 241, 0.25);
-
-      &:hover:not(:disabled) {
-        background: rgba(99, 102, 241, 0.18);
-      }
+      &:hover:not(:disabled) { background: rgba(99, 102, 241, 0.18); }
     }
 
     .btn-danger {
-      background: rgba(240, 82, 82, 0.10);
-      color: #F05252;
+      background: rgba(240, 82, 82, 0.10); color: #F05252;
       border: 1px solid rgba(240, 82, 82, 0.25);
-
-      &:hover:not(:disabled) {
-        background: rgba(240, 82, 82, 0.20);
-      }
+      &:hover:not(:disabled) { background: rgba(240, 82, 82, 0.20); }
     }
 
-    /* ── Restore Preview ── */
     .restore-preview {
-      margin-top: 20px;
-      padding: 18px;
-      background: #0a1420;
-      border: 1px solid rgba(0, 200, 215, 0.15);
-      border-radius: 12px;
+      margin-top: 20px; padding: 18px; background: #0a1420;
+      border: 1px solid rgba(0, 200, 215, 0.15); border-radius: 12px;
     }
 
     .preview-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 14px;
-      font-weight: 600;
-      color: #E8F4F8;
-      font-size: 0.9rem;
-
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px; font-weight: 600; color: #E8F4F8; font-size: 0.9rem;
       mat-icon { color: #00C8D7; }
     }
 
     .preview-stats {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
+      display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 18px;
     }
 
     .preview-stat {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.82rem;
-      color: rgba(200, 230, 240, 0.55);
-
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.82rem; color: rgba(200, 230, 240, 0.55);
       strong { color: #E8F4F8; }
-
-      &.fecha {
-        mat-icon {
-          font-size: 14px;
-          width: 14px;
-          height: 14px;
-          color: rgba(200, 230, 240, 0.35);
-        }
-      }
+      &.fecha mat-icon { font-size: 14px; width: 14px; height: 14px; color: rgba(200, 230, 240, 0.35); }
     }
 
-    .preview-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+    .preview-actions, .restore-actions, .maintenance-actions, .danger-actions {
+      display: flex; gap: 10px; flex-wrap: wrap;
     }
 
-    .restore-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .maintenance-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    /* ── Import Result ── */
     .import-result {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin-top: 18px;
-      padding: 14px 16px;
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-top: 18px; padding: 14px 16px;
       background: rgba(240, 82, 82, 0.08);
       border: 1px solid rgba(240, 82, 82, 0.2);
-      border-radius: 12px;
-      color: #F05252;
-
-      &.success {
-        background: rgba(11, 196, 183, 0.08);
-        border-color: rgba(11, 196, 183, 0.2);
-        color: #0BC4B7;
-      }
-
-      mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-        flex-shrink: 0;
-        margin-top: 1px;
-      }
-
-      .result-text {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 0.85rem;
-        line-height: 1.4;
-      }
+      border-radius: 12px; color: #F05252;
+      &.success { background: rgba(11, 196, 183, 0.08); border-color: rgba(11, 196, 183, 0.2); color: #0BC4B7; }
+      mat-icon { font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; }
+      .result-text { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; line-height: 1.4; }
     }
 
-    /* ── Danger Zone ── */
-    .danger-zone {
-      border-color: rgba(240, 82, 82, 0.15);
-    }
+    .danger-zone { border-color: rgba(240, 82, 82, 0.15); }
 
-    .danger-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    /* ── Responsive ── */
     @media (max-width: 768px) {
-      .info-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .preview-actions {
-        flex-direction: column;
-      }
-
-      .section-card {
-        padding: 20px;
-      }
+      .info-grid { grid-template-columns: repeat(2, 1fr); }
+      .preview-actions { flex-direction: column; }
+      .section-card { padding: 20px; }
     }
 
     @media (max-width: 480px) {
-      .info-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .alert-duplicates {
-        flex-wrap: wrap;
-      }
+      .info-grid { grid-template-columns: 1fr 1fr; }
+      .alert-duplicates { flex-wrap: wrap; }
     }
   `],
 })
@@ -724,6 +540,8 @@ export class ConfiguracionComponent implements OnInit {
     private backupService: BackupService,
     private toastService: ToastService,
     private loadingService: LoadingService,
+    public soundService: SoundService,
+    private dialog: MatDialog,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -773,6 +591,19 @@ export class ConfiguracionComponent implements OnInit {
     } catch {
       this.almacenamientoEstimado = 'N/A';
     }
+  }
+
+  // ═══════════════════════════════════════════════
+  // SONIDO
+  // ═══════════════════════════════════════════════
+
+  toggleSonido(): void {
+    const nuevo = this.soundService.toggle();
+    this.toastService.info(nuevo ? 'Sonido activado' : 'Sonido desactivado');
+  }
+
+  probarSonido(): void {
+    this.soundService.beepExito();
   }
 
   // ═══════════════════════════════════════════════
@@ -835,15 +666,19 @@ export class ConfiguracionComponent implements OnInit {
     if (!this.backupPreview) return;
 
     if (modo === 'replace') {
-      const c1 = confirm(
-        '⚠️ REEMPLAZAR TODO\n\n' +
-        'Esto BORRARÁ todos los datos actuales y los reemplazará con el backup.\n\n' +
-        '¿Estás seguro?'
-      );
-      if (!c1) return;
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        width: '400px',
+        data: {
+          titulo: '¿Reemplazar TODOS los datos?',
+          mensaje: 'Se borrarán todos los datos actuales y se reemplazarán con el backup. Esta acción no se puede deshacer.',
+          variante: 'danger',
+          textoConfirmar: 'Reemplazar todo',
+          icono: 'swap_horiz',
+        } as ConfirmDialogData,
+      });
 
-      const c2 = confirm('¿REALMENTE quieres borrar todo? Esta acción NO se puede deshacer.');
-      if (!c2) return;
+      const confirmado = await dialogRef.afterClosed().toPromise();
+      if (!confirmado) return;
     }
 
     try {
@@ -912,16 +747,19 @@ export class ConfiguracionComponent implements OnInit {
   // ═══════════════════════════════════════════════
 
   async limpiarTodosDatos(): Promise<void> {
-    const c1 = confirm(
-      '⚠️ ELIMINAR TODOS LOS DATOS\n\n' +
-      'Esto borrará TODOS los alumnos, registros y motivos.\n' +
-      'Los motivos por defecto se recrearán automáticamente.\n\n' +
-      '¿Hiciste un backup? Si no, cancela y hazlo primero.'
-    );
-    if (!c1) return;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        titulo: '¿Eliminar TODOS los datos?',
+        mensaje: 'Se borrarán todos los alumnos, registros y motivos. Los motivos por defecto se recrearán. Asegúrate de haber hecho un backup.',
+        variante: 'danger',
+        textoConfirmar: 'Eliminar todo',
+        icono: 'delete_forever',
+      } as ConfirmDialogData,
+    });
 
-    const c2 = confirm('¿ÚLTIMA OPORTUNIDAD — realmente quieres borrar todo?');
-    if (!c2) return;
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
 
     try {
       this.procesando = true;

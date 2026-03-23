@@ -1,6 +1,6 @@
 <!-- ╔══════════════════════════════════════════════════════╗ -->
-<!-- ║  registros.component.html — Stenbrary v3.3          ║ -->
-<!-- ║  Vista dedicada de historial de registros            ║ -->
+<!-- ║  registros.component.html — Stenbrary v3.6          ║ -->
+<!-- ║  NUEVO: Botón "Generar PDF" en header               ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 
 <div class="registros-container">
@@ -19,9 +19,14 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn-outline" (click)="exportarCSV()" matTooltip="Exportar a CSV">
+      <button class="btn-outline" (click)="generarPDF()" matTooltip="Generar reporte PDF"
+              [disabled]="registrosFiltrados.length === 0">
+        <mat-icon>picture_as_pdf</mat-icon>
+        <span class="btn-text">PDF</span>
+      </button>
+      <button class="btn-outline" (click)="exportarCSV()" matTooltip="Exportar a Excel">
         <mat-icon>download</mat-icon>
-        <span class="btn-text">Exportar</span>
+        <span class="btn-text">Excel</span>
       </button>
       <button class="btn-outline" (click)="cargarDatos()" matTooltip="Actualizar">
         <mat-icon>refresh</mat-icon>
@@ -151,6 +156,30 @@
           </td>
         </ng-container>
 
+                <!-- Salida -->
+        <ng-container matColumnDef="salida">
+          <th mat-header-cell *matHeaderCellDef>Salida</th>
+          <td mat-cell *matCellDef="let r">
+            @if (r.horaSalida) {
+              <span class="mono salida-badge">{{ formatearHora(r.horaSalida) }}</span>
+            } @else {
+              <span class="sin-salida">—</span>
+            }
+          </td>
+        </ng-container>
+ 
+        <!-- Duración -->
+        <ng-container matColumnDef="duracion">
+          <th mat-header-cell *matHeaderCellDef>Duración</th>
+          <td mat-cell *matCellDef="let r">
+            @if (r.duracionMinutos != null) {
+              <span class="duracion-chip">{{ formatearDuracion(r.duracionMinutos) }}</span>
+            } @else {
+              <span class="sin-salida">—</span>
+            }
+          </td>
+        </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="columnas"></tr>
         <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
       </table>
@@ -159,8 +188,8 @@
       @if (totalPaginas > 1) {
         <div class="paginacion">
           <span class="pag-info mono">
-            {{ paginaActual() * filasPorPagina + 1 }}–{{ 
-              finPagina 
+            {{ paginaActual() * filasPorPagina + 1 }}–{{
+              finPagina
             }} de {{ registrosFiltrados.length }}
           </span>
           <div class="pag-controls">

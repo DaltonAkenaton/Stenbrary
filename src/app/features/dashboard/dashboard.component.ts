@@ -1,13 +1,12 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  RUTA: src/app/features/dashboard/                   ║
-// ║        dashboard.component.ts                        ║
-// ║  Stenbrary v3.5.1 — Auto-refresh + accesos rápidos   ║
+// ║  dashboard.component.ts                              ║
+// ║  Stenbrary v3.6.2 — Resumen / Vista General          ║
 // ║                                                      ║
-// ║  NUEVO:                                              ║
-// ║  - Auto-refresh cada 30s (toggle on/off)             ║
-// ║  - Indicador visual cuando se está actualizando      ║
-// ║  - Accesos rápidos: + Importar, Configuración        ║
-// ║  - Saludo según hora del día                         ║
+// ║  Alineado con dashboard.component.html v3.5.1:       ║
+// ║  - saludo dinámico según hora del día                 ║
+// ║  - Auto-refresh toggleable con indicador visual       ║
+// ║  - Estado "actualizando" para spinner del botón       ║
+// ║  - Accesos rápidos a todas las secciones              ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
@@ -34,8 +33,6 @@ interface ActividadHoy {
   cantidad: number;
 }
 
-const AUTO_REFRESH_MS = 30_000; // 30 segundos
-
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -51,32 +48,39 @@ const AUTO_REFRESH_MS = 30_000; // 30 segundos
 export class DashboardComponent implements OnInit, OnDestroy {
 
   cargando = true;
-  actualizando = false;
 
-  // Auto-refresh
-  autoRefreshActivo = true;
-  private refreshInterval: ReturnType<typeof setInterval> | null = null;
+  // ─── Saludo dinámico ────────────────────────────────────
+  saludo = '';
 
-  // Stats principales
+  // ─── Stats principales ──────────────────────────────────
   stats: QuickStat[] = [];
 
-  // Actividades de hoy
+  // ─── Actividades de hoy (top motivos) ───────────────────
   actividadesHoy: ActividadHoy[] = [];
 
-  // Últimos registros
+  // ─── Últimos 5 registros ────────────────────────────────
   ultimosRegistros: Registro[] = [];
+
+  // ─── Hora del último registro ───────────────────────────
   ultimoRegistroHora = '';
 
-  // Saludo
-  saludo = '';
+  // ─── Auto-refresh ───────────────────────────────────────
+  autoRefreshActivo = true;
+  actualizando = false;
+  private refreshInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly REFRESH_MS = 30_000; // 30 segundos
 
   constructor(
     private databaseService: DatabaseService,
     private router: Router,
   ) {}
 
+  // ═══════════════════════════════════════════════
+  // LIFECYCLE
+  // ═══════════════════════════════════════════════
+
   async ngOnInit(): Promise<void> {
-    this.saludo = this.obtenerSaludo();
+    this.generarSaludo();
     await this.cargarDatos();
     this.iniciarAutoRefresh();
   }
@@ -85,10 +89,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.detenerAutoRefresh();
   }
 
-  // ─── AUTO-REFRESH ────────────────────────────────────
+  // ═══════════════════════════════════════════════
+  // SALUDO DINÁMICO
+  // ═══════════════════════════════════════════════
+
+  private generarSaludo(): void {
+    const hora = new Date().getHours();
+
+    if (hora >= 5 && hora < 12) {
+      this.saludo = 'Buenos días';
+    } else if (hora >= 12 && hora < 18) {
+      this.saludo = 'Buenas tardes';
+    } else {
+      this.saludo = 'Buenas noches';
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // AUTO-REFRESH
+  // ═══════════════════════════════════════════════
 
   toggleAutoRefresh(): void {
     this.autoRefreshActivo = !this.autoRefreshActivo;
+
     if (this.autoRefreshActivo) {
       this.iniciarAutoRefresh();
     } else {
@@ -97,16 +120,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private iniciarAutoRefresh(): void {
-    this.detenerAutoRefresh();
-    if (!this.autoRefreshActivo) return;
+    this.detenerAutoRefresh(); // Limpiar cualquier interval previo
 
-    this.refreshInterval = setInterval(async () => {
-      if (!this.cargando) {
-        this.actualizando = true;
+    if (this.autoRefreshActivo) {
+      this.refreshInterval = setInterval(async () => {
         await this.cargarDatos(true);
-        this.actualizando = false;
-      }
-    }, AUTO_REFRESH_MS);
+      }, this.REFRESH_MS);
+    }
   }
 
   private detenerAutoRefresh(): void {
@@ -116,11 +136,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ─── CARGA DE DATOS ──────────────────────────────────
+  // ═══════════════════════════════════════════════
+  // CARGA DE DATOS
+  // ═══════════════════════════════════════════════
 
   async cargarDatos(silencioso = false): Promise<void> {
     try {
-      if (!silencioso) this.cargando = true;
+      if (!silencioso) {
+        this.cargando = true;
+      } else {
+        this.actualizando = true;
+      }
 
       const [alumnos, registrosHoy, todosRegistros, motivos] = await Promise.all([
         this.databaseService.obtenerTodosLosAlumnos(),
@@ -161,7 +187,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         },
       ];
 
-      // Actividades de hoy
+      // Actividades de hoy (agrupar por motivo)
       const porMotivo = new Map<string, { cantidad: number; icono: string; color: string }>();
       registrosHoy.forEach(r => {
         const existente = porMotivo.get(r.motivoNombre);
@@ -193,32 +219,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
           hour: '2-digit',
           minute: '2-digit',
         });
+      } else {
+        this.ultimoRegistroHora = '';
       }
 
       this.cargando = false;
+      this.actualizando = false;
     } catch (error) {
       console.error('Error al cargar dashboard:', error);
       this.cargando = false;
+      this.actualizando = false;
     }
   }
 
-  // ─── UTILIDADES ──────────────────────────────────────
+  // ═══════════════════════════════════════════════
+  // NAVEGACIÓN
+  // ═══════════════════════════════════════════════
 
   navegar(ruta: string): void {
     this.router.navigate([ruta]);
   }
+
+  // ═══════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════
 
   formatearHora(fecha: Date): string {
     return new Date(fecha).toLocaleTimeString('es-MX', {
       hour: '2-digit',
       minute: '2-digit',
     });
-  }
-
-  private obtenerSaludo(): string {
-    const hora = new Date().getHours();
-    if (hora < 12) return 'Buenos días';
-    if (hora < 18) return 'Buenas tardes';
-    return 'Buenas noches';
   }
 }

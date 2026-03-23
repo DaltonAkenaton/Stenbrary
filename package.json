@@ -1,6 +1,6 @@
 {
   "name": "stenbrary",
-  "version": "0.0.0",
+  "version": "3.6.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -25,6 +25,9 @@
     "@zxing/library": "^0.21.3",
     "chart.js": "^4.5.1",
     "idb": "^8.0.3",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
+    "material-icons": "^1.13.14",
     "rxjs": "~7.8.0",
     "tslib": "^2.6.0",
     "uuid": "^10.0.0",

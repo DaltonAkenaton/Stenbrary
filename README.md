@@ -1,27 +1,108 @@
-# Stenbrary
+# 📚 Stenbrary
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+Sistema PWA de registro de accesos para bibliotecas. Permite escanear credenciales de alumnos, registrar su actividad, y consultar estadísticas de uso — todo funcionando offline.
 
-## Development server
+## Stack Técnico
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- **Angular 18.2** con standalone components
+- **TypeScript 5.5**
+- **Angular Material** — UI components + dark theme
+- **IndexedDB** (idb 8.0) — almacenamiento local offline-first
+- **Chart.js 4.5** — gráficas en dashboard ejecutivo
+- **SheetJS (xlsx)** — importación/exportación de archivos Excel
+- **ZXing + BarcodeDetector API** — escaneo de códigos de barras
+- **Service Workers** — funcionamiento offline (PWA)
+- **Netlify** — despliegue
 
-## Code scaffolding
+## Funcionalidades
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- Escaneo de credenciales con cámara (Code 128, Code 39, QR, EAN-13, etc.)
+- Registro manual de matrícula + acceso como invitado
+- Selección de motivo de visita (Estudiar, Trabajo escolar, etc.)
+- Gestión completa de alumnos (CRUD, filtros, búsqueda)
+- Importación masiva desde Excel (.xlsx, .xls, .csv)
+- Exportación a Excel de registros y alumnos
+- Dashboard con estadísticas en tiempo real (auto-refresh 30s)
+- Dashboard ejecutivo con gráficas Chart.js (barras, dona, carreras)
+- Mapa de calor de actividad por día/hora
+- Top alumnos más frecuentes + insights automáticos
+- Sistema de backup/restore con JSON
+- Configuración del sistema con limpieza de datos
+- Gestión de motivos/actividades (crear, editar, reordenar)
 
-## Build
+## Instalación
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+# Clonar repositorio
+git clone https://github.com/tu-usuario/stenbrary.git
+cd stenbrary
 
-## Running unit tests
+# Instalar dependencias
+npm install
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+# Iniciar servidor de desarrollo
+ng serve
+```
 
-## Running end-to-end tests
+Navega a `http://localhost:4200/`
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+## Comandos
 
-## Further help
+| Comando | Descripción |
+|---------|-------------|
+| `ng serve` | Servidor de desarrollo con hot-reload |
+| `ng build` | Build de producción en `dist/stenbrary/` |
+| `ng test` | Tests unitarios con Karma |
+| `ng build --configuration=development` | Build sin optimización |
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Estructura del Proyecto
+
+```
+src/app/
+├── core/                    → Servicios, modelos, guards, constantes
+│   ├── models/              → Interfaces (Alumno, Registro, Motivo)
+│   ├── services/            → Lógica de negocio (Database, Export, Backup...)
+│   ├── guards/              → Protección de rutas
+│   └── constants/           → Catálogos y valores fijos
+│
+├── shared/                  → Componentes reutilizables (Loading, Toast)
+│
+└── features/                → Páginas (lazy-loaded)
+    ├── scanner/             → Escaneo de credenciales
+    ├── seleccion-motivo/    → Selección de actividad
+    ├── registro-alumno/     → Formulario de nuevo alumno
+    ├── dashboard/           → Resumen con auto-refresh
+    ├── dashboard-ejecutivo/ → Gráficas y estadísticas avanzadas
+    ├── alumnos/             → Gestión de alumnos
+    ├── detalle-alumno/      → Perfil individual del alumno
+    ├── registros/           → Historial de accesos
+    ├── gestion-motivos/     → CRUD de motivos/actividades
+    ├── importar-alumnos/    → Importación masiva desde Excel
+    └── configuracion/       → Backup, restore, info del sistema
+```
+
+## Arquitectura
+
+- **Offline-first**: Toda la data se almacena en IndexedDB. No requiere conexión a internet.
+- **Standalone components**: Sin NgModules, cada componente declara sus propias dependencias.
+- **Lazy loading**: Cada feature se carga bajo demanda vía `loadComponent()`.
+- **PWA**: Service Worker habilitado para caché de assets y funcionamiento sin red.
+
+## Despliegue
+
+El proyecto está configurado para Netlify. El archivo `public/_redirects` maneja el routing SPA.
+
+```bash
+# Build de producción
+ng build
+
+# El contenido de dist/stenbrary/browser/ se despliega en Netlify
+```
+
+## Versión
+
+**v3.5.1** — Marzo 2026
+
+## Licencia
+
+Proyecto privado — Todos los derechos reservados.

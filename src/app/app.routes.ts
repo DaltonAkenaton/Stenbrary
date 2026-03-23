@@ -1,12 +1,16 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  RUTA: src/app/app.routes.ts                        ║
-// ║  Stenbrary v3.5 — Con importación masiva             ║
+// ║  app.routes.ts                                       ║
+// ║  Stenbrary v3.6.2 — Rutas con guard de flujo         ║
 // ║                                                      ║
-// ║  NUEVO v3.5:                                         ║
-// ║  - /importar-alumnos → ImportarAlumnosComponent      ║
+// ║  FIX v3.6.2:                                         ║
+// ║  - registroFlujoGuard en /seleccion-motivo            ║
+// ║    (impide acceso directo sin escanear primero)       ║
+// ║  - Ruta gestion-motivos sin espacio                   ║
+// ║  - detalle-alumno/:matricula (no :id)                 ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Routes } from '@angular/router';
+import { registroFlujoGuard } from './core/guards/registro-flujo.guard';
 
 export const routes: Routes = [
   {
@@ -30,6 +34,7 @@ export const routes: Routes = [
     path: 'seleccion-motivo',
     loadComponent: () =>
       import('./features/seleccion-motivo/seleccion-motivo.component').then(m => m.SeleccionMotivoComponent),
+    canActivate: [registroFlujoGuard],
     title: 'Stenbrary — Actividad',
   },
   {
@@ -59,7 +64,7 @@ export const routes: Routes = [
   {
     path: 'gestion-motivos',
     loadComponent: () =>
-      import('./features/gestion motivos/gestion-motivos.component').then(m => m.GestionMotivosComponent),
+      import('./features/gestion-motivos/gestion-motivos.component').then(m => m.GestionMotivosComponent),
     title: 'Stenbrary — Gestión de Motivos',
   },
   {

@@ -1,3 +1,15 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  RUTA: src/app/shared/components/toast-container/    ║
+// ║        toast-container.component.ts                  ║
+// ║  Stenbrary v3.6 — Dark theme fix                     ║
+// ║                                                      ║
+// ║  FIX: Fondo blanco → dark theme consistente          ║
+// ║  - Toast con fondo oscuro y borde de color           ║
+// ║  - Colores: cyan (success), rojo (error),            ║
+// ║    amarillo (warning), azul (info)                   ║
+// ║  - Texto claro, ícono X claro                        ║
+// ╚══════════════════════════════════════════════════════╝
+
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,19 +22,18 @@ import { ToastService, Toast } from '../../core/services/toast.service';
   imports: [CommonModule, MatIconModule],
   template: `
     <div class="toast-container">
-      <div 
-        *ngFor="let toast of toasts" 
-        [class]="'toast toast-' + toast.type"
-        [@slideIn]>
-        
+      <div
+        *ngFor="let toast of toasts"
+        [class]="'toast toast-' + toast.type">
+
         <div class="toast-icon">
           <mat-icon>{{ getIcon(toast.type) }}</mat-icon>
         </div>
-        
+
         <div class="toast-content">
           <p class="toast-message">{{ toast.message }}</p>
         </div>
-        
+
         <button class="toast-close" (click)="removeToast(toast.id)">
           <mat-icon>close</mat-icon>
         </button>
@@ -37,7 +48,7 @@ import { ToastService, Toast } from '../../core/services/toast.service';
       z-index: 9999;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       max-width: 400px;
     }
 
@@ -45,18 +56,20 @@ import { ToastService, Toast } from '../../core/services/toast.service';
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      background: white;
-      animation: slideIn 0.3s ease-out;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #0f1a28;
+      border: 1px solid rgba(200, 230, 240, 0.06);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35),
+                  0 0 0 1px rgba(0, 0, 0, 0.1);
+      animation: slideIn 300ms ease-out;
       min-width: 300px;
       max-width: 400px;
     }
 
     @keyframes slideIn {
       from {
-        transform: translateX(400px);
+        transform: translateX(120px);
         opacity: 0;
       }
       to {
@@ -71,15 +84,14 @@ import { ToastService, Toast } from '../../core/services/toast.service';
       justify-content: center;
       width: 32px;
       height: 32px;
-      border-radius: 50%;
+      border-radius: 10px;
       flex-shrink: 0;
     }
 
     .toast-icon mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-      color: white;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
 
     .toast-content {
@@ -88,9 +100,10 @@ import { ToastService, Toast } from '../../core/services/toast.service';
 
     .toast-message {
       margin: 0;
-      font-size: 14px;
-      line-height: 1.5;
-      color: #333;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      color: #E8F4F8;
+      font-family: 'DM Sans', sans-serif;
     }
 
     .toast-close {
@@ -101,58 +114,57 @@ import { ToastService, Toast } from '../../core/services/toast.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0.6;
-      transition: opacity 0.2s;
+      opacity: 0.35;
+      transition: opacity 200ms;
+      flex-shrink: 0;
     }
 
-    .toast-close:hover {
-      opacity: 1;
-    }
+    .toast-close:hover { opacity: 0.8; }
 
     .toast-close mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      color: #666;
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: rgba(200, 230, 240, 0.6);
     }
 
-    /* Success */
+    /* ── Success ── */
     .toast-success {
-      border-left: 4px solid #4caf50;
+      border-left: 3px solid #0BC4B7;
     }
-
     .toast-success .toast-icon {
-      background: #4caf50;
+      background: rgba(11, 196, 183, 0.12);
+      mat-icon { color: #0BC4B7; }
     }
 
-    /* Error */
+    /* ── Error ── */
     .toast-error {
-      border-left: 4px solid #f44336;
+      border-left: 3px solid #F05252;
     }
-
     .toast-error .toast-icon {
-      background: #f44336;
+      background: rgba(240, 82, 82, 0.12);
+      mat-icon { color: #F05252; }
     }
 
-    /* Warning */
+    /* ── Warning ── */
     .toast-warning {
-      border-left: 4px solid #ff9800;
+      border-left: 3px solid #F5A623;
     }
-
     .toast-warning .toast-icon {
-      background: #ff9800;
+      background: rgba(245, 166, 35, 0.12);
+      mat-icon { color: #F5A623; }
     }
 
-    /* Info */
+    /* ── Info ── */
     .toast-info {
-      border-left: 4px solid #2196f3;
+      border-left: 3px solid #3B82F6;
     }
-
     .toast-info .toast-icon {
-      background: #2196f3;
+      background: rgba(59, 130, 246, 0.12);
+      mat-icon { color: #3B82F6; }
     }
 
-    /* Responsive */
+    /* ── Responsive ── */
     @media (max-width: 768px) {
       .toast-container {
         top: 10px;
@@ -166,7 +178,7 @@ import { ToastService, Toast } from '../../core/services/toast.service';
         max-width: none;
       }
     }
-  `]
+  `],
 })
 export class ToastContainerComponent implements OnInit, OnDestroy {
   toasts: Toast[] = [];
@@ -189,7 +201,6 @@ export class ToastContainerComponent implements OnInit, OnDestroy {
   addToast(toast: Toast): void {
     this.toasts.push(toast);
 
-    // Auto-remover después de la duración especificada
     const timer = setTimeout(() => {
       this.removeToast(toast.id);
     }, toast.duration);
@@ -198,29 +209,21 @@ export class ToastContainerComponent implements OnInit, OnDestroy {
   }
 
   removeToast(id: string): void {
-    // Limpiar timer
     const timer = this.timers.get(id);
     if (timer) {
       clearTimeout(timer);
       this.timers.delete(id);
     }
-
-    // Remover toast
     this.toasts = this.toasts.filter(t => t.id !== id);
   }
 
   getIcon(type: Toast['type']): string {
     switch (type) {
-      case 'success':
-        return 'check_circle';
-      case 'error':
-        return 'error';
-      case 'warning':
-        return 'warning';
-      case 'info':
-        return 'info';
-      default:
-        return 'info';
+      case 'success': return 'check_circle';
+      case 'error': return 'error';
+      case 'warning': return 'warning';
+      case 'info': return 'info';
+      default: return 'info';
     }
   }
 }

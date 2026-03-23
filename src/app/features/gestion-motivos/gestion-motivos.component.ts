@@ -1,6 +1,13 @@
-// ==============================================================================
-// RUTA: src/app/features/gestion-motivos/gestion-motivos.component.ts
-// ==============================================================================
+// ╔══════════════════════════════════════════════════════╗
+// ║  gestion-motivos.component.ts                        ║
+// ║  Stenbrary v3.6.2 — confirm() → ConfirmDialog        ║
+// ║                                                      ║
+// ║  FIX v3.6.2:                                         ║
+// ║  - Reemplazado confirm() nativo por                  ║
+// ║    ConfirmDialogComponent (consistencia visual)       ║
+// ║  - Eliminada doble confirmación en eliminarMotivo     ║
+// ║    (el dialog ya tiene variante danger + texto claro) ║
+// ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -17,6 +24,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { Motivo } from '../../core/models';
 import { MotivoFormDialogComponent } from './motivo-form-dialog/motivo-form-dialog.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-gestion-motivos',
@@ -29,16 +37,15 @@ import { MotivoFormDialogComponent } from './motivo-form-dialog/motivo-form-dial
     MatChipsModule,
     MatTooltipModule,
     MatDialogModule,
-    MatTableModule
+    MatTableModule,
   ],
   templateUrl: './gestion-motivos.component.html',
-  styleUrl: './gestion-motivos.component.scss'
+  styleUrl: './gestion-motivos.component.scss',
 })
 export class GestionMotivosComponent implements OnInit {
   motivos: Motivo[] = [];
   cargando = true;
 
-  // Columnas de la tabla
   columnasMotivos: string[] = ['icono', 'nombre', 'prioridad', 'estado', 'acciones'];
 
   constructor(
@@ -46,7 +53,7 @@ export class GestionMotivosComponent implements OnInit {
     private toastService: ToastService,
     private loadingService: LoadingService,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -57,7 +64,6 @@ export class GestionMotivosComponent implements OnInit {
     try {
       this.cargando = true;
       this.motivos = await this.databaseService.obtenerTodosLosMotivos();
-      console.log('📋 Motivos cargados:', this.motivos.length);
       this.cargando = false;
     } catch (error) {
       console.error('❌ Error al cargar motivos:', error);
@@ -69,49 +75,55 @@ export class GestionMotivosComponent implements OnInit {
   abrirDialogNuevo(): void {
     const dialogRef = this.dialog.open(MotivoFormDialogComponent, {
       width: '500px',
-      data: { motivo: null, esNuevo: true }
+      data: { motivo: null, esNuevo: true },
     });
 
     dialogRef.afterClosed().subscribe(async (resultado) => {
-      if (resultado) {
-        await this.cargarMotivos();
-      }
+      if (resultado) await this.cargarMotivos();
     });
   }
 
   abrirDialogEditar(motivo: Motivo): void {
     const dialogRef = this.dialog.open(MotivoFormDialogComponent, {
       width: '500px',
-      data: { motivo: { ...motivo }, esNuevo: false }
+      data: { motivo: { ...motivo }, esNuevo: false },
     });
 
     dialogRef.afterClosed().subscribe(async (resultado) => {
-      if (resultado) {
-        await this.cargarMotivos();
-      }
+      if (resultado) await this.cargarMotivos();
     });
   }
 
+  // ── Cambiar estado (activar/desactivar) ─────────────────
   async cambiarEstado(motivo: Motivo): Promise<void> {
     const accion = motivo.activo ? 'desactivar' : 'activar';
-    
-    const confirmar = confirm(
-      `¿Estás seguro de ${accion} el motivo "${motivo.nombre}"?`
-    );
 
-    if (!confirmar) return;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        titulo: `¿${accion === 'activar' ? 'Activar' : 'Desactivar'} motivo?`,
+        mensaje: motivo.activo
+          ? `"${motivo.nombre}" dejará de aparecer como opción de actividad para los alumnos.`
+          : `"${motivo.nombre}" volverá a estar disponible como opción de actividad.`,
+        variante: motivo.activo ? 'warning' : 'info',
+        textoConfirmar: motivo.activo ? 'Desactivar' : 'Activar',
+        icono: motivo.activo ? 'visibility_off' : 'visibility',
+      } as ConfirmDialogData,
+    });
+
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
 
     try {
       this.loadingService.show(`${accion === 'activar' ? 'Activando' : 'Desactivando'} motivo...`);
 
       await this.databaseService.actualizarMotivo(motivo.id!, {
         ...motivo,
-        activo: !motivo.activo
+        activo: !motivo.activo,
       });
 
       this.loadingService.hide();
       this.toastService.success(`Motivo ${accion === 'activar' ? 'activado' : 'desactivado'} exitosamente`);
-      
       await this.cargarMotivos();
     } catch (error) {
       console.error('❌ Error al cambiar estado:', error);
@@ -120,30 +132,26 @@ export class GestionMotivosComponent implements OnInit {
     }
   }
 
+  // ── Eliminar motivo ─────────────────────────────────────
   async eliminarMotivo(motivo: Motivo): Promise<void> {
-    const confirmar = confirm(
-      `⚠️ ¿Estás seguro de eliminar el motivo "${motivo.nombre}"?\n\n` +
-      'Esta acción NO se puede deshacer.\n' +
-      'Los registros existentes mantendrán el nombre del motivo.'
-    );
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        titulo: `¿Eliminar "${motivo.nombre}"?`,
+        mensaje: 'Esta acción no se puede deshacer. Los registros existentes mantendrán el nombre del motivo.',
+        variante: 'danger',
+        textoConfirmar: 'Eliminar',
+      } as ConfirmDialogData,
+    });
 
-    if (!confirmar) return;
-
-    // Segunda confirmación para acciones destructivas
-    const confirmacionFinal = confirm(
-      '¿REALMENTE quieres eliminarlo? Esta es tu última oportunidad.'
-    );
-
-    if (!confirmacionFinal) return;
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
 
     try {
       this.loadingService.show('Eliminando motivo...');
-
       await this.databaseService.eliminarMotivo(motivo.id!);
-
       this.loadingService.hide();
       this.toastService.success('Motivo eliminado exitosamente');
-      
       await this.cargarMotivos();
     } catch (error) {
       console.error('❌ Error al eliminar motivo:', error);
@@ -152,6 +160,7 @@ export class GestionMotivosComponent implements OnInit {
     }
   }
 
+  // ── Reordenar ───────────────────────────────────────────
   async subirPrioridad(motivo: Motivo): Promise<void> {
     if (motivo.orden <= 1) {
       this.toastService.info('El motivo ya está en la primera posición');
@@ -159,20 +168,17 @@ export class GestionMotivosComponent implements OnInit {
     }
 
     try {
-      // Buscar el motivo anterior
       const motivoAnterior = this.motivos.find(m => m.orden === motivo.orden - 1);
-      
       if (!motivoAnterior) return;
 
-      // Intercambiar órdenes
       await this.databaseService.actualizarMotivo(motivo.id!, {
         ...motivo,
-        orden: motivo.orden - 1
+        orden: motivo.orden - 1,
       });
 
       await this.databaseService.actualizarMotivo(motivoAnterior.id!, {
         ...motivoAnterior,
-        orden: motivoAnterior.orden + 1
+        orden: motivoAnterior.orden + 1,
       });
 
       this.toastService.success('Orden actualizado');
@@ -190,20 +196,17 @@ export class GestionMotivosComponent implements OnInit {
     }
 
     try {
-      // Buscar el motivo siguiente
       const motivoSiguiente = this.motivos.find(m => m.orden === motivo.orden + 1);
-      
       if (!motivoSiguiente) return;
 
-      // Intercambiar órdenes
       await this.databaseService.actualizarMotivo(motivo.id!, {
         ...motivo,
-        orden: motivo.orden + 1
+        orden: motivo.orden + 1,
       });
 
       await this.databaseService.actualizarMotivo(motivoSiguiente.id!, {
         ...motivoSiguiente,
-        orden: motivoSiguiente.orden - 1
+        orden: motivoSiguiente.orden - 1,
       });
 
       this.toastService.success('Orden actualizado');

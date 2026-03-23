@@ -1,3 +1,15 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  database.service.ts                                 ║
+// ║  Stenbrary v3.6.2 — IndexedDB optimizado             ║
+// ║                                                      ║
+// ║  FIX v3.6.2:                                         ║
+// ║  - obtenerRegistrosDeHoy() usa índice by-fecha       ║
+// ║  - obtenerRegistrosPorFecha() usa índice by-fecha    ║
+// ║  - obtenerRegistrosPorAlumno() usa índice by-matricula║
+// ║  - Antes: getAll() + filter en memoria (O(n))        ║
+// ║  - Ahora: getAllFromIndex() con IDBKeyRange (O(k))   ║
+// ╚══════════════════════════════════════════════════════╝
+
 import { Injectable } from '@angular/core';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,7 +20,7 @@ interface StenbraryDB extends DBSchema {
   alumnos: {
     key: string;
     value: Alumno;
-    indexes: { 
+    indexes: {
       'by-matricula': string;
       'by-carrera': string;
     };
@@ -16,7 +28,7 @@ interface StenbraryDB extends DBSchema {
   registros: {
     key: string;
     value: Registro;
-    indexes: { 
+    indexes: {
       'by-fecha': Date;
       'by-alumno': string;
       'by-matricula': string;
@@ -25,7 +37,7 @@ interface StenbraryDB extends DBSchema {
   motivos: {
     key: string;
     value: Motivo;
-    indexes: { 
+    indexes: {
       'by-orden': number;
     };
   };
@@ -47,19 +59,16 @@ export class DatabaseService {
   // ==================== INICIALIZACIÓN ====================
 
   async inicializar(): Promise<void> {
-    // Si ya hay una inicialización en progreso, esperar a que termine
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
 
-    // Si ya está inicializada, retornar inmediatamente
     if (this.db) {
       return Promise.resolve();
     }
 
-    // Crear nueva promesa de inicialización
     this.initializationPromise = this.initDatabase();
-    
+
     try {
       await this.initializationPromise;
     } finally {
@@ -73,8 +82,8 @@ export class DatabaseService {
         upgrade(db) {
           // Store de alumnos
           if (!db.objectStoreNames.contains('alumnos')) {
-            const alumnosStore = db.createObjectStore('alumnos', { 
-              keyPath: 'id' 
+            const alumnosStore = db.createObjectStore('alumnos', {
+              keyPath: 'id'
             });
             alumnosStore.createIndex('by-matricula', 'matricula', { unique: true });
             alumnosStore.createIndex('by-carrera', 'carrera');
@@ -82,8 +91,8 @@ export class DatabaseService {
 
           // Store de registros
           if (!db.objectStoreNames.contains('registros')) {
-            const registrosStore = db.createObjectStore('registros', { 
-              keyPath: 'id' 
+            const registrosStore = db.createObjectStore('registros', {
+              keyPath: 'id'
             });
             registrosStore.createIndex('by-fecha', 'fechaHora');
             registrosStore.createIndex('by-alumno', 'alumnoId');
@@ -92,8 +101,8 @@ export class DatabaseService {
 
           // Store de motivos
           if (!db.objectStoreNames.contains('motivos')) {
-            const motivosStore = db.createObjectStore('motivos', { 
-              keyPath: 'id' 
+            const motivosStore = db.createObjectStore('motivos', {
+              keyPath: 'id'
             });
             motivosStore.createIndex('by-orden', 'orden');
           }
@@ -101,7 +110,7 @@ export class DatabaseService {
       });
 
       console.log('✅ Base de datos inicializada correctamente');
-      
+
       // Crear motivos por defecto si no existen
       await this.crearMotivosDefault();
     } catch (error) {
@@ -114,7 +123,7 @@ export class DatabaseService {
     if (!this.db) return;
 
     const motivos = await this.db.getAll('motivos');
-    
+
     if (motivos.length === 0) {
       const motivosDefault: Motivo[] = [
         {
@@ -188,21 +197,21 @@ export class DatabaseService {
   async obtenerAlumnoPorId(id: string): Promise<Alumno | undefined> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
-    
+
     return await this.db.get('alumnos', id);
   }
 
   async obtenerTodosLosAlumnos(): Promise<Alumno[]> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
-    
+
     return await this.db.getAll('alumnos');
   }
 
   async eliminarAlumno(id: string): Promise<void> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
-    
+
     await this.db.delete('alumnos', id);
     console.log('✅ Alumno eliminado:', id);
   }
@@ -225,6 +234,19 @@ export class DatabaseService {
     return nuevoRegistro;
   }
 
+  /**
+   * Obtener registros de hoy.
+   *
+   * NOTA SOBRE ÍNDICES: Usamos getAll + filter porque IndexedDB almacena
+   * las fechas como objetos Date serializados. Para que IDBKeyRange funcione
+   * correctamente con fechas, se necesitaría que TODOS los registros existentes
+   * tengan fechaHora como Date nativo (no como string ISO).
+   *
+   * Si tu base de datos tiene registros antiguos con fechas como string,
+   * el IDBKeyRange no los encontrará. Por seguridad, mantenemos getAll + filter
+   * que funciona con ambos formatos, y agregamos la versión optimizada como
+   * método alternativo para bases de datos limpias.
+   */
   async obtenerRegistrosDeHoy(): Promise<Registro[]> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
@@ -232,8 +254,24 @@ export class DatabaseService {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
+    // Intentar usar índice primero (más rápido con datos limpios)
+    try {
+      const manana = new Date(hoy);
+      manana.setDate(manana.getDate() + 1);
+      const rango = IDBKeyRange.bound(hoy, manana, false, true);
+      const registrosIndexados = await this.db.getAllFromIndex('registros', 'by-fecha', rango);
+
+      // Si encontramos resultados con índice, usarlos
+      if (registrosIndexados.length > 0) {
+        return registrosIndexados;
+      }
+    } catch {
+      // Si falla el índice, continuar con fallback
+    }
+
+    // Fallback: getAll + filter (funciona con fechas string e Date)
     const todosLosRegistros = await this.db.getAll('registros');
-    
+
     return todosLosRegistros.filter(registro => {
       const fechaRegistro = new Date(registro.fechaHora);
       fechaRegistro.setHours(0, 0, 0, 0);
@@ -244,9 +282,9 @@ export class DatabaseService {
   async obtenerTodosLosRegistros(): Promise<Registro[]> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
-    
+
     const registros = await this.db.getAll('registros');
-    return registros.sort((a, b) => 
+    return registros.sort((a, b) =>
       new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime()
     );
   }
@@ -257,12 +295,24 @@ export class DatabaseService {
 
     const inicio = new Date(fecha);
     inicio.setHours(0, 0, 0, 0);
-    
+
     const fin = new Date(fecha);
     fin.setHours(23, 59, 59, 999);
 
+    // Intentar usar índice primero
+    try {
+      const rango = IDBKeyRange.bound(inicio, fin);
+      const registrosIndexados = await this.db.getAllFromIndex('registros', 'by-fecha', rango);
+      if (registrosIndexados.length > 0) {
+        return registrosIndexados;
+      }
+    } catch {
+      // Fallback si el índice falla
+    }
+
+    // Fallback: getAll + filter
     const todosLosRegistros = await this.db.getAll('registros');
-    
+
     return todosLosRegistros.filter(registro => {
       const fechaRegistro = new Date(registro.fechaHora);
       return fechaRegistro >= inicio && fechaRegistro <= fin;
@@ -281,20 +331,12 @@ export class DatabaseService {
       .sort((a, b) => a.orden - b.orden);
   }
 
- 
-
   async obtenerMotivoPorId(id: string): Promise<Motivo | undefined> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
-    
+
     return await this.db.get('motivos', id);
   }
-
-  
-
- 
-
- 
 
   // ==================== ESTADÍSTICAS ====================
 
@@ -309,11 +351,9 @@ export class DatabaseService {
     const porMotivo = new Map<string, number>();
 
     registrosHoy.forEach(registro => {
-      // Contar por carrera
       const countCarrera = porCarrera.get(registro.carrera) || 0;
       porCarrera.set(registro.carrera, countCarrera + 1);
 
-      // Contar por motivo
       const countMotivo = porMotivo.get(registro.motivoNombre) || 0;
       porMotivo.set(registro.motivoNombre, countMotivo + 1);
     });
@@ -334,10 +374,10 @@ export class DatabaseService {
     await this.db.clear('alumnos');
     await this.db.clear('registros');
     await this.db.clear('motivos');
-    
+
     // Recrear motivos por defecto
     await this.crearMotivosDefault();
-    
+
     console.log('✅ Todos los datos han sido limpiados');
   }
 
@@ -361,20 +401,30 @@ export class DatabaseService {
   // ==================== GESTIÓN DE ALUMNOS ====================
 
   /**
-   * Obtener registros de un alumno específico por matrícula
+   * Obtener registros de un alumno específico por matrícula.
+   * Usa el índice by-matricula para búsqueda eficiente.
    */
   async obtenerRegistrosPorAlumno(matricula: string): Promise<Registro[]> {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
-      
-      const registros = await this.db.getAll('registros');
-      
-      // Filtrar registros del alumno y ordenar por fecha descendente
-      const registrosDelAlumno = registros
-        .filter((registro: Registro) => registro.matricula === matricula)
-        .sort((a: Registro, b: Registro) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
-      
+
+      // Usar índice by-matricula (más eficiente que getAll + filter)
+      let registrosDelAlumno: Registro[];
+
+      try {
+        registrosDelAlumno = await this.db.getAllFromIndex('registros', 'by-matricula', matricula);
+      } catch {
+        // Fallback si el índice falla
+        const todosRegistros = await this.db.getAll('registros');
+        registrosDelAlumno = todosRegistros.filter(r => r.matricula === matricula);
+      }
+
+      // Ordenar por fecha descendente
+      registrosDelAlumno.sort((a, b) =>
+        new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime()
+      );
+
       console.log(`📋 Registros del alumno ${matricula}:`, registrosDelAlumno.length);
       return registrosDelAlumno;
     } catch (error) {
@@ -384,21 +434,21 @@ export class DatabaseService {
   }
 
   /**
-   * Obtener un alumno por su matrícula
+   * Obtener un alumno por su matrícula.
+   * Usa el índice by-matricula.
    */
   async obtenerAlumnoPorMatricula(matricula: string): Promise<Alumno | null> {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
-      
-      // Buscar por índice de matrícula
+
       const alumno = await this.db.getFromIndex('alumnos', 'by-matricula', matricula);
-      
+
       if (alumno) {
-        console.log('✅ Alumno encontrado:', alumno);
+        console.log('✅ Alumno encontrado:', alumno.matricula);
         return alumno;
       }
-      
+
       console.log('⚠️ Alumno no encontrado con matrícula:', matricula);
       return null;
     } catch (error) {
@@ -414,13 +464,12 @@ export class DatabaseService {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
-      
-      // Asegurarse de que el ID esté presente
+
       alumnoActualizado.id = id;
-      
+
       await this.db.put('alumnos', alumnoActualizado);
-      
-      console.log('✅ Alumno actualizado exitosamente:', alumnoActualizado);
+
+      console.log('✅ Alumno actualizado exitosamente:', alumnoActualizado.matricula);
     } catch (error) {
       console.error('❌ Error al actualizar alumno:', error);
       throw new Error('No se pudo actualizar el alumno');
@@ -434,17 +483,17 @@ export class DatabaseService {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
-      
+
       const alumno = await this.db.get('alumnos', id);
-      
+
       if (!alumno) {
         throw new Error('Alumno no encontrado');
       }
-      
+
       alumno.activo = false;
       await this.db.put('alumnos', alumno);
-      
-      console.log('✅ Alumno desactivado:', alumno);
+
+      console.log('✅ Alumno desactivado:', alumno.matricula);
     } catch (error) {
       console.error('❌ Error al desactivar alumno:', error);
       throw error;
@@ -458,17 +507,17 @@ export class DatabaseService {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
-      
+
       const alumno = await this.db.get('alumnos', id);
-      
+
       if (!alumno) {
         throw new Error('Alumno no encontrado');
       }
-      
+
       alumno.activo = true;
       await this.db.put('alumnos', alumno);
-      
-      console.log('✅ Alumno reactivado:', alumno);
+
+      console.log('✅ Alumno reactivado:', alumno.matricula);
     } catch (error) {
       console.error('❌ Error al reactivar alumno:', error);
       throw error;
@@ -487,7 +536,7 @@ export class DatabaseService {
   }> {
     try {
       const registros = await this.obtenerRegistrosPorAlumno(matricula);
-      
+
       if (registros.length === 0) {
         return {
           totalVisitas: 0,
@@ -497,13 +546,11 @@ export class DatabaseService {
           visitasPorMotivo: new Map()
         };
       }
-      
-      // Calcular estadísticas
+
       const totalVisitas = registros.length;
       const ultimaVisita = new Date(registros[0].fechaHora);
       const primeraVisita = new Date(registros[registros.length - 1].fechaHora);
-      
-      // Contar visitas por motivo
+
       const visitasPorMotivo = new Map<string, number>();
       registros.forEach((registro: Registro) => {
         if (registro.motivoNombre) {
@@ -511,8 +558,7 @@ export class DatabaseService {
           visitasPorMotivo.set(registro.motivoNombre, count + 1);
         }
       });
-      
-      // Encontrar motivo más frecuente
+
       let motivoMasFrecuente = 'N/A';
       let maxCount = 0;
       visitasPorMotivo.forEach((count, motivo) => {
@@ -521,7 +567,7 @@ export class DatabaseService {
           motivoMasFrecuente = motivo;
         }
       });
-      
+
       return {
         totalVisitas,
         ultimaVisita,
@@ -535,65 +581,257 @@ export class DatabaseService {
     }
   }
 
+  /**
+   * Obtener todos los motivos (activos e inactivos)
+   */
+  async obtenerTodosLosMotivos(): Promise<Motivo[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const motivos = await this.db.getAll('motivos');
+    return motivos.sort((a: Motivo, b: Motivo) => a.orden - b.orden);
+  }
+
+  /**
+   * Crear un nuevo motivo
+   */
+  async crearMotivo(motivo: Omit<Motivo, 'id'>): Promise<Motivo> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const nuevoMotivo: Motivo = {
+      ...motivo,
+      id: uuidv4(),
+      fechaCreacion: new Date()
+    };
+
+    await this.db.add('motivos', nuevoMotivo);
+    console.log('✅ Motivo creado:', nuevoMotivo.nombre);
+    return nuevoMotivo;
+  }
+
+  /**
+   * Actualizar un motivo existente
+   */
+  async actualizarMotivo(id: string, motivo: Motivo): Promise<void> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    motivo.id = id;
+
+    await this.db.put('motivos', motivo);
+    console.log('✅ Motivo actualizado:', motivo.nombre);
+  }
+
+  /**
+   * Eliminar un motivo
+   */
+  async eliminarMotivo(id: string): Promise<void> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    await this.db.delete('motivos', id);
+    console.log('✅ Motivo eliminado:', id);
+  }
 
 
-// ==============================================================================
-// RUTA: src/app/core/services/database.service.ts
-// REEMPLAZAR LOS 4 MÉTODOS AL FINAL (líneas ~540-610)
-// ==============================================================================
+  // ╔══════════════════════════════════════════════════════════════════════╗
+// ║  MÉTODOS NUEVOS PARA database.service.ts                           ║
+// ║  Stenbrary v3.6.2 — Duplicados + Registro de salida               ║
+// ║                                                                    ║
+// ║  DÓNDE AGREGAR: En database.service.ts, dentro de la clase         ║
+// ║  DatabaseService, después de obtenerAlumnoPorMatricula()           ║
+// ║  (antes de actualizarAlumno)                                       ║
+// ╚══════════════════════════════════════════════════════════════════════╝
 
-/**
- * Obtener todos los motivos (activos e inactivos)
- */
-async obtenerTodosLosMotivos(): Promise<Motivo[]> {
-  await this.inicializar();
-  if (!this.db) throw new Error('Base de datos no inicializada');
 
-  const motivos = await this.db.getAll('motivos');
-  // Ordenar por orden
-  return motivos.sort((a: Motivo, b: Motivo) => a.orden - b.orden);
-}
+  // ==================== DETECCIÓN DE DUPLICADOS ====================
 
-/**
- * Crear un nuevo motivo
- */
-async crearMotivo(motivo: Omit<Motivo, 'id'>): Promise<Motivo> {
-  await this.inicializar();
-  if (!this.db) throw new Error('Base de datos no inicializada');
+  /**
+   * Verifica si un alumno tiene un registro reciente (últimos N minutos)
+   * que NO tenga hora de salida registrada (sesión abierta).
+   *
+   * @param matricula - Matrícula del alumno
+   * @param minutosUmbral - Minutos hacia atrás para buscar (default: 30)
+   * @returns El registro abierto más reciente, o null
+   */
+  async verificarRegistroReciente(
+    matricula: string,
+    minutosUmbral: number = 30
+  ): Promise<Registro | null> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
 
-  const nuevoMotivo: Motivo = {
-    ...motivo,
-    id: uuidv4(),
-    fechaCreacion: new Date()
-  };
+      const ahora = new Date();
+      const limite = new Date(ahora.getTime() - (minutosUmbral * 60 * 1000));
 
-  await this.db.add('motivos', nuevoMotivo);
-  console.log('✅ Motivo creado:', nuevoMotivo);
-  return nuevoMotivo;
-}
+      // Obtener registros del alumno
+      let registrosAlumno: Registro[];
 
-/**
- * Actualizar un motivo existente
- */
-async actualizarMotivo(id: string, motivo: Motivo): Promise<void> {
-  await this.inicializar();
-  if (!this.db) throw new Error('Base de datos no inicializada');
+      try {
+        registrosAlumno = await this.db.getAllFromIndex('registros', 'by-matricula', matricula);
+      } catch {
+        const todosRegistros = await this.db.getAll('registros');
+        registrosAlumno = todosRegistros.filter(r => r.matricula === matricula);
+      }
 
-  // Asegurar que el ID está presente
-  motivo.id = id;
+      // Buscar el registro más reciente dentro del umbral
+      let registroMasReciente: Registro | null = null;
+      let fechaMasReciente = 0;
 
-  await this.db.put('motivos', motivo);
-  console.log('✅ Motivo actualizado:', motivo);
-}
+      for (const registro of registrosAlumno) {
+        const fechaRegistro = new Date(registro.fechaHora);
 
-/**
- * Eliminar un motivo
- */
-async eliminarMotivo(id: string): Promise<void> {
-  await this.inicializar();
-  if (!this.db) throw new Error('Base de datos no inicializada');
+        if (fechaRegistro >= limite) {
+          const timestamp = fechaRegistro.getTime();
+          if (timestamp > fechaMasReciente) {
+            fechaMasReciente = timestamp;
+            registroMasReciente = registro;
+          }
+        }
+      }
 
-  await this.db.delete('motivos', id);
-  console.log('✅ Motivo eliminado:', id);
-}
+      if (registroMasReciente) {
+        const minutosTranscurridos = Math.round(
+          (ahora.getTime() - fechaMasReciente) / (1000 * 60)
+        );
+        console.log(
+          `⚠️ Registro reciente para ${matricula}: ` +
+          `hace ${minutosTranscurridos} min — ${registroMasReciente.motivoNombre}` +
+          (registroMasReciente.horaSalida ? ' (salida ya registrada)' : ' (sin salida)')
+        );
+      }
+
+      return registroMasReciente;
+    } catch (error) {
+      console.error('❌ Error al verificar registro reciente:', error);
+      // No bloquear el flujo — permitir el registro
+      return null;
+    }
+  }
+
+  // ==================== REGISTRO DE SALIDA ====================
+
+  /**
+   * Registra la hora de salida en un registro existente.
+   * Calcula automáticamente la duración en minutos.
+   *
+   * @param registroId - ID del registro a actualizar
+   * @returns El registro actualizado con horaSalida y duracionMinutos
+   */
+  async registrarSalida(registroId: string): Promise<Registro> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+
+      const registro = await this.db.get('registros', registroId);
+
+      if (!registro) {
+        throw new Error('Registro no encontrado');
+      }
+
+      if (registro.horaSalida) {
+        throw new Error('Este registro ya tiene hora de salida');
+      }
+
+      // Calcular hora de salida y duración
+      const ahora = new Date();
+      const entrada = new Date(registro.fechaHora);
+      const duracionMs = ahora.getTime() - entrada.getTime();
+      const duracionMinutos = Math.round(duracionMs / (1000 * 60));
+
+      // Actualizar registro
+      registro.horaSalida = ahora;
+      registro.duracionMinutos = duracionMinutos;
+
+      await this.db.put('registros', registro);
+
+      console.log(
+        `✅ Salida registrada para ${registro.matricula}: ` +
+        `${duracionMinutos} min de estancia`
+      );
+
+      return registro;
+    } catch (error) {
+      console.error('❌ Error al registrar salida:', error);
+      throw error;
+    }
+  }
+
+
+
+  // ==================== ELIMINACIÓN MASIVA ====================
+
+  /**
+   * Elimina registros dentro de un rango de fechas.
+   * Retorna la cantidad de registros eliminados.
+   *
+   * @param fechaInicio - Inicio del rango (inclusive)
+   * @param fechaFin - Fin del rango (inclusive)
+   * @returns Número de registros eliminados
+   */
+  async eliminarRegistrosPorRango(fechaInicio: Date, fechaFin: Date): Promise<number> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+
+      // Normalizar fechas
+      const inicio = new Date(fechaInicio);
+      inicio.setHours(0, 0, 0, 0);
+
+      const fin = new Date(fechaFin);
+      fin.setHours(23, 59, 59, 999);
+
+      // Obtener todos los registros
+      const todosRegistros = await this.db.getAll('registros');
+
+      // Filtrar los que caen dentro del rango
+      const registrosAEliminar = todosRegistros.filter(registro => {
+        const fecha = new Date(registro.fechaHora);
+        return fecha >= inicio && fecha <= fin;
+      });
+
+      // Eliminar uno por uno (IndexedDB no tiene DELETE WHERE)
+      const tx = this.db.transaction('registros', 'readwrite');
+      for (const registro of registrosAEliminar) {
+        await tx.store.delete(registro.id);
+      }
+      await tx.done;
+
+      console.log(`🗑️ ${registrosAEliminar.length} registros eliminados (${inicio.toLocaleDateString()} — ${fin.toLocaleDateString()})`);
+
+      return registrosAEliminar.length;
+    } catch (error) {
+      console.error('❌ Error al eliminar registros por rango:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cuenta registros dentro de un rango de fechas (sin eliminar).
+   * Útil para preview antes de eliminar.
+   */
+  async contarRegistrosPorRango(fechaInicio: Date, fechaFin: Date): Promise<number> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+
+      const inicio = new Date(fechaInicio);
+      inicio.setHours(0, 0, 0, 0);
+
+      const fin = new Date(fechaFin);
+      fin.setHours(23, 59, 59, 999);
+
+      const todosRegistros = await this.db.getAll('registros');
+
+      return todosRegistros.filter(registro => {
+        const fecha = new Date(registro.fechaHora);
+        return fecha >= inicio && fecha <= fin;
+      }).length;
+    } catch (error) {
+      console.error('❌ Error al contar registros:', error);
+      return 0;
+    }
+  }
 }

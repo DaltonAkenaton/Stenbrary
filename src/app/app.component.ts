@@ -1,11 +1,13 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  RUTA: src/app/app.component.ts                     ║
+// ║  app.component.ts                                    ║
 // ║  Shell principal con sidebar de navegación           ║
-// ║  Stenbrary v3.4 — Con Configuración                  ║
+// ║  Stenbrary v3.6.2                                    ║
 // ║                                                      ║
-// ║  CAMBIO v3.4:                                        ║
-// ║  - Eliminado "Alertas" (no implementado)             ║
-// ║  - Agregado "Configuración" en sección Admin         ║
+// ║  FIX v3.6.2:                                         ║
+// ║  - Eliminado alertNavItem (ruta no existía)           ║
+// ║  - PWA Update integrado (hayActualizacion + métodos) ║
+// ║  - Sidebar agrupado por secciones (navSections)       ║
+// ║  - Configuración en sección Administración            ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, signal, OnInit, OnDestroy } from '@angular/core';
@@ -14,6 +16,8 @@ import { NgClass } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatRippleModule } from '@angular/material/core';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { filter } from 'rxjs/operators';
 
 interface NavItem {
   icon: string;
@@ -34,11 +38,10 @@ interface NavSection {
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
-    NgClass,
     MatIconModule,
     MatTooltipModule,
-    MatRippleModule,
-  ],
+    MatRippleModule
+],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -57,14 +60,46 @@ export class AppComponent implements OnInit, OnDestroy {
   private onlineHandler = () => this.isOnline.set(true);
   private offlineHandler = () => this.isOnline.set(false);
 
+  // ─── PWA UPDATE ─────────────────────────────────────────
+  hayActualizacion = false;
+
+  constructor(
+    private router: Router,
+    private swUpdate: SwUpdate,
+  ) {}
+
   ngOnInit(): void {
+    // Listeners de conexión
     window.addEventListener('online', this.onlineHandler);
     window.addEventListener('offline', this.offlineHandler);
+
+    // Listener de actualizaciones PWA
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.versionUpdates
+        .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
+        .subscribe(() => {
+          console.log('🔄 Nueva versión disponible');
+          this.hayActualizacion = true;
+        });
+    }
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('online', this.onlineHandler);
     window.removeEventListener('offline', this.offlineHandler);
+  }
+
+  actualizarApp(): void {
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.activateUpdate().then(() => {
+        console.log('✅ Actualización aplicada, recargando...');
+        document.location.reload();
+      });
+    }
+  }
+
+  descartarActualizacion(): void {
+    this.hayActualizacion = false;
   }
 
   // ─── NAVEGACIÓN POR SECCIONES ────────────────────────────
@@ -127,14 +162,12 @@ export class AppComponent implements OnInit, OnDestroy {
     },
   ];
 
-  // Flat list for template
+  // Flat list para compatibilidad
   get navItems(): NavItem[] {
     return this.navSections.flatMap(s => s.items);
   }
 
   // ─── TOPBAR ──────────────────────────────────────────────
-  constructor(private router: Router) {}
-
   get currentPageTitle(): string {
     const map: Record<string, string> = {
       '/scanner':           'Registro de Actividad',
@@ -146,6 +179,7 @@ export class AppComponent implements OnInit, OnDestroy {
       '/estadisticas':      'Estadísticas',
       '/gestion-motivos':   'Gestión de Motivos',
       '/configuracion':     'Configuración',
+      '/importar-alumnos':  'Importar Alumnos',
     };
     const url = this.router.url.split('?')[0];
     if (url.startsWith('/detalle-alumno')) return 'Detalle del Alumno';

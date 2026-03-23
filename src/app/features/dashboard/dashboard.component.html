@@ -1,6 +1,9 @@
 <!-- ╔══════════════════════════════════════════════════════╗ -->
-<!-- ║  dashboard.component.html — Stenbrary v3.5.1        ║ -->
-<!-- ║  Auto-refresh + accesos rápidos actualizados         ║ -->
+<!-- ║  dashboard.component.html — Stenbrary v3.6.2        ║ -->
+<!-- ║  Auto-refresh toggleable + saludo dinámico           ║ -->
+<!-- ║                                                      ║ -->
+<!-- ║  FIX v3.6.2:                                         ║ -->
+<!-- ║  - *ngIf → @if (consistencia con Angular 17+)       ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 
 <div class="dashboard-container">
@@ -35,7 +38,9 @@
           [class.active]="autoRefreshActivo"
           (click)="toggleAutoRefresh()"
           [matTooltip]="autoRefreshActivo ? 'Auto-refresh activo (30s) — clic para desactivar' : 'Auto-refresh desactivado — clic para activar'">
-          <span class="pulse-dot" *ngIf="autoRefreshActivo"></span>
+          @if (autoRefreshActivo) {
+            <span class="pulse-dot"></span>
+          }
           <mat-icon>{{ autoRefreshActivo ? 'sync' : 'sync_disabled' }}</mat-icon>
         </button>
         <button class="btn-refresh" (click)="cargarDatos()" matTooltip="Actualizar datos">

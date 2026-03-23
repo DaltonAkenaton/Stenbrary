@@ -21,6 +21,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { Alumno, Motivo, Registro } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
+import { SoundService } from '../../core/services/sound.service';
 
 @Component({
   selector: 'app-seleccion-motivo',
@@ -56,6 +57,7 @@ export class SeleccionMotivoComponent implements OnInit {
     private databaseService: DatabaseService,
     private router: Router,
     private toastService: ToastService,
+    private soundService: SoundService,
     private loadingService: LoadingService
   ) {}
 
@@ -165,6 +167,7 @@ export class SeleccionMotivoComponent implements OnInit {
       if (navigator.vibrate) {
         navigator.vibrate([80, 40, 80]);
       }
+      this.soundService.beepExito();
 
       this.registroExitoso = true;
       sessionStorage.removeItem('alumnoActual');

@@ -1,12 +1,10 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  RUTA: src/app/core/guards/registro-flujo.guard.ts   ║
-// ║  Stenbrary v3.5 — Guard para flujo de registro       ║
-// ║                                                      ║
-// ║  Protege /seleccion-motivo: solo se puede acceder    ║
-// ║  si hay un alumno en sessionStorage (escaneado o     ║
-// ║  invitado). Si no, redirige a /scanner.              ║
-// ║                                                      ║
-// ║  Usa functional guard (Angular 14.2+), no class.     ║
+// ║  registro-flujo.guard.ts                            ║
+// ║  Stenbrary v3.6.2 — Guard de flujo de registro     ║
+// ║                                                     ║
+// ║  Protege /seleccion-motivo para que solo sea        ║
+// ║  accesible si hay un alumno en sesión (es decir,    ║
+// ║  si pasó por el scanner o registro primero).        ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { inject } from '@angular/core';
@@ -14,28 +12,30 @@ import { CanActivateFn, Router } from '@angular/router';
 import { ToastService } from '../services/toast.service';
 
 /**
- * Guard funcional que verifica si hay un alumno activo en sessionStorage.
- * Si no lo hay, redirige al scanner con un mensaje de error.
+ * Guard funcional (Angular 18+) que verifica la existencia
+ * de `alumnoActual` en sessionStorage antes de permitir
+ * el acceso a la pantalla de selección de motivo.
+ *
+ * Si no hay alumno en sesión, redirige al scanner con un aviso.
  */
 export const registroFlujoGuard: CanActivateFn = () => {
   const router = inject(Router);
   const toastService = inject(ToastService);
 
-  const alumnoJson = sessionStorage.getItem('alumnoActual');
+  const alumnoActual = sessionStorage.getItem('alumnoActual');
 
-  if (alumnoJson) {
+  if (alumnoActual) {
     try {
-      const alumno = JSON.parse(alumnoJson);
-      // Verificar que tiene al menos matrícula y nombre
-      if (alumno.matricula && alumno.nombre) {
-        return true;
-      }
+      // Validar que sea JSON válido
+      JSON.parse(alumnoActual);
+      return true;
     } catch {
-      // JSON inválido → limpiar y redirigir
+      // Si el JSON está corrupto, limpiar y redirigir
       sessionStorage.removeItem('alumnoActual');
     }
   }
 
-  toastService.warning('Primero escanea o ingresa una matrícula');
-  return router.createUrlTree(['/scanner']);
+  toastService.warning('Primero escanea tu credencial');
+  router.navigate(['/scanner']);
+  return false;
 };

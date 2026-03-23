@@ -24,6 +24,7 @@ import { Alumno } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../core/constants/catalogos.constants';
+import { validarMatricula, MATRICULA_CONFIG, normalizarMatricula } from '../../core/utils/matricula.utils';
 
 @Component({
   selector: 'app-registro-alumno',
@@ -81,9 +82,9 @@ export class RegistroAlumnoComponent implements OnInit {
     }
 
     this.registroForm = this.fb.group({
-      matricula: [
+            matricula: [
         { value: this.matricula, disabled: this.matriculaBloqueada },
-        [Validators.required, Validators.minLength(5)],
+        [Validators.required, Validators.minLength(MATRICULA_CONFIG.minDigitos)]
       ],
       nombre: ['', [Validators.required, Validators.minLength(2)]],
       apellidoPaterno: ['', [Validators.required, Validators.minLength(2)]],
@@ -109,7 +110,10 @@ export class RegistroAlumnoComponent implements OnInit {
       this.loadingService.show('Registrando alumno...');
 
       const formValue = this.registroForm.getRawValue();
-      const matriculaFinal = this.matriculaBloqueada ? this.matricula : formValue.matricula.trim();
+
+
+            const matriculaRaw = this.matriculaBloqueada ? this.matricula : formValue.matricula.trim();
+      const matriculaFinal = normalizarMatricula(matriculaRaw);
 
       const nuevoAlumno: Omit<Alumno, 'id' | 'fechaRegistro'> = {
         matricula: matriculaFinal,
@@ -175,10 +179,10 @@ export class RegistroAlumnoComponent implements OnInit {
   obtenerErrorCampo(campo: string): string {
     const control = this.registroForm.get(campo);
     if (control?.hasError('required')) return 'Este campo es obligatorio';
-    if (control?.hasError('minlength')) {
-      const minLen = campo === 'matricula' ? 5 : 2;
-      return `Mínimo ${minLen} caracteres`;
-    }
+          if (control?.hasError('minlength')) {
+        const minLen = campo === 'matricula' ? MATRICULA_CONFIG.minDigitos : 2;
+        return `Mínimo ${minLen} caracteres`;
+      }
     return '';
   }
 

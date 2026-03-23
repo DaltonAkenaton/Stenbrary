@@ -1,12 +1,11 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  RUTA: src/app/features/detalle-alumno/              ║
-// ║        detalle-alumno.component.ts                   ║
-// ║  Stenbrary v3.4 — Fix completo                       ║
+// ║  detalle-alumno.component.ts                         ║
+// ║  Stenbrary v3.6.2 — confirm() → ConfirmDialog        ║
 // ║                                                      ║
-// ║  FIX v3.4:                                           ║
-// ║  - Lee :matricula de la ruta (antes :id — roto)     ║
-// ║  - Código limpio sin residuos de merge               ║
-// ║  - LoadingService/ToastService integrados limpiamente║
+// ║  FIX v3.6.2:                                         ║
+// ║  - Lee :matricula de la ruta                          ║
+// ║  - confirm() reemplazado por ConfirmDialogComponent   ║
+// ║  - Código limpio sin residuos de merge                ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
@@ -24,6 +23,7 @@ import { Alumno, Registro } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { EditarAlumnoDialogComponent } from './editar-alumno-dialog/editar-alumno-dialog.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 interface EstadisticasAlumno {
   totalVisitas: number;
@@ -72,11 +72,10 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════
 
   async ngOnInit(): Promise<void> {
-    // FIX v3.4: El parámetro en la ruta es :matricula
     const matricula = this.route.snapshot.paramMap.get('matricula');
 
     if (!matricula) {
-      this.error = 'No se especificó una matrícula';
+      this.error = 'No se especificó un alumno';
       this.cargando = false;
       return;
     }
@@ -84,9 +83,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     await this.cargarDatosAlumno(matricula);
   }
 
-  ngOnDestroy(): void {
-    // Cleanup
-  }
+  ngOnDestroy(): void {}
 
   // ═══════════════════════════════════════════════
   // CARGA DE DATOS
@@ -95,10 +92,9 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   async cargarDatosAlumno(matricula: string): Promise<void> {
     try {
       this.cargando = true;
-      this.error = null;
       this.loadingService.show('Cargando datos del alumno...');
+      this.error = null;
 
-      // Buscar alumno por matrícula
       this.alumno = await this.databaseService.obtenerAlumnoPorMatricula(matricula);
 
       if (!this.alumno) {
@@ -108,21 +104,17 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Cargar registros del alumno
       this.registros = await this.databaseService.obtenerRegistrosPorAlumno(matricula);
-
-      // Calcular estadísticas
       this.calcularEstadisticas();
 
-      console.log('✅ Datos del alumno cargados:', this.alumno.matricula);
       this.cargando = false;
       this.loadingService.hide();
     } catch (error) {
+      this.loadingService.hide();
+      this.toastService.error('Error al cargar datos del alumno');
       console.error('❌ Error al cargar datos del alumno:', error);
       this.error = 'Error al cargar la información del alumno';
       this.cargando = false;
-      this.loadingService.hide();
-      this.toastService.error('Error al cargar datos del alumno');
     }
   }
 
@@ -148,7 +140,6 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
       Math.max(...this.registros.map(r => new Date(r.fechaHora).getTime()))
     );
 
-    // Contar visitas por motivo
     const motivosCount = new Map<string, number>();
     this.registros.forEach(registro => {
       if (registro.motivoNombre) {
@@ -157,7 +148,6 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Motivo más frecuente
     let motivoFrecuente = 'N/A';
     let maxCount = 0;
     motivosCount.forEach((count, motivo) => {
@@ -167,12 +157,10 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Visitas por motivo (array ordenado)
     const visitasPorMotivo = Array.from(motivosCount.entries())
       .map(([motivo, cantidad]) => ({ motivo, cantidad }))
       .sort((a, b) => b.cantidad - a.cantidad);
 
-    // Promedio semanal
     const primeraVisita = new Date(
       Math.min(...this.registros.map(r => new Date(r.fechaHora).getTime()))
     );
@@ -205,8 +193,8 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     });
 
     dialogRef.afterClosed().subscribe(async (resultado) => {
-      if (resultado) {
-        await this.cargarDatosAlumno(this.alumno!.matricula);
+      if (resultado && this.alumno) {
+        await this.cargarDatosAlumno(this.alumno.matricula);
       }
     });
   }
@@ -214,12 +202,19 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   async desactivarAlumno(): Promise<void> {
     if (!this.alumno) return;
 
-    const confirmar = confirm(
-      `¿Estás seguro de desactivar al alumno ${this.obtenerNombreCompleto()}?\n\n` +
-      'El alumno no podrá registrar nuevos accesos, pero su historial se mantendrá.'
-    );
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        titulo: `¿Desactivar a ${this.obtenerNombreCompleto()}?`,
+        mensaje: 'El alumno no podrá registrar nuevos accesos, pero su historial se mantendrá intacto.',
+        variante: 'warning',
+        textoConfirmar: 'Desactivar',
+        icono: 'person_off',
+      } as ConfirmDialogData,
+    });
 
-    if (!confirmar) return;
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
 
     try {
       this.loadingService.show('Desactivando alumno...');
@@ -242,11 +237,19 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   async reactivarAlumno(): Promise<void> {
     if (!this.alumno) return;
 
-    const confirmar = confirm(
-      `¿Reactivar al alumno ${this.obtenerNombreCompleto()}?`
-    );
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        titulo: `¿Reactivar a ${this.obtenerNombreCompleto()}?`,
+        mensaje: 'El alumno podrá registrar accesos nuevamente.',
+        variante: 'info',
+        textoConfirmar: 'Reactivar',
+        icono: 'person',
+      } as ConfirmDialogData,
+    });
 
-    if (!confirmar) return;
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
 
     try {
       this.loadingService.show('Reactivando alumno...');
@@ -258,8 +261,6 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
 
       this.loadingService.hide();
       this.toastService.success('Alumno reactivado exitosamente');
-
-      // Recargar datos
       await this.cargarDatosAlumno(this.alumno.matricula);
     } catch (error) {
       console.error('❌ Error al reactivar alumno:', error);

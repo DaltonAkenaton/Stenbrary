@@ -6,7 +6,7 @@
 // ║  FIX v3.4:                                           ║
 // ║  - exportarCSV() escapa campos con comas/comillas    ║
 // ╚══════════════════════════════════════════════════════╝
-
+import { ReportService, TipoReporte } from '../../core/services/report.service';
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -69,12 +69,15 @@ export class RegistrosComponent implements OnInit {
   filasPorPagina = 30;
 
   // ─── TABLA ─────────────────────────────────────────────
-  columnas: string[] = ['fechaHora', 'matricula', 'nombre', 'carrera', 'motivo'];
-
+columnas: string[] = [                                          
+      'fechaHora', 'matricula', 'nombre', 'carrera',               
+      'motivo', 'salida', 'duracion'                                
+    ];  
   constructor(
   private databaseService: DatabaseService,
   private toastService: ToastService,
-  private exportService: ExportService,   
+  private exportService: ExportService,
+  private reportService: ReportService,   // ← AGREGAR
   private router: Router,
 ) {}
 
@@ -194,6 +197,15 @@ export class RegistrosComponent implements OnInit {
     });
   }
 
+
+  formatearDuracion(minutos: number): string {                    
+      if (minutos < 60) return `${minutos} min`;                    
+      const h = Math.floor(minutos / 60);                           
+      const m = minutos % 60;                                       
+      return m > 0 ? `${h}h ${m}m` : `${h}h`;                      
+    }   
+
+
   get etiquetaRango(): string {
     const map: Record<RangoFecha, string> = {
       hoy: 'Hoy',
@@ -215,6 +227,36 @@ export class RegistrosComponent implements OnInit {
     this.toastService.success(`${datos.length} registros exportados a Excel`);
   }
 
+  
+
+
+  generarPDF(): void {
+    const datos = this.registrosFiltrados;
+    if (datos.length === 0) {
+      this.toastService.warning('No hay datos para generar el reporte');
+      return;
+    }
+
+    const tipoMap: Record<string, TipoReporte> = {
+      'hoy': 'diario',
+      'semana': 'semanal',
+      'mes': 'mensual',
+      'todo': 'personalizado',
+    };
+
+    const f = this.filtros();
+    const tipo = tipoMap[f.rangoFecha] || 'personalizado';
+
+    this.reportService.generarReporteAccesos(datos, {
+      tipo,
+      filtros: {
+        busqueda: f.busqueda || undefined,
+        carrera: f.carrera || undefined,
+        motivo: f.motivo || undefined,
+      },
+    });
+    this.toastService.success(`Reporte PDF generado (${datos.length} registros)`);
+  }
 
 
 

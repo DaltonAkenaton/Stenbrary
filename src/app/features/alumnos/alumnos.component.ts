@@ -205,10 +205,12 @@ export class AlumnosComponent implements OnInit {
    * Escapa un campo para CSV: si contiene comas, comillas o saltos de línea,
    * lo envuelve en comillas dobles y duplica las comillas internas.
    */
-  private escaparCSV(valor: string): string {
-    if (valor.includes(',') || valor.includes('"') || valor.includes('\n')) {
-      return `"${valor.replace(/"/g, '""')}"`;
-    }
-    return valor;
+  private escaparCSV(valor: string | number): string {
+  const str = String(valor);
+  // Si contiene coma, comillas o salto de línea, envolver en comillas
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
   }
+  return str;
+}
 }

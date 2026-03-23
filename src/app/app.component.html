@@ -1,10 +1,13 @@
 <!--
-  RUTA: src/app/app.component.html
+  app.component.html
   Shell de la aplicación: Sidebar + Topbar + Área de contenido
-  Stenbrary v3.4 — Sin alertas fantasma
+  Stenbrary v3.6.2
 
-  FIX v3.4: Eliminado footer del sidebar con enlace a /alertas
-  (ruta no implementada, causaba redirección silenciosa)
+  FIX v3.6.2:
+  - Sidebar usa navSections (agrupado por Operación/Consulta/Admin)
+  - Eliminado alertNavItem (ruta /alertas no existía)
+  - Footer del sidebar muestra versión del sistema
+  - Banner de actualización PWA con bindings correctos
 -->
 
 <div class="app-shell" [class.sidebar-expanded]="isSidebarExpanded()">
@@ -31,29 +34,53 @@
     <!-- Línea divisora después del logo -->
     <div class="sidebar-divider"></div>
 
-    <!-- Nav items principales -->
+    <!-- Nav items agrupados por sección -->
     <nav class="sidebar-nav" aria-label="Navegación principal">
-      @for (item of navItems; track item.route) {
-        <a
-          class="nav-item"
-          [routerLink]="item.route"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-          [attr.aria-label]="item.label"
-          [matTooltip]="!isSidebarExpanded() ? item.label : ''"
-          matTooltipPosition="right"
-          matRipple
-          matRippleColor="rgba(0, 200, 215, 0.10)">
-          <mat-icon>{{ item.icon }}</mat-icon>
-          @if (isSidebarExpanded()) {
-            <span class="nav-label">{{ item.label }}</span>
-          }
-        </a>
+      @for (section of navSections; track section.title) {
+
+        <!-- Título de sección (solo visible cuando el sidebar está expandido) -->
+        @if (isSidebarExpanded()) {
+          <span class="nav-section-title">{{ section.title }}</span>
+        }
+
+        @for (item of section.items; track item.route) {
+          <a
+            class="nav-item"
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+            [attr.aria-label]="item.label"
+            [matTooltip]="!isSidebarExpanded() ? item.label : ''"
+            matTooltipPosition="right"
+            matRipple
+            matRippleColor="rgba(0, 200, 215, 0.10)">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            @if (isSidebarExpanded()) {
+              <span class="nav-label">{{ item.label }}</span>
+            }
+          </a>
+        }
       }
     </nav>
 
     <!-- Spacer empuja el footer hacia abajo -->
     <div class="sidebar-spacer"></div>
+
+    <!-- Línea divisora antes del footer -->
+    <div class="sidebar-divider"></div>
+
+    <!-- Footer del sidebar — versión del sistema -->
+    <div class="sidebar-footer">
+      <div
+        class="nav-item version-info"
+        [matTooltip]="!isSidebarExpanded() ? 'Stenbrary v3.6.2' : ''"
+        matTooltipPosition="right">
+        <mat-icon>info_outline</mat-icon>
+        @if (isSidebarExpanded()) {
+          <span class="nav-label">v3.6.2</span>
+        }
+      </div>
+    </div>
 
   </aside>
 
@@ -70,7 +97,7 @@
         @if (isOnline()) {
           <span
             class="status-badge status-online"
-            matTooltip="Conectado a internet — los datos se sincronizarán"
+            matTooltip="Conectado a internet"
             matTooltipPosition="below">
             <span class="status-dot"></span>
             <mat-icon class="status-icon">wifi</mat-icon>
@@ -79,7 +106,7 @@
         } @else {
           <span
             class="status-badge status-offline"
-            matTooltip="Sin conexión — los registros se guardan localmente y se sincronizarán al reconectar"
+            matTooltip="Sin conexión — los registros se guardan localmente"
             matTooltipPosition="below">
             <span class="status-dot"></span>
             <mat-icon class="status-icon">wifi_off</mat-icon>
@@ -91,6 +118,25 @@
 
     <!-- Separador del topbar -->
     <div class="topbar-separator"></div>
+
+    <!-- ═══ Banner de actualización PWA ═══ -->
+    @if (hayActualizacion) {
+      <div class="update-banner">
+        <div class="update-content">
+          <mat-icon>system_update</mat-icon>
+          <span>Hay una nueva versión disponible</span>
+        </div>
+        <div class="update-actions">
+          <button class="update-dismiss" (click)="descartarActualizacion()">
+            Ahora no
+          </button>
+          <button class="update-apply" (click)="actualizarApp()">
+            <mat-icon>refresh</mat-icon>
+            Actualizar
+          </button>
+        </div>
+      </div>
+    }
 
     <!-- Contenido dinámico de cada ruta -->
     <main class="content-area">
