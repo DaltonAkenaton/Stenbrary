@@ -40,7 +40,7 @@
             @if (!esInvitado) {
               {{ alumno.matricula }} ·
             }
-            {{ motivoSeleccionado?.nombre }}
+            {{ resumenMotivos }}
           </p>
         </div>
 
@@ -63,7 +63,7 @@
       <!-- ─────────────────────────────────────────────
            PANEL IZQUIERDO: Info del alumno + Confirmación
       ───────────────────────────────────────────── -->
-      <aside class="panel-info" [class.has-selection]="motivoSeleccionado">
+      <aside class="panel-info" [class.has-selection]="haySeleccion">
 
         <!-- Tarjeta del alumno -->
         <div class="student-card" *ngIf="alumno">
@@ -90,41 +90,43 @@
         }
 
         <!-- Estado: Esperando selección -->
-        @if (!motivoSeleccionado && !cargandoMotivos) {
+        @if (!haySeleccion && !cargandoMotivos) {
           <div class="waiting-state">
             <div class="waiting-icon">
               <mat-icon>touch_app</mat-icon>
             </div>
-            <p class="waiting-text">Selecciona una actividad</p>
-            <p class="waiting-hint">Tu acceso se registrará al confirmar</p>
+            <p class="waiting-text">Selecciona una o más actividades</p>
+            <p class="waiting-hint">Puedes elegir varias antes de confirmar</p>
           </div>
         }
 
-        <!-- Panel de confirmación (motivo seleccionado) -->
-        @if (motivoSeleccionado) {
+        <!-- Panel de confirmación -->
+        @if (haySeleccion) {
           <div class="confirm-panel">
 
-            <!-- Motivo seleccionado -->
-            <div class="confirm-motivo">
-              <div class="confirm-icon">
-                <mat-icon [style.color]="motivoSeleccionado.color || '#00C8D7'">
-                  {{ motivoSeleccionado.icono }}
-                </mat-icon>
-              </div>
-              <div class="confirm-details">
-                <h3>{{ motivoSeleccionado.nombre }}</h3>
-                @if (motivoSeleccionado.descripcion) {
-                  <p class="confirm-desc">{{ motivoSeleccionado.descripcion }}</p>
-                }
-              </div>
+            <!-- Chips compactos de motivos seleccionados -->
+            <div class="confirm-chips">
+              @for (m of motivosSeleccionados; track m.id) {
+                <span class="confirm-chip" [style.--chip-color]="m.color || '#00C8D7'">
+                  <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
+                  {{ m.nombre }}
+                  <button class="chip-remove" (click)="seleccionarMotivo(m)" [disabled]="registrando">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </span>
+              }
             </div>
 
             <!-- Pregunta de confirmación -->
             <div class="confirm-question">
               <mat-icon>help_outline</mat-icon>
               <span>
-                ¿Registrar actividad
-                <strong>"{{ motivoSeleccionado.nombre }}"</strong>
+                ¿Registrar
+                @if (motivosSeleccionados.length === 1) {
+                  <strong>"{{ motivosSeleccionados[0].nombre }}"</strong>
+                } @else {
+                  <strong>{{ motivosSeleccionados.length }} actividades</strong>
+                }
                 para <strong>{{ obtenerNombreCorto() }}</strong>?
               </span>
             </div>
@@ -145,8 +147,8 @@
 
             <!-- Links secundarios -->
             <button class="link-action" (click)="deseleccionarMotivo()" [disabled]="registrando">
-              <mat-icon>swap_horiz</mat-icon>
-              Cambiar actividad
+              <mat-icon>clear_all</mat-icon>
+              Limpiar selección
             </button>
 
           </div>
@@ -200,8 +202,7 @@
             @for (motivo of motivos; track motivo.id; let i = $index) {
               <div
                 class="motivo-card"
-                [class.selected]="motivoSeleccionado?.id === motivo.id"
-                [class.dimmed]="motivoSeleccionado && motivoSeleccionado.id !== motivo.id"
+                [class.selected]="estaSeleccionado(motivo)"
                 (click)="seleccionarMotivo(motivo)"
                 matRipple>
 
@@ -218,7 +219,7 @@
                 }
 
                 <!-- Indicador de seleccionado -->
-                @if (motivoSeleccionado?.id === motivo.id) {
+                @if (estaSeleccionado(motivo)) {
                   <div class="selected-badge">
                     <mat-icon>check</mat-icon>
                   </div>
@@ -247,27 +248,29 @@
     <!-- ─────────────────────────────────────────────
          MOBILE: Bottom sheet de confirmación
     ───────────────────────────────────────────── -->
-    @if (motivoSeleccionado) {
+    @if (haySeleccion) {
       <div class="mobile-backdrop" (click)="deseleccionarMotivo()"></div>
       <div class="mobile-confirm-sheet">
         <div class="sheet-handle"></div>
 
-        <div class="sheet-motivo">
-          <div class="sheet-motivo-icon">
-            <mat-icon [style.color]="motivoSeleccionado.color || '#00C8D7'">
-              {{ motivoSeleccionado.icono }}
-            </mat-icon>
+        @for (m of motivosSeleccionados; track m.id) {
+          <div class="sheet-motivo">
+            <div class="sheet-motivo-icon">
+              <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
+            </div>
+            <div class="sheet-motivo-info">
+              <h3>{{ m.nombre }}</h3>
+              @if (m.descripcion) { <p>{{ m.descripcion }}</p> }
+            </div>
           </div>
-          <div class="sheet-motivo-info">
-            <h3>{{ motivoSeleccionado.nombre }}</h3>
-            @if (motivoSeleccionado.descripcion) {
-              <p>{{ motivoSeleccionado.descripcion }}</p>
-            }
-          </div>
-        </div>
+        }
 
         <div class="sheet-question">
-          ¿Registrar <strong>"{{ motivoSeleccionado.nombre }}"</strong>
+          @if (motivosSeleccionados.length === 1) {
+            ¿Registrar <strong>"{{ motivosSeleccionados[0].nombre }}"</strong>
+          } @else {
+            ¿Registrar <strong>{{ motivosSeleccionados.length }} actividades</strong>
+          }
           para <strong>{{ obtenerNombreCorto() }}</strong>?
         </div>
 

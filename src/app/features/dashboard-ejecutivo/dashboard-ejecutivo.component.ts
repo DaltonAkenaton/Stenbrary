@@ -79,6 +79,15 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   distribucionMotivos?: DistribucionMotivos;
   datosCarreras: DatosCarrera[] = [];
 
+  // Selector de período
+  periodoSeleccionado = 30;
+  opcionesPeriodo = [
+    { dias: 7,  label: '7 días'  },
+    { dias: 14, label: '14 días' },
+    { dias: 30, label: '30 días' },
+    { dias: 90, label: '90 días' },
+  ];
+
   // Heatmap config
   diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   horasDelDia = Array.from({ length: 15 }, (_, i) => i + 7);
@@ -108,19 +117,25 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.chartCarreras?.destroy();
   }
 
+  setPeriodo(dias: number): void {
+    this.periodoSeleccionado = dias;
+    this.cargarDatos();
+  }
+
   async cargarDatos(): Promise<void> {
+    const dias = this.periodoSeleccionado;
     try {
       this.cargando = true;
 
       const [tendencia, heatmap, top, insights, prediccion, diarios, motivos, carreras] =
         await Promise.all([
-          this.estadisticasService.compararTendencias(7, 7),
-          this.estadisticasService.generarHeatmap(30),
+          this.estadisticasService.compararTendencias(dias, dias),
+          this.estadisticasService.generarHeatmap(dias),
           this.estadisticasService.obtenerTopAlumnos(5),
           this.estadisticasService.generarInsights(),
           this.estadisticasService.predecirDiaOcupado(),
-          this.estadisticasService.obtenerRegistrosPorDia(7),
-          this.estadisticasService.obtenerDistribucionMotivos(30),
+          this.estadisticasService.obtenerRegistrosPorDia(dias),
+          this.estadisticasService.obtenerDistribucionMotivos(dias),
           this.estadisticasService.analizarPorCarrera(),
         ]);
 

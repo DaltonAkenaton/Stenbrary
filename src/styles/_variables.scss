@@ -106,3 +106,13 @@ $z-modal:    1000;
 $z-overlay:  999;
 $z-toast:    1100;
 $z-dropdown: 50;
+
+// ─── GRADIENTES ──────────────────────────────────────────
+$gradient-card:   linear-gradient(160deg, rgba(255,255,255,0.018) 0%, transparent 60%);
+$gradient-cyan:   linear-gradient(135deg, #{$cyan-500}, #{$teal-400});
+$gradient-glow:   radial-gradient(ellipse 60% 50% at 50% 0%, rgba(0,200,215,0.07) 0%, transparent 70%);
+
+// ─── SOMBRAS ADICIONALES ─────────────────────────────────
+$shadow-float:    0 12px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 200, 215, 0.06);
+$shadow-glow-sm:  0 4px 20px rgba(0, 200, 215, 0.20);
+$shadow-glow-md:  0 8px 32px rgba(0, 200, 215, 0.28);

@@ -96,8 +96,9 @@ h1 {
 
   &:hover {
     border-color: $border-glow;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 0 40px rgba(0, 200, 215, 0.06);
+    background: linear-gradient(160deg, rgba(0, 200, 215, 0.04) 0%, $navy-800 100%);
 
     .stat-arrow { opacity: 1; transform: translateX(0); }
   }
@@ -131,8 +132,45 @@ h1 {
 
 .stat-label {
   font-size: 0.78rem;
-  color: $text-muted;
+  color: $text-secondary;
   margin-top: 2px;
+  font-weight: 500;
+}
+
+.stat-subtexto {
+  font-size: 0.7rem;
+  color: $text-muted;
+  margin-top: 1px;
+}
+
+.stat-help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: $text-muted;
+  opacity: 0;
+  transition: opacity 200ms;
+  flex-shrink: 0;
+  margin-left: auto;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: $cyan-400;
+    background: rgba($cyan-500, 0.08);
+    opacity: 1 !important;
+  }
+}
+
+.stat-card:hover .stat-help {
+  opacity: 0.6;
 }
 
 .stat-arrow {
@@ -172,6 +210,8 @@ h1 {
     font-size: 1rem;
     font-weight: 700;
     color: $text-primary;
+    display: flex;
+    align-items: center;
   }
 }
 
@@ -319,6 +359,66 @@ h1 {
     color: $text-muted;
     font-size: 0.85rem;
     text-align: center;
+    margin: 0;
+  }
+
+  small {
+    font-size: 0.75rem;
+    color: $text-muted;
+    opacity: 0.7;
+    text-align: center;
+  }
+}
+
+.panel-empty-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: rgba($cyan-500, 0.10);
+  border: 1px solid rgba($cyan-500, 0.20);
+  border-radius: 20px;
+  color: $cyan-400;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 200ms;
+  font-family: inherit;
+
+  mat-icon {
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    color: $cyan-400 !important;
+  }
+
+  &:hover {
+    background: rgba($cyan-500, 0.16);
+    border-color: rgba($cyan-500, 0.35);
+  }
+}
+
+// ─── PANEL HEADER HELP ───────────────────────────────────
+.panel-help {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+  color: $text-muted;
+  cursor: help;
+  opacity: 0.5;
+  transition: opacity 200ms;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    opacity: 1;
+    color: $cyan-400;
   }
 }
 
@@ -369,8 +469,9 @@ h1 {
   &:hover {
     border-color: $border-glow;
     color: $cyan-400;
-    background: rgba($cyan-500, 0.04);
-    transform: translateY(-2px);
+    background: linear-gradient(160deg, rgba($cyan-500, 0.06) 0%, rgba($cyan-500, 0.02) 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25), 0 0 24px rgba(0, 200, 215, 0.06);
   }
 }
 

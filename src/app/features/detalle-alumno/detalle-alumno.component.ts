@@ -11,6 +11,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ConfigService } from '../../core/services/config.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,6 +25,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { EditarAlumnoDialogComponent } from './editar-alumno-dialog/editar-alumno-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { RegistroDetalleDialogComponent } from './registro-detalle-dialog/registro-detalle-dialog.component';
 
 interface EstadisticasAlumno {
   totalVisitas: number;
@@ -55,6 +57,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   estadisticas: EstadisticasAlumno | null = null;
   cargando = true;
   error: string | null = null;
+  enBibliotecaAhora = false;
 
   columnasRegistros: string[] = ['fechaHora', 'motivo', 'acciones'];
 
@@ -65,6 +68,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     public dialog: MatDialog,
     private toastService: ToastService,
     private loadingService: LoadingService,
+    public configService: ConfigService,
   ) {}
 
   // ═══════════════════════════════════════════════
@@ -106,6 +110,12 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
 
       this.registros = await this.databaseService.obtenerRegistrosPorAlumno(matricula);
       this.calcularEstadisticas();
+
+      // Verificar si el alumno está actualmente en la biblioteca
+      if (this.configService.registroSalidaActivo) {
+        const entradaAbierta = await this.databaseService.obtenerEntradaAbiertaHoy(matricula);
+        this.enBibliotecaAhora = !!entradaAbierta && !entradaAbierta.cierreAutomatico;
+      }
 
       this.cargando = false;
       this.loadingService.hide();
@@ -269,10 +279,41 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     }
   }
 
+  async eliminarAlumno(): Promise<void> {
+    if (!this.alumno) return;
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        titulo: `¿Eliminar a ${this.obtenerNombreCompleto()}?`,
+        mensaje: 'Esta acción es permanente e irreversible. Se eliminarán el perfil del alumno y todos sus registros de acceso.',
+        variante: 'danger',
+        textoConfirmar: 'Eliminar permanentemente',
+        icono: 'delete_forever',
+      } as ConfirmDialogData,
+    });
+
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
+
+    try {
+      this.loadingService.show('Eliminando alumno...');
+      await this.databaseService.eliminarAlumno(this.alumno.id!);
+      this.loadingService.hide();
+      this.toastService.success('Alumno eliminado permanentemente');
+      this.router.navigate(['/alumnos']);
+    } catch (error) {
+      console.error('❌ Error al eliminar alumno:', error);
+      this.loadingService.hide();
+      this.toastService.error('Error al eliminar el alumno. Intenta de nuevo.');
+    }
+  }
+
   verRegistroDetalle(registro: Registro): void {
-    this.toastService.info(
-      `Registro: ${this.formatearFecha(registro.fechaHora)} — ${registro.motivoNombre}`
-    );
+    this.dialog.open(RegistroDetalleDialogComponent, {
+      width: '480px',
+      data: { registro },
+    });
   }
 
   // ═══════════════════════════════════════════════

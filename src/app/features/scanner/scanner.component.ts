@@ -40,17 +40,43 @@ import { Alumno, Registro } from '../../core/models';
 import { esMatriculaValidaScanner, normalizarMatricula } from '../../core/utils/matricula.utils';
 
 import { SoundService } from '../../core/services/sound.service';
+import { ConfigService } from '../../core/services/config.service';
+import { InvitadoNombreDialogComponent } from './invitado-nombre-dialog/invitado-nombre-dialog.component';
 
 
 
 // ── Constantes ──────────────────────────────────────────────────────────────
-const SCAN_INTERVAL_MS     = 200;
+const SCAN_INTERVAL_MS     = 160; // más frecuente que 200ms para mejor respuesta
 const DUPLICADO_UMBRAL_MIN = 30;
 
-const PREPROCESS_STRATEGIES: Array<{ filter: string; label: string }> = [
-  { filter: 'grayscale(100%) contrast(160%) brightness(110%)', label: 'balanced' },
-  { filter: 'grayscale(100%) contrast(220%) brightness(90%)',  label: 'high-contrast' },
-  { filter: 'grayscale(100%) contrast(120%) brightness(130%)', label: 'bright' },
+/**
+ * Estrategias de preprocesado optimizadas para CODE 128 (credenciales UAT).
+ *
+ * Code 128 es un código de barras 1D que requiere:
+ *   - Alto contraste entre barras negras y espacios blancos
+ *   - Bordes nítidos (el blur hurt más que ayuda en 1D)
+ *   - Suficiente resolución horizontal (upscaling ayuda en webcams ≤640px)
+ *
+ * Orden de prioridad: de mayor probabilidad de éxito a menor.
+ * El presupuesto de 45ms por frame limita cuántas se ejecutan,
+ * por eso el orden importa.
+ */
+const PREPROCESS_STRATEGIES: Array<{ filter: string; scale: number; label: string }> = [
+  // 1. Equilibrado — mejor punto de partida para la mayoría de condiciones
+  { filter: 'grayscale(100%) contrast(190%) brightness(105%)', scale: 1,   label: 'balanced'        },
+  // 2. Alto contraste — iluminación normal, cámara sin problemas
+  { filter: 'grayscale(100%) contrast(280%) brightness(90%)',  scale: 1,   label: 'high-contrast'   },
+  // 3. Brillante — entorno oscuro / webcam subexpuesta
+  { filter: 'grayscale(100%) contrast(150%) brightness(150%)', scale: 1,   label: 'bright'          },
+  // 4. Oscuro — entorno muy iluminado / reflexión en la credencial
+  { filter: 'grayscale(100%) contrast(260%) brightness(75%)',  scale: 1,   label: 'dark'            },
+  // 5. Upscaled 1.5× — webcams antiguas ≤640×480 (más píxeles = mejor decode 1D)
+  { filter: 'grayscale(100%) contrast(200%) brightness(105%)', scale: 1.5, label: 'upscaled'        },
+  // 6. Ultra contraste upscaled — último recurso, cámaras muy malas
+  { filter: 'grayscale(100%) contrast(340%) brightness(82%)',  scale: 1.5, label: 'ultra'           },
+  // 7. Denoise al final — blur suaviza el ruido pero puede difuminar barras finas;
+  //    solo llega aquí si ninguna estrategia anterior funcionó
+  { filter: 'blur(0.4px) grayscale(100%) contrast(240%) brightness(98%)', scale: 1, label: 'denoise' },
 ];
 
 declare class BarcodeDetector {
@@ -83,13 +109,16 @@ export class ScannerComponent implements OnInit, OnDestroy {
   linternaActiva     = false;
   linternaDisponible = false;
 
-  private scannerActivo   = false;
-  private mediaStream:    MediaStream | null = null;
-  private scanIntervalId: ReturnType<typeof setInterval> | null = null;
-  private enCooldown      = false;
-  private nativeDetector:   BarcodeDetector | null = null;
-  private browserReader:    BrowserMultiFormatReader | null = null;
-  private usandoNativo     = false;
+  private scannerActivo      = false;
+  private mediaStream:       MediaStream | null = null;
+  private loopFrameId:       number | null = null;
+  private lastScanTs         = 0;
+  private enCooldown         = false;
+  private isDetecting        = false;  // guard para evitar llamadas nativas concurrentes
+  private zxingStrategyIdx   = 0;      // rotación de estrategias entre frames
+  private nativeDetector:    BarcodeDetector | null = null;
+  private browserReader:     BrowserMultiFormatReader | null = null;
+  private usandoNativo       = false;
 
   constructor(
     private databaseService: DatabaseService,
@@ -98,6 +127,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     private toastService: ToastService,
     private loadingService: LoadingService,
     private soundService: SoundService,
+    private configService: ConfigService,
     private ngZone: NgZone
   ) {}
 
@@ -106,7 +136,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════════════════════════════
 
   ngOnInit(): void {
-    console.log('📱 ScannerComponent v3.6.2 — Duplicados + Salida');
     this.detectarCapacidades();
   }
 
@@ -150,21 +179,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.enCooldown = false;
 
       if (this.usandoNativo) {
+        // Solo Code 128 y Code 39 — credenciales UAT usan Code 128.
+        // Menos formatos = el browser dedica todo su tiempo a un solo decoder.
         this.nativeDetector = new BarcodeDetector({
-          formats: [
-            'code_128', 'code_39', 'ean_13', 'ean_8',
-            'itf', 'codabar', 'upc_a', 'upc_e',
-            'qr_code', 'data_matrix'
-          ]
+          formats: ['code_128', 'code_39'],
         });
       } else {
         const hints = new Map<DecodeHintType, any>();
+        // Restringir a Code 128 + Code 39 reduce el trabajo de ZXing 5–8×
+        // frente a intentar los 10 formatos originales.
+        // Si en el futuro se confirma que solo es Code 128, eliminar CODE_39.
         hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-          BarcodeFormat.CODE_128, BarcodeFormat.CODE_39,
-          BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
-          BarcodeFormat.ITF, BarcodeFormat.CODABAR,
-          BarcodeFormat.UPC_A, BarcodeFormat.UPC_E,
-          BarcodeFormat.QR_CODE, BarcodeFormat.DATA_MATRIX,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
         ]);
         hints.set(DecodeHintType.TRY_HARDER, true);
         this.browserReader = new BrowserMultiFormatReader(hints);
@@ -177,12 +204,16 @@ export class ScannerComponent implements OnInit, OnDestroy {
         if (!video) return;
         video.srcObject = this.mediaStream!;
         video.play().catch(() => {});
-        video.onloadeddata = () => {
+
+        // addEventListener en lugar de onloadeddata para no sobreescribir handlers
+        const onReady = () => {
+          video.removeEventListener('loadeddata', onReady);
           this.cargando = false;
           this.toastService.info('Scanner activo — apunta al código de barras');
           this.detectarLinterna();
           this.iniciarLoop();
         };
+        video.addEventListener('loadeddata', onReady);
       }, 150);
 
     } catch (err: any) {
@@ -195,18 +226,49 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   private async obtenerCamara(): Promise<MediaStream> {
+    // Progresión de constraints: ideal alta calidad → fallback básico.
+    // Se pide 1080p + 30fps para maximizar la nitidez del código de barras;
+    // si la cámara no lo soporta, se degrada automáticamente.
     const intentos: MediaStreamConstraints[] = [
-      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
-      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 },  height: { ideal: 480 } } },
-      { video: true },
+      {
+        video: {
+          facingMode:  { ideal: 'environment' },
+          width:       { ideal: 1920, min: 320 },
+          height:      { ideal: 1080, min: 240 },
+          frameRate:   { ideal: 30,  min: 10  },
+          // Foco y exposición continuos mejoran la nitidez en webcams de escritorio
+          advanced: [{ focusMode: 'continuous' as any, exposureMode: 'continuous' as any }] as any,
+        },
+      },
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width:      { ideal: 1280 },
+          height:     { ideal: 720  },
+          frameRate:  { ideal: 30   },
+        },
+      },
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width:      { ideal: 640 },
+          height:     { ideal: 480 },
+        },
+      },
+      { video: true }, // último recurso: cualquier cámara disponible
     ];
+
+    // Errores que no tienen sentido reintentar con diferentes constraints
+    const erroresNoRecuperables = ['NotAllowedError', 'PermissionDeniedError', 'SecurityError', 'NotFoundError', 'DevicesNotFoundError'];
+
     for (let i = 0; i < intentos.length; i++) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia(intentos[i]);
-        if (i > 0) console.log(`📷 Fallback resolución #${i + 1}`);
+        if (i > 0) console.warn(`📷 Cámara: usando fallback #${i + 1}`);
         return stream;
       } catch (err: any) {
-        if (err.name === 'OverconstrainedError' && i < intentos.length - 1) continue;
+        if (erroresNoRecuperables.includes(err?.name)) throw err; // falla rápido
+        if (i < intentos.length - 1) continue;
         throw err;
       }
     }
@@ -240,16 +302,34 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════════════════════════════
 
   private iniciarLoop(): void {
-    this.scanIntervalId = setInterval(() => {
-      if (!this.scannerActivo || this.enCooldown) return;
-      if (this.usandoNativo) { this.detectarConNativo(); }
-      else { this.detectarConZXingBrowser(); }
-    }, SCAN_INTERVAL_MS);
+    this.lastScanTs = 0;
+
+    // requestAnimationFrame sincroniza con el ciclo de refresco de la pantalla
+    // (60 fps) y evita el drift acumulativo de setInterval. El throttle manual
+    // mantiene la frecuencia deseada sin sobrecargar la CPU.
+    const tick = (ts: number) => {
+      if (!this.scannerActivo) return;
+
+      if (!this.enCooldown && ts - this.lastScanTs >= SCAN_INTERVAL_MS) {
+        this.lastScanTs = ts;
+        if (this.usandoNativo) this.detectarConNativo();
+        else this.detectarConZXingBrowser();
+      }
+
+      this.loopFrameId = requestAnimationFrame(tick);
+    };
+
+    this.loopFrameId = requestAnimationFrame(tick);
   }
 
   private async detectarConNativo(): Promise<void> {
+    // Guard: si la llamada anterior todavía está esperando la GPU/CPU, saltar este frame.
+    // Sin esto, en cámaras lentas se acumulan decenas de llamadas detect() concurrentes.
+    if (this.isDetecting) return;
     const video = this.videoElement?.nativeElement;
     if (!video || !this.nativeDetector || video.readyState < 2) return;
+
+    this.isDetecting = true;
     try {
       const resultados = await this.nativeDetector.detect(video);
       for (const barcode of resultados) {
@@ -261,6 +341,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
       }
     } catch (err: any) {
       if (err.name !== 'InvalidStateError') console.warn('BarcodeDetector error:', err.message);
+    } finally {
+      this.isDetecting = false;
     }
   }
 
@@ -269,37 +351,79 @@ export class ScannerComponent implements OnInit, OnDestroy {
     const canvas = this.canvasElement?.nativeElement;
     if (!video || !canvas || !this.browserReader || video.readyState < 2) return;
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    const vw  = video.videoWidth  || 640;
-    const vh  = video.videoHeight || 480;
+    const vw = video.videoWidth  || 640;
+    const vh = video.videoHeight || 480;
+    if (vw === 0 || vh === 0) return;
 
-    for (const strategy of PREPROCESS_STRATEGIES) {
-      canvas.width = vw; canvas.height = vh;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    const total = PREPROCESS_STRATEGIES.length;
+
+    /**
+     * Presupuesto de tiempo por frame: 45ms máximo.
+     * Sin este límite, 7 estrategias × 2 zonas = 14 decodes síncronos
+     * pueden bloquear el hilo principal hasta 1,100ms en cámaras lentas.
+     *
+     * Rotación de estrategia inicial: cada frame empieza en un índice
+     * distinto para que todas las estrategias obtengan intentos equitativos
+     * aunque el presupuesto se agote en la primera ronda.
+     */
+    const BUDGET_MS = 45;
+    const t0 = performance.now();
+
+    for (let i = 0; i < total; i++) {
+      if (performance.now() - t0 > BUDGET_MS) break;
+
+      const strategy = PREPROCESS_STRATEGIES[(this.zxingStrategyIdx + i) % total];
+
+      // ── Frame completo ──────────────────────────────────────────────
+      const tw = Math.round(vw * strategy.scale);
+      const th = Math.round(vh * strategy.scale);
+      canvas.width  = tw;
+      canvas.height = th;
       ctx.filter = strategy.filter;
-      ctx.drawImage(video, 0, 0, vw, vh);
+      ctx.drawImage(video, 0, 0, tw, th);
       ctx.filter = 'none';
 
       const fullResult = this.intentarDecodeCanvas(canvas);
-      if (fullResult) { this.procesarDeteccion(fullResult, `zxing:${strategy.label}:full`); return; }
+      if (fullResult) {
+        this.procesarDeteccion(fullResult, `zxing:${strategy.label}:full`);
+        return;
+      }
 
-      const roiX = Math.floor(vw * 0.15);
-      const roiY = Math.floor(vh * 0.35);
-      const roiW = Math.floor(vw * 0.70);
-      const roiH = Math.floor(vh * 0.30);
-      canvas.width = roiW; canvas.height = roiH;
+      if (performance.now() - t0 > BUDGET_MS) break;
+
+      // ── ROI central horizontal (82% ancho, 42% alto, centrado) ──────
+      const roiX  = Math.floor(vw * 0.09);
+      const roiY  = Math.floor(vh * 0.29);
+      const roiW  = Math.floor(vw * 0.82);
+      const roiH  = Math.floor(vh * 0.42);
+      const roiTW = Math.round(roiW * strategy.scale);
+      const roiTH = Math.round(roiH * strategy.scale);
+      canvas.width  = roiTW;
+      canvas.height = roiTH;
       ctx.filter = strategy.filter;
-      ctx.drawImage(video, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+      ctx.drawImage(video, roiX, roiY, roiW, roiH, 0, 0, roiTW, roiTH);
       ctx.filter = 'none';
 
       const roiResult = this.intentarDecodeCanvas(canvas);
-      if (roiResult) { this.procesarDeteccion(roiResult, `zxing:${strategy.label}:roi`); return; }
+      if (roiResult) {
+        this.procesarDeteccion(roiResult, `zxing:${strategy.label}:roi`);
+        return;
+      }
     }
 
-    canvas.width = vw; canvas.height = vh;
-    ctx.filter = 'none';
-    ctx.drawImage(video, 0, 0, vw, vh);
-    const rawResult = this.intentarDecodeCanvas(canvas);
-    if (rawResult) this.procesarDeteccion(rawResult, 'zxing:raw:full');
+    // Avanzar el índice de rotación para el siguiente frame
+    this.zxingStrategyIdx = (this.zxingStrategyIdx + 1) % total;
+
+    // ── Fallback raw sin filtro (si el código ya tiene buen contraste) ──
+    if (performance.now() - t0 <= BUDGET_MS) {
+      canvas.width  = vw;
+      canvas.height = vh;
+      ctx.filter = 'none';
+      ctx.drawImage(video, 0, 0, vw, vh);
+      const rawResult = this.intentarDecodeCanvas(canvas);
+      if (rawResult) this.procesarDeteccion(rawResult, 'zxing:raw:full');
+    }
   }
 
   private intentarDecodeCanvas(canvas: HTMLCanvasElement): string | null {
@@ -333,7 +457,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.enCooldown = true;
     console.log(`✅ Detectado [${fuente}]: ${texto}`);
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-this.soundService.beepScan();    
+    this.soundService.beepScan();
     this.detenerScanner();
     this.ngZone.run(() => {
       this.toastService.success(`Código detectado: ${texto}`);
@@ -347,7 +471,7 @@ this.soundService.beepScan();
 
   detenerScanner(): void {
     this.scannerActivo = false;
-    if (this.scanIntervalId !== null) { clearInterval(this.scanIntervalId); this.scanIntervalId = null; }
+    if (this.loopFrameId !== null) { cancelAnimationFrame(this.loopFrameId); this.loopFrameId = null; }
     if (this.linternaActiva) {
       const track = this.mediaStream?.getVideoTracks()[0];
       track?.applyConstraints({ advanced: [{ torch: false } as any] }).catch(() => {});
@@ -376,8 +500,13 @@ this.soundService.beepScan();
         this.procesarMatricula(matricula);
       } else {
         this.toastService.warning('Escaneo cancelado');
-        this.ultimoQrEscaneado = '';
-        this.enCooldown = false;
+        // Auto-reiniciar tras 1.5s: da tiempo para que el usuario retire
+        // la credencial del encuadre antes de que se vuelva a detectar.
+        setTimeout(() => {
+          this.ultimoQrEscaneado = '';
+          this.enCooldown = false;
+          this.iniciarScanner();
+        }, 1500);
       }
     });
   }
@@ -417,10 +546,12 @@ this.soundService.beepScan();
           return;
         }
 
-        // ── Verificar registro duplicado ──────────────────────────────
-        const registroReciente = await this.databaseService.verificarRegistroReciente(
-          matricula, DUPLICADO_UMBRAL_MIN
-        );
+        // ── Verificar entrada abierta / duplicado ─────────────────────
+        // Cuando el módulo de salida está activo, buscamos cualquier entrada
+        // abierta del día (sin horaSalida), no solo en los últimos 30 min.
+        const registroReciente = this.configService.registroSalidaActivo
+          ? await this.databaseService.obtenerEntradaAbiertaHoy(matricula)
+          : await this.databaseService.verificarRegistroReciente(matricula, this.configService.umbralDuplicadoMin);
 
         if (registroReciente) {
           const resultado = await this.mostrarDialogDuplicado(alumno, registroReciente);
@@ -431,7 +562,11 @@ this.soundService.beepScan();
               return;
 
             case 'nuevo':
-              // Continuar flujo normal (selección de motivo)
+              // Si el módulo de salida está activo, cerrar la entrada anterior
+              // para que el alumno no aparezca dos veces en "En Biblioteca"
+              if (this.configService.registroSalidaActivo) {
+                await this.databaseService.registrarSalida(registroReciente.id);
+              }
               break;
 
             case 'cancelar':
@@ -568,22 +703,34 @@ this.soundService.beepScan();
 
   /**
    * Acceso sin credencial — invitados NO pasan por verificación de duplicados.
+   * Abre un dialog para capturar un nombre opcional del visitante.
    */
   accederComoInvitado(): void {
-    const invitado = {
-      id: 'invitado-' + Date.now(),
-      matricula: 'INVITADO',
-      nombre: 'Visitante',
-      apellidoPaterno: 'Externo',
-      apellidoMaterno: '',
-      carrera: 'Visitante',
-      activo: true,
-      esInvitado: true
-    };
+    const dialogRef = this.dialog.open(InvitadoNombreDialogComponent, {
+      width: '380px',
+      disableClose: false,
+    });
 
-    sessionStorage.setItem('alumnoActual', JSON.stringify(invitado));
-    this.toastService.info('Acceso como invitado — selecciona tu actividad');
-    this.router.navigate(['/seleccion-motivo']);
+    dialogRef.afterClosed().subscribe((nombreIngresado: string | null | undefined) => {
+      // Si el dialog se cerró con X (undefined), cancelar
+      if (nombreIngresado === undefined) return;
+
+      const nombreVisitante = nombreIngresado || 'Visitante';
+      const invitado = {
+        id: 'invitado-' + Date.now(),
+        matricula: 'INVITADO',
+        nombre: nombreVisitante,
+        apellidoPaterno: nombreIngresado ? '' : 'Externo',
+        apellidoMaterno: '',
+        carrera: 'Visitante',
+        activo: true,
+        esInvitado: true
+      };
+
+      sessionStorage.setItem('alumnoActual', JSON.stringify(invitado));
+      this.toastService.info('Acceso como visitante — selecciona tu actividad');
+      this.router.navigate(['/seleccion-motivo']);
+    });
   }
 
   private interpretarErrorCamara(err: any): string {

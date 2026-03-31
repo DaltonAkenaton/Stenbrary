@@ -70,6 +70,13 @@ export class AlumnosComponent implements OnInit {
   paginaActual = signal(0);
   filasPorPagina = 25;
 
+  // ─── VISTA ─────────────────────────────────────────────
+  vistaActual = signal<'lista' | 'cards'>('lista');
+
+  toggleVista(): void {
+    this.vistaActual.update(v => v === 'lista' ? 'cards' : 'lista');
+  }
+
   // ─── TABLA ─────────────────────────────────────────────
   columnas: string[] = [
     'matricula', 'nombre', 'carrera', 'grado', 'grupo', 'turno', 'acciones',

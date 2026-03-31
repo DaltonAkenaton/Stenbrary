@@ -1,107 +1,176 @@
 <!-- ==============================================================================
-     RUTA: src/app/features/gestion-motivos/gestion-motivos.component.html
-     Stenbrary v3.0 — Cyan Cube Dark Theme
+     gestion-motivos.component.html
+     Stenbrary v4.1 — Layout de lista horizontal
      ============================================================================== -->
 
 <div class="gestion-motivos-container">
-  
-  <!-- Header -->
-  <div class="header">
-    <button mat-icon-button class="back-button" (click)="volverDashboard()">
-      <mat-icon>arrow_back</mat-icon>
-    </button>
-    <div class="header-info">
-      <h1>Gestión de Motivos</h1>
-      <p class="subtitle">Administra los motivos de visita a la biblioteca</p>
+
+  <!-- ═══ HEADER ════════════════════════════════════════════ -->
+  <div class="page-header">
+    <div class="header-left">
+      <p class="subtitle">Actividades disponibles para registrar el acceso de alumnos</p>
+
+      <!-- Stats chips -->
+      <div class="stats-row" *ngIf="!cargando && motivos.length > 0">
+        <span class="stat-chip total">
+          <mat-icon>category</mat-icon>
+          {{ motivos.length }} {{ motivos.length === 1 ? 'actividad' : 'actividades' }}
+        </span>
+        <span class="stat-chip activos">
+          <span class="stat-dot dot-activo"></span>
+          {{ motivosActivos }} activos
+        </span>
+        <span class="stat-chip inactivos" *ngIf="motivosInactivos > 0">
+          <span class="stat-dot dot-inactivo"></span>
+          {{ motivosInactivos }} inactivos
+        </span>
+      </div>
     </div>
-    <button mat-raised-button color="primary" (click)="abrirDialogNuevo()">
-      <mat-icon>add</mat-icon>
-      Nuevo Motivo
-    </button>
+
+    <div class="header-right">
+      <!-- Search -->
+      <div class="search-box" *ngIf="!cargando && motivos.length > 3">
+        <mat-icon>search</mat-icon>
+        <input
+          type="text"
+          placeholder="Buscar..."
+          [(ngModel)]="filtroBusqueda"
+          autocomplete="off">
+        @if (filtroBusqueda) {
+          <button class="clear-btn" (click)="filtroBusqueda = ''">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+
+      <button class="btn-new" (click)="abrirDialogNuevo()">
+        <mat-icon>add</mat-icon>
+        <span>Nueva Actividad</span>
+      </button>
+    </div>
   </div>
 
-  <!-- Loading -->
+  <!-- ═══ LOADING ══════════════════════════════════════════ -->
   <div class="loading-state" *ngIf="cargando">
-    <mat-icon>hourglass_empty</mat-icon>
-    <p>Cargando motivos...</p>
+    <div class="loading-spinner"></div>
+    <p>Cargando actividades...</p>
   </div>
 
-  <!-- Lista de Motivos -->
-  <div class="motivos-grid" *ngIf="!cargando && motivos.length > 0">
-    
-    <mat-card *ngFor="let motivo of motivos" class="motivo-card">
-      
-      <!-- Header del Card -->
-      <div class="motivo-header">
-        <div class="motivo-icono">
+  <!-- ═══ LISTA DE MOTIVOS ══════════════════════════════════ -->
+  <div class="motivos-list" *ngIf="!cargando && motivosFiltrados.length > 0">
+
+    <!-- Cabecera de columnas -->
+    <div class="list-header">
+      <div class="col-order">Orden</div>
+      <div class="col-actividad">Actividad</div>
+      <div class="col-estado">Estado</div>
+      <div class="col-acciones">Acciones</div>
+    </div>
+
+    <!-- Filas -->
+    <div
+      class="motivo-row"
+      *ngFor="let motivo of motivosFiltrados; let i = index"
+      [class.row-inactivo]="!motivo.activo"
+      [style.--row-color]="motivo.color"
+      [style.--row-index]="i">
+
+      <!-- Orden + flechas -->
+      <div class="col-order">
+        <span class="order-num" [style.color]="motivo.color">{{ motivo.orden }}</span>
+        <div class="order-arrows">
+          <button
+            mat-icon-button
+            matTooltip="Subir"
+            [disabled]="motivo.orden === 1"
+            (click)="subirPrioridad(motivo)">
+            <mat-icon>keyboard_arrow_up</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            matTooltip="Bajar"
+            [disabled]="motivo.orden === motivos.length"
+            (click)="bajarPrioridad(motivo)">
+            <mat-icon>keyboard_arrow_down</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Icono + Nombre + Descripción -->
+      <div class="col-actividad">
+        <div class="row-icon"
+          [style.background]="motivo.color + '18'"
+          [style.border-color]="motivo.color + '35'">
           <mat-icon [style.color]="motivo.color">{{ motivo.icono }}</mat-icon>
         </div>
-        <div class="motivo-info">
-          <h3>{{ motivo.nombre }}</h3>
-          <p class="motivo-prioridad">Prioridad: {{ motivo.orden }}</p>
+        <div class="row-info">
+          <span class="row-name">{{ motivo.nombre }}</span>
+          @if (motivo.descripcion) {
+            <span class="row-desc">{{ motivo.descripcion }}</span>
+          }
         </div>
-        <mat-chip [class.chip-activo]="motivo.activo" [class.chip-inactivo]="!motivo.activo">
+      </div>
+
+      <!-- Estado -->
+      <div class="col-estado">
+        <span class="estado-badge" [class.badge-activo]="motivo.activo" [class.badge-inactivo]="!motivo.activo">
+          <span class="estado-dot"></span>
           {{ motivo.activo ? 'Activo' : 'Inactivo' }}
-        </mat-chip>
+        </span>
       </div>
 
       <!-- Acciones -->
-      <div class="motivo-acciones">
-        
-        <div class="orden-buttons">
-          <button 
-            mat-icon-button 
-            matTooltip="Subir prioridad"
-            [disabled]="motivo.orden === 1"
-            (click)="subirPrioridad(motivo)">
-            <mat-icon>arrow_upward</mat-icon>
-          </button>
-          <button 
-            mat-icon-button 
-            matTooltip="Bajar prioridad"
-            [disabled]="motivo.orden === motivos.length"
-            (click)="bajarPrioridad(motivo)">
-            <mat-icon>arrow_downward</mat-icon>
-          </button>
-        </div>
-
-        <button 
-          mat-icon-button 
-          color="primary"
-          matTooltip="Editar motivo"
+      <div class="col-acciones">
+        <button
+          mat-icon-button
+          class="action-btn btn-edit"
+          matTooltip="Editar"
           (click)="abrirDialogEditar(motivo)">
           <mat-icon>edit</mat-icon>
         </button>
-
-        <button 
-          mat-icon-button 
-          [color]="motivo.activo ? 'warn' : 'accent'"
+        <button
+          mat-icon-button
+          class="action-btn"
+          [class.btn-desactivar]="motivo.activo"
+          [class.btn-activar]="!motivo.activo"
           [matTooltip]="motivo.activo ? 'Desactivar' : 'Activar'"
           (click)="cambiarEstado(motivo)">
           <mat-icon>{{ motivo.activo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
         </button>
-
-        <button 
-          mat-icon-button 
-          color="warn"
-          matTooltip="Eliminar motivo"
+        <button
+          mat-icon-button
+          class="action-btn btn-delete"
+          matTooltip="Eliminar"
           (click)="eliminarMotivo(motivo)">
-          <mat-icon>delete</mat-icon>
+          <mat-icon>delete_outline</mat-icon>
         </button>
       </div>
 
-    </mat-card>
+    </div>
 
   </div>
 
-  <!-- Empty State -->
+  <!-- ═══ SIN RESULTADOS DE BÚSQUEDA ═══════════════════════ -->
+  <div class="empty-state" *ngIf="!cargando && motivos.length > 0 && motivosFiltrados.length === 0">
+    <mat-icon>search_off</mat-icon>
+    <h2>Sin resultados</h2>
+    <p>Ninguna actividad coincide con "<strong>{{ filtroBusqueda }}</strong>"</p>
+    <button class="btn-link" (click)="filtroBusqueda = ''">
+      <mat-icon>clear</mat-icon>
+      Limpiar búsqueda
+    </button>
+  </div>
+
+  <!-- ═══ EMPTY STATE ═══════════════════════════════════════ -->
   <div class="empty-state" *ngIf="!cargando && motivos.length === 0">
-    <mat-icon>label_off</mat-icon>
-    <h2>No hay motivos registrados</h2>
-    <p>Crea el primer motivo de visita para empezar</p>
-    <button mat-raised-button color="primary" (click)="abrirDialogNuevo()">
+    <div class="empty-icon-wrap">
+      <mat-icon>category</mat-icon>
+    </div>
+    <h2>Sin actividades</h2>
+    <p>Crea la primera actividad disponible para los alumnos al registrar su acceso</p>
+    <button class="btn-new" (click)="abrirDialogNuevo()">
       <mat-icon>add</mat-icon>
-      Crear Primer Motivo
+      <span>Crear primera actividad</span>
     </button>
   </div>
 

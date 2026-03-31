@@ -11,13 +11,15 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, signal, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatRippleModule } from '@angular/material/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { ConfigService } from './core/services/config.service';
 
 interface NavItem {
   icon: string;
@@ -54,6 +56,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.isSidebarExpanded.update(v => !v);
   }
 
+  cerrarSidebar(): void {
+    this.isSidebarExpanded.set(false);
+  }
+
   // ─── ESTADO DE CONEXIÓN ─────────────────────────────────
   isOnline = signal(navigator.onLine);
 
@@ -63,9 +69,12 @@ export class AppComponent implements OnInit, OnDestroy {
   // ─── PWA UPDATE ─────────────────────────────────────────
   hayActualizacion = false;
 
+  private routerSub: Subscription | null = null;
+
   constructor(
     private router: Router,
     private swUpdate: SwUpdate,
+    public configService: ConfigService,
   ) {}
 
   ngOnInit(): void {
@@ -82,11 +91,21 @@ export class AppComponent implements OnInit, OnDestroy {
           this.hayActualizacion = true;
         });
     }
+
+    // Auto-cerrar sidebar en móvil al navegar
+    this.routerSub = this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe(() => {
+        if (window.innerWidth < 768) {
+          this.isSidebarExpanded.set(false);
+        }
+      });
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('online', this.onlineHandler);
     window.removeEventListener('offline', this.offlineHandler);
+    this.routerSub?.unsubscribe();
   }
 
   actualizarApp(): void {
@@ -103,68 +122,57 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   // ─── NAVEGACIÓN POR SECCIONES ────────────────────────────
-  readonly navSections: NavSection[] = [
-    {
-      title: 'Operación',
-      items: [
-        {
-          icon: 'qr_code_scanner',
-          label: 'Registro de Actividad',
-          route: '/scanner',
-          exact: true,
-        },
-        {
-          icon: 'person_add',
-          label: 'Registrar Alumno',
-          route: '/registro-alumno',
-        },
-      ],
-    },
-    {
-      title: 'Consulta',
-      items: [
-        {
-          icon: 'dashboard',
-          label: 'Resumen',
-          route: '/dashboard',
-        },
-        {
-          icon: 'groups',
-          label: 'Alumnos',
-          route: '/alumnos',
-        },
-        {
-          icon: 'history',
-          label: 'Registros',
-          route: '/registros',
-        },
-        {
-          icon: 'bar_chart',
-          label: 'Estadísticas',
-          route: '/estadisticas',
-        },
-      ],
-    },
-    {
-      title: 'Administración',
-      items: [
-        {
-          icon: 'category',
-          label: 'Gestión de Motivos',
-          route: '/gestion-motivos',
-        },
-        {
-          icon: 'settings',
-          label: 'Configuración',
-          route: '/configuracion',
-        },
-      ],
-    },
-  ];
+  get navSections(): NavSection[] {
+    const operacion: NavItem[] = [
+      { icon: 'qr_code_scanner', label: 'Registro de Actividad', route: '/scanner', exact: true },
+      { icon: 'person_add',      label: 'Registrar Alumno',      route: '/registro-alumno' },
+    ];
+
+    if (this.configService.registroSalidaActivo) {
+      operacion.push({ icon: 'sensor_door', label: 'En Biblioteca', route: '/presencia' });
+    }
+
+    return [
+      { title: 'Operación', items: operacion },
+      {
+        title: 'Consulta',
+        items: [
+          { icon: 'dashboard',  label: 'Resumen',      route: '/dashboard'    },
+          { icon: 'groups',     label: 'Alumnos',      route: '/alumnos'      },
+          { icon: 'history',    label: 'Registros',    route: '/registros'    },
+          { icon: 'bar_chart',  label: 'Estadísticas', route: '/estadisticas' },
+        ],
+      },
+      {
+        title: 'Administración',
+        items: [
+          { icon: 'category', label: 'Gestión de Motivos', route: '/gestion-motivos' },
+          { icon: 'settings', label: 'Configuración',      route: '/configuracion'   },
+        ],
+      },
+    ];
+  }
 
   // Flat list para compatibilidad
   get navItems(): NavItem[] {
     return this.navSections.flatMap(s => s.items);
+  }
+
+  // ─── BOTTOM NAV (móvil) ──────────────────────────────────
+  get bottomNavItems(): NavItem[] {
+    const items: NavItem[] = [
+      { icon: 'qr_code_scanner', label: 'Scanner',   route: '/scanner',  exact: true },
+      { icon: 'dashboard',       label: 'Resumen',   route: '/dashboard'             },
+      { icon: 'groups',          label: 'Alumnos',   route: '/alumnos'               },
+    ];
+
+    if (this.configService.registroSalidaActivo) {
+      items.push({ icon: 'sensor_door', label: 'Biblioteca', route: '/presencia' });
+    } else {
+      items.push({ icon: 'history', label: 'Registros', route: '/registros' });
+    }
+
+    return items;
   }
 
   // ─── TOPBAR ──────────────────────────────────────────────
@@ -180,6 +188,7 @@ export class AppComponent implements OnInit, OnDestroy {
       '/gestion-motivos':   'Gestión de Motivos',
       '/configuracion':     'Configuración',
       '/importar-alumnos':  'Importar Alumnos',
+      '/presencia':         'En Biblioteca Ahora',
     };
     const url = this.router.url.split('?')[0];
     if (url.startsWith('/detalle-alumno')) return 'Detalle del Alumno';

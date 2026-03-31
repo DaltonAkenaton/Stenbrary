@@ -20,12 +20,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Registro, Alumno, Motivo } from '../../core/models';
 import { ExportService } from '../../core/services/export.service';
+import { RegistroDetalleDialogComponent } from '../detalle-alumno/registro-detalle-dialog/registro-detalle-dialog.component';
 
-type RangoFecha = 'hoy' | 'semana' | 'mes' | 'todo';
+type RangoFecha = 'hoy' | 'semana' | 'mes' | 'todo' | 'personalizado';
 
 @Component({
   selector: 'app-registros',
@@ -42,6 +44,7 @@ type RangoFecha = 'hoy' | 'semana' | 'mes' | 'todo';
     MatTableModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
   ],
   templateUrl: './registros.component.html',
   styleUrl: './registros.component.scss',
@@ -62,6 +65,10 @@ export class RegistrosComponent implements OnInit {
     carrera: '',
   });
 
+  // Rango personalizado
+  fechaPersonalizadaInicio = '';
+  fechaPersonalizadaFin = '';
+
   carrerasUnicas = signal<string[]>([]);
 
   // ─── PAGINACIÓN ────────────────────────────────────────
@@ -77,8 +84,9 @@ columnas: string[] = [
   private databaseService: DatabaseService,
   private toastService: ToastService,
   private exportService: ExportService,
-  private reportService: ReportService,   // ← AGREGAR
+  private reportService: ReportService,
   private router: Router,
+  private dialog: MatDialog,
 ) {}
 
   async ngOnInit(): Promise<void> {
@@ -130,6 +138,17 @@ columnas: string[] = [
       const inicioMes = new Date(inicioHoy);
       inicioMes.setDate(inicioMes.getDate() - 30);
       resultado = resultado.filter(r => new Date(r.fechaHora) >= inicioMes);
+    } else if (f.rangoFecha === 'personalizado') {
+      if (this.fechaPersonalizadaInicio) {
+        const inicio = new Date(this.fechaPersonalizadaInicio);
+        inicio.setHours(0, 0, 0, 0);
+        resultado = resultado.filter(r => new Date(r.fechaHora) >= inicio);
+      }
+      if (this.fechaPersonalizadaFin) {
+        const fin = new Date(this.fechaPersonalizadaFin);
+        fin.setHours(23, 59, 59, 999);
+        resultado = resultado.filter(r => new Date(r.fechaHora) <= fin);
+      }
     }
 
     if (f.busqueda.trim()) {
@@ -212,8 +231,17 @@ columnas: string[] = [
       semana: 'Últimos 7 días',
       mes: 'Últimos 30 días',
       todo: 'Todo el historial',
+      personalizado: 'Rango personalizado',
     };
     return map[this.filtros().rangoFecha];
+  }
+
+  // ─── DETALLE ───────────────────────────────────────────
+  verDetalle(registro: Registro): void {
+    this.dialog.open(RegistroDetalleDialogComponent, {
+      width: '480px',
+      data: { registro },
+    });
   }
 
   // ─── EXPORTAR CSV (FIX v3.4: escapar campos) ──────────

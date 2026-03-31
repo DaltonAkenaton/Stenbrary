@@ -1,58 +1,178 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  gestion-motivos.component.scss                      ║
-// ║  Stenbrary v3.0 — Cyan Cube Dark Theme               ║
-// ║                                                      ║
-// ║  REWRITE: Tema claro → oscuro completo               ║
+// ║  Stenbrary v4.1 — Layout de lista horizontal         ║
 // ╚══════════════════════════════════════════════════════╝
 
 @import '../../../styles/variables';
 @import '../../../styles/mixins';
 
 .gestion-motivos-container {
-  min-height: 100vh;
-  background: transparent;
-  padding: $spacing-lg;
+  padding: $spacing-lg $spacing-xl;
+
+  @media (max-width: $breakpoint-sm) {
+    padding: $spacing-md;
+  }
 }
 
 // ═══════════════════════════════════════════════════
-// HEADER
+// PAGE HEADER
 // ═══════════════════════════════════════════════════
 
-.header {
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-xl;
+  flex-wrap: wrap;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.subtitle {
+  margin: 0;
+  color: $text-muted;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.header-right {
   display: flex;
   align-items: center;
-  gap: $spacing-md;
-  margin-bottom: $spacing-xl;
+  gap: $spacing-sm;
+  flex-shrink: 0;
+}
 
-  .back-button {
-    background: $navy-700;
-    color: $text-primary;
-    border: 1px solid $border-subtle;
-    box-shadow: none;
-    flex-shrink: 0;
-    transition: all $transition-fast;
+// ─── Stats chips ────────────────────────────────────
+.stats-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
 
-    &:hover {
-      background: $navy-600;
-      border-color: $border-glow;
-    }
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-family: $font-mono;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+
+  &.total {
+    background: rgba(0, 200, 215, 0.08);
+    color: $cyan-400;
+    border: 1px solid rgba(0, 200, 215, 0.18);
+    mat-icon { color: $cyan-500; }
   }
 
-  .header-info {
+  &.activos {
+    background: rgba(14, 176, 123, 0.08);
+    color: $success-color;
+    border: 1px solid rgba(14, 176, 123, 0.20);
+  }
+
+  &.inactivos {
+    background: rgba(245, 166, 35, 0.08);
+    color: $amber-color;
+    border: 1px solid rgba(245, 166, 35, 0.20);
+  }
+}
+
+.stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  &.dot-activo  { background: $success-color; box-shadow: 0 0 4px $success-color; }
+  &.dot-inactivo { background: $amber-color; }
+}
+
+// ─── Search ─────────────────────────────────────────
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  background: rgba($navy-700, 0.5);
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  transition: border-color $transition-fast, background $transition-fast;
+  width: 200px;
+
+  &:focus-within {
+    border-color: rgba(0, 200, 215, 0.30);
+    background: rgba($navy-700, 0.8);
+  }
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    color: $text-muted;
+    flex-shrink: 0;
+  }
+
+  input {
     flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: $text-primary;
+    font-family: $font-body;
+    font-size: 0.83rem;
+    min-width: 0;
+    &::placeholder { color: $text-muted; }
+  }
+}
 
-    h1 {
-      margin: 0;
-      font-size: 1.75rem;
-      font-weight: 800;
-      color: $text-primary;
-    }
+.clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  transition: color $transition-fast;
+  mat-icon { font-size: 13px; width: 13px; height: 13px; }
+  &:hover { color: $text-primary; }
+}
 
-    .subtitle {
-      margin: $spacing-xs 0 0;
-      color: $text-secondary;
-      font-size: 0.85rem;
-    }
+// ─── Btn New ────────────────────────────────────────
+.btn-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, $cyan-500, $teal-400);
+  color: $navy-950;
+  border: none;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all $transition-fast;
+  box-shadow: 0 3px 16px rgba(0, 200, 215, 0.22);
+  white-space: nowrap;
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 22px rgba(0, 200, 215, 0.35);
   }
 }
 
@@ -63,197 +183,378 @@
 .loading-state {
   @include flex-center;
   flex-direction: column;
-  min-height: 50vh;
-  color: $text-secondary;
+  gap: $spacing-md;
+  min-height: 40vh;
+  color: $text-muted;
+  p { font-size: 0.9rem; }
+}
 
-  mat-icon {
-    font-size: 3rem;
-    width: 3rem;
-    height: 3rem;
-    color: $cyan-500;
-    margin-bottom: $spacing-md;
-    animation: spin 1.5s linear infinite;
+.loading-spinner {
+  width: 34px;
+  height: 34px;
+  border: 2.5px solid rgba($cyan-500, 0.12);
+  border-top-color: $cyan-500;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ═══════════════════════════════════════════════════
+// LISTA
+// ═══════════════════════════════════════════════════
+
+.motivos-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+// ─── Cabecera ───────────────────────────────────────
+.list-header {
+  display: grid;
+  grid-template-columns: 90px 1fr 110px 130px;
+  gap: $spacing-md;
+  align-items: center;
+  padding: 10px $spacing-lg;
+  background: rgba($navy-700, 0.6);
+  border-bottom: 1px solid $border-subtle;
+
+  > div {
+    font-family: $font-mono;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $text-muted;
   }
 
-  p { font-size: 1rem; }
+  .col-acciones { text-align: right; }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+// ─── Fila de motivo ─────────────────────────────────
+@keyframes rowEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-// ═══════════════════════════════════════════════════
-// GRID DE MOTIVOS
-// ═══════════════════════════════════════════════════
-
-.motivos-grid {
+.motivo-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: $spacing-lg;
-}
+  grid-template-columns: 90px 1fr 110px 130px;
+  gap: $spacing-md;
+  align-items: center;
+  padding: 14px $spacing-lg;
+  border-bottom: 1px solid $border-subtle;
+  border-left: 3px solid var(--row-color, #{$cyan-500});
+  background: transparent;
+  transition: background $transition-fast;
+  position: relative;
 
-.motivo-card {
-  padding: $spacing-lg;
-  border-radius: $border-radius-lg;
-  border-left: 3px solid $cyan-500;
-  transition: all $transition-fast;
+  animation: rowEnter 320ms cubic-bezier(0.25, 0.8, 0.25, 1) both;
+  animation-delay: calc(var(--row-index, 0) * 40ms);
+
+  &:last-child { border-bottom: none; }
 
   &:hover {
-    transform: translateY(-3px);
-    border-color: $border-glow !important;
-    border-left-color: $cyan-400 !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px rgba(0, 200, 215, 0.06);
+    background: rgba(0, 200, 215, 0.025);
+  }
+
+  &.row-inactivo {
+    opacity: 0.55;
+    border-left-color: rgba(200, 200, 215, 0.15);
+
+    &:hover { opacity: 0.8; }
   }
 }
 
-// ═══════════════════════════════════════════════════
-// HEADER DEL CARD
-// ═══════════════════════════════════════════════════
-
-.motivo-header {
-  display: flex;
-  align-items: flex-start;
-  gap: $spacing-md;
-  margin-bottom: $spacing-lg;
-
-  .motivo-icono {
-    @include flex-center;
-    width: 52px;
-    height: 52px;
-    background: rgba(0, 200, 215, 0.1);
-    border: 1px solid $border-subtle;
-    border-radius: $border-radius-md;
-    flex-shrink: 0;
-
-    mat-icon {
-      font-size: 28px;
-      width: 28px;
-      height: 28px;
-    }
-  }
-
-  .motivo-info {
-    flex: 1;
-    min-width: 0;
-
-    h3 {
-      margin: 0 0 2px 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: $text-primary;
-    }
-
-    .motivo-prioridad {
-      margin: 0;
-      font-size: 0.8rem;
-      color: $text-muted;
-      font-family: $font-mono;
-    }
-  }
-
-  .chip-activo {
-    background: rgba($success-color, 0.15) !important;
-    color: $success-color !important;
-    border: 1px solid rgba($success-color, 0.3) !important;
-    font-weight: 600;
-  }
-
-  .chip-inactivo {
-    background: rgba($warn-color, 0.15) !important;
-    color: $warn-color !important;
-    border: 1px solid rgba($warn-color, 0.3) !important;
-    font-weight: 600;
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// ACCIONES
-// ═══════════════════════════════════════════════════
-
-.motivo-acciones {
+// ─── Columna: Orden ─────────────────────────────────
+.col-order {
   display: flex;
   align-items: center;
-  gap: $spacing-sm;
-  padding-top: $spacing-md;
-  border-top: 1px solid $border-subtle;
+  gap: 4px;
+}
 
-  .orden-buttons {
-    display: flex;
-    gap: 2px;
-    margin-right: auto;
+.order-num {
+  font-family: $font-mono;
+  font-size: 15px;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
 
-    button:disabled {
-      opacity: 0.2;
-    }
-  }
+.order-arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 
   button {
-    transition: all $transition-fast;
+    width: 22px !important;
+    height: 22px !important;
+    line-height: 22px !important;
+    padding: 0 !important;
 
-    &:hover:not(:disabled) {
-      transform: scale(1.1);
+    ::ng-deep .mat-mdc-button-touch-target { width: 22px !important; height: 22px !important; }
+
+    mat-icon {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
     }
+
+    &:disabled { opacity: 0.2; }
   }
 }
 
+// ─── Columna: Actividad ─────────────────────────────
+.col-actividad {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  min-width: 0;
+}
+
+.row-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: $border-radius-md;
+  border: 1px solid transparent;
+  @include flex-center;
+  flex-shrink: 0;
+  transition: transform $transition-fast;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.motivo-row:hover .row-icon {
+  transform: scale(1.08);
+}
+
+.row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: $text-primary;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-desc {
+  font-size: 0.75rem;
+  color: $text-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+// ─── Columna: Estado ────────────────────────────────
+.col-estado {
+  display: flex;
+  align-items: center;
+}
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-family: $font-mono;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  .estado-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &.badge-activo {
+    background: rgba($success-color, 0.10);
+    color: $success-color;
+    border: 1px solid rgba($success-color, 0.22);
+
+    .estado-dot {
+      background: $success-color;
+      box-shadow: 0 0 5px $success-color;
+      animation: dotPulse 2s ease-in-out infinite;
+    }
+  }
+
+  &.badge-inactivo {
+    background: rgba($amber-color, 0.08);
+    color: $amber-color;
+    border: 1px solid rgba($amber-color, 0.20);
+
+    .estado-dot { background: $amber-color; }
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.3); }
+}
+
+// ─── Columna: Acciones ──────────────────────────────
+.col-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.action-btn {
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  opacity: 0.55;
+  transition: opacity $transition-fast, transform $transition-fast !important;
+
+  ::ng-deep .mat-mdc-button-touch-target { width: 32px !important; height: 32px !important; }
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+.btn-edit mat-icon  { color: $cyan-400; }
+.btn-activar mat-icon   { color: $success-color; }
+.btn-desactivar mat-icon { color: $amber-color; }
+.btn-delete mat-icon { color: $warn-color; }
+
 // ═══════════════════════════════════════════════════
-// EMPTY STATE
+// EMPTY STATES
 // ═══════════════════════════════════════════════════
 
 .empty-state {
   @include flex-center;
   flex-direction: column;
-  min-height: 50vh;
+  gap: $spacing-md;
+  min-height: 42vh;
   text-align: center;
+  animation: rowEnter 350ms ease both;
+
+  h2 { margin: 0; font-size: 1.35rem; color: $text-primary; }
+
+  p { margin: 0; color: $text-muted; font-size: 0.88rem; max-width: 320px; line-height: 1.6; }
+
+  mat-icon { font-size: 3rem; width: 3rem; height: 3rem; opacity: 0.22; color: $cyan-500; }
+
+  strong { color: $text-secondary; }
+}
+
+.empty-icon-wrap {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: rgba(0, 200, 215, 0.06);
+  border: 1px solid rgba(0, 200, 215, 0.12);
+  @include flex-center;
 
   mat-icon {
-    font-size: 4rem;
-    width: 4rem;
-    height: 4rem;
-    opacity: 0.3;
-    color: $cyan-500;
-    margin-bottom: $spacing-lg;
-  }
-
-  h2 {
-    margin: 0 0 $spacing-sm 0;
-    font-size: 1.5rem;
-    color: $text-primary;
-  }
-
-  p {
-    margin: 0 0 $spacing-lg 0;
-    color: $text-secondary;
-    font-size: 1rem;
+    font-size: 2.2rem !important;
+    width: 2.2rem !important;
+    height: 2.2rem !important;
+    opacity: 0.45 !important;
   }
 }
 
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  background: rgba(0, 200, 215, 0.08);
+  border: 1px solid rgba(0, 200, 215, 0.18);
+  border-radius: $border-radius-md;
+  color: $cyan-400;
+  font-family: $font-body;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all $transition-fast;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { background: rgba(0, 200, 215, 0.14); }
+}
+
 // ═══════════════════════════════════════════════════
-// RESPONSIVE
+// RESPONSIVE — mobile: mostrar como cards
 // ═══════════════════════════════════════════════════
 
 @media (max-width: $breakpoint-sm) {
   .gestion-motivos-container { padding: $spacing-md; }
 
-  .header {
+  .page-header {
     flex-direction: column;
-    align-items: stretch;
-
-    .back-button { align-self: flex-start; }
-    button { width: 100%; }
+    gap: $spacing-md;
   }
 
-  .motivos-grid { grid-template-columns: 1fr; }
-
-  .motivo-acciones {
+  .header-right {
+    width: 100%;
     flex-wrap: wrap;
-
-    .orden-buttons {
-      width: 100%;
-      justify-content: center;
-      margin-right: 0;
-      margin-bottom: $spacing-sm;
-    }
+    .search-box { flex: 1; width: auto; }
+    .btn-new { flex: 1; justify-content: center; }
   }
+
+  .list-header { display: none; }
+
+  .motivos-list {
+    border: none;
+    gap: $spacing-md;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .motivo-row {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    border: 1px solid $border-subtle;
+    border-left: 3px solid var(--row-color, #{$cyan-500});
+    border-radius: $border-radius-lg;
+    padding: $spacing-md;
+    gap: $spacing-sm;
+    background: $navy-800;
+
+    &:last-child { border-bottom: 1px solid $border-subtle; }
+  }
+
+  .col-order {
+    order: 3;
+    border-top: 1px solid $border-subtle;
+    padding-top: $spacing-sm;
+    justify-content: center;
+  }
+
+  .col-estado {
+    position: absolute;
+    top: $spacing-md;
+    right: $spacing-md;
+  }
+
+  .col-acciones { order: 2; justify-content: center; }
+
+  .order-arrows { flex-direction: row; }
 }

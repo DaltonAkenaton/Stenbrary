@@ -16,6 +16,8 @@
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,6 +29,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
+import { ConfigService } from '../../core/services/config.service';
 import {
   BackupService,
   BackupData,
@@ -40,6 +43,7 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -59,7 +63,7 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
         </div>
         <div>
           <h1>Configuración</h1>
-          <p class="subtitle">Gestión de datos, respaldos y sistema</p>
+          <p class="subtitle">Opciones del sistema, respaldo de datos y herramientas de mantenimiento</p>
         </div>
       </div>
 
@@ -100,17 +104,17 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
         </div>
 
         <div class="info-meta">
-          <span class="meta-chip">
+          <span class="meta-chip" matTooltip="Versión actual del sistema">
             <mat-icon>code</mat-icon>
-            Stenbrary v3.6.2
+            Stenbrary v3.7.0
           </span>
-          <span class="meta-chip">
+          <span class="meta-chip" matTooltip="Los datos se guardan en este dispositivo, sin necesidad de internet">
             <mat-icon>storage</mat-icon>
-            IndexedDB local
+            Datos guardados localmente
           </span>
-          <span class="meta-chip">
+          <span class="meta-chip" matTooltip="Funciona sin internet. Instálala en tu dispositivo para acceso rápido">
             <mat-icon>phone_android</mat-icon>
-            PWA Offline-First
+            Funciona sin internet
           </span>
         </div>
       </mat-card>
@@ -142,25 +146,119 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
         </button>
       </mat-card>
 
+      <!-- ═══ REGISTRO DE SALIDA ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>sensor_door</mat-icon>
+          <h2>Registro de Salida</h2>
+        </div>
+        <p class="section-desc">
+          Activa el módulo <strong style="color:#E8F4F8">En Biblioteca</strong> para llevar un control
+          de quién está en la biblioteca en este momento. Cuando está activo, el scanner detectará
+          si un alumno ya tiene una entrada abierta y ofrecerá registrar su salida automáticamente.
+        </p>
+        <div class="sound-toggle">
+          <span class="sound-status">
+            {{ configService.registroSalidaActivo ? 'Activado' : 'Desactivado' }}
+          </span>
+          <button class="btn-inline"
+            [class.btn-inline-active]="configService.registroSalidaActivo"
+            (click)="toggleRegistroSalida()">
+            <mat-icon>{{ configService.registroSalidaActivo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            {{ configService.registroSalidaActivo ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+        <p class="section-hint" *ngIf="!configService.registroSalidaActivo">
+          <mat-icon>info</mat-icon>
+          Si los alumnos no registran salida con regularidad, desactiva esta opción para evitar datos incompletos.
+        </p>
+        <p class="section-hint" *ngIf="configService.registroSalidaActivo" style="color: rgba(0,200,215,0.5)">
+          <mat-icon>check_circle</mat-icon>
+          Módulo activo — aparece como "En Biblioteca" en el menú de navegación.
+        </p>
+
+        <!-- Cierre automático (solo visible si el módulo está activo) -->
+        <div *ngIf="configService.registroSalidaActivo" style="margin-top: 20px;">
+          <div class="section-header" style="margin-bottom: 10px;">
+            <mat-icon>timer_off</mat-icon>
+            <h2 style="font-size: 0.95rem;">Cierre automático de entradas</h2>
+          </div>
+          <p class="section-desc" style="margin-bottom: 12px;">
+            Si un alumno no registra salida, el sistema la marcará automáticamente después de este tiempo.
+          </p>
+          <div class="auto-close-options">
+            @for (op of opcionesAutoSalida; track op.valor) {
+              <button class="auto-close-btn"
+                [class.active]="configService.horasAutoSalida === op.valor"
+                (click)="setHorasAutoSalida(op.valor)">
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+          <p class="section-hint" *ngIf="configService.horasAutoSalida === 0">
+            <mat-icon>warning</mat-icon>
+            Desactivado — las entradas sin salida permanecerán abiertas indefinidamente.
+          </p>
+        </div>
+      </mat-card>
+
+      <!-- ═══ COMPORTAMIENTO DEL ESCÁNER ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>qr_code_scanner</mat-icon>
+          <h2>
+            Comportamiento del Escáner
+            <span style="display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;color:rgba(160,200,215,0.4);cursor:help;"
+                  matTooltip="Cuando un alumno escanea su credencial, el sistema verifica si ya tiene un registro reciente. Si hay uno dentro de este tiempo, se pedirá confirmación para evitar entradas accidentales. Por ejemplo: si un alumno entra y vuelve a escanear por error 5 minutos después, el sistema preguntará si realmente quiere registrar otra entrada."
+                  matTooltipPosition="above">
+              <mat-icon style="font-size:15px;width:15px;height:15px;">help_outline</mat-icon>
+            </span>
+          </h2>
+        </div>
+        <p class="section-desc">
+          Tiempo mínimo entre dos registros del mismo alumno. Si escanea antes de que pase este tiempo,
+          el sistema pedirá confirmación para evitar registros accidentales.
+        </p>
+        <div class="auto-close-options">
+          @for (op of opcionesUmbral; track op.valor) {
+            <button class="auto-close-btn"
+              [class.active]="configService.umbralDuplicadoMin === op.valor"
+              (click)="setUmbralDuplicado(op.valor)">
+              {{ op.etiqueta }}
+            </button>
+          }
+        </div>
+        <p class="section-hint">
+          <mat-icon>info</mat-icon>
+          Actualmente: {{ configService.umbralDuplicadoMin }} minutos entre registros del mismo alumno.
+        </p>
+      </mat-card>
+
       <!-- ═══ BACKUP ═══ -->
       <mat-card class="section-card">
         <div class="section-header">
           <mat-icon>cloud_download</mat-icon>
-          <h2>Respaldar Datos</h2>
+          <h2>Guardar una copia de seguridad</h2>
         </div>
         <p class="section-desc">
-          Descarga un archivo JSON con todos tus datos (alumnos, registros y motivos).
-          Guárdalo en un lugar seguro.
+          Descarga un archivo con <strong>todos los datos del sistema</strong>: alumnos,
+          registros de acceso y tipos de actividades.
+          Guárdalo en una USB, Google Drive o donde prefieras.
         </p>
+        <div class="section-desc-list">
+          <span><mat-icon>check_circle</mat-icon> Recomendado hacerlo periódicamente</span>
+          <span><mat-icon>check_circle</mat-icon> Si cambias de computadora, usa este archivo para restaurar todo</span>
+          <span><mat-icon>check_circle</mat-icon> El archivo se puede abrir con cualquier editor de texto</span>
+        </div>
         <button class="btn-action btn-backup"
                 (click)="exportarBackup()"
                 [disabled]="procesando">
           <mat-icon>download</mat-icon>
-          <span>{{ procesando ? 'Generando...' : 'Descargar Backup' }}</span>
+          <span>{{ procesando ? 'Generando archivo...' : 'Descargar copia de seguridad' }}</span>
         </button>
         <p class="section-hint">
           <mat-icon>schedule</mat-icon>
-          {{ ultimoBackup ? 'Último backup: ' + ultimoBackup : 'No se ha hecho ningún backup desde esta sesión' }}
+          {{ ultimoBackup ? 'Última copia: ' + ultimoBackup : 'Aún no has descargado ninguna copia en esta sesión' }}
         </p>
       </mat-card>
 
@@ -168,11 +266,12 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       <mat-card class="section-card">
         <div class="section-header">
           <mat-icon>cloud_upload</mat-icon>
-          <h2>Restaurar Datos</h2>
+          <h2>Restaurar desde una copia de seguridad</h2>
         </div>
         <p class="section-desc">
-          Importa un archivo de backup previamente descargado.
-          Los datos nuevos se agregarán sin borrar los existentes (duplicados se omiten).
+          Si tienes un archivo de copia de seguridad (descargado previamente desde esta misma pantalla),
+          puedes cargarlo aquí para recuperar tus datos.
+          Los datos nuevos se agregarán <strong>sin borrar los existentes</strong>.
         </p>
 
         <input type="file" #fileInput accept=".json"
@@ -183,7 +282,7 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
                   (click)="fileInput.click()"
                   [disabled]="procesando">
             <mat-icon>upload_file</mat-icon>
-            <span>Seleccionar archivo JSON</span>
+            <span>Seleccionar archivo de copia de seguridad</span>
           </button>
         </div>
 
@@ -211,14 +310,14 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
             <button class="btn-action btn-merge"
                     (click)="importarBackup('merge')"
                     [disabled]="procesando"
-                    matTooltip="Agrega datos nuevos sin borrar los existentes">
+                    matTooltip="Recomendado: agrega los datos del archivo sin borrar lo que ya existe en el sistema">
               <mat-icon>merge_type</mat-icon>
-              <span>Combinar datos</span>
+              <span>Combinar (recomendado)</span>
             </button>
             <button class="btn-action btn-replace"
                     (click)="importarBackup('replace')"
                     [disabled]="procesando"
-                    matTooltip="⚠️ Borra todo y reemplaza con el backup">
+                    matTooltip="⚠️ CUIDADO: Borra TODOS los datos actuales y los reemplaza con los del archivo">
               <mat-icon>swap_horiz</mat-icon>
               <span>Reemplazar todo</span>
             </button>
@@ -263,14 +362,53 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
           <h2>Mantenimiento</h2>
         </div>
         <p class="section-desc">
-          Herramientas para mantener tus datos limpios y organizados.
+          Si notas que algunas actividades aparecen repetidas al registrar accesos,
+          usa esta herramienta para limpiar duplicados automáticamente.
         </p>
         <div class="maintenance-actions">
           <button class="btn-action btn-maintenance"
                   (click)="limpiarDuplicados()"
-                  [disabled]="procesando">
+                  [disabled]="procesando"
+                  matTooltip="Elimina actividades que estén duplicadas en la base de datos">
             <mat-icon>content_copy</mat-icon>
-            <span>Limpiar motivos duplicados</span>
+            <span>Limpiar actividades duplicadas</span>
+          </button>
+        </div>
+      </mat-card>
+
+      <!-- ═══ ACCESOS DIRECTOS ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>apps</mat-icon>
+          <h2>Accesos Directos</h2>
+        </div>
+        <p class="section-desc">
+          Accede rápidamente a otras secciones del sistema desde aquí.
+        </p>
+        <div class="shortcuts-grid">
+          <button class="shortcut-btn" (click)="navegar('/gestion-motivos')">
+            <mat-icon>category</mat-icon>
+            <div class="shortcut-info">
+              <span class="shortcut-title">Gestión de Actividades</span>
+              <span class="shortcut-desc">Agregar, editar o eliminar tipos de actividades</span>
+            </div>
+            <mat-icon class="shortcut-arrow">chevron_right</mat-icon>
+          </button>
+          <button class="shortcut-btn" (click)="navegar('/importar-alumnos')">
+            <mat-icon>upload_file</mat-icon>
+            <div class="shortcut-info">
+              <span class="shortcut-title">Importar Alumnos</span>
+              <span class="shortcut-desc">Cargar alumnos desde un archivo Excel (.xlsx)</span>
+            </div>
+            <mat-icon class="shortcut-arrow">chevron_right</mat-icon>
+          </button>
+          <button class="shortcut-btn" (click)="navegar('/estadisticas')">
+            <mat-icon>bar_chart</mat-icon>
+            <div class="shortcut-info">
+              <span class="shortcut-title">Estadísticas Avanzadas</span>
+              <span class="shortcut-desc">Gráficas, tendencias y análisis del sistema</span>
+            </div>
+            <mat-icon class="shortcut-arrow">chevron_right</mat-icon>
           </button>
         </div>
       </mat-card>
@@ -279,18 +417,27 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       <mat-card class="section-card danger-zone">
         <div class="section-header danger">
           <mat-icon>warning</mat-icon>
-          <h2>Zona Peligrosa</h2>
+          <h2>Zona Peligrosa — Lee antes de usar</h2>
         </div>
         <p class="section-desc">
-          Estas acciones son irreversibles. Asegúrate de tener un backup antes de continuar.
+          Las acciones de esta sección <strong>no se pueden deshacer</strong>.
+          Antes de continuar, asegúrate de haber descargado una copia de seguridad arriba.
+          Si tienes dudas, contacta al administrador del sistema.
         </p>
         <div class="danger-actions">
           <button class="btn-action btn-danger"
                   (click)="limpiarTodosDatos()"
-                  [disabled]="procesando">
+                  [disabled]="procesando || !DESTRUCCION_HABILITADA"
+                  matTooltip="Desactivado por seguridad. Solo el desarrollador puede activar esta función en el código fuente."
+                  matTooltipPosition="above">
             <mat-icon>delete_forever</mat-icon>
             <span>Eliminar todos los datos</span>
           </button>
+          <p class="danger-note">
+            <mat-icon>lock</mat-icon>
+            Esta acción está desactivada por seguridad. Para habilitarla, el desarrollador debe cambiar
+            <code>DESTRUCCION_HABILITADA</code> a <code>true</code> en el código fuente.
+          </p>
         </div>
       </mat-card>
 
@@ -334,8 +481,18 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
     }
 
     .section-desc {
-      margin: 0 0 20px; font-size: 0.85rem;
-      color: rgba(200, 230, 240, 0.55); line-height: 1.5;
+      margin: 0 0 16px; font-size: 0.85rem;
+      color: rgba(200, 230, 240, 0.55); line-height: 1.6;
+    }
+
+    .section-desc-list {
+      display: flex; flex-direction: column; gap: 6px;
+      margin: -6px 0 18px;
+      span {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.8rem; color: rgba(200, 230, 240, 0.45);
+        mat-icon { font-size: 14px; width: 14px; height: 14px; color: #0BC4B7; }
+      }
     }
 
     .section-hint {
@@ -490,6 +647,41 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       display: flex; gap: 10px; flex-wrap: wrap;
     }
 
+    /* ── Accesos directos ── */
+    .shortcuts-grid {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .shortcut-btn {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; background: #0a1420;
+      border: 1px solid rgba(0, 200, 215, 0.08);
+      border-radius: 12px; cursor: pointer; text-align: left; width: 100%;
+      transition: all 150ms; font-family: inherit;
+      & > mat-icon:first-child { color: #00C8D7; font-size: 22px; width: 22px; height: 22px; flex-shrink: 0; }
+      &:hover { border-color: rgba(0, 200, 215, 0.25); background: rgba(0, 200, 215, 0.04); }
+    }
+    .shortcut-info {
+      flex: 1; display: flex; flex-direction: column; gap: 2px;
+    }
+    .shortcut-title {
+      font-size: 0.88rem; font-weight: 600; color: #E8F4F8;
+    }
+    .shortcut-desc {
+      font-size: 0.75rem; color: rgba(160, 200, 215, 0.5);
+    }
+    .shortcut-arrow {
+      color: rgba(160, 200, 215, 0.25) !important;
+      font-size: 18px !important; width: 18px !important; height: 18px !important;
+    }
+
+    .danger-note {
+      display: flex; align-items: flex-start; gap: 6px;
+      font-size: 0.78rem; color: rgba(160, 200, 215, 0.45);
+      line-height: 1.5; margin-top: 4px; width: 100%;
+      mat-icon { font-size: 14px; width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
+      code { font-family: 'Space Mono', monospace; font-size: 0.72rem; color: rgba(0, 200, 215, 0.55); }
+    }
+
     .import-result {
       display: flex; align-items: flex-start; gap: 10px;
       margin-top: 18px; padding: 14px 16px;
@@ -502,6 +694,25 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
     }
 
     .danger-zone { border-color: rgba(240, 82, 82, 0.15); }
+
+    .auto-close-options {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    .auto-close-btn {
+      padding: 7px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      color: rgba(200,230,240,0.55);
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: all 150ms;
+      &:hover { background: rgba(0,200,215,0.08); color: #00C8D7; border-color: rgba(0,200,215,0.2); }
+      &.active {
+        background: rgba(0,200,215,0.15); color: #00C8D7;
+        border-color: rgba(0,200,215,0.35);
+      }
+    }
 
     @media (max-width: 768px) {
       .info-grid { grid-template-columns: repeat(2, 1fr); }
@@ -516,6 +727,11 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
   `],
 })
 export class ConfiguracionComponent implements OnInit {
+
+  // ─── DEVELOPER FLAG ──────────────────────────────────────
+  // Para activar el botón "Eliminar todos los datos", cambia
+  // el valor a `true` aquí y reconstruye la aplicación.
+  readonly DESTRUCCION_HABILITADA = false;
 
   cargandoInfo = true;
   procesando = false;
@@ -541,7 +757,9 @@ export class ConfiguracionComponent implements OnInit {
     private toastService: ToastService,
     private loadingService: LoadingService,
     public soundService: SoundService,
+    public configService: ConfigService,
     private dialog: MatDialog,
+    private router: Router,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -604,6 +822,65 @@ export class ConfiguracionComponent implements OnInit {
 
   probarSonido(): void {
     this.soundService.beepExito();
+  }
+
+  // ═══════════════════════════════════════════════
+  // REGISTRO DE SALIDA
+  // ═══════════════════════════════════════════════
+
+  readonly opcionesAutoSalida = [
+    { valor: 0,  etiqueta: 'No cerrar' },
+    { valor: 1,  etiqueta: '1 hora'    },
+    { valor: 2,  etiqueta: '2 horas'   },
+    { valor: 3,  etiqueta: '3 horas'   },
+    { valor: 4,  etiqueta: '4 horas'   },
+    { valor: 6,  etiqueta: '6 horas'   },
+    { valor: 8,  etiqueta: '8 horas'   },
+  ];
+
+  setHorasAutoSalida(horas: number): void {
+    this.configService.setHorasAutoSalida(horas);
+    const etiqueta = this.opcionesAutoSalida.find(o => o.valor === horas)?.etiqueta ?? `${horas}h`;
+    this.toastService.info(
+      horas === 0
+        ? 'Cierre automático desactivado'
+        : `Cierre automático configurado a ${etiqueta}`
+    );
+  }
+
+  toggleRegistroSalida(): void {
+    const nuevo = !this.configService.registroSalidaActivo;
+    this.configService.setRegistroSalidaActivo(nuevo);
+    this.toastService.info(
+      nuevo
+        ? 'Registro de salida activado — aparece "En Biblioteca" en el menú'
+        : 'Registro de salida desactivado'
+    );
+  }
+
+  // ═══════════════════════════════════════════════
+  // ESCÁNER
+  // ═══════════════════════════════════════════════
+
+  readonly opcionesUmbral = [
+    { valor: 10, etiqueta: '10 min' },
+    { valor: 20, etiqueta: '20 min' },
+    { valor: 30, etiqueta: '30 min' },
+    { valor: 45, etiqueta: '45 min' },
+    { valor: 60, etiqueta: '1 hora' },
+  ];
+
+  setUmbralDuplicado(minutos: number): void {
+    this.configService.setUmbralDuplicadoMin(minutos);
+    this.toastService.info(`Umbral de duplicados: ${minutos} minutos`);
+  }
+
+  // ═══════════════════════════════════════════════
+  // NAVEGACIÓN
+  // ═══════════════════════════════════════════════
+
+  navegar(ruta: string): void {
+    this.router.navigate([ruta]);
   }
 
   // ═══════════════════════════════════════════════

@@ -233,6 +233,45 @@
   to   { opacity: 1; transform: translateX(0); filter: blur(0); }
 }
 
+.confirm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.confirm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px 5px 10px;
+  background: rgba(var(--chip-color, #00C8D7), .08);
+  border: 1px solid rgba(var(--chip-color, #00C8D7), .3);
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: $text-primary;
+  white-space: nowrap;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+}
+
+.chip-remove {
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; flex-shrink: 0;
+  background: rgba(240, 82, 82, 0.1);
+  border: none; border-radius: 50%;
+  color: rgba(240, 82, 82, .7); cursor: pointer; transition: background 120ms;
+  padding: 0;
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+  &:hover:not(:disabled) { background: rgba(240, 82, 82, 0.25); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
 .confirm-motivo {
   display: flex;
   align-items: flex-start;

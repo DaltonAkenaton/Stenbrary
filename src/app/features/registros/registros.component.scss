@@ -136,6 +136,65 @@ h1 {
   }
 }
 
+// ─── RANGO PERSONALIZADO ────────────────────────────────
+.rango-personalizado {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  margin-bottom: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.date-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: $cyan-500;
+    opacity: 0.7;
+  }
+
+  label {
+    font-size: 0.78rem;
+    color: $text-secondary;
+    font-weight: 500;
+  }
+
+  input[type="date"] {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $border-subtle;
+    border-radius: 6px;
+    color: $text-primary;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+
+    &::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: rgba($cyan-500, 0.4);
+    }
+  }
+}
+
+.date-sep {
+  color: $text-muted;
+  font-size: 1.1rem;
+}
+
 // ─── FILTROS ─────────────────────────────────────────────
 .filtros-panel {
   background: $navy-800;
@@ -241,6 +300,15 @@ h1 {
   border-radius: $border-radius-lg;
   overflow: hidden;
   animation: slideInUp 400ms 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background 150ms;
+
+  &:hover td {
+    background: rgba($cyan-500, 0.04);
+  }
 }
 
 .registros-table {

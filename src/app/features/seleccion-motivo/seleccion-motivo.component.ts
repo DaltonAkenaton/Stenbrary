@@ -42,8 +42,8 @@ export class SeleccionMotivoComponent implements OnInit {
   alumno: Alumno | null = null;
   motivos: Motivo[] = [];
 
-  /** Motivo seleccionado (pero aún no confirmado) */
-  motivoSeleccionado: Motivo | null = null;
+  /** Motivos seleccionados (multi-select) */
+  motivosSeleccionados: Motivo[] = [];
 
   /** Si el usuario es un invitado (sin matrícula) */
   esInvitado = false;
@@ -107,28 +107,32 @@ export class SeleccionMotivoComponent implements OnInit {
   // SELECCIÓN (paso 1 — toggle behavior)
   // ═══════════════════════════════════════════════
 
-  /**
-   * Toggle: si el motivo ya está seleccionado, deselecciona.
-   * Si es otro, lo selecciona.
-   */
+  /** Toggle: añade o quita un motivo de la selección. */
   seleccionarMotivo(motivo: Motivo): void {
     if (this.registrando) return;
-
-    if (this.motivoSeleccionado?.id === motivo.id) {
-      // Toggle off — deseleccionar
-      this.motivoSeleccionado = null;
+    const idx = this.motivosSeleccionados.findIndex(m => m.id === motivo.id);
+    if (idx >= 0) {
+      this.motivosSeleccionados = this.motivosSeleccionados.filter((_, i) => i !== idx);
     } else {
-      // Seleccionar nuevo
-      this.motivoSeleccionado = motivo;
+      this.motivosSeleccionados = [...this.motivosSeleccionados, motivo];
     }
   }
 
-  /**
-   * Deselecciona el motivo actual.
-   */
+  estaSeleccionado(motivo: Motivo): boolean {
+    return this.motivosSeleccionados.some(m => m.id === motivo.id);
+  }
+
   deseleccionarMotivo(): void {
     if (this.registrando) return;
-    this.motivoSeleccionado = null;
+    this.motivosSeleccionados = [];
+  }
+
+  get haySeleccion(): boolean {
+    return this.motivosSeleccionados.length > 0;
+  }
+
+  get resumenMotivos(): string {
+    return this.motivosSeleccionados.map(m => m.nombre).join(', ');
   }
 
   // ═══════════════════════════════════════════════
@@ -136,7 +140,7 @@ export class SeleccionMotivoComponent implements OnInit {
   // ═══════════════════════════════════════════════
 
   async confirmarRegistro(): Promise<void> {
-    if (!this.alumno || !this.motivoSeleccionado || this.registrando) return;
+    if (!this.alumno || !this.haySeleccion || this.registrando) return;
 
     try {
       this.registrando = true;
@@ -145,22 +149,26 @@ export class SeleccionMotivoComponent implements OnInit {
         ? 'Visitante Externo'
         : `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
 
+      const primero = this.motivosSeleccionados[0];
+
       const nuevoRegistro: Omit<Registro, 'id' | 'fechaHora' | 'sincronizado'> = {
         alumnoId: this.alumno.id!,
         matricula: this.alumno.matricula,
-        nombreCompleto: nombreCompleto,
+        nombreCompleto,
         carrera: this.alumno.carrera,
-        motivoId: this.motivoSeleccionado.id || '',
-        motivoNombre: this.motivoSeleccionado.nombre
+        motivoId: primero.id || '',
+        motivoNombre: primero.nombre,
+        motivoIds: this.motivosSeleccionados.map(m => m.id || ''),
+        motivoNombres: this.motivosSeleccionados.map(m => m.nombre),
       };
 
       await this.databaseService.crearRegistro(nuevoRegistro);
 
       const displayName = this.esInvitado ? 'Visitante' : this.alumno.nombre;
-      console.log('🎉 Registro completado:', displayName, '-', this.motivoSeleccionado.nombre);
+      console.log('🎉 Registro completado:', displayName, '-', this.resumenMotivos);
 
       this.toastService.success(
-        `¡Registro exitoso! ${displayName} — ${this.motivoSeleccionado.nombre}`
+        `¡Registro exitoso! ${displayName} — ${this.resumenMotivos}`
       );
 
       // Feedback háptico

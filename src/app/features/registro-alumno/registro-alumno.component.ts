@@ -19,12 +19,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DatabaseService } from '../../core/services/database.service';
 import { Alumno } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../core/constants/catalogos.constants';
 import { validarMatricula, MATRICULA_CONFIG, normalizarMatricula } from '../../core/utils/matricula.utils';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-registro-alumno',
@@ -39,6 +41,7 @@ import { validarMatricula, MATRICULA_CONFIG, normalizarMatricula } from '../../c
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
   ],
   templateUrl: './registro-alumno.component.html',
   styleUrl: './registro-alumno.component.scss',
@@ -64,6 +67,7 @@ export class RegistroAlumnoComponent implements OnInit {
     private router: Router,
     private toastService: ToastService,
     private loadingService: LoadingService,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -138,15 +142,35 @@ export class RegistroAlumnoComponent implements OnInit {
         sessionStorage.removeItem('matriculaTemp');
         this.router.navigate(['/seleccion-motivo']);
       } else {
-        this.registroForm.reset();
-        this.toastService.info('Puedes registrar otro alumno');
+        this.cargando = false;
+        const dialogData: ConfirmDialogData = {
+          titulo: 'Alumno registrado',
+          mensaje: `${formValue.nombre} ${formValue.apellidoPaterno} fue registrado correctamente. ¿Deseas registrar otro alumno?`,
+          textoConfirmar: 'Registrar otro',
+          textoCancelar: 'Ir al escáner',
+          variante: 'info',
+        };
+        const ref = this.dialog.open(ConfirmDialogComponent, {
+          width: '400px',
+          data: dialogData,
+        });
+        ref.afterClosed().subscribe((otro: boolean) => {
+          if (otro) {
+            this.registroForm.reset();
+          } else {
+            this.router.navigate(['/scanner']);
+          }
+        });
       }
     } catch (error: any) {
       console.error('❌ Error al registrar alumno:', error);
       this.loadingService.hide();
 
-      if (error.message && error.message.includes('already exists')) {
-        this.error = 'Esta matrícula ya está registrada';
+      const esDuplicado = error.name === 'ConstraintError'
+        || (error.message && (error.message.includes('already exists') || error.message.includes('constraint')));
+
+      if (esDuplicado) {
+        this.error = 'Esta matrícula ya está registrada en el sistema';
         this.toastService.error('Esta matrícula ya está registrada');
       } else {
         this.error = 'Error al registrar el alumno. Intenta de nuevo.';

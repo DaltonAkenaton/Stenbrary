@@ -42,6 +42,12 @@
           <mat-chip [class]="alumno.activo ? 'chip-activo' : 'chip-inactivo'">
             {{ alumno.activo ? 'Activo' : 'Inactivo' }}
           </mat-chip>
+          @if (enBibliotecaAhora) {
+            <mat-chip class="chip-en-biblioteca">
+              <mat-icon>sensor_door</mat-icon>
+              En biblioteca ahora
+            </mat-chip>
+          }
         </div>
         <div class="actions">
           <button mat-raised-button color="primary" (click)="abrirDialogEditar()"
@@ -49,12 +55,17 @@
             <mat-icon>edit</mat-icon>
             Editar
           </button>
-          <button mat-raised-button 
+          <button mat-raised-button
                   [color]="alumno.activo ? 'warn' : 'accent'"
                   (click)="alumno.activo ? desactivarAlumno() : reactivarAlumno()"
                   [matTooltip]="alumno.activo ? 'Desactivar alumno' : 'Reactivar alumno'">
             <mat-icon>{{ alumno.activo ? 'block' : 'check_circle' }}</mat-icon>
             {{ alumno.activo ? 'Desactivar' : 'Reactivar' }}
+          </button>
+          <button mat-icon-button class="btn-eliminar"
+                  (click)="eliminarAlumno()"
+                  matTooltip="Eliminar alumno permanentemente">
+            <mat-icon>delete_forever</mat-icon>
           </button>
         </div>
       </div>

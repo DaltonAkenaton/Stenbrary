@@ -17,8 +17,15 @@ export interface Registro {
   matricula: string;
   nombreCompleto: string;
   carrera: string;
+
+  // ── Motivo principal (retrocompat) ──
   motivoId: string;
   motivoNombre: string;
+
+  // ── Múltiples motivos (v3.7.0) — incluye el principal ──
+  motivoIds?: string[];
+  motivoNombres?: string[];
+
   fechaHora: Date;
   dispositivo?: string;
   sincronizado: boolean;
@@ -26,4 +33,8 @@ export interface Registro {
   // ── Hora de salida (v3.6.2) ──
   horaSalida?: Date;
   duracionMinutos?: number;
+
+  // ── Cierre automático (v3.7.0) ──
+  // true cuando el sistema cerró la entrada por tiempo, no el alumno
+  cierreAutomatico?: boolean;
 }

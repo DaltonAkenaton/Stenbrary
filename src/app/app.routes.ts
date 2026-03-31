@@ -80,6 +80,12 @@ export const routes: Routes = [
     title: 'Stenbrary — Importar Alumnos',
   },
   {
+    path: 'presencia',
+    loadComponent: () =>
+      import('./features/presencia/presencia.component').then(m => m.PresenciaComponent),
+    title: 'Stenbrary — En Biblioteca',
+  },
+  {
     path: 'detalle-alumno/:matricula',
     loadComponent: () =>
       import('./features/detalle-alumno/detalle-alumno.component').then(m => m.DetalleAlumnoComponent),

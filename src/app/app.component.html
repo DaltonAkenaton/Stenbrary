@@ -40,7 +40,7 @@
 
         <!-- Título de sección (solo visible cuando el sidebar está expandido) -->
         @if (isSidebarExpanded()) {
-          <span class="nav-section-title">{{ section.title }}</span>
+          <span class="nav-section-title" [style.--section-index]="$index">{{ section.title }}</span>
         }
 
         @for (item of section.items; track item.route) {
@@ -52,9 +52,15 @@
             [attr.aria-label]="item.label"
             [matTooltip]="!isSidebarExpanded() ? item.label : ''"
             matTooltipPosition="right"
+            [style.--nav-index]="$index"
             matRipple
             matRippleColor="rgba(0, 200, 215, 0.10)">
-            <mat-icon>{{ item.icon }}</mat-icon>
+            <div class="nav-icon-wrap">
+              <mat-icon>{{ item.icon }}</mat-icon>
+              @if (item.route === '/presencia' && configService.hayAutoClose()) {
+                <span class="nav-warn-dot" matTooltip="Hay entradas cerradas automáticamente sin confirmar"></span>
+              }
+            </div>
             @if (isSidebarExpanded()) {
               <span class="nav-label">{{ item.label }}</span>
             }
@@ -84,6 +90,11 @@
 
   </aside>
 
+  <!-- Backdrop para drawer móvil — cierra el sidebar al tocar fuera -->
+  @if (isSidebarExpanded()) {
+    <div class="sidebar-backdrop" (click)="cerrarSidebar()" aria-hidden="true"></div>
+  }
+
   <!-- ══════════════════════════════════════════════════════
        ÁREA PRINCIPAL — Topbar + Contenido de ruta
   ══════════════════════════════════════════════════════ -->
@@ -91,6 +102,15 @@
 
     <!-- Topbar -->
     <header class="topbar">
+      <!-- Botón hamburguesa — solo visible en móvil -->
+      <button
+        class="hamburger-btn"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="isSidebarExpanded() ? 'Cerrar menú' : 'Abrir menú'"
+        matRipple
+        matRippleColor="rgba(0, 200, 215, 0.10)">
+        <mat-icon>{{ isSidebarExpanded() ? 'close' : 'menu' }}</mat-icon>
+      </button>
       <h1 class="topbar-title">{{ currentPageTitle }}</h1>
       <div class="topbar-end">
         <!-- Badge de estado — reactivo a navigator.onLine -->
@@ -101,7 +121,6 @@
             matTooltipPosition="below">
             <span class="status-dot"></span>
             <mat-icon class="status-icon">wifi</mat-icon>
-            Online
           </span>
         } @else {
           <span
@@ -144,5 +163,31 @@
     </main>
 
   </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       BOTTOM NAVIGATION — Solo visible en móvil
+  ══════════════════════════════════════════════════════ -->
+  <nav class="bottom-nav" aria-label="Navegación móvil">
+    @for (item of bottomNavItems; track item.route) {
+      <a
+        class="bottom-nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+        [attr.aria-label]="item.label">
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span class="bottom-nav-label">{{ item.label }}</span>
+      </a>
+    }
+    <!-- Botón "Más" abre el sidebar drawer con todas las secciones -->
+    <button
+      class="bottom-nav-item bottom-nav-more"
+      (click)="toggleSidebar()"
+      [class.active]="isSidebarExpanded()"
+      aria-label="Más opciones">
+      <mat-icon>{{ isSidebarExpanded() ? 'close' : 'apps' }}</mat-icon>
+      <span class="bottom-nav-label">Más</span>
+    </button>
+  </nav>
 
 </div>

@@ -61,8 +61,14 @@
           <div class="stat-data">
             <span class="stat-valor mono">{{ stat.valor }}</span>
             <span class="stat-label">{{ stat.etiqueta }}</span>
+            <span class="stat-subtexto">{{ stat.subtexto }}</span>
           </div>
-          <mat-icon class="stat-arrow">chevron_right</mat-icon>
+          <span class="stat-help"
+                [matTooltip]="stat.tooltip"
+                matTooltipPosition="above"
+                (click)="$event.stopPropagation()">
+            <mat-icon>help_outline</mat-icon>
+          </span>
         </button>
       }
     </div>
@@ -73,9 +79,14 @@
       <!-- Actividades de hoy -->
       <div class="panel">
         <div class="panel-header">
-          <h2>Actividades de hoy</h2>
+          <h2>
+            Actividades de hoy
+            <span class="panel-help" matTooltip="Muestra cuántos alumnos eligieron cada tipo de actividad al entrar hoy" matTooltipPosition="above">
+              <mat-icon>help_outline</mat-icon>
+            </span>
+          </h2>
           <button class="link-btn" (click)="navegar('/registros')">
-            Ver todos
+            Ver historial completo
             <mat-icon>arrow_forward</mat-icon>
           </button>
         </div>
@@ -90,14 +101,22 @@
                   <mat-icon [style.color]="a.color">{{ a.icono }}</mat-icon>
                 </div>
                 <span class="actividad-nombre">{{ a.nombre }}</span>
-                <span class="actividad-count mono">{{ a.cantidad }}</span>
+                <span class="actividad-count mono"
+                      [matTooltip]="a.cantidad + ' ' + (a.cantidad === 1 ? 'alumno eligió esta actividad' : 'alumnos eligieron esta actividad')">
+                  {{ a.cantidad }}
+                </span>
               </div>
             }
           </div>
         } @else {
           <div class="panel-empty">
             <mat-icon>event_note</mat-icon>
-            <p>No hay actividades registradas hoy</p>
+            <p>Aún no hay actividades registradas hoy</p>
+            <small>Aparecerán aquí cuando los alumnos escaneen su credencial</small>
+            <button class="panel-empty-cta" (click)="navegar('/scanner')">
+              <mat-icon>qr_code_scanner</mat-icon>
+              Ir al escáner
+            </button>
           </div>
         }
       </div>
@@ -105,9 +124,14 @@
       <!-- Últimos registros -->
       <div class="panel">
         <div class="panel-header">
-          <h2>Últimos registros</h2>
+          <h2>
+            Últimas entradas
+            <span class="panel-help" matTooltip="Los 5 registros más recientes del día de hoy" matTooltipPosition="above">
+              <mat-icon>help_outline</mat-icon>
+            </span>
+          </h2>
           <button class="link-btn" (click)="navegar('/registros')">
-            Historial
+            Ver todos los registros
             <mat-icon>arrow_forward</mat-icon>
           </button>
         </div>
@@ -128,7 +152,8 @@
         } @else {
           <div class="panel-empty">
             <mat-icon>schedule</mat-icon>
-            <p>Los registros de hoy aparecerán aquí</p>
+            <p>Todavía no hay entradas hoy</p>
+            <small>Las entradas del día aparecerán aquí en tiempo real</small>
           </div>
         }
       </div>
@@ -137,29 +162,35 @@
 
     <!-- ── ACCESOS RÁPIDOS ── -->
     <div class="quick-actions">
-      <h3>Accesos rápidos</h3>
+      <h3>¿Qué quieres hacer?</h3>
       <div class="actions-grid">
-        <button class="action-card" (click)="navegar('/scanner')">
+        <button class="action-card" (click)="navegar('/scanner')"
+                matTooltip="Registrar la entrada de un alumno con su credencial">
           <mat-icon>qr_code_scanner</mat-icon>
-          <span>Escanear</span>
+          <span>Registrar entrada</span>
         </button>
-        <button class="action-card" (click)="navegar('/registro-alumno')">
+        <button class="action-card" (click)="navegar('/registro-alumno')"
+                matTooltip="Dar de alta a un alumno que no está en el sistema">
           <mat-icon>person_add</mat-icon>
           <span>Nuevo alumno</span>
         </button>
-        <button class="action-card" (click)="navegar('/importar-alumnos')">
+        <button class="action-card" (click)="navegar('/importar-alumnos')"
+                matTooltip="Cargar alumnos desde un archivo Excel (.xlsx)">
           <mat-icon>upload_file</mat-icon>
-          <span>Importar</span>
+          <span>Importar alumnos</span>
         </button>
-        <button class="action-card" (click)="navegar('/alumnos')">
+        <button class="action-card" (click)="navegar('/alumnos')"
+                matTooltip="Ver la lista completa de alumnos registrados">
           <mat-icon>groups</mat-icon>
-          <span>Alumnos</span>
+          <span>Ver alumnos</span>
         </button>
-        <button class="action-card" (click)="navegar('/estadisticas')">
+        <button class="action-card" (click)="navegar('/estadisticas')"
+                matTooltip="Gráficas y análisis de uso de la biblioteca">
           <mat-icon>bar_chart</mat-icon>
           <span>Estadísticas</span>
         </button>
-        <button class="action-card" (click)="navegar('/configuracion')">
+        <button class="action-card" (click)="navegar('/configuracion')"
+                matTooltip="Respaldo de datos, sonido y otras opciones">
           <mat-icon>settings</mat-icon>
           <span>Configuración</span>
         </button>

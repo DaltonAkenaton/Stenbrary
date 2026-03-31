@@ -1,12 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  Stenbrary — Global Styles                           ║
-// ║  Cyan Cube Design System — v3.2                      ║
-// ║                                                      ║
-// ║  FIXES v3.2:                                         ║
-// ║  - mat-tab labels: visible text on dark bg            ║
-// ║  - mat-dialog: dark background, visible title         ║
-// ║  - mat-select: dark dropdown panel                    ║
-// ║  - mat-chip: dark themed                              ║
+// ║  Cyan Cube Design System — v3.8                      ║
 // ╚══════════════════════════════════════════════════════╝
 
 @use '@angular/material' as mat;
@@ -34,7 +28,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-// ─── FONDO GLOBAL CON MESH SUTIL ─────────────────────────
+// ─── FONDO GLOBAL CON MESH ───────────────────────────────
 body::before {
   content: '';
   position: fixed;
@@ -42,33 +36,35 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 55% 45% at 15% 20%, rgba(0, 200, 215, 0.06) 0%, transparent 70%),
-    radial-gradient(ellipse 35% 55% at 88% 75%, rgba(0, 169, 158, 0.05) 0%, transparent 70%);
+    radial-gradient(ellipse 60% 50% at 10% 15%,  rgba(0, 200, 215, 0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 60% at 90% 80%,  rgba(0, 169, 158, 0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 30% 35% at 55% 50%,  rgba(0, 200, 215, 0.025) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 30% at 50% 100%, rgba(0, 140, 150, 0.04) 0%, transparent 70%);
 }
 
-// ─── SCROLLBAR PERSONALIZADO ─────────────────────────────
+// ─── SCROLLBAR ───────────────────────────────────────────
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: $navy-800;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: $navy-600;
-  border-radius: 3px;
+  background: rgba(0, 200, 215, 0.18);
+  border-radius: 10px;
+  transition: background 200ms;
 
   &:hover {
-    background: $cyan-600;
+    background: rgba(0, 200, 215, 0.35);
   }
 }
 
-// Firefox scrollbar
 * {
   scrollbar-width: thin;
-  scrollbar-color: $navy-600 $navy-800;
+  scrollbar-color: rgba(0, 200, 215, 0.18) transparent;
 }
 
 // ─── TIPOGRAFÍA ──────────────────────────────────────────
@@ -84,7 +80,14 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.02em;
 }
 
-// ─── UTILIDADES GLOBALES ─────────────────────────────────
+// ─── FOCUS RING ──────────────────────────────────────────
+:focus-visible {
+  outline: 2px solid rgba($cyan-500, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// ─── UTILIDADES ──────────────────────────────────────────
 .full-width  { width: 100%; }
 .full-height { height: 100%; }
 .text-center { text-align: center; }
@@ -106,23 +109,40 @@ h1, h2, h3, h4, h5, h6 {
 .flex-1        { flex: 1; }
 
 // ─── ANIMACIONES GLOBALES ────────────────────────────────
+
+// Page entrance: cada componente cargado por router-outlet entra con este efecto
+router-outlet + * {
+  animation: pageEnter 340ms cubic-bezier(0.25, 0.8, 0.25, 1) both;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
 @keyframes slideInUp {
-  from { transform: translateY(16px); opacity: 0; }
+  from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
 
 @keyframes slideInDown {
-  from { transform: translateY(-16px); opacity: 0; }
+  from { transform: translateY(-20px); opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
 }
 
 @keyframes scaleIn {
-  from { transform: scale(0.92); opacity: 0; }
+  from { transform: scale(0.94); opacity: 0; }
   to   { transform: scale(1);    opacity: 1; }
 }
 
@@ -137,8 +157,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 8px  rgba(0, 200, 215, 0.3); }
-  50%       { box-shadow: 0 0 20px rgba(0, 200, 215, 0.6); }
+  0%, 100% { box-shadow: 0 0 6px  rgba(0, 200, 215, 0.25); }
+  50%       { box-shadow: 0 0 18px rgba(0, 200, 215, 0.55); }
 }
 
 @keyframes scanLine {
@@ -147,18 +167,26 @@ h1, h2, h3, h4, h5, h6 {
   100% { top: 4px; opacity: 1; }
 }
 
-.fade-in      { animation: fadeIn    $transition-normal both; }
-.slide-in-up  { animation: slideInUp $transition-normal both; }
-.slide-in-down{ animation: slideInDown $transition-normal both; }
-.scale-in     { animation: scaleIn   $transition-normal both; }
-.pulse        { animation: pulse 2s ease-in-out infinite; }
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
+}
+
+.fade-in       { animation: fadeIn    $transition-normal both; }
+.slide-in-up   { animation: slideInUp $transition-normal both; }
+.slide-in-down { animation: slideInDown $transition-normal both; }
+.scale-in      { animation: scaleIn   $transition-normal both; }
+.pulse         { animation: pulse 2s ease-in-out infinite; }
 
 // ─── CARD GENÉRICO ───────────────────────────────────────
 .card {
   background: $navy-800;
+  background-image: $gradient-card;
   border: 1px solid $border-subtle;
   border-radius: $border-radius-lg;
   padding: $spacing-lg;
+  position: relative;
+  overflow: hidden;
 
   &.card-hover {
     transition: border-color $transition-fast, box-shadow $transition-fast, transform $transition-fast;
@@ -166,7 +194,7 @@ h1, h2, h3, h4, h5, h6 {
 
     &:hover {
       border-color: $border-glow;
-      box-shadow: 0 0 32px rgba(0, 200, 215, 0.08);
+      box-shadow: 0 0 0 1px rgba($cyan-500, 0.05), 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 40px rgba($cyan-500, 0.06);
       transform: translateY(-2px);
     }
   }
@@ -177,7 +205,7 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: $spacing-sm;
-  background: linear-gradient(135deg, $cyan-500, $teal-500);
+  background: $gradient-cyan;
   color: $navy-950;
   padding: 10px $spacing-lg;
   border: none;
@@ -187,21 +215,55 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   cursor: pointer;
   transition: all $transition-fast;
-  box-shadow: $shadow-cyan;
+  box-shadow: $shadow-glow-sm;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0);
+    transition: background $transition-fast;
+  }
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 28px rgba(0, 200, 215, 0.35);
+    box-shadow: $shadow-glow-md;
+
+    &::after { background: rgba(255, 255, 255, 0.08); }
   }
 
-  &:active { transform: translateY(0); }
+  &:active {
+    transform: translateY(0);
+    box-shadow: $shadow-glow-sm;
+  }
 
   &:disabled {
-    opacity: 0.4;
+    opacity: 0.38;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
   }
+}
+
+// ─── HELP TIP ────────────────────────────────────────────
+.help-tip {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+  color: rgba(200, 230, 240, 0.35);
+  cursor: help;
+  transition: color 200ms;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover { color: $cyan-400; }
 }
 
 // ─── CHIP / BADGE ────────────────────────────────────────
@@ -210,9 +272,9 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 11px;
   padding: 3px 10px;
   border-radius: 100px;
-  background: rgba(0, 200, 215, 0.12);
+  background: rgba(0, 200, 215, 0.10);
   color: $cyan-400;
-  border: 1px solid $border-glow;
+  border: 1px solid rgba(0, 200, 215, 0.22);
   letter-spacing: 0.5px;
 }
 
@@ -220,37 +282,37 @@ h1, h2, h3, h4, h5, h6 {
 .spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid $navy-600;
+  border: 2.5px solid rgba($navy-600, 0.8);
   border-top-color: $cyan-500;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.75s linear infinite;
+  box-shadow: 0 0 12px rgba($cyan-500, 0.15);
 }
 
 // ─── OVERLAY ─────────────────────────────────────────────
 .overlay {
   @include overlay;
   @include flex-center;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
 }
 
 
 // ═══════════════════════════════════════════════════════════
 // ANGULAR MATERIAL — DARK THEME OVERRIDES
-// Overrides completos para que TODOS los componentes
-// de Material respeten la paleta navy/cyan.
 // ═══════════════════════════════════════════════════════════
 
 // ─── CARDS ───────────────────────────────────────────────
 .mat-mdc-card {
   background: $navy-800 !important;
+  background-image: $gradient-card !important;
   border: 1px solid $border-subtle !important;
   color: $text-primary !important;
 }
 
-// ─── FORM FIELDS ────────────────────────────────────────
+// ─── FORM FIELDS ─────────────────────────────────────────
 .mat-mdc-form-field {
   .mdc-text-field {
-    background-color: $navy-700 !important;
+    background-color: rgba($navy-700, 0.8) !important;
     border-radius: $border-radius-sm !important;
   }
 
@@ -260,19 +322,17 @@ h1, h2, h3, h4, h5, h6 {
     color: $text-primary !important;
   }
 
-  // Placeholder text
   .mat-mdc-input-element::placeholder {
     color: $text-muted !important;
   }
 
-  // Outline borders
   .mdc-text-field--outlined .mdc-notched-outline__leading,
   .mdc-text-field--outlined .mdc-notched-outline__notch,
   .mdc-text-field--outlined .mdc-notched-outline__trailing {
     border-color: $border-subtle !important;
+    transition: border-color $transition-fast !important;
   }
 
-  // Focused state
   &.mat-focused {
     .mdc-text-field--outlined .mdc-notched-outline__leading,
     .mdc-text-field--outlined .mdc-notched-outline__notch,
@@ -280,57 +340,46 @@ h1, h2, h3, h4, h5, h6 {
       border-color: $cyan-500 !important;
     }
 
-    .mdc-floating-label {
-      color: $cyan-400 !important;
-    }
+    .mdc-floating-label { color: $cyan-400 !important; }
   }
 
-  // Hint text
-  .mat-mdc-form-field-hint {
-    color: $text-muted !important;
-  }
+  .mat-mdc-form-field-hint    { color: $text-muted !important; }
 
-  // Prefix/suffix icons
   .mat-mdc-form-field-icon-prefix,
   .mat-mdc-form-field-icon-suffix {
     color: $text-muted !important;
   }
 }
 
-// ─── TABS — CRITICAL FIX ─────────────────────────────────
-// El texto de los tabs era invisible porque el color heredado
-// de Material era oscuro sobre fondo oscuro.
+// ─── TABS ────────────────────────────────────────────────
 .mat-mdc-tab-group {
   .mat-mdc-tab-header {
     border-bottom: 1px solid $border-subtle;
-    background: $navy-800;
+    background: rgba($navy-800, 0.6);
+    backdrop-filter: blur(8px);
   }
 
-  // Label text — THE FIX
   .mat-mdc-tab .mdc-tab__text-label {
     color: $text-secondary !important;
     font-family: $font-body;
     font-weight: 500;
     letter-spacing: 0.02em;
+    transition: color $transition-fast !important;
   }
 
-  // Active tab
   .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label {
     color: $cyan-400 !important;
     font-weight: 600;
   }
 
-  // Tab indicator (underline)
   .mat-mdc-tab-header .mdc-tab-indicator__content--underline {
     border-color: $cyan-500 !important;
   }
 
-  // Ripple
   .mat-mdc-tab .mat-ripple-element {
     background-color: rgba(0, 200, 215, 0.08) !important;
   }
 
-  // Hover
   .mat-mdc-tab:hover .mdc-tab__text-label {
     color: $text-primary !important;
   }
@@ -339,24 +388,20 @@ h1, h2, h3, h4, h5, h6 {
 // ─── DIALOGS ─────────────────────────────────────────────
 .mat-mdc-dialog-container {
   .mdc-dialog__surface {
-    background: $navy-800 !important;
+    background: linear-gradient(160deg, rgba($navy-800, 1) 0%, rgba($navy-900, 1) 100%) !important;
     border: 1px solid $border-subtle !important;
     border-radius: $border-radius-lg !important;
     color: $text-primary !important;
+    box-shadow: $shadow-float !important;
   }
 
-  // Dialog title
   .mat-mdc-dialog-title {
     color: $text-primary !important;
     font-family: $font-display !important;
 
-    // Fix: prevent title from being clipped
-    &::before {
-      display: none !important;
-    }
+    &::before { display: none !important; }
   }
 
-  // Dialog actions
   .mat-mdc-dialog-actions {
     border-top: 1px solid $border-subtle;
     padding: $spacing-md $spacing-lg !important;
@@ -368,9 +413,11 @@ h1, h2, h3, h4, h5, h6 {
   background: $navy-700 !important;
   border: 1px solid $border-subtle !important;
   border-radius: $border-radius-md !important;
+  box-shadow: $shadow-float !important;
 
   .mat-mdc-option {
     color: $text-primary !important;
+    transition: background $transition-fast !important;
 
     &:hover {
       background: rgba(0, 200, 215, 0.08) !important;
@@ -386,36 +433,46 @@ h1, h2, h3, h4, h5, h6 {
 
 // ─── BUTTONS ─────────────────────────────────────────────
 .mat-mdc-raised-button.mat-primary {
-  background: linear-gradient(135deg, $cyan-500, $teal-400) !important;
+  background: $gradient-cyan !important;
   color: $navy-950 !important;
   font-weight: 600 !important;
-  box-shadow: 0 4px 16px rgba(0, 200, 215, 0.25) !important;
+  box-shadow: $shadow-glow-sm !important;
+  transition: all $transition-fast !important;
+
+  &:hover {
+    box-shadow: $shadow-glow-md !important;
+  }
 }
 
 .mat-mdc-outlined-button,
 .mat-mdc-button {
   color: $text-secondary !important;
+  transition: all $transition-fast !important;
 
-  &:hover {
-    background: rgba(0, 200, 215, 0.06) !important;
-  }
+  &:hover { background: rgba(0, 200, 215, 0.06) !important; }
 }
 
 // ─── SNACK BAR ───────────────────────────────────────────
 .mat-mdc-snack-bar-container {
-  background: $navy-700 !important;
+  background: linear-gradient(135deg, rgba($navy-700, 0.97), rgba($navy-800, 0.97)) !important;
   border: 1px solid $border-glow !important;
   color: $text-primary !important;
   border-radius: $border-radius-md !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: $shadow-float !important;
 }
 
 // ─── TOOLTIP ─────────────────────────────────────────────
 .mat-mdc-tooltip .mdc-tooltip__surface {
-  background: $navy-700 !important;
+  background: rgba($navy-700, 0.97) !important;
   color: $text-primary !important;
-  border: 1px solid $border-subtle !important;
+  border: 1px solid rgba(0, 200, 215, 0.15) !important;
   font-family: $font-body !important;
   font-size: 12px !important;
+  max-width: 280px !important;
+  line-height: 1.5 !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: $shadow-md !important;
 }
 
 // ─── PROGRESS SPINNER ────────────────────────────────────
@@ -425,9 +482,9 @@ h1, h2, h3, h4, h5, h6 {
 
 // ─── CHIPS ───────────────────────────────────────────────
 .mat-mdc-chip {
-  background: rgba(0, 200, 215, 0.10) !important;
+  background: rgba(0, 200, 215, 0.09) !important;
   color: $cyan-400 !important;
-  border: 1px solid $border-subtle !important;
+  border: 1px solid rgba(0, 200, 215, 0.18) !important;
 }
 
 // ─── TABLE ───────────────────────────────────────────────
@@ -435,18 +492,28 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent !important;
 
   .mat-mdc-header-cell {
-    background: $navy-700 !important;
+    background: rgba($navy-700, 0.7) !important;
     color: $text-primary !important;
     border-bottom-color: $border-subtle !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.02em !important;
   }
 
   .mat-mdc-cell {
     color: $text-secondary !important;
     border-bottom-color: $border-subtle !important;
+    transition: color $transition-fast !important;
   }
 
-  .mat-mdc-row:hover {
-    background: rgba(0, 200, 215, 0.04) !important;
+  .mat-mdc-row {
+    transition: background $transition-fast !important;
+
+    &:hover {
+      background: rgba(0, 200, 215, 0.04) !important;
+
+      .mat-mdc-cell { color: $text-primary !important; }
+    }
   }
 }
 

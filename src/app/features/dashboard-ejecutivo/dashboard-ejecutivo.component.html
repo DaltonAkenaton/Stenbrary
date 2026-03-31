@@ -19,6 +19,15 @@
       <h1>Dashboard Ejecutivo</h1>
       <p class="subtitle">Análisis avanzado y tendencias</p>
     </div>
+    <div class="periodo-selector">
+      @for (op of opcionesPeriodo; track op.dias) {
+        <button class="periodo-btn"
+                [class.active]="periodoSeleccionado === op.dias"
+                (click)="setPeriodo(op.dias)">
+          {{ op.label }}
+        </button>
+      }
+    </div>
   </div>
 
   <!-- Loading -->

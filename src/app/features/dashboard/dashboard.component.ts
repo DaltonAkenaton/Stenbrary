@@ -22,6 +22,8 @@ interface QuickStat {
   icono: string;
   valor: number;
   etiqueta: string;
+  subtexto: string;
+  tooltip: string;
   color: string;
   ruta: string;
 }
@@ -160,28 +162,36 @@ export class DashboardComponent implements OnInit, OnDestroy {
         {
           icono: 'today',
           valor: registrosHoy.length,
-          etiqueta: 'Registros hoy',
+          etiqueta: 'Accesos hoy',
+          subtexto: 'entradas registradas hoy',
+          tooltip: 'Cuántos alumnos han ingresado a la biblioteca el día de hoy. Se reinicia a medianoche.',
           color: '#00C8D7',
           ruta: '/registros',
         },
         {
           icono: 'groups',
           valor: alumnos.length,
-          etiqueta: 'Alumnos',
+          etiqueta: 'Alumnos registrados',
+          subtexto: 'en el sistema',
+          tooltip: 'Total de alumnos dados de alta en el sistema. Puedes agregar más en "Registrar Alumno" o importar desde Excel.',
           color: '#0BC4B7',
           ruta: '/alumnos',
         },
         {
           icono: 'history',
           valor: todosRegistros.length,
-          etiqueta: 'Registros totales',
+          etiqueta: 'Visitas en total',
+          subtexto: 'desde el inicio del sistema',
+          tooltip: 'Número acumulado de accesos desde que se instaló el sistema. Incluye todos los días.',
           color: '#5DE4EC',
           ruta: '/registros',
         },
         {
           icono: 'category',
           valor: motivos.length,
-          etiqueta: 'Actividades',
+          etiqueta: 'Tipos de actividad',
+          subtexto: 'opciones de registro',
+          tooltip: 'Actividades disponibles para que los alumnos elijan al ingresar (lectura, tareas, investigación, etc.). Gestiónalas en "Gestión de Motivos".',
           color: '#F5A623',
           ruta: '/gestion-motivos',
         },

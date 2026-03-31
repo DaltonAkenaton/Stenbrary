@@ -11,6 +11,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -31,6 +32,7 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -45,8 +47,26 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
 export class GestionMotivosComponent implements OnInit {
   motivos: Motivo[] = [];
   cargando = true;
+  filtroBusqueda = '';
 
   columnasMotivos: string[] = ['icono', 'nombre', 'prioridad', 'estado', 'acciones'];
+
+  get motivosActivos(): number {
+    return this.motivos.filter(m => m.activo).length;
+  }
+
+  get motivosInactivos(): number {
+    return this.motivos.filter(m => !m.activo).length;
+  }
+
+  get motivosFiltrados(): Motivo[] {
+    if (!this.filtroBusqueda.trim()) return this.motivos;
+    const q = this.filtroBusqueda.toLowerCase().trim();
+    return this.motivos.filter(m =>
+      m.nombre.toLowerCase().includes(q) ||
+      (m.descripcion || '').toLowerCase().includes(q)
+    );
+  }
 
   constructor(
     private databaseService: DatabaseService,

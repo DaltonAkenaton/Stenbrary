@@ -761,6 +761,126 @@ export class DatabaseService {
 
 
 
+  // ==================== PRESENCIA EN BIBLIOTECA ====================
+
+  /**
+   * Devuelve el registro abierto más reciente del día para un alumno.
+   * "Abierto" = sin horaSalida. Usado por el scanner cuando
+   * registroSalidaActivo está habilitado.
+   */
+  async obtenerEntradaAbiertaHoy(matricula: string): Promise<Registro | null> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+
+      const inicioHoy = new Date();
+      inicioHoy.setHours(0, 0, 0, 0);
+
+      const registros = await this.db.getAllFromIndex('registros', 'by-matricula', matricula);
+
+      const abiertos = registros
+        .filter(r => !r.horaSalida && new Date(r.fechaHora) >= inicioHoy)
+        .sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
+
+      return abiertos[0] ?? null;
+    } catch (error) {
+      console.error('❌ Error al buscar entrada abierta:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Devuelve todos los registros del día sin hora de salida
+   * (excluyendo invitados). Usado por el módulo de Presencia.
+   */
+  async obtenerRegistrosAbiertoHoy(): Promise<Registro[]> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const manana = new Date(hoy);
+      manana.setDate(manana.getDate() + 1);
+
+      let registrosHoy: Registro[];
+      try {
+        const rango = IDBKeyRange.bound(hoy, manana, false, true);
+        registrosHoy = await this.db.getAllFromIndex('registros', 'by-fecha', rango);
+        if (!registrosHoy.length) throw new Error('fallback');
+      } catch {
+        const todos = await this.db.getAll('registros');
+        registrosHoy = todos.filter(r => new Date(r.fechaHora) >= hoy);
+      }
+
+      // Incluye entradas sin salida Y entradas cerradas automáticamente
+      // (cierreAutomatico = true) que aún requieren confirmación del personal
+      return registrosHoy
+        .filter(r => r.matricula !== 'INVITADO' && (!r.horaSalida || r.cierreAutomatico === true))
+        .sort((a, b) => new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime());
+    } catch (error) {
+      console.error('❌ Error al obtener registros abiertos:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Cierra automáticamente entradas abiertas más antiguas que `horasUmbral`.
+   * Marca cierreAutomatico = true y estima horaSalida como fechaHora + umbral.
+   * Retorna la cantidad de entradas cerradas.
+   * Si horasUmbral <= 0, no hace nada (feature desactivado).
+   */
+  async cerrarEntradasAntiguas(horasUmbral: number): Promise<number> {
+    if (horasUmbral <= 0) return 0;
+    try {
+      await this.inicializar();
+      if (!this.db) return 0;
+
+      const abiertas = await this.obtenerRegistrosAbiertoHoy();
+      const limiteMs = horasUmbral * 60 * 60 * 1000;
+      const ahora = Date.now();
+      let cerrados = 0;
+
+      for (const r of abiertas) {
+        const edad = ahora - new Date(r.fechaHora).getTime();
+        if (edad >= limiteMs) {
+          r.horaSalida = new Date(new Date(r.fechaHora).getTime() + limiteMs);
+          r.duracionMinutos = horasUmbral * 60;
+          r.cierreAutomatico = true;
+          await this.db.put('registros', r);
+          cerrados++;
+        }
+      }
+
+      if (cerrados > 0) {
+        console.log(`🔒 Cierre automático: ${cerrados} entrada(s) cerrada(s) tras ${horasUmbral}h`);
+      }
+      return cerrados;
+    } catch (error) {
+      console.error('❌ Error en cierre automático:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Confirma un cierre automático: el personal revisó y acepta la salida estimada.
+   * Quita el flag cierreAutomatico para que desaparezca de la vista de Presencia.
+   */
+  async confirmarCierreAutomatico(registroId: string): Promise<void> {
+    try {
+      await this.inicializar();
+      if (!this.db) return;
+      const r = await this.db.get('registros', registroId);
+      if (r) {
+        r.cierreAutomatico = false;
+        await this.db.put('registros', r);
+      }
+    } catch (error) {
+      console.error('❌ Error al confirmar cierre automático:', error);
+      throw error;
+    }
+  }
+
   // ==================== ELIMINACIÓN MASIVA ====================
 
   /**
