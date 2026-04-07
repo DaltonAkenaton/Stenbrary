@@ -60,6 +60,7 @@
         <mat-icon>event</mat-icon>
         <label>Desde</label>
         <input type="date" [(ngModel)]="fechaPersonalizadaInicio"
+               [max]="fechaPersonalizadaFin"
                (ngModelChange)="paginaActual.set(0)">
       </div>
       <span class="date-sep">—</span>
@@ -67,6 +68,7 @@
         <mat-icon>event</mat-icon>
         <label>Hasta</label>
         <input type="date" [(ngModel)]="fechaPersonalizadaFin"
+               [min]="fechaPersonalizadaInicio"
                (ngModelChange)="paginaActual.set(0)">
       </div>
     </div>

@@ -67,7 +67,29 @@ export interface DatosCarrera {
 })
 export class EstadisticasAvanzadasService {
 
+  // Cache para evitar cargas múltiples en paralelo (8 queries simultáneas)
+  private registrosCache: Registro[] | null = null;
+  private cacheTimestamp = 0;
+  private readonly CACHE_TTL = 15_000; // 15 segundos
+
   constructor(private databaseService: DatabaseService) {}
+
+  /** Obtiene todos los registros con caché de corta duración */
+  private async obtenerRegistrosConCache(): Promise<Registro[]> {
+    const ahora = Date.now();
+    if (this.registrosCache && (ahora - this.cacheTimestamp) < this.CACHE_TTL) {
+      return this.registrosCache;
+    }
+    this.registrosCache = await this.obtenerRegistrosConCache();
+    this.cacheTimestamp = ahora;
+    return this.registrosCache;
+  }
+
+  /** Invalida el caché manualmente */
+  invalidarCache(): void {
+    this.registrosCache = null;
+    this.cacheTimestamp = 0;
+  }
 
   // ═══════════════════════════════════════════════
   // DATOS PARA GRÁFICAS (NUEVO v3.5)
@@ -81,7 +103,7 @@ export class EstadisticasAvanzadasService {
     const hoy = new Date();
     hoy.setHours(23, 59, 59, 999);
 
-    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+    const todosRegistros = await this.obtenerRegistrosConCache();
 
     const etiquetas: string[] = [];
     const cantidades: number[] = [];
@@ -118,7 +140,7 @@ export class EstadisticasAvanzadasService {
     const inicio = new Date(hoy);
     inicio.setDate(hoy.getDate() - dias);
 
-    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+    const todosRegistros = await this.obtenerRegistrosConCache();
     const motivos = await this.databaseService.obtenerTodosLosMotivos();
 
     const registrosPeriodo = todosRegistros.filter(r =>
@@ -177,7 +199,7 @@ export class EstadisticasAvanzadasService {
     const finAnterior = new Date(inicioActual);
     finAnterior.setDate(finAnterior.getDate() - 1);
 
-    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+    const todosRegistros = await this.obtenerRegistrosConCache();
 
     const registrosActuales = todosRegistros.filter(r => {
       const fecha = new Date(r.fechaHora);
@@ -206,7 +228,7 @@ export class EstadisticasAvanzadasService {
     const inicio = new Date(hoy);
     inicio.setDate(hoy.getDate() - diasPeriodo);
 
-    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+    const todosRegistros = await this.obtenerRegistrosConCache();
     const registrosPeriodo = todosRegistros.filter(r => {
       const fecha = new Date(r.fechaHora);
       return fecha >= inicio && fecha <= hoy;
@@ -235,13 +257,19 @@ export class EstadisticasAvanzadasService {
     return heatmapData;
   }
 
-  async obtenerTopAlumnos(limite: number = 10): Promise<TopAlumno[]> {
-    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+  async obtenerTopAlumnos(limite: number = 10, dias?: number): Promise<TopAlumno[]> {
+    let registrosFiltrados = await this.obtenerRegistrosConCache();
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
+
+    if (dias) {
+      const inicio = new Date();
+      inicio.setDate(inicio.getDate() - dias);
+      registrosFiltrados = registrosFiltrados.filter(r => new Date(r.fechaHora) >= inicio);
+    }
 
     const registrosPorMatricula = new Map<string, Registro[]>();
 
-    todosRegistros.forEach(registro => {
+    registrosFiltrados.forEach(registro => {
       const registros = registrosPorMatricula.get(registro.matricula) || [];
       registros.push(registro);
       registrosPorMatricula.set(registro.matricula, registros);
@@ -277,27 +305,27 @@ export class EstadisticasAvanzadasService {
     return topAlumnos.sort((a, b) => b.totalVisitas - a.totalVisitas).slice(0, limite);
   }
 
-  async generarInsights(): Promise<Insight[]> {
+  async generarInsights(dias: number = 30): Promise<Insight[]> {
     const insights: Insight[] = [];
 
-    const tendencia = await this.compararTendencias(7, 7);
+    const tendencia = await this.compararTendencias(dias, dias);
     if (tendencia.direccion === 'up' && tendencia.porcentajeCambio > 10) {
       insights.push({
         tipo: 'success',
         icono: 'trending_up',
         titulo: 'Tendencia al Alza',
-        descripcion: `Las visitas aumentaron ${tendencia.porcentajeCambio.toFixed(1)}% esta semana comparado con la anterior`,
+        descripcion: `Las visitas aumentaron ${tendencia.porcentajeCambio.toFixed(1)}% en este período comparado con el anterior`,
       });
     } else if (tendencia.direccion === 'down' && Math.abs(tendencia.porcentajeCambio) > 10) {
       insights.push({
         tipo: 'warning',
         icono: 'trending_down',
         titulo: 'Disminución de Visitas',
-        descripcion: `Las visitas disminuyeron ${Math.abs(tendencia.porcentajeCambio).toFixed(1)}% esta semana`,
+        descripcion: `Las visitas disminuyeron ${Math.abs(tendencia.porcentajeCambio).toFixed(1)}% en este período`,
       });
     }
 
-    const heatmap = await this.generarHeatmap(30);
+    const heatmap = await this.generarHeatmap(dias);
     const horaPico = this.encontrarHoraPico(heatmap);
     if (horaPico) {
       insights.push({
@@ -334,12 +362,18 @@ export class EstadisticasAvanzadasService {
     return insights;
   }
 
-  async analizarPorCarrera(): Promise<DatosCarrera[]> {
-    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+  async analizarPorCarrera(dias?: number): Promise<DatosCarrera[]> {
+    let registrosFiltrados = await this.obtenerRegistrosConCache();
+
+    if (dias) {
+      const inicio = new Date();
+      inicio.setDate(inicio.getDate() - dias);
+      registrosFiltrados = registrosFiltrados.filter(r => new Date(r.fechaHora) >= inicio);
+    }
 
     const carrerasMap = new Map<string, { visitas: number; alumnos: Set<string> }>();
 
-    todosRegistros.forEach(registro => {
+    registrosFiltrados.forEach(registro => {
       const data = carrerasMap.get(registro.carrera) || { visitas: 0, alumnos: new Set() };
       data.visitas++;
       data.alumnos.add(registro.matricula);
@@ -356,8 +390,8 @@ export class EstadisticasAvanzadasService {
       .sort((a, b) => b.totalVisitas - a.totalVisitas);
   }
 
-  async predecirDiaOcupado(): Promise<string> {
-    const heatmap = await this.generarHeatmap(30);
+  async predecirDiaOcupado(dias: number = 30): Promise<string> {
+    const heatmap = await this.generarHeatmap(dias);
     const visitasPorDia = new Map<string, number>();
     heatmap.forEach(item => {
       visitasPorDia.set(item.dia, (visitasPorDia.get(item.dia) || 0) + item.cantidad);

@@ -705,6 +705,9 @@ export class ImportarAlumnosComponent {
   filas: FilaImportacion[] = [];
   columnasPreview = ['estado', 'fila', 'matricula', 'nombre', 'apellidos', 'carrera', 'grado', 'grupo', 'turno'];
 
+  // Matrículas ya existentes en BD (pre-validación)
+  private matriculasExistentes = new Set<string>();
+
   // Resultado
   resultado: ResultadoImportacion | null = null;
 
@@ -739,8 +742,12 @@ export class ImportarAlumnosComponent {
     this.nombreArchivo = file.name;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        // Pre-cargar matrículas existentes en BD para validar duplicados
+        const alumnosExistentes = await this.databaseService.obtenerTodosLosAlumnos();
+        this.matriculasExistentes = new Set(alumnosExistentes.map(a => a.matricula));
+
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
@@ -898,6 +905,11 @@ export class ImportarAlumnosComponent {
     );
     if (duplicadoInterno) {
       fila.errores.push(`Matrícula duplicada en fila ${duplicadoInterno.fila}`);
+    }
+
+    // Verificar si ya existe en la base de datos
+    if (fila.matricula && this.matriculasExistentes.has(fila.matricula)) {
+      fila.errores.push('Matrícula ya registrada en el sistema');
     }
 
     fila.valido = fila.errores.length === 0;

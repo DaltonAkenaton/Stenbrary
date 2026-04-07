@@ -31,12 +31,12 @@ import { MatInputModule } from '@angular/material/input';
 
     <mat-dialog-content>
       <p class="hint">
-        Puedes registrar tu nombre para identificarte en el historial,
-        o continuar de forma anónima.
+        Registra tu nombre para identificarte en el historial,
+        o continúa de forma anónima.
       </p>
 
       <mat-form-field appearance="outline" class="nombre-field">
-        <mat-label>Nombre del visitante (opcional)</mat-label>
+        <mat-label>Nombre del visitante</mat-label>
         <mat-icon matPrefix>badge</mat-icon>
         <input
           matInput
@@ -45,6 +45,9 @@ import { MatInputModule } from '@angular/material/input';
           maxlength="60"
           (keyup.enter)="confirmar()">
         <mat-hint align="end">{{ nombre.length }}/60</mat-hint>
+        @if (mostrarError) {
+          <mat-error>Escribe tu nombre o usa "Sin nombre"</mat-error>
+        }
       </mat-form-field>
     </mat-dialog-content>
 
@@ -53,7 +56,8 @@ import { MatInputModule } from '@angular/material/input';
         <mat-icon>visibility_off</mat-icon>
         Sin nombre
       </button>
-      <button mat-flat-button color="primary" (click)="confirmar()">
+      <button mat-flat-button color="primary" (click)="confirmar()"
+              [disabled]="nombre.trim().length === 0">
         <mat-icon>check</mat-icon>
         Continuar
       </button>
@@ -94,11 +98,16 @@ import { MatInputModule } from '@angular/material/input';
 })
 export class InvitadoNombreDialogComponent {
   nombre = '';
+  mostrarError = false;
 
   constructor(private dialogRef: MatDialogRef<InvitadoNombreDialogComponent>) {}
 
   confirmar(): void {
-    this.dialogRef.close(this.nombre.trim() || null);
+    if (!this.nombre.trim()) {
+      this.mostrarError = true;
+      return;
+    }
+    this.dialogRef.close(this.nombre.trim());
   }
 
   anonimo(): void {

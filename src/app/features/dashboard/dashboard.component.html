@@ -107,6 +107,11 @@
                 </span>
               </div>
             }
+            @if (totalActividadesDistintas > 6) {
+              <div class="actividad-more">
+                <span>y {{ totalActividadesDistintas - 6 }} más</span>
+              </div>
+            }
           </div>
         } @else {
           <div class="panel-empty">

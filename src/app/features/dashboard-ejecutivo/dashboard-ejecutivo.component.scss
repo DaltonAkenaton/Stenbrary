@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  dashboard-ejecutivo.component.scss                  ║
-// ║  Stenbrary v3.0 — Dark Theme Fixes                   ║
+// ║  Stenbrary v4.1 — Rangos dinámicos + export          ║
 // ╚══════════════════════════════════════════════════════╝
 
 @import '../../../styles/variables';
@@ -51,17 +51,27 @@
     }
   }
 
+  .periodo-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: auto;
+    align-items: flex-end;
+  }
+
   .periodo-selector {
     display: flex;
     gap: 4px;
-    margin-left: auto;
     background: $navy-800;
     border: 1px solid $border-subtle;
     border-radius: $border-radius-md;
     padding: 3px;
+    flex-wrap: wrap;
   }
 
   .periodo-btn {
+    display: inline-flex;
+    align-items: center;
     background: transparent;
     border: none;
     color: $text-secondary;
@@ -82,6 +92,175 @@
       background: rgba($cyan-500, 0.12);
       color: $cyan-400;
       font-weight: 600;
+    }
+  }
+
+  .rango-personalizado {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .date-input {
+    background: $navy-800;
+    border: 1px solid $border-subtle;
+    border-radius: 8px;
+    color: $text-primary;
+    padding: 5px 10px;
+    font-family: $font-body;
+    font-size: 0.78rem;
+    outline: none;
+    transition: border-color 200ms;
+
+    &:focus {
+      border-color: $border-glow;
+    }
+
+    &::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+  }
+
+  .date-separator {
+    color: $text-muted;
+    font-size: 0.85rem;
+  }
+
+  .btn-aplicar {
+    background: rgba($cyan-500, 0.12);
+    border: 1px solid rgba($cyan-500, 0.25);
+    border-radius: 8px;
+    color: $cyan-400;
+    padding: 5px 14px;
+    font-family: $font-body;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms;
+
+    &:hover:not(:disabled) {
+      background: rgba($cyan-500, 0.20);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// MINI PERÍODO SELECTOR (heatmap, top alumnos)
+// ═══════════════════════════════════════════════════
+
+.mini-periodo-selector {
+  display: flex;
+  gap: 2px;
+  background: rgba($navy-700, 0.6);
+  border: 1px solid $border-subtle;
+  border-radius: 8px;
+  padding: 2px;
+  flex-wrap: wrap;
+}
+
+.mini-periodo-btn {
+  background: transparent;
+  border: none;
+  color: $text-muted;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 180ms;
+  font-family: $font-body;
+  white-space: nowrap;
+
+  &:hover {
+    color: $text-primary;
+    background: rgba($cyan-500, 0.06);
+  }
+
+  &.active {
+    background: rgba($cyan-500, 0.14);
+    color: $cyan-400;
+    font-weight: 600;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SECTION HEADER ROW (título + controles)
+// ═══════════════════════════════════════════════════
+
+.section-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+  flex-wrap: wrap;
+
+  h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    mat-icon { color: $amber-color; }
+  }
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+// ═══════════════════════════════════════════════════
+// EXPORT BUTTONS
+// ═══════════════════════════════════════════════════
+
+.export-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba($success-color, 0.08);
+  border: 1px solid rgba($success-color, 0.20);
+  border-radius: 8px;
+  color: $success-color;
+  font-family: $font-body;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: rgba($success-color, 0.16);
+    transform: translateY(-1px);
+  }
+
+  &.export-btn-pdf {
+    background: rgba($warn-color, 0.08);
+    border-color: rgba($warn-color, 0.20);
+    color: $warn-color;
+
+    &:hover {
+      background: rgba($warn-color, 0.16);
     }
   }
 }
@@ -187,6 +366,60 @@
 }
 
 // ═══════════════════════════════════════════════════
+// GRÁFICAS CHART.JS
+// ═══════════════════════════════════════════════════
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.chart-card {
+  background: #101c2c !important;
+  border: 1px solid rgba(0, 200, 215, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  overflow: hidden;
+  margin-bottom: $spacing-xl;
+}
+
+.chart-header {
+  margin-bottom: 16px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: $text-primary;
+
+    mat-icon {
+      color: $cyan-500;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+.chart-doughnut {
+  height: 280px;
+}
+
+.chart-carreras {
+  min-height: 200px;
+}
+
+// ═══════════════════════════════════════════════════
 // TENDENCIA
 // ═══════════════════════════════════════════════════
 
@@ -289,8 +522,10 @@
   padding: $spacing-xl;
 
   .heatmap-header {
-    @include flex-between;
-    margin-bottom: $spacing-lg;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: $spacing-md;
     flex-wrap: wrap;
     gap: $spacing-md;
 
@@ -304,10 +539,17 @@
     }
   }
 
+  .heatmap-controls {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
   .heatmap-leyenda {
     display: flex;
     gap: $spacing-md;
     flex-wrap: wrap;
+    margin-bottom: $spacing-lg;
 
     .leyenda-item {
       display: flex;
@@ -397,39 +639,33 @@
       font-family: $font-mono;
     }
 
-    // Dark theme heatmap intensities
     &.intensidad-0 {
       background: $navy-700;
       border: 1px solid $border-subtle;
-
       .cell-value { color: $text-muted; }
     }
 
     &.intensidad-1 {
       background: rgba($cyan-500, 0.15);
       border: 1px solid rgba($cyan-500, 0.2);
-
       .cell-value { color: $cyan-400; }
     }
 
     &.intensidad-2 {
       background: rgba($cyan-500, 0.30);
       border: 1px solid rgba($cyan-500, 0.35);
-
       .cell-value { color: white; }
     }
 
     &.intensidad-3 {
       background: rgba($cyan-500, 0.50);
       box-shadow: 0 0 8px rgba($cyan-500, 0.2);
-
       .cell-value { color: white; }
     }
 
     &.intensidad-4 {
       background: rgba($cyan-500, 0.75);
       box-shadow: 0 0 12px rgba($cyan-500, 0.3);
-
       .cell-value { color: white; font-weight: 800; }
     }
   }
@@ -460,15 +696,6 @@
 
 .top-alumnos-card {
   padding: $spacing-xl;
-
-  h2 {
-    margin: 0 0 $spacing-xl 0;
-    display: flex;
-    align-items: center;
-    gap: $spacing-sm;
-
-    mat-icon { color: $amber-color; }
-  }
 
   .top-alumnos-lista {
     display: flex;
@@ -630,6 +857,17 @@
 
     .tendencia-icono { order: -1; }
   }
+
+  .section-header-row {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+}
+
+@media (max-width: 1100px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: $breakpoint-md) {
@@ -645,6 +883,12 @@
       width: 100%;
     }
   }
+
+  .section-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: $breakpoint-sm) {
@@ -652,93 +896,29 @@
     flex-direction: column;
     align-items: flex-start;
   }
-}
 
+  .chart-wrapper { height: 240px; }
+  .chart-doughnut { height: 220px; }
+  .chart-card { padding: 16px; }
 
-
-
-
-
-
-
-
-
-
-// ╔══════════════════════════════════════════════════════╗
-// ║  REEMPLAZAR TODO el contenido de:                    ║
-// ║  src/app/features/dashboard-ejecutivo/               ║
-// ║       dashboard-ejecutivo.component.scss             ║
-// ║                                                      ║
-// ║  FIX: dona visible sin zoom, grid mejorado           ║
-// ╚══════════════════════════════════════════════════════╝
-
-// ── Gráficas Chart.js ────────────────────────────────────
-
-.charts-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.chart-card {
-  background: #101c2c !important;
-  border: 1px solid rgba(0, 200, 215, 0.08);
-  border-radius: 16px;
-  padding: 24px;
-  overflow: hidden;
-}
-
-.chart-header {
-  margin-bottom: 16px;
-
-  h2 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #E8F4F8;
-
-    mat-icon {
-      color: #00C8D7;
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-    }
-  }
-}
-
-.chart-wrapper {
-  position: relative;
-  height: 300px;
-  width: 100%;
-}
-
-.chart-doughnut {
-  height: 280px;
-}
-
-.chart-carreras {
-  min-height: 200px;
-}
-
-@media (max-width: 1100px) {
-  .charts-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .chart-wrapper {
-    height: 240px;
+  .header .periodo-controls {
+    width: 100%;
+    align-items: stretch;
   }
 
-  .chart-doughnut {
-    height: 220px;
+  .header .periodo-selector {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
   }
 
-  .chart-card {
-    padding: 16px;
+  .header .rango-personalizado {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mini-periodo-selector {
+    overflow-x: auto;
+    flex-wrap: nowrap;
   }
 }

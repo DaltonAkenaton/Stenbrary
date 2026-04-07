@@ -146,7 +146,7 @@ export class SeleccionMotivoComponent implements OnInit {
       this.registrando = true;
 
       const nombreCompleto = this.esInvitado
-        ? 'Visitante Externo'
+        ? `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`.trim() || 'Visitante'
         : `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
 
       const primero = this.motivosSeleccionados[0];
@@ -164,7 +164,9 @@ export class SeleccionMotivoComponent implements OnInit {
 
       await this.databaseService.crearRegistro(nuevoRegistro);
 
-      const displayName = this.esInvitado ? 'Visitante' : this.alumno.nombre;
+      const displayName = this.esInvitado
+        ? (this.alumno.nombre !== 'Visitante' ? this.alumno.nombre : 'Visitante')
+        : this.alumno.nombre;
       console.log('🎉 Registro completado:', displayName, '-', this.resumenMotivos);
 
       this.toastService.success(
@@ -214,13 +216,17 @@ export class SeleccionMotivoComponent implements OnInit {
 
   obtenerNombreCorto(): string {
     if (!this.alumno) return '';
-    if (this.esInvitado) return 'Visitante Externo';
+    if (this.esInvitado) {
+      return this.alumno.nombre === 'Visitante' ? 'Visitante' : this.alumno.nombre;
+    }
     return `${this.alumno.nombre} ${this.alumno.apellidoPaterno}`;
   }
 
   obtenerNombreCompleto(): string {
     if (!this.alumno) return '';
-    if (this.esInvitado) return 'Visitante Externo';
+    if (this.esInvitado) {
+      return `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`.trim() || 'Visitante';
+    }
     return `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
   }
 }

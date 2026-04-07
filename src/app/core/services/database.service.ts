@@ -815,8 +815,9 @@ export class DatabaseService {
 
       // Incluye entradas sin salida Y entradas cerradas automáticamente
       // (cierreAutomatico = true) que aún requieren confirmación del personal
+      // Incluye visitantes (INVITADO) para que aparezcan en presencia
       return registrosHoy
-        .filter(r => r.matricula !== 'INVITADO' && (!r.horaSalida || r.cierreAutomatico === true))
+        .filter(r => !r.horaSalida || r.cierreAutomatico === true)
         .sort((a, b) => new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime());
     } catch (error) {
       console.error('❌ Error al obtener registros abiertos:', error);

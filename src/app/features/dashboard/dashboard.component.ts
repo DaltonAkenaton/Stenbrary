@@ -59,6 +59,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // ─── Actividades de hoy (top motivos) ───────────────────
   actividadesHoy: ActividadHoy[] = [];
+  totalActividadesDistintas = 0;
 
   // ─── Últimos 5 registros ────────────────────────────────
   ultimosRegistros: Registro[] = [];
@@ -213,10 +214,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       });
 
-      this.actividadesHoy = Array.from(porMotivo.entries())
+      const todasActividades = Array.from(porMotivo.entries())
         .map(([nombre, data]) => ({ nombre, ...data }))
-        .sort((a, b) => b.cantidad - a.cantidad)
-        .slice(0, 6);
+        .sort((a, b) => b.cantidad - a.cantidad);
+      this.totalActividadesDistintas = todasActividades.length;
+      this.actividadesHoy = todasActividades.slice(0, 6);
 
       // Últimos 5 registros
       this.ultimosRegistros = registrosHoy

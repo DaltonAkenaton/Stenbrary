@@ -154,11 +154,21 @@ export class GestionMotivosComponent implements OnInit {
 
   // ── Eliminar motivo ─────────────────────────────────────
   async eliminarMotivo(motivo: Motivo): Promise<void> {
+    // Consultar cuántos registros usan este motivo
+    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+    const registrosConMotivo = todosRegistros.filter(r =>
+      r.motivoNombre === motivo.nombre || r.motivoNombres?.includes(motivo.nombre)
+    ).length;
+
+    const mensajeUso = registrosConMotivo > 0
+      ? `Esta actividad se ha usado en ${registrosConMotivo} registro${registrosConMotivo === 1 ? '' : 's'}. Los registros existentes mantendrán el nombre.`
+      : 'Esta actividad no tiene registros asociados.';
+
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '380px',
       data: {
         titulo: `¿Eliminar "${motivo.nombre}"?`,
-        mensaje: 'Esta acción no se puede deshacer. Los registros existentes mantendrán el nombre del motivo.',
+        mensaje: `${mensajeUso} Esta acción no se puede deshacer.`,
         variante: 'danger',
         textoConfirmar: 'Eliminar',
       } as ConfirmDialogData,

@@ -282,6 +282,14 @@ h1 {
   text-align: right;
 }
 
+.actividad-more {
+  text-align: center;
+  padding: 8px $spacing-md;
+  font-size: 0.8rem;
+  color: $navy-500;
+  font-style: italic;
+}
+
 // ─── ÚLTIMOS REGISTROS ───────────────────────────────────
 .registros-preview {
   display: flex;

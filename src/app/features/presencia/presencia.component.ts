@@ -54,12 +54,12 @@ const REFRESH_MS = 30_000;
             <p class="header-subtitle" *ngIf="!cargando">
               @if (registrosFiltrados.length > 0) {
                 <span class="count-badge">{{ registrosFiltrados.length }}</span>
-                {{ registrosFiltrados.length === 1 ? 'alumno presente' : 'alumnos presentes' }}
+                {{ registrosFiltrados.length === 1 ? 'persona presente' : 'personas presentes' }}
                 @if (busqueda) { · filtrado de {{ registros.length }} }
               } @else if (registros.length > 0) {
                 Sin resultados para "{{ busqueda }}"
               } @else {
-                Ningún alumno en este momento
+                Nadie en este momento
               }
             </p>
           </div>
@@ -115,12 +115,18 @@ const REFRESH_MS = 30_000;
                  matTooltip="Toca para registrar salida"
                  [class.cierre-auto]="r.cierreAutomatico">
 
-              <div class="card-avatar">
-                <mat-icon>account_circle</mat-icon>
+              <div class="card-avatar" [class.guest]="r.matricula === 'INVITADO'">
+                <mat-icon>{{ r.matricula === 'INVITADO' ? 'person_outline' : 'account_circle' }}</mat-icon>
               </div>
 
               <div class="card-nombre">{{ r.nombreCompleto }}</div>
-              <div class="card-matricula mono">{{ r.matricula }}</div>
+              @if (r.matricula === 'INVITADO') {
+                <div class="card-guest-badge">
+                  <mat-icon>badge</mat-icon> Visitante
+                </div>
+              } @else {
+                <div class="card-matricula mono">{{ r.matricula }}</div>
+              }
               <div class="card-carrera">{{ r.carrera }}</div>
 
               <div class="card-motivos">
@@ -160,11 +166,17 @@ const REFRESH_MS = 30_000;
             <div class="lista-row" (click)="pedirSalida(r)" matRipple
                  [class.cierre-auto]="r.cierreAutomatico">
 
-              <mat-icon class="row-avatar">account_circle</mat-icon>
+              <mat-icon class="row-avatar" [class.guest]="r.matricula === 'INVITADO'">
+                {{ r.matricula === 'INVITADO' ? 'person_outline' : 'account_circle' }}
+              </mat-icon>
 
               <div class="row-info">
                 <span class="row-nombre">{{ r.nombreCompleto }}</span>
-                <span class="row-meta mono">{{ r.matricula }}</span>
+                @if (r.matricula === 'INVITADO') {
+                  <span class="row-guest-badge">Visitante</span>
+                } @else {
+                  <span class="row-meta mono">{{ r.matricula }}</span>
+                }
               </div>
 
               <div class="row-carrera">{{ r.carrera }}</div>
@@ -191,7 +203,7 @@ const REFRESH_MS = 30_000;
         <div class="empty-state">
           <mat-icon>meeting_room</mat-icon>
           <h3>La biblioteca está vacía</h3>
-          <p>No hay alumnos con entrada activa en este momento.</p>
+          <p>No hay personas con entrada activa en este momento.</p>
         </div>
       }
 
@@ -346,6 +358,12 @@ const REFRESH_MS = 30_000;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .card-matricula { font-size: .78rem; color: rgba(200,230,240,.5); }
+    .card-guest-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .72rem; font-weight: 600; color: #F5A623;
+      mat-icon { font-size: 13px; width: 13px; height: 13px; }
+    }
+    .card-avatar.guest mat-icon { color: rgba(245,166,35,.5); }
     .card-carrera { font-size: .78rem; color: rgba(200,230,240,.45); }
     .card-motivos { display: flex; flex-wrap: wrap; gap: 5px; }
     .card-tiempo {
@@ -384,6 +402,10 @@ const REFRESH_MS = 30_000;
     .row-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
     .row-nombre { font-size: .9rem; font-weight: 600; color: #E8F4F8; }
     .row-meta { font-size: .75rem; color: rgba(200,230,240,.45); }
+    .row-guest-badge {
+      font-size: .72rem; font-weight: 600; color: #F5A623;
+    }
+    .row-avatar.guest { color: rgba(245,166,35,.5) !important; }
     .row-carrera { font-size: .8rem; color: rgba(200,230,240,.5); flex-shrink: 0; }
     .row-motivos { display: flex; gap: 4px; flex-wrap: wrap; flex-shrink: 0; }
     .row-tiempo { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
@@ -440,6 +462,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
+  private cargando_ = false; // debounce guard
   ahora = new Date();
 
   constructor(
@@ -463,6 +486,8 @@ export class PresenciaComponent implements OnInit, OnDestroy {
   }
 
   async cargar(): Promise<void> {
+    if (this.cargando_) return; // evitar cargas simultáneas
+    this.cargando_ = true;
     try {
       this.cargando = true;
       // Primero ejecutar cierre automático si está configurado
@@ -483,6 +508,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       this.toastService.error('Error al cargar la presencia');
     } finally {
       this.cargando = false;
+      this.cargando_ = false;
     }
   }
 

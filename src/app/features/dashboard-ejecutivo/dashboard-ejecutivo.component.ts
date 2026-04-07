@@ -1,13 +1,14 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  RUTA: src/app/features/dashboard-ejecutivo/         ║
-// ║        dashboard-ejecutivo.component.ts              ║
-// ║  Stenbrary v3.5 — Con gráficas Chart.js              ║
+// ║  dashboard-ejecutivo.component.ts                    ║
+// ║  Stenbrary v4.1 — Rangos dinámicos + export          ║
 // ║                                                      ║
-// ║  NUEVO v3.5:                                         ║
-// ║  - Gráfica de barras: registros por día (7 días)    ║
-// ║  - Gráfica de dona: distribución por motivos        ║
-// ║  - Gráfica de barras horiz: visitas por carrera     ║
-// ║  Chart.js se inicializa en AfterViewInit             ║
+// ║  MEJORAS v4.1:                                       ║
+// ║  - Títulos de gráficas dinámicos (no hardcodeados)   ║
+// ║  - Período se aplica a TODAS las secciones           ║
+// ║  - Heatmap con selector de rango histórico           ║
+// ║  - Top alumnos con rango + export Excel/PDF          ║
+// ║  - Visitas por carrera con rango                     ║
+// ║  - Hora pico por período seleccionado                ║
 // ╚══════════════════════════════════════════════════════╝
 
 import {
@@ -19,6 +20,7 @@ import {
   ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,8 +38,10 @@ import {
   DistribucionMotivos,
   DatosCarrera,
 } from '../../core/services/estadisticas-avanzadas.service';
+import { ExportService } from '../../core/services/export.service';
+import { DatabaseService } from '../../core/services/database.service';
+import { ToastService } from '../../core/services/toast.service';
 
-// Registrar todos los componentes de Chart.js
 Chart.register(...registerables);
 
 @Component({
@@ -45,6 +49,7 @@ Chart.register(...registerables);
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatIconModule,
     MatButtonModule,
@@ -62,41 +67,65 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   @ViewChild('chartMotivos') chartMotivosRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartCarreras') chartCarrerasRef!: ElementRef<HTMLCanvasElement>;
 
-  // Chart instances (para destruir)
+  // Chart instances
   private chartDiario: Chart | null = null;
   private chartMotivos: Chart | null = null;
   private chartCarreras: Chart | null = null;
 
-  // Datos existentes
+  // Datos
   tendenciaSemanal?: TendenciaComparativa;
   heatmapData: HeatmapData[] = [];
   topAlumnos: TopAlumno[] = [];
   insights: Insight[] = [];
   diaPredicho = '';
-
-  // Datos nuevos para gráficas
   datosDiarios?: DatosDiarios;
   distribucionMotivos?: DistribucionMotivos;
   datosCarreras: DatosCarrera[] = [];
 
-  // Selector de período
+  // ─── Selector de período global ──────────────────
   periodoSeleccionado = 30;
+  rangoPersonalizado = false;
+  fechaInicio = '';
+  fechaFin = '';
   opcionesPeriodo = [
-    { dias: 7,  label: '7 días'  },
-    { dias: 14, label: '14 días' },
-    { dias: 30, label: '30 días' },
-    { dias: 90, label: '90 días' },
+    { dias: 7,   label: '7 días' },
+    { dias: 14,  label: '14 días' },
+    { dias: 30,  label: '30 días' },
+    { dias: 90,  label: '90 días' },
+    { dias: 365, label: 'Este año' },
   ];
 
-  // Heatmap config
+  // ─── Heatmap config ──────────────────────────────
   diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   horasDelDia = Array.from({ length: 15 }, (_, i) => i + 7);
 
-  // Flag para saber si los datos cargaron antes que la vista
+  heatmapPeriodo = 30;
+  opcionesHeatmap = [
+    { dias: 7,   label: 'Esta semana' },
+    { dias: 14,  label: '2 semanas' },
+    { dias: 30,  label: 'Este mes' },
+    { dias: 90,  label: '3 meses' },
+    { dias: 180, label: '6 meses' },
+    { dias: 365, label: 'Este año' },
+  ];
+
+  // ─── Top alumnos config ──────────────────────────
+  topPeriodo = 30;
+  opcionesTopPeriodo = [
+    { dias: 7,   label: '7 días' },
+    { dias: 30,  label: '30 días' },
+    { dias: 90,  label: '90 días' },
+    { dias: 365, label: 'Este año' },
+    { dias: 0,   label: 'Todo' },
+  ];
+
   private datosListos = false;
 
   constructor(
     private estadisticasService: EstadisticasAvanzadasService,
+    private exportService: ExportService,
+    private databaseService: DatabaseService,
+    private toastService: ToastService,
     private router: Router,
   ) {}
 
@@ -105,7 +134,6 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   ngAfterViewInit(): void {
-    // Si los datos ya cargaron, renderizar gráficas
     if (this.datosListos) {
       setTimeout(() => this.renderizarGraficas(), 0);
     }
@@ -117,10 +145,114 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.chartCarreras?.destroy();
   }
 
+  // ═══════════════════════════════════════════════
+  // LABELS DINÁMICOS
+  // ═══════════════════════════════════════════════
+
+  get labelPeriodo(): string {
+    if (this.rangoPersonalizado && this.fechaInicio && this.fechaFin) {
+      const fi = new Date(this.fechaInicio + 'T00:00:00');
+      const ff = new Date(this.fechaFin + 'T00:00:00');
+      return `${this.formatearFecha(fi)} — ${this.formatearFecha(ff)}`;
+    }
+    if (this.periodoSeleccionado === 365) return 'Este año';
+    return `Últimos ${this.periodoSeleccionado} días`;
+  }
+
+  get labelRegistrosDiarios(): string {
+    return `Registros — ${this.labelPeriodo}`;
+  }
+
+  get labelMotivos(): string {
+    return `Motivos (${this.labelPeriodo})`;
+  }
+
+  get labelCarreras(): string {
+    return `Visitas por Carrera — ${this.labelPeriodo}`;
+  }
+
+  get labelTendencia(): string {
+    if (this.periodoSeleccionado <= 14) return 'Tendencia Semanal';
+    if (this.periodoSeleccionado <= 90) return 'Tendencia del Período';
+    return 'Tendencia Anual';
+  }
+
+  get labelHeatmap(): string {
+    const op = this.opcionesHeatmap.find(o => o.dias === this.heatmapPeriodo);
+    return `Mapa de Calor — ${op?.label || this.heatmapPeriodo + ' días'}`;
+  }
+
+  get labelTopAlumnos(): string {
+    if (this.topPeriodo === 0) return 'Top 5 Alumnos Más Frecuentes — Histórico';
+    const op = this.opcionesTopPeriodo.find(o => o.dias === this.topPeriodo);
+    return `Top 5 Alumnos Más Frecuentes — ${op?.label || this.topPeriodo + ' días'}`;
+  }
+
+  // ═══════════════════════════════════════════════
+  // PERÍODO GLOBAL
+  // ═══════════════════════════════════════════════
+
   setPeriodo(dias: number): void {
     this.periodoSeleccionado = dias;
+    this.rangoPersonalizado = false;
     this.cargarDatos();
   }
+
+  toggleRangoPersonalizado(): void {
+    this.rangoPersonalizado = !this.rangoPersonalizado;
+    if (this.rangoPersonalizado) {
+      // Defaults: último mes
+      const hoy = new Date();
+      const hace30 = new Date(hoy);
+      hace30.setDate(hoy.getDate() - 30);
+      this.fechaFin = hoy.toISOString().split('T')[0];
+      this.fechaInicio = hace30.toISOString().split('T')[0];
+    }
+  }
+
+  aplicarRangoPersonalizado(): void {
+    if (!this.fechaInicio || !this.fechaFin) return;
+    const inicio = new Date(this.fechaInicio + 'T00:00:00');
+    const fin = new Date(this.fechaFin + 'T00:00:00');
+    if (inicio > fin) {
+      this.toastService.warning('La fecha de inicio debe ser anterior a la fecha de fin');
+      return;
+    }
+    const diffMs = fin.getTime() - inicio.getTime();
+    this.periodoSeleccionado = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    this.cargarDatos();
+  }
+
+  get fechaMaxima(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  // ─── Heatmap período ─────────────────────────────
+  setHeatmapPeriodo(dias: number): void {
+    this.heatmapPeriodo = dias;
+    this.cargarHeatmap();
+  }
+
+  private async cargarHeatmap(): Promise<void> {
+    this.heatmapData = await this.estadisticasService.generarHeatmap(this.heatmapPeriodo);
+    this.diaPredicho = await this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo);
+  }
+
+  // ─── Top alumnos período ─────────────────────────
+  setTopPeriodo(dias: number): void {
+    this.topPeriodo = dias;
+    this.cargarTopAlumnos();
+  }
+
+  private async cargarTopAlumnos(): Promise<void> {
+    this.topAlumnos = await this.estadisticasService.obtenerTopAlumnos(
+      5, this.topPeriodo || undefined
+    );
+  }
+
+  // ═══════════════════════════════════════════════
+  // CARGA PRINCIPAL
+  // ═══════════════════════════════════════════════
 
   async cargarDatos(): Promise<void> {
     const dias = this.periodoSeleccionado;
@@ -130,13 +262,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       const [tendencia, heatmap, top, insights, prediccion, diarios, motivos, carreras] =
         await Promise.all([
           this.estadisticasService.compararTendencias(dias, dias),
-          this.estadisticasService.generarHeatmap(dias),
-          this.estadisticasService.obtenerTopAlumnos(5),
-          this.estadisticasService.generarInsights(),
-          this.estadisticasService.predecirDiaOcupado(),
+          this.estadisticasService.generarHeatmap(this.heatmapPeriodo),
+          this.estadisticasService.obtenerTopAlumnos(5, this.topPeriodo || undefined),
+          this.estadisticasService.generarInsights(dias),
+          this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo),
           this.estadisticasService.obtenerRegistrosPorDia(dias),
           this.estadisticasService.obtenerDistribucionMotivos(dias),
-          this.estadisticasService.analizarPorCarrera(),
+          this.estadisticasService.analizarPorCarrera(dias),
         ]);
 
       this.tendenciaSemanal = tendencia;
@@ -151,14 +283,64 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.cargando = false;
       this.datosListos = true;
 
-      // Renderizar gráficas (puede que AfterViewInit ya haya corrido)
       setTimeout(() => this.renderizarGraficas(), 50);
-
-      console.log('✅ Estadísticas avanzadas + gráficas cargadas');
     } catch (error) {
       console.error('❌ Error al cargar estadísticas avanzadas:', error);
       this.cargando = false;
     }
+  }
+
+  // ═══════════════════════════════════════════════
+  // EXPORTAR TOP ALUMNOS
+  // ═══════════════════════════════════════════════
+
+  async exportarTopExcel(): Promise<void> {
+    if (this.topAlumnos.length === 0) return;
+
+    const registros = await this.obtenerRegistrosTopAlumnos();
+    this.exportService.exportarRegistrosXLSX(
+      registros,
+      `top_alumnos_stenbrary_${new Date().toISOString().split('T')[0]}`
+    );
+    this.toastService.success('Excel exportado correctamente');
+  }
+
+  async exportarTopPDF(): Promise<void> {
+    if (this.topAlumnos.length === 0) return;
+
+    const { ReportService } = await import('../../core/services/report.service');
+    const reportService = new ReportService(this.databaseService);
+
+    const registros = await this.obtenerRegistrosTopAlumnos();
+    const hoy = new Date();
+    const inicio = new Date(hoy);
+    if (this.topPeriodo > 0) inicio.setDate(hoy.getDate() - this.topPeriodo);
+    else inicio.setFullYear(2020);
+
+    await reportService.generarReporteAccesos(registros, {
+      tipo: 'personalizado',
+      titulo: 'Top 5 Alumnos Más Frecuentes',
+      fechaInicio: inicio,
+      fechaFin: hoy,
+    });
+    this.toastService.success('PDF exportado correctamente');
+  }
+
+  private async obtenerRegistrosTopAlumnos() {
+    const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+    const matriculasTop = new Set(this.topAlumnos.map(t => t.alumno.matricula));
+
+    let registros = todosRegistros.filter(r => matriculasTop.has(r.matricula));
+
+    if (this.topPeriodo > 0) {
+      const inicio = new Date();
+      inicio.setDate(inicio.getDate() - this.topPeriodo);
+      registros = registros.filter(r => new Date(r.fechaHora) >= inicio);
+    }
+
+    return registros.sort((a, b) =>
+      new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime()
+    );
   }
 
   // ═══════════════════════════════════════════════
@@ -221,6 +403,9 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
             ticks: {
               color: 'rgba(200, 230, 240, 0.5)',
               font: { family: "'DM Sans', sans-serif", size: 11 },
+              maxRotation: this.periodoSeleccionado > 30 ? 45 : 0,
+              autoSkip: true,
+              maxTicksLimit: this.periodoSeleccionado > 30 ? 15 : undefined,
             },
           },
           y: {
@@ -304,7 +489,6 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     const ctx = this.chartCarrerasRef.nativeElement.getContext('2d');
     if (!ctx) return;
 
-    // Abreviar nombres largos
     const etiquetas = this.datosCarreras.map(d => this.abreviarCarrera(d.carrera));
     const cantidades = this.datosCarreras.map(d => d.totalVisitas);
 
@@ -330,7 +514,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         ],
       },
       options: {
-        indexAxis: 'y', // Barras horizontales
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -384,7 +568,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   // ═══════════════════════════════════════════════
-  // HELPERS EXISTENTES
+  // HELPERS
   // ═══════════════════════════════════════════════
 
   obtenerCantidadHeatmap(dia: string, hora: number): number {
@@ -394,9 +578,12 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   obtenerClaseIntensidad(cantidad: number): string {
     if (cantidad === 0) return 'intensidad-0';
-    if (cantidad <= 2) return 'intensidad-1';
-    if (cantidad <= 5) return 'intensidad-2';
-    if (cantidad <= 10) return 'intensidad-3';
+    const maximo = this.obtenerMaximoHeatmap();
+    if (maximo === 0) return 'intensidad-0';
+    const porcentaje = cantidad / maximo;
+    if (porcentaje <= 0.2) return 'intensidad-1';
+    if (porcentaje <= 0.4) return 'intensidad-2';
+    if (porcentaje <= 0.7) return 'intensidad-3';
     return 'intensidad-4';
   }
 
@@ -426,8 +613,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   obtenerTextoTendencia(): string {
     if (!this.tendenciaSemanal) return 'Sin cambios';
     const p = Math.abs(this.tendenciaSemanal.porcentajeCambio).toFixed(1);
-    if (this.tendenciaSemanal.direccion === 'up') return `↑ ${p}% más que la semana anterior`;
-    if (this.tendenciaSemanal.direccion === 'down') return `↓ ${p}% menos que la semana anterior`;
+    if (this.tendenciaSemanal.direccion === 'up') return `↑ ${p}% más que el período anterior`;
+    if (this.tendenciaSemanal.direccion === 'down') return `↓ ${p}% menos que el período anterior`;
     return 'Sin cambios significativos';
   }
 
@@ -447,15 +634,10 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.router.navigate(['/dashboard']);
   }
 
-  /** Altura dinámica: más carreras = más alto */
   get alturaGraficaCarreras(): number {
     return Math.max(200, this.datosCarreras.length * 48);
   }
 
-  /**
-   * Abreviar nombres de carrera largos para las etiquetas del eje Y.
-   * Ej: "Ingeniería en Tecnologías de la Información" → "Ing. TI"
-   */
   private abreviarCarrera(carrera: string): string {
     if (carrera.length <= 20) return carrera;
 

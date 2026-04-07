@@ -1,11 +1,6 @@
 <!--
-  RUTA: src/app/features/dashboard-ejecutivo/dashboard-ejecutivo.component.html
-  Stenbrary v3.5 — Con gráficas Chart.js
-
-  NUEVO v3.5:
-  - Canvas para gráfica de barras diaria
-  - Canvas para dona de motivos
-  - Canvas para barras horizontales de carreras
+  dashboard-ejecutivo.component.html
+  Stenbrary v4.1 — Rangos dinámicos + export
 -->
 
 <div class="dashboard-ejecutivo-container">
@@ -19,13 +14,35 @@
       <h1>Dashboard Ejecutivo</h1>
       <p class="subtitle">Análisis avanzado y tendencias</p>
     </div>
-    <div class="periodo-selector">
-      @for (op of opcionesPeriodo; track op.dias) {
+    <div class="periodo-controls">
+      <div class="periodo-selector">
+        @for (op of opcionesPeriodo; track op.dias) {
+          <button class="periodo-btn"
+                  [class.active]="!rangoPersonalizado && periodoSeleccionado === op.dias"
+                  (click)="setPeriodo(op.dias)">
+            {{ op.label }}
+          </button>
+        }
         <button class="periodo-btn"
-                [class.active]="periodoSeleccionado === op.dias"
-                (click)="setPeriodo(op.dias)">
-          {{ op.label }}
+                [class.active]="rangoPersonalizado"
+                (click)="toggleRangoPersonalizado()">
+          <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:2px">date_range</mat-icon>
+          Personalizado
         </button>
+      </div>
+
+      @if (rangoPersonalizado) {
+        <div class="rango-personalizado">
+          <input type="date" [(ngModel)]="fechaInicio" [max]="fechaFin || fechaMaxima"
+                 class="date-input">
+          <span class="date-separator">—</span>
+          <input type="date" [(ngModel)]="fechaFin" [min]="fechaInicio" [max]="fechaMaxima"
+                 class="date-input">
+          <button class="btn-aplicar" (click)="aplicarRangoPersonalizado()"
+                  [disabled]="!fechaInicio || !fechaFin">
+            Aplicar
+          </button>
+        </div>
       }
     </div>
   </div>
@@ -57,19 +74,17 @@
       </mat-card>
     </div>
 
-    <!-- ═══════════════════════════════════════════
-         GRÁFICAS (NUEVO v3.5)
-    ═══════════════════════════════════════════ -->
+    <!-- ═══ GRÁFICAS ═══════════════════════════════════ -->
 
     <!-- Fila 1: Barras diarias + Dona motivos -->
     <div class="charts-row">
 
-      <!-- Gráfica: Registros por día -->
+      <!-- Registros por día (TÍTULO DINÁMICO) -->
       <mat-card class="chart-card chart-wide">
         <div class="chart-header">
           <h2>
             <mat-icon>bar_chart</mat-icon>
-            Registros — Últimos 7 días
+            {{ labelRegistrosDiarios }}
           </h2>
         </div>
         <div class="chart-wrapper">
@@ -77,12 +92,12 @@
         </div>
       </mat-card>
 
-      <!-- Gráfica: Distribución por motivos -->
+      <!-- Distribución por motivos (TÍTULO DINÁMICO) -->
       <mat-card class="chart-card chart-narrow">
         <div class="chart-header">
           <h2>
             <mat-icon>pie_chart</mat-icon>
-            Motivos (30 días)
+            {{ labelMotivos }}
           </h2>
         </div>
         <div class="chart-wrapper chart-doughnut">
@@ -92,12 +107,12 @@
 
     </div>
 
-    <!-- Fila 2: Carreras -->
+    <!-- Fila 2: Carreras (TÍTULO DINÁMICO) -->
     <mat-card class="chart-card" *ngIf="datosCarreras.length > 0">
       <div class="chart-header">
         <h2>
           <mat-icon>school</mat-icon>
-          Visitas por Carrera
+          {{ labelCarreras }}
         </h2>
       </div>
       <div class="chart-wrapper chart-carreras"
@@ -106,20 +121,16 @@
       </div>
     </mat-card>
 
-    <!-- ═══════════════════════════════════════════
-         SECCIONES EXISTENTES
-    ═══════════════════════════════════════════ -->
-
-    <!-- Tendencia Semanal -->
+    <!-- ═══ TENDENCIA (TÍTULO DINÁMICO) ════════════════ -->
     <mat-card class="tendencia-card" *ngIf="tendenciaSemanal">
       <h2>
         <mat-icon>timeline</mat-icon>
-        Tendencia Semanal
+        {{ labelTendencia }}
       </h2>
 
       <div class="tendencia-grid">
         <div class="tendencia-stat">
-          <span class="tendencia-label">Esta Semana</span>
+          <span class="tendencia-label">Este Período</span>
           <span class="tendencia-valor grande">{{ tendenciaSemanal.actual }}</span>
           <span class="tendencia-sublabel">registros</span>
         </div>
@@ -129,7 +140,7 @@
         </div>
 
         <div class="tendencia-stat">
-          <span class="tendencia-label">Semana Anterior</span>
+          <span class="tendencia-label">Período Anterior</span>
           <span class="tendencia-valor">{{ tendenciaSemanal.anterior }}</span>
           <span class="tendencia-sublabel">registros</span>
         </div>
@@ -140,35 +151,44 @@
       </div>
     </mat-card>
 
-    <!-- Heatmap de Actividad -->
+    <!-- ═══ HEATMAP CON SELECTOR DE RANGO ══════════════ -->
     <mat-card class="heatmap-card">
       <div class="heatmap-header">
         <h2>
           <mat-icon>grid_on</mat-icon>
-          Mapa de Calor — Actividad por Día y Hora
+          {{ labelHeatmap }}
         </h2>
-        <div class="heatmap-leyenda">
-          <span class="leyenda-item">
-            <span class="leyenda-cuadro intensidad-0"></span>
-            Nulo
-          </span>
-          <span class="leyenda-item">
-            <span class="leyenda-cuadro intensidad-1"></span>
-            Bajo
-          </span>
-          <span class="leyenda-item">
-            <span class="leyenda-cuadro intensidad-2"></span>
-            Medio
-          </span>
-          <span class="leyenda-item">
-            <span class="leyenda-cuadro intensidad-3"></span>
-            Alto
-          </span>
-          <span class="leyenda-item">
-            <span class="leyenda-cuadro intensidad-4"></span>
-            Muy Alto
-          </span>
+
+        <div class="heatmap-controls">
+          <!-- Selector de período del heatmap -->
+          <div class="mini-periodo-selector">
+            @for (op of opcionesHeatmap; track op.dias) {
+              <button class="mini-periodo-btn"
+                      [class.active]="heatmapPeriodo === op.dias"
+                      (click)="setHeatmapPeriodo(op.dias)">
+                {{ op.label }}
+              </button>
+            }
+          </div>
         </div>
+      </div>
+
+      <div class="heatmap-leyenda">
+        <span class="leyenda-item">
+          <span class="leyenda-cuadro intensidad-0"></span> Nulo
+        </span>
+        <span class="leyenda-item">
+          <span class="leyenda-cuadro intensidad-1"></span> Bajo
+        </span>
+        <span class="leyenda-item">
+          <span class="leyenda-cuadro intensidad-2"></span> Medio
+        </span>
+        <span class="leyenda-item">
+          <span class="leyenda-cuadro intensidad-3"></span> Alto
+        </span>
+        <span class="leyenda-item">
+          <span class="leyenda-cuadro intensidad-4"></span> Muy Alto
+        </span>
       </div>
 
       <div class="heatmap-container">
@@ -199,12 +219,39 @@
       </div>
     </mat-card>
 
-    <!-- Top Alumnos -->
+    <!-- ═══ TOP ALUMNOS CON RANGO + EXPORT ═════════════ -->
     <mat-card class="top-alumnos-card">
-      <h2>
-        <mat-icon>emoji_events</mat-icon>
-        Top 5 Alumnos Más Frecuentes
-      </h2>
+      <div class="section-header-row">
+        <h2>
+          <mat-icon>emoji_events</mat-icon>
+          {{ labelTopAlumnos }}
+        </h2>
+
+        <div class="section-actions">
+          <!-- Selector de período -->
+          <div class="mini-periodo-selector">
+            @for (op of opcionesTopPeriodo; track op.dias) {
+              <button class="mini-periodo-btn"
+                      [class.active]="topPeriodo === op.dias"
+                      (click)="setTopPeriodo(op.dias)">
+                {{ op.label }}
+              </button>
+            }
+          </div>
+
+          <!-- Export buttons -->
+          <div class="export-btns" *ngIf="topAlumnos.length > 0">
+            <button class="export-btn" matTooltip="Exportar a Excel" (click)="exportarTopExcel()">
+              <mat-icon>table_chart</mat-icon>
+              <span>Excel</span>
+            </button>
+            <button class="export-btn export-btn-pdf" matTooltip="Exportar a PDF" (click)="exportarTopPDF()">
+              <mat-icon>picture_as_pdf</mat-icon>
+              <span>PDF</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div class="top-alumnos-lista" *ngIf="topAlumnos.length > 0">
         <div
