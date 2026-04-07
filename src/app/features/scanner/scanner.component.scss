@@ -632,3 +632,84 @@
   pointer-events: none;
   visibility: hidden;
 }
+
+// ─── BANNER DE AFORO ─────────────────────────────────────
+.aforo-banner {
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto $spacing-md;
+  padding: 14px 18px;
+  background: $navy-700;
+  border: 1px solid rgba(0, 200, 215, 0.18);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.25s, background 0.25s;
+
+  &[data-estado="libre"]      { border-color: rgba(11, 196, 183, 0.30); }
+  &[data-estado="normal"]     { border-color: rgba(0, 200, 215, 0.35); }
+  &[data-estado="alto"]       { border-color: rgba(245, 166, 35, 0.50); background: rgba(245, 166, 35, 0.04); }
+  &[data-estado="lleno"],
+  &[data-estado="sobreaforo"] { border-color: rgba(240, 82, 82, 0.55); background: rgba(240, 82, 82, 0.06); }
+}
+
+.aforo-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  > mat-icon {
+    color: $cyan-500;
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+  }
+}
+
+.aforo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.aforo-titulo {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(200, 230, 240, 0.55);
+  font-weight: 600;
+}
+
+.aforo-detalle {
+  font-size: 0.95rem;
+  color: #E8F4F8;
+  font-weight: 500;
+  strong { color: $cyan-500; font-weight: 700; font-size: 1.05rem; }
+}
+
+.aforo-lleno-label {
+  color: #F05252;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.aforo-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 200, 215, 0.10);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.aforo-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0BC4B7, #00C8D7);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+
+  .aforo-banner[data-estado="alto"] & { background: linear-gradient(90deg, #F5A623, #FFC36E); }
+  .aforo-banner[data-estado="lleno"] &,
+  .aforo-banner[data-estado="sobreaforo"] & { background: linear-gradient(90deg, #F05252, #FF7878); }
+}

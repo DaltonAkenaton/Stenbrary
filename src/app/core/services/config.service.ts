@@ -10,6 +10,14 @@
 
 import { Injectable, signal } from '@angular/core';
 
+/**
+ * Modos de control de aforo:
+ * - 'permitir': solo alerta visual/sonora, no bloquea (default)
+ * - 'confirmar': bloquea con dialog de confirmación (override manual)
+ * - 'bloquear': bloqueo duro, no permite registrar más entradas
+ */
+export type AforoModo = 'permitir' | 'confirmar' | 'bloquear';
+
 interface AppConfig {
   registroSalidaActivo: boolean;
   // 0 = desactivado. Cualquier valor > 0 = horas antes de marcar cierre automático
@@ -18,6 +26,10 @@ interface AppConfig {
   nombreInstitucion: string;
   // Minutos para considerar un registro como duplicado en el scanner
   umbralDuplicadoMin: number;
+  // Capacidad máxima del recinto (0 = sin límite / desactivado)
+  aforoMaximo: number;
+  // Comportamiento al alcanzar el aforo máximo
+  aforoModo: AforoModo;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -25,6 +37,8 @@ const DEFAULT_CONFIG: AppConfig = {
   horasAutoSalida: 3,
   nombreInstitucion: '',
   umbralDuplicadoMin: 30,
+  aforoMaximo: 0,
+  aforoModo: 'permitir',
 };
 
 const STORAGE_KEY = 'stenbrary-config';
@@ -79,6 +93,29 @@ export class ConfigService {
   setUmbralDuplicadoMin(minutos: number): void {
     this.config.umbralDuplicadoMin = minutos;
     this.guardar();
+  }
+
+  get aforoMaximo(): number {
+    return this.config.aforoMaximo;
+  }
+
+  setAforoMaximo(valor: number): void {
+    this.config.aforoMaximo = Math.max(0, Math.floor(valor) || 0);
+    this.guardar();
+  }
+
+  get aforoModo(): AforoModo {
+    return this.config.aforoModo;
+  }
+
+  setAforoModo(modo: AforoModo): void {
+    this.config.aforoModo = modo;
+    this.guardar();
+  }
+
+  /** El control de aforo está activo cuando hay capacidad > 0 y el módulo de salida está activo */
+  get aforoActivo(): boolean {
+    return this.config.aforoMaximo > 0 && this.config.registroSalidaActivo;
   }
 
   private cargar(): AppConfig {

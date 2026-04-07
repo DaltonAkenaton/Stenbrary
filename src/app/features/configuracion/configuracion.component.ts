@@ -29,7 +29,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
-import { ConfigService } from '../../core/services/config.service';
+import { ConfigService, AforoModo } from '../../core/services/config.service';
 import {
   BackupService,
   BackupData,
@@ -199,6 +199,72 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
             <mat-icon>warning</mat-icon>
             Desactivado — las entradas sin salida permanecerán abiertas indefinidamente.
           </p>
+        </div>
+      </mat-card>
+
+      <!-- ═══ CONTROL DE AFORO ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>groups</mat-icon>
+          <h2>Control de Aforo</h2>
+        </div>
+        <p class="section-desc">
+          Define la <strong style="color:#E8F4F8">capacidad máxima</strong> del recinto y cómo
+          debe reaccionar el sistema cuando se alcance. Útil para cumplir con normas de seguridad
+          o aforo permitido.
+        </p>
+
+        <p class="section-hint" *ngIf="!configService.registroSalidaActivo">
+          <mat-icon>warning</mat-icon>
+          Activa primero el <strong>Registro de Salida</strong> arriba — sin él, el sistema
+          no sabe quién sigue dentro y el aforo no puede calcularse correctamente.
+        </p>
+
+        <div *ngIf="configService.registroSalidaActivo">
+          <!-- Capacidad máxima -->
+          <div class="aforo-input-row">
+            <label for="aforoMax">Capacidad máxima (personas)</label>
+            <input id="aforoMax"
+                   type="number"
+                   min="0"
+                   step="1"
+                   class="aforo-number-input"
+                   [ngModel]="configService.aforoMaximo"
+                   (ngModelChange)="setAforoMaximo($event)"
+                   placeholder="0 = sin límite">
+          </div>
+
+          <p class="section-hint" *ngIf="configService.aforoMaximo === 0">
+            <mat-icon>info</mat-icon>
+            Aforo desactivado — no se aplicará ningún límite.
+          </p>
+          <p class="section-hint" *ngIf="configService.aforoMaximo > 0" style="color: rgba(0,200,215,0.5)">
+            <mat-icon>check_circle</mat-icon>
+            Aforo configurado: <strong>{{ configService.aforoMaximo }}</strong> personas máximo.
+          </p>
+
+          <!-- Modo de comportamiento -->
+          <div *ngIf="configService.aforoMaximo > 0" style="margin-top: 18px;">
+            <div class="section-header" style="margin-bottom: 10px;">
+              <mat-icon>policy</mat-icon>
+              <h2 style="font-size: 0.95rem;">Al alcanzar el aforo máximo</h2>
+            </div>
+            <div class="auto-close-options">
+              @for (op of opcionesAforoModo; track op.valor) {
+                <button class="auto-close-btn"
+                  [class.active]="configService.aforoModo === op.valor"
+                  (click)="setAforoModo(op.valor)"
+                  [matTooltip]="op.descripcion"
+                  matTooltipPosition="above">
+                  {{ op.etiqueta }}
+                </button>
+              }
+            </div>
+            <p class="section-hint">
+              <mat-icon>info</mat-icon>
+              {{ descripcionModoActual }}
+            </p>
+          </div>
         </div>
       </mat-card>
 
@@ -724,6 +790,42 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       .info-grid { grid-template-columns: 1fr 1fr; }
       .alert-duplicates { flex-wrap: wrap; }
     }
+
+    /* ─── AFORO ─── */
+    .aforo-input-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 16px; background: #0a1420;
+      border: 1px solid rgba(0, 200, 215, 0.08); border-radius: 10px;
+
+      label {
+        font-size: 0.9rem; color: #E8F4F8; font-weight: 500;
+      }
+    }
+
+    .aforo-number-input {
+      width: 120px; padding: 10px 14px;
+      background: #142033; color: #E8F4F8;
+      border: 1px solid rgba(0, 200, 215, 0.20); border-radius: 8px;
+      font-size: 1rem; font-weight: 600; text-align: right;
+      font-family: inherit;
+
+      &:focus {
+        outline: none;
+        border-color: rgba(0, 200, 215, 0.55);
+        box-shadow: 0 0 0 3px rgba(0, 200, 215, 0.10);
+      }
+
+      /* Quitar flechas en algunos browsers para look más limpio */
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        opacity: 0.4;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .aforo-input-row { flex-direction: column; align-items: stretch; }
+      .aforo-number-input { width: 100%; }
+    }
   `],
 })
 export class ConfiguracionComponent implements OnInit {
@@ -873,6 +975,49 @@ export class ConfiguracionComponent implements OnInit {
   setUmbralDuplicado(minutos: number): void {
     this.configService.setUmbralDuplicadoMin(minutos);
     this.toastService.info(`Umbral de duplicados: ${minutos} minutos`);
+  }
+
+  // ═══════════════════════════════════════════════
+  // CONTROL DE AFORO
+  // ═══════════════════════════════════════════════
+
+  readonly opcionesAforoModo: { valor: AforoModo; etiqueta: string; descripcion: string }[] = [
+    {
+      valor: 'permitir',
+      etiqueta: 'Solo alertar',
+      descripcion: 'Muestra alerta visual y sonora pero permite registrar más entradas.',
+    },
+    {
+      valor: 'confirmar',
+      etiqueta: 'Confirmar',
+      descripcion: 'Bloquea el registro y pide confirmación explícita del personal para continuar.',
+    },
+    {
+      valor: 'bloquear',
+      etiqueta: 'Bloquear',
+      descripcion: 'Bloqueo total — no se permiten nuevas entradas hasta que alguien salga.',
+    },
+  ];
+
+  get descripcionModoActual(): string {
+    const op = this.opcionesAforoModo.find(o => o.valor === this.configService.aforoModo);
+    return op?.descripcion ?? '';
+  }
+
+  setAforoMaximo(valor: number | string): void {
+    const num = typeof valor === 'string' ? parseInt(valor, 10) : valor;
+    this.configService.setAforoMaximo(isNaN(num) ? 0 : num);
+    if (num > 0) {
+      this.toastService.info(`Aforo configurado: ${num} personas`);
+    } else {
+      this.toastService.info('Control de aforo desactivado');
+    }
+  }
+
+  setAforoModo(modo: AforoModo): void {
+    this.configService.setAforoModo(modo);
+    const op = this.opcionesAforoModo.find(o => o.valor === modo);
+    if (op) this.toastService.info(`Modo de aforo: ${op.etiqueta}`);
   }
 
   // ═══════════════════════════════════════════════

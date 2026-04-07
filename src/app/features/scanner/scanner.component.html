@@ -9,6 +9,32 @@
 <div class="scanner-container">
 
   <!-- ══════════════════════════════════════════════════
+       INDICADOR DE AFORO (solo si está activo)
+  ══════════════════════════════════════════════════ -->
+  @if (aforoService.activo() && !escaneando) {
+    <div class="aforo-banner" [attr.data-estado]="aforoService.estado()">
+      <div class="aforo-info">
+        <mat-icon>groups</mat-icon>
+        <div class="aforo-text">
+          <span class="aforo-titulo">Aforo</span>
+          <span class="aforo-detalle">
+            <strong>{{ aforoService.ocupacion() }}</strong> / {{ aforoService.capacidad() }}
+            ·
+            @if (aforoService.disponibles() > 0) {
+              {{ aforoService.disponibles() }} disponibles
+            } @else {
+              <span class="aforo-lleno-label">¡Lleno!</span>
+            }
+          </span>
+        </div>
+      </div>
+      <div class="aforo-bar-wrap">
+        <div class="aforo-bar" [style.width.%]="aforoService.porcentaje() > 100 ? 100 : aforoService.porcentaje()"></div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════
        VISTA PRINCIPAL — Tarjetas de acción
   ══════════════════════════════════════════════════ -->
   @if (!escaneando) {

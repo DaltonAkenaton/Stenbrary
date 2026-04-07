@@ -41,7 +41,9 @@ import { esMatriculaValidaScanner, normalizarMatricula } from '../../core/utils/
 
 import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
+import { AforoService } from '../../core/services/aforo.service';
 import { InvitadoNombreDialogComponent } from './invitado-nombre-dialog/invitado-nombre-dialog.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 
 
@@ -128,6 +130,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     private loadingService: LoadingService,
     private soundService: SoundService,
     private configService: ConfigService,
+    public aforoService: AforoService,
     private ngZone: NgZone
   ) {}
 
@@ -137,6 +140,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.detectarCapacidades();
+    // Refrescar aforo al entrar al scanner para tener el conteo actualizado
+    if (this.configService.aforoActivo) {
+      this.aforoService.refrescar();
+    }
   }
 
   ngOnDestroy(): void {
@@ -577,6 +584,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
           }
         }
 
+        // ── Verificar aforo antes de permitir nueva entrada ───────────
+        const puedeEntrar = await this.verificarAforo();
+        if (!puedeEntrar) {
+          this.resetEstado();
+          return;
+        }
+
         // ── Flujo normal: ir a selección de motivo ────────────────────
         this.toastService.success(`¡Bienvenido ${alumno.nombre}!`);
         sessionStorage.setItem('alumnoActual', JSON.stringify(alumno));
@@ -711,9 +725,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
       disableClose: false,
     });
 
-    dialogRef.afterClosed().subscribe((nombreIngresado: string | null | undefined) => {
+    dialogRef.afterClosed().subscribe(async (nombreIngresado: string | null | undefined) => {
       // Si el dialog se cerró con X (undefined), cancelar
       if (nombreIngresado === undefined) return;
+
+      // Verificar aforo antes de permitir acceso del visitante
+      const puedeEntrar = await this.verificarAforo();
+      if (!puedeEntrar) return;
 
       const nombreVisitante = nombreIngresado || 'Visitante';
       const invitado = {
@@ -731,6 +749,63 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.toastService.info('Acceso como visitante — selecciona tu actividad');
       this.router.navigate(['/seleccion-motivo']);
     });
+  }
+
+  /**
+   * Verifica si hay cupo disponible antes de permitir una nueva entrada.
+   * Retorna true si puede continuar, false si debe abortar.
+   *
+   * Comportamiento según `aforoModo`:
+   * - 'permitir':  alerta + sonido pero permite continuar
+   * - 'confirmar': bloquea con dialog de confirmación (override manual)
+   * - 'bloquear':  bloqueo duro, no permite registrar más entradas
+   */
+  private async verificarAforo(): Promise<boolean> {
+    if (!this.configService.aforoActivo) return true;
+
+    // Refrescar conteo desde la BD para tener el dato más actual
+    await this.aforoService.refrescar();
+
+    if (this.aforoService.hayCupo) return true;
+
+    const ocupacion = this.aforoService.ocupacion();
+    const capacidad = this.aforoService.capacidad();
+    const modo = this.configService.aforoModo;
+
+    // Sonido de alerta en cualquier modo
+    this.soundService.beepError();
+
+    if (modo === 'bloquear') {
+      this.toastService.error(
+        `Aforo lleno (${ocupacion}/${capacidad}). Espera a que alguien salga.`
+      );
+      return false;
+    }
+
+    if (modo === 'confirmar') {
+      const data: ConfirmDialogData = {
+        titulo: 'Aforo máximo alcanzado',
+        mensaje: `Hay ${ocupacion} personas dentro y la capacidad es de ${capacidad}.\n\n¿Deseas autorizar esta entrada de todas formas?`,
+        textoConfirmar: 'Autorizar entrada',
+        textoCancelar: 'Cancelar',
+        variante: 'warning',
+        icono: 'warning',
+      };
+      const ref = this.dialog.open(ConfirmDialogComponent, { width: '420px', data });
+      const confirmado = await ref.afterClosed().toPromise();
+      if (!confirmado) {
+        this.toastService.info('Entrada cancelada');
+        return false;
+      }
+      this.toastService.warning('Entrada autorizada manualmente — sobreaforo');
+      return true;
+    }
+
+    // modo === 'permitir' (default)
+    this.toastService.warning(
+      `Aforo lleno (${ocupacion}/${capacidad}) — entrada permitida con alerta`
+    );
+    return true;
   }
 
   private interpretarErrorCamara(err: any): string {

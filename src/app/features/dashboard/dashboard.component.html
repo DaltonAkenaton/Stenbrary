@@ -73,6 +73,41 @@
       }
     </div>
 
+    <!-- ── INDICADOR DE AFORO ── -->
+    @if (aforoService.activo()) {
+      <div class="aforo-dashboard" [attr.data-estado]="aforoService.estado()"
+           (click)="navegar('/presencia')"
+           matTooltip="Ver detalle en biblioteca">
+        <div class="aforo-dashboard-left">
+          <mat-icon>groups</mat-icon>
+          <div>
+            <span class="aforo-dashboard-titulo">Aforo actual</span>
+            <span class="aforo-dashboard-valor">
+              <strong>{{ aforoService.ocupacion() }}</strong>
+              / {{ aforoService.capacidad() }}
+            </span>
+          </div>
+        </div>
+        <div class="aforo-dashboard-right">
+          @if (aforoService.disponibles() > 0) {
+            <span class="aforo-dashboard-disponibles">
+              {{ aforoService.disponibles() }} <small>disponibles</small>
+            </span>
+          } @else {
+            <span class="aforo-dashboard-lleno">
+              <mat-icon>warning</mat-icon>
+              ¡Lleno!
+            </span>
+          }
+          <div class="aforo-dashboard-bar">
+            <div class="aforo-dashboard-bar-fill"
+                 [style.width.%]="aforoService.porcentaje() > 100 ? 100 : aforoService.porcentaje()">
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- ── CONTENIDO EN DOS COLUMNAS ── -->
     <div class="content-grid">
 

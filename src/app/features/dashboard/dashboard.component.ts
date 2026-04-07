@@ -16,6 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatabaseService } from '../../core/services/database.service';
+import { AforoService } from '../../core/services/aforo.service';
 import { Alumno, Registro, Motivo } from '../../core/models';
 
 interface QuickStat {
@@ -75,6 +76,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private databaseService: DatabaseService,
+    public aforoService: AforoService,
     private router: Router,
   ) {}
 
@@ -157,6 +159,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.databaseService.obtenerTodosLosRegistros(),
         this.databaseService.obtenerMotivosActivos(),
       ]);
+
+      // Refrescar aforo en paralelo (no bloquea el resto del dashboard)
+      if (this.aforoService.activo()) {
+        this.aforoService.refrescar();
+      }
 
       // Stats cards
       this.stats = [

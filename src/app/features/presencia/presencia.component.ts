@@ -19,6 +19,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatRippleModule } from '@angular/material/core';
 import { DatabaseService } from '../../core/services/database.service';
 import { ConfigService } from '../../core/services/config.service';
+import { AforoService } from '../../core/services/aforo.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
@@ -84,6 +85,45 @@ const REFRESH_MS = 30_000;
           </button>
         </div>
       </div>
+
+      <!-- INDICADOR DE AFORO -->
+      @if (aforoService.activo()) {
+        <div class="aforo-card" [attr.data-estado]="aforoService.estado()">
+          <div class="aforo-card-top">
+            <div class="aforo-card-info">
+              <mat-icon>groups</mat-icon>
+              <div>
+                <span class="aforo-card-titulo">Aforo del recinto</span>
+                <span class="aforo-card-detalle">
+                  <strong>{{ aforoService.ocupacion() }}</strong>
+                  de {{ aforoService.capacidad() }} personas
+                </span>
+              </div>
+            </div>
+            <div class="aforo-card-stats">
+              <div class="aforo-stat">
+                <span class="aforo-stat-valor">{{ aforoService.disponibles() }}</span>
+                <span class="aforo-stat-label">disponibles</span>
+              </div>
+              <div class="aforo-stat">
+                <span class="aforo-stat-valor">{{ aforoService.porcentaje() }}%</span>
+                <span class="aforo-stat-label">ocupación</span>
+              </div>
+            </div>
+          </div>
+          <div class="aforo-card-bar-wrap">
+            <div class="aforo-card-bar"
+                 [style.width.%]="aforoService.porcentaje() > 100 ? 100 : aforoService.porcentaje()">
+            </div>
+          </div>
+          @if (aforoService.estado() === 'lleno' || aforoService.estado() === 'sobreaforo') {
+            <div class="aforo-card-alert">
+              <mat-icon>warning</mat-icon>
+              <span>Aforo máximo alcanzado</span>
+            </div>
+          }
+        </div>
+      }
 
       <!-- BUSCADOR -->
       <div class="search-bar">
@@ -452,6 +492,93 @@ const REFRESH_MS = 30_000;
       font-size: .72rem; font-weight: 600; color: #F5A623;
       mat-icon { font-size: 13px; width: 13px; height: 13px; }
     }
+
+    /* ── INDICADOR DE AFORO ── */
+    .aforo-card {
+      margin: 0 0 20px;
+      padding: 18px 22px;
+      background: #142033;
+      border: 1px solid rgba(0,200,215,0.18);
+      border-radius: 14px;
+      transition: border-color .3s, background .3s;
+
+      &[data-estado="libre"]      { border-color: rgba(11,196,183,.35); }
+      &[data-estado="normal"]     { border-color: rgba(0,200,215,.40); }
+      &[data-estado="alto"]       { border-color: rgba(245,166,35,.55); background: rgba(245,166,35,.04); }
+      &[data-estado="lleno"],
+      &[data-estado="sobreaforo"] { border-color: rgba(240,82,82,.60); background: rgba(240,82,82,.06); }
+    }
+
+    .aforo-card-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+
+    .aforo-card-info {
+      display: flex; align-items: center; gap: 14px;
+
+      > mat-icon {
+        font-size: 32px; width: 32px; height: 32px;
+        color: #00C8D7;
+      }
+      > div { display: flex; flex-direction: column; line-height: 1.3; }
+    }
+
+    .aforo-card-titulo {
+      font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+      color: rgba(200,230,240,.55); font-weight: 600;
+    }
+
+    .aforo-card-detalle {
+      font-size: 1rem; color: #E8F4F8; font-weight: 500;
+      strong { color: #00C8D7; font-weight: 700; font-size: 1.25rem; }
+    }
+
+    .aforo-card-stats {
+      display: flex; gap: 24px;
+    }
+
+    .aforo-stat {
+      display: flex; flex-direction: column; align-items: flex-end;
+    }
+
+    .aforo-stat-valor {
+      font-size: 1.4rem; font-weight: 700; color: #E8F4F8;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .aforo-stat-label {
+      font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
+      color: rgba(200,230,240,.50); font-weight: 600;
+    }
+
+    .aforo-card-bar-wrap {
+      width: 100%; height: 8px; margin-top: 14px;
+      background: rgba(0,200,215,.10); border-radius: 4px; overflow: hidden;
+    }
+
+    .aforo-card-bar {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, #0BC4B7, #00C8D7);
+      transition: width .4s ease;
+
+      .aforo-card[data-estado="alto"] & { background: linear-gradient(90deg, #F5A623, #FFC36E); }
+      .aforo-card[data-estado="lleno"] &,
+      .aforo-card[data-estado="sobreaforo"] & { background: linear-gradient(90deg, #F05252, #FF7878); }
+    }
+
+    .aforo-card-alert {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 12px; padding: 10px 14px;
+      background: rgba(240,82,82,.10); border-radius: 8px;
+      color: #F05252; font-size: .85rem; font-weight: 600;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    }
+
+    @media (max-width: 600px) {
+      .aforo-card-top { flex-direction: column; align-items: flex-start; }
+      .aforo-card-stats { width: 100%; justify-content: space-between; }
+    }
   `],
 })
 export class PresenciaComponent implements OnInit, OnDestroy {
@@ -471,6 +598,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
     private toastService: ToastService,
     private loadingService: LoadingService,
     private soundService: SoundService,
+    public aforoService: AforoService,
     private dialog: MatDialog,
   ) {}
 
@@ -504,6 +632,8 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       this.configService.setHayAutoClose(
         this.registros.some(r => r.cierreAutomatico === true)
       );
+      // Sincronizar aforo con el conteo recién obtenido
+      this.aforoService.setOcupacion(this.registros.length);
     } catch {
       this.toastService.error('Error al cargar la presencia');
     } finally {
@@ -559,6 +689,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
 
       this.registros = this.registros.filter(r => r.id !== registro.id);
       this.configService.setHayAutoClose(this.registros.some(r => r.cierreAutomatico === true));
+      this.aforoService.setOcupacion(this.registros.length);
     } catch {
       this.loadingService.hide();
       this.toastService.error('Error al registrar la salida');
