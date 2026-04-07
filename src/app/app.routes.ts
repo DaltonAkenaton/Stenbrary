@@ -86,6 +86,12 @@ export const routes: Routes = [
     title: 'Stenbrary — En Biblioteca',
   },
   {
+    path: 'novedades',
+    loadComponent: () =>
+      import('./features/novedades/novedades.component').then(m => m.NovedadesComponent),
+    title: 'Stenbrary — Novedades',
+  },
+  {
     path: 'detalle-alumno/:matricula',
     loadComponent: () =>
       import('./features/detalle-alumno/detalle-alumno.component').then(m => m.DetalleAlumnoComponent),

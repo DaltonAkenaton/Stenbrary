@@ -223,6 +223,17 @@
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
+.nav-news-dot {
+  position: absolute;
+  top: -3px; right: -3px;
+  width: 8px; height: 8px;
+  background: #00C8D7;
+  border-radius: 50%;
+  border: 1.5px solid $navy-950;
+  animation: pulse-dot 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(0, 200, 215, 0.6);
+}
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: .7; transform: scale(1.25); }

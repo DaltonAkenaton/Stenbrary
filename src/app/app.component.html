@@ -60,6 +60,9 @@
               @if (item.route === '/presencia' && configService.hayAutoClose()) {
                 <span class="nav-warn-dot" matTooltip="Hay entradas cerradas automáticamente sin confirmar"></span>
               }
+              @if (item.route === '/novedades' && changelogService.hayNovedades()) {
+                <span class="nav-news-dot" matTooltip="Hay novedades en esta versión"></span>
+              }
             </div>
             @if (isSidebarExpanded()) {
               <span class="nav-label">{{ item.label }}</span>
@@ -77,15 +80,23 @@
 
     <!-- Footer del sidebar — versión del sistema -->
     <div class="sidebar-footer">
-      <div
+      <a
         class="nav-item version-info"
-        [matTooltip]="!isSidebarExpanded() ? 'Stenbrary v3.6.2' : ''"
-        matTooltipPosition="right">
-        <mat-icon>info_outline</mat-icon>
+        routerLink="/novedades"
+        [matTooltip]="!isSidebarExpanded() ? ('Stenbrary v' + changelogService.versionActualSignal().version + ' — ver novedades') : ''"
+        matTooltipPosition="right"
+        matRipple
+        matRippleColor="rgba(0, 200, 215, 0.10)">
+        <div class="nav-icon-wrap">
+          <mat-icon>info_outline</mat-icon>
+          @if (changelogService.hayNovedades()) {
+            <span class="nav-news-dot"></span>
+          }
+        </div>
         @if (isSidebarExpanded()) {
-          <span class="nav-label">v3.6.2</span>
+          <span class="nav-label">v{{ changelogService.versionActualSignal().version }}</span>
         }
-      </div>
+      </a>
     </div>
 
   </aside>

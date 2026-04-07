@@ -30,6 +30,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
 import { ConfigService, AforoModo } from '../../core/services/config.service';
+import { ChangelogService } from '../../core/services/changelog.service';
 import {
   BackupService,
   BackupData,
@@ -104,10 +105,16 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
         </div>
 
         <div class="info-meta">
-          <span class="meta-chip" matTooltip="Versión actual del sistema">
+          <button class="meta-chip meta-chip-link"
+                  type="button"
+                  (click)="navegar('/novedades')"
+                  matTooltip="Ver el historial de cambios y novedades">
             <mat-icon>code</mat-icon>
-            Stenbrary v3.7.0
-          </span>
+            Stenbrary v{{ changelogService.versionActualSignal().version }}
+            @if (changelogService.hayNovedades()) {
+              <span class="meta-chip-dot"></span>
+            }
+          </button>
           <span class="meta-chip" matTooltip="Los datos se guardan en este dispositivo, sin necesidad de internet">
             <mat-icon>storage</mat-icon>
             Datos guardados localmente
@@ -629,6 +636,31 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       mat-icon { font-size: 13px; width: 13px; height: 13px; color: #00C8D7; }
     }
 
+    .meta-chip-link {
+      cursor: pointer; font-family: inherit;
+      transition: background .2s, border-color .2s, color .2s;
+      position: relative;
+      &:hover {
+        background: rgba(0, 200, 215, 0.14);
+        border-color: rgba(0, 200, 215, 0.30);
+        color: #E8F4F8;
+      }
+    }
+
+    .meta-chip-dot {
+      width: 7px; height: 7px;
+      background: #00C8D7;
+      border-radius: 50%;
+      margin-left: 4px;
+      box-shadow: 0 0 6px rgba(0, 200, 215, 0.7);
+      animation: pulse-meta 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-meta {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .6; transform: scale(1.3); }
+    }
+
     .sound-toggle {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px; background: #0a1420;
@@ -860,6 +892,7 @@ export class ConfiguracionComponent implements OnInit {
     private loadingService: LoadingService,
     public soundService: SoundService,
     public configService: ConfigService,
+    public changelogService: ChangelogService,
     private dialog: MatDialog,
     private router: Router,
   ) {}

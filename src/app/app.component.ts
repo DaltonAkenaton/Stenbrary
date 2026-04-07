@@ -20,6 +20,7 @@ import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { ConfigService } from './core/services/config.service';
+import { ChangelogService } from './core/services/changelog.service';
 
 interface NavItem {
   icon: string;
@@ -75,6 +76,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private swUpdate: SwUpdate,
     public configService: ConfigService,
+    public changelogService: ChangelogService,
   ) {}
 
   ngOnInit(): void {
@@ -147,6 +149,7 @@ export class AppComponent implements OnInit, OnDestroy {
         title: 'Administración',
         items: [
           { icon: 'category', label: 'Gestión de Motivos', route: '/gestion-motivos' },
+          { icon: 'campaign', label: 'Novedades',          route: '/novedades'       },
           { icon: 'settings', label: 'Configuración',      route: '/configuracion'   },
         ],
       },
