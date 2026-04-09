@@ -228,17 +228,36 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
         </p>
 
         <div *ngIf="configService.registroSalidaActivo">
-          <!-- Capacidad máxima -->
+          <!-- Capacidad máxima — stepper personalizado -->
           <div class="aforo-input-row">
             <label for="aforoMax">Capacidad máxima (personas)</label>
-            <input id="aforoMax"
-                   type="number"
-                   min="0"
-                   step="1"
-                   class="aforo-number-input"
-                   [ngModel]="configService.aforoMaximo"
-                   (ngModelChange)="setAforoMaximo($event)"
-                   placeholder="0 = sin límite">
+            <div class="aforo-stepper">
+              <button type="button"
+                      class="stepper-btn"
+                      (click)="setAforoMaximo(configService.aforoMaximo - 1)"
+                      [disabled]="configService.aforoMaximo <= 0"
+                      matTooltip="Disminuir"
+                      matTooltipPosition="above"
+                      aria-label="Disminuir capacidad">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <input id="aforoMax"
+                     type="number"
+                     min="0"
+                     step="1"
+                     class="aforo-number-input"
+                     [ngModel]="configService.aforoMaximo"
+                     (ngModelChange)="setAforoMaximo($event)"
+                     placeholder="0">
+              <button type="button"
+                      class="stepper-btn"
+                      (click)="setAforoMaximo(configService.aforoMaximo + 1)"
+                      matTooltip="Aumentar"
+                      matTooltipPosition="above"
+                      aria-label="Aumentar capacidad">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
           </div>
 
           <p class="section-hint" *ngIf="configService.aforoMaximo === 0">
@@ -834,29 +853,80 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       }
     }
 
-    .aforo-number-input {
-      width: 120px; padding: 10px 14px;
-      background: #142033; color: #E8F4F8;
-      border: 1px solid rgba(0, 200, 215, 0.20); border-radius: 8px;
-      font-size: 1rem; font-weight: 600; text-align: right;
-      font-family: inherit;
+    /* Stepper personalizado: [−] [input] [+] */
+    .aforo-stepper {
+      display: inline-flex;
+      align-items: stretch;
+      background: #142033;
+      border: 1px solid rgba(0, 200, 215, 0.22);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
 
-      &:focus {
-        outline: none;
+      &:focus-within {
         border-color: rgba(0, 200, 215, 0.55);
         box-shadow: 0 0 0 3px rgba(0, 200, 215, 0.10);
       }
+    }
 
-      /* Quitar flechas en algunos browsers para look más limpio */
+    .stepper-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 38px;
+      background: rgba(0, 200, 215, 0.06);
+      color: #00C8D7;
+      border: none;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+
+      mat-icon {
+        font-size: 18px; width: 18px; height: 18px;
+      }
+
+      &:hover:not(:disabled) {
+        background: rgba(0, 200, 215, 0.18);
+      }
+      &:active:not(:disabled) {
+        background: rgba(0, 200, 215, 0.28);
+      }
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      &:first-child {
+        border-right: 1px solid rgba(0, 200, 215, 0.15);
+      }
+      &:last-child {
+        border-left: 1px solid rgba(0, 200, 215, 0.15);
+      }
+    }
+
+    .aforo-number-input {
+      width: 80px;
+      padding: 10px 8px;
+      background: transparent;
+      color: #E8F4F8;
+      border: none;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: center;
+      font-family: inherit;
+      -moz-appearance: textfield;
+
+      &:focus { outline: none; }
+
+      /* Ocultar flechas nativas — usamos los botones custom */
       &::-webkit-outer-spin-button,
       &::-webkit-inner-spin-button {
-        opacity: 0.4;
+        -webkit-appearance: none;
+        margin: 0;
       }
     }
 
     @media (max-width: 480px) {
       .aforo-input-row { flex-direction: column; align-items: stretch; }
-      .aforo-number-input { width: 100%; }
+      .aforo-stepper { width: 100%; }
+      .aforo-number-input { flex: 1; width: auto; }
     }
   `],
 })

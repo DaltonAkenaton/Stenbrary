@@ -539,6 +539,30 @@
     }
   }
 
+  .heatmap-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .heatmap-sublabel {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: $text-muted;
+    font-weight: 500;
+    padding-left: 2px;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: rgba(0, 200, 215, 0.55);
+    }
+  }
+
   .heatmap-controls {
     display: flex;
     align-items: center;
@@ -595,7 +619,8 @@
 
   .heatmap-grid {
     display: grid;
-    grid-template-columns: 100px repeat(15, 50px);
+    // grid-template-columns se aplica inline desde el componente
+    // (depende del número real de horas detectadas).
     gap: 3px;
     min-width: 900px;
   }
@@ -616,8 +641,9 @@
   .heatmap-dia {
     height: 36px;
     justify-content: flex-end;
-    padding-right: $spacing-sm;
+    padding: 0 $spacing-sm 0 $spacing-xs;
     color: $text-secondary;
+    white-space: nowrap;
   }
 
   .heatmap-cell {

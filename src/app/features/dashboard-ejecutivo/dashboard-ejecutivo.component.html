@@ -154,10 +154,16 @@
     <!-- ═══ HEATMAP CON SELECTOR DE RANGO ══════════════ -->
     <mat-card class="heatmap-card">
       <div class="heatmap-header">
-        <h2>
-          <mat-icon>grid_on</mat-icon>
-          {{ labelHeatmap }}
-        </h2>
+        <div class="heatmap-title-block">
+          <h2>
+            <mat-icon>grid_on</mat-icon>
+            {{ labelHeatmap }}
+          </h2>
+          <p class="heatmap-sublabel" *ngIf="sublabelHeatmap">
+            <mat-icon>event</mat-icon>
+            {{ sublabelHeatmap }}
+          </p>
+        </div>
 
         <div class="heatmap-controls">
           <!-- Selector de período del heatmap -->
@@ -192,16 +198,17 @@
       </div>
 
       <div class="heatmap-container">
-        <div class="heatmap-grid">
+        <div class="heatmap-grid"
+             [style.grid-template-columns]="'auto repeat(' + heatmapHoras.length + ', minmax(50px, 1fr))'">
           <div class="heatmap-corner"></div>
-          <div *ngFor="let hora of horasDelDia" class="heatmap-hora">
+          <div *ngFor="let hora of heatmapHoras" class="heatmap-hora">
             {{ hora }}:00
           </div>
 
           <ng-container *ngFor="let dia of diasSemana">
-            <div class="heatmap-dia">{{ dia }}</div>
+            <div class="heatmap-dia">{{ etiquetaDia(dia) }}</div>
             <div
-              *ngFor="let hora of horasDelDia"
+              *ngFor="let hora of heatmapHoras"
               class="heatmap-cell"
               [class]="obtenerClaseIntensidad(obtenerCantidadHeatmap(dia, hora))"
               [matTooltip]="dia + ' ' + hora + ':00 — ' + obtenerCantidadHeatmap(dia, hora) + ' visitas'">

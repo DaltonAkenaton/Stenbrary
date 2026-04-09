@@ -1,10 +1,10 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  RUTA: src/app/core/services/report.service.ts       ║
-// ║  Stenbrary v3.6 — Reportes PDF con filtros visibles   ║
+// ║  Stenbrary v3.8.2 — Reportes PDF con sección Top      ║
 // ║                                                      ║
-// ║  MEJORA: El PDF muestra qué filtros se aplicaron      ║
-// ║  Ej: "Filtrado por: Carrera = Lic. en TI,            ║
-// ║       Actividad = Estudiar"                           ║
+// ║  MEJORAS:                                             ║
+// ║  - El PDF muestra qué filtros se aplicaron            ║
+// ║  - Soporta sección "Top Alumnos" en el ranking PDF    ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable } from '@angular/core';
@@ -21,12 +21,25 @@ export interface FiltrosReporte {
   motivo?: string;
 }
 
+/** Datos mínimos de un alumno destacado para incluir en el PDF. */
+export interface TopAlumnoReporte {
+  posicion: number;
+  matricula: string;
+  nombreCompleto: string;
+  carrera: string;
+  totalVisitas: number;
+  ultimaVisita: Date;
+  motivoFrecuente: string;
+}
+
 export interface OpcionesReporte {
   tipo: TipoReporte;
   fechaInicio?: Date;
   fechaFin?: Date;
   titulo?: string;
   filtros?: FiltrosReporte;
+  /** Si se pasa, el PDF añade una sección "Top Alumnos" antes del detalle. */
+  topAlumnos?: TopAlumnoReporte[];
 }
 
 @Injectable({
@@ -46,7 +59,18 @@ export class ReportService {
 
     let y = this.dibujarHeader(doc, opciones, pageWidth, margin);
     y = this.dibujarResumen(doc, registros, y, margin, pageWidth);
-    y = this.dibujarTablaRegistros(doc, registros, y, margin);
+
+    // Sección Top Alumnos (solo si se pasa el array)
+    if (opciones.topAlumnos && opciones.topAlumnos.length > 0) {
+      y = this.verificarEspacioPagina(doc, y, 70);
+      y = this.dibujarTopAlumnos(doc, opciones.topAlumnos, y, margin, pageWidth);
+    }
+
+    y = this.verificarEspacioPagina(doc, y, 60);
+    const tituloRegistros = opciones.topAlumnos && opciones.topAlumnos.length > 0
+      ? 'Detalle de Visitas del Top'
+      : 'Detalle de Registros';
+    y = this.dibujarTablaRegistros(doc, registros, y, margin, tituloRegistros);
 
     y = this.verificarEspacioPagina(doc, y, 60);
     y = this.dibujarResumenCarreras(doc, registros, y, margin, pageWidth);
@@ -217,6 +241,87 @@ export class ReportService {
   }
 
   // ═══════════════════════════════════════════════
+  // SECCIÓN TOP ALUMNOS (ranking destacado)
+  // ═══════════════════════════════════════════════
+
+  private dibujarTopAlumnos(
+    doc: jsPDF,
+    top: TopAlumnoReporte[],
+    startY: number,
+    margin: number,
+    pageWidth: number
+  ): number {
+    // Título de sección
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text('Ranking de Alumnos Más Frecuentes', margin, startY);
+
+    // Subtítulo descriptivo
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      `${top.length} alumno${top.length === 1 ? '' : 's'} con mayor cantidad de visitas en el período`,
+      margin,
+      startY + 4,
+    );
+
+    const datos = top.map(t => [
+      `#${t.posicion}`,
+      t.matricula,
+      t.nombreCompleto,
+      t.carrera.length > 28 ? t.carrera.substring(0, 26) + '…' : t.carrera,
+      t.totalVisitas.toString(),
+      t.motivoFrecuente,
+      new Date(t.ultimaVisita).toLocaleDateString('es-MX'),
+    ]);
+
+    autoTable(doc, {
+      startY: startY + 7,
+      head: [['Pos.', 'Matrícula', 'Alumno', 'Carrera', 'Visitas', 'Actividad Frecuente', 'Última Visita']],
+      body: datos,
+      margin: { left: margin, right: margin },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [230, 230, 230],
+        lineWidth: 0.2,
+      },
+      headStyles: {
+        fillColor: [245, 166, 35],
+        textColor: [255, 255, 255],
+        fontSize: 8,
+        fontStyle: 'bold',
+        halign: 'center',
+      },
+      alternateRowStyles: { fillColor: [255, 250, 240] },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 11, fontStyle: 'bold', textColor: [180, 120, 0] },
+        1: { cellWidth: 22, fontStyle: 'bold' },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 38 },
+        4: { halign: 'center', cellWidth: 14, fontStyle: 'bold' },
+        5: { cellWidth: 30 },
+        6: { halign: 'center' },
+      },
+      // Resalta el podio (top 3) con un fondo dorado tenue
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.row.index < 3) {
+          const intensidad = [0.18, 0.12, 0.07][data.row.index];
+          data.cell.styles.fillColor = [
+            255,
+            Math.round(248 - 20 * intensidad),
+            Math.round(220 - 40 * intensidad),
+          ];
+        }
+      },
+    });
+
+    return (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  // ═══════════════════════════════════════════════
   // TABLA DE REGISTROS
   // ═══════════════════════════════════════════════
 
@@ -224,12 +329,13 @@ export class ReportService {
     doc: jsPDF,
     registros: Registro[],
     startY: number,
-    margin: number
+    margin: number,
+    titulo: string = 'Detalle de Registros'
   ): number {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 30, 30);
-    doc.text('Detalle de Registros', margin, startY);
+    doc.text(titulo, margin, startY);
 
     const datos = registros.map((r, i) => {
       const fecha = new Date(r.fechaHora);

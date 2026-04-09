@@ -32,11 +32,13 @@ import {
   EstadisticasAvanzadasService,
   TendenciaComparativa,
   HeatmapData,
+  HeatmapResultado,
   TopAlumno,
   Insight,
   DatosDiarios,
   DistribucionMotivos,
   DatosCarrera,
+  RangoFechas,
 } from '../../core/services/estadisticas-avanzadas.service';
 import { ExportService } from '../../core/services/export.service';
 import { DatabaseService } from '../../core/services/database.service';
@@ -75,6 +77,9 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // Datos
   tendenciaSemanal?: TendenciaComparativa;
   heatmapData: HeatmapData[] = [];
+  heatmapHoras: number[] = [];
+  heatmapRango: RangoFechas | null = null;
+  heatmapFechasPorDia: Map<string, Date[]> = new Map();
   topAlumnos: TopAlumno[] = [];
   insights: Insight[] = [];
   diaPredicho = '';
@@ -97,7 +102,6 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   // ─── Heatmap config ──────────────────────────────
   diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-  horasDelDia = Array.from({ length: 15 }, (_, i) => i + 7);
 
   heatmapPeriodo = 30;
   opcionesHeatmap = [
@@ -149,18 +153,34 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // LABELS DINÁMICOS
   // ═══════════════════════════════════════════════
 
+  /** Rango actual del selector global — fuente única de verdad. */
+  get rangoActual(): RangoFechas {
+    if (this.rangoPersonalizado && this.fechaInicio && this.fechaFin) {
+      return this.estadisticasService.normalizarRango(
+        new Date(this.fechaInicio + 'T00:00:00'),
+        new Date(this.fechaFin + 'T00:00:00'),
+      );
+    }
+    return this.estadisticasService.crearRangoUltimosDias(this.periodoSeleccionado);
+  }
+
   get labelPeriodo(): string {
     if (this.rangoPersonalizado && this.fechaInicio && this.fechaFin) {
       const fi = new Date(this.fechaInicio + 'T00:00:00');
       const ff = new Date(this.fechaFin + 'T00:00:00');
       return `${this.formatearFecha(fi)} — ${this.formatearFecha(ff)}`;
     }
-    if (this.periodoSeleccionado === 365) return 'Este año';
+    if (this.periodoSeleccionado === 365) return 'Últimos 365 días';
     return `Últimos ${this.periodoSeleccionado} días`;
   }
 
   get labelRegistrosDiarios(): string {
-    return `Registros — ${this.labelPeriodo}`;
+    const g = this.datosDiarios?.granularidad;
+    const sufijo =
+      g === 'mes' ? 'por mes' :
+      g === 'semana' ? 'por semana' :
+      'por día';
+    return `Registros ${sufijo} — ${this.labelPeriodo}`;
   }
 
   get labelMotivos(): string {
@@ -172,14 +192,40 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   get labelTendencia(): string {
-    if (this.periodoSeleccionado <= 14) return 'Tendencia Semanal';
-    if (this.periodoSeleccionado <= 90) return 'Tendencia del Período';
+    const dias = this.estadisticasService.diasEnRango(this.rangoActual);
+    if (dias <= 14) return 'Tendencia Semanal';
+    if (dias <= 90) return 'Tendencia del Período';
     return 'Tendencia Anual';
   }
 
   get labelHeatmap(): string {
     const op = this.opcionesHeatmap.find(o => o.dias === this.heatmapPeriodo);
     return `Mapa de Calor — ${op?.label || this.heatmapPeriodo + ' días'}`;
+  }
+
+  /** Subtítulo del heatmap con las fechas exactas del rango. */
+  get sublabelHeatmap(): string {
+    if (!this.heatmapRango) return '';
+    const fi = this.heatmapRango.inicio;
+    const ff = this.heatmapRango.fin;
+    const fmt = (d: Date) => d.toLocaleDateString('es-MX', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+    return `Del ${fmt(fi)} al ${fmt(ff)}`;
+  }
+
+  /**
+   * Etiqueta para una fila del heatmap.
+   * Si el período tiene exactamente 1 ocurrencia de cada día (semana de 7),
+   * agrega la fecha concreta — p. ej. "Lunes 1 abr".
+   * Si tiene varias ocurrencias, solo muestra el nombre del día.
+   */
+  etiquetaDia(dia: string): string {
+    const fechas = this.heatmapFechasPorDia.get(dia);
+    if (!fechas || fechas.length !== 1) return dia;
+    const f = fechas[0];
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return `${dia} ${f.getDate()} ${meses[f.getMonth()]}`;
   }
 
   get labelTopAlumnos(): string {
@@ -200,7 +246,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   toggleRangoPersonalizado(): void {
     this.rangoPersonalizado = !this.rangoPersonalizado;
-    if (this.rangoPersonalizado) {
+    if (this.rangoPersonalizado && (!this.fechaInicio || !this.fechaFin)) {
       // Defaults: último mes
       const hoy = new Date();
       const hace30 = new Date(hoy);
@@ -218,8 +264,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.toastService.warning('La fecha de inicio debe ser anterior a la fecha de fin');
       return;
     }
-    const diffMs = fin.getTime() - inicio.getTime();
-    this.periodoSeleccionado = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    // El rango se lee directamente desde rangoActual; solo recargamos.
     this.cargarDatos();
   }
 
@@ -234,8 +279,19 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private async cargarHeatmap(): Promise<void> {
-    this.heatmapData = await this.estadisticasService.generarHeatmap(this.heatmapPeriodo);
+    // Refresh real desde DB: si el usuario registró actividad nueva,
+    // el cambio de período del heatmap también debe reflejarlo.
+    this.estadisticasService.invalidarCache();
+    const resultado = await this.estadisticasService.generarHeatmap(this.heatmapPeriodo);
+    this.aplicarHeatmap(resultado);
     this.diaPredicho = await this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo);
+  }
+
+  private aplicarHeatmap(resultado: HeatmapResultado): void {
+    this.heatmapData = resultado.data;
+    this.heatmapHoras = resultado.horas;
+    this.heatmapRango = resultado.rango;
+    this.heatmapFechasPorDia = resultado.fechasPorDia;
   }
 
   // ─── Top alumnos período ─────────────────────────
@@ -245,6 +301,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private async cargarTopAlumnos(): Promise<void> {
+    this.estadisticasService.invalidarCache();
     this.topAlumnos = await this.estadisticasService.obtenerTopAlumnos(
       5, this.topPeriodo || undefined
     );
@@ -255,24 +312,27 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // ═══════════════════════════════════════════════
 
   async cargarDatos(): Promise<void> {
-    const dias = this.periodoSeleccionado;
+    const rango = this.rangoActual;
     try {
       this.cargando = true;
+      // Invalidar caché para que un cambio de período (o entrar al dashboard
+      // tras registrar actividad nueva) refleje datos frescos.
+      this.estadisticasService.invalidarCache();
 
       const [tendencia, heatmap, top, insights, prediccion, diarios, motivos, carreras] =
         await Promise.all([
-          this.estadisticasService.compararTendencias(dias, dias),
+          this.estadisticasService.compararTendencias(rango),
           this.estadisticasService.generarHeatmap(this.heatmapPeriodo),
           this.estadisticasService.obtenerTopAlumnos(5, this.topPeriodo || undefined),
-          this.estadisticasService.generarInsights(dias),
+          this.estadisticasService.generarInsights(rango),
           this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo),
-          this.estadisticasService.obtenerRegistrosPorDia(dias),
-          this.estadisticasService.obtenerDistribucionMotivos(dias),
-          this.estadisticasService.analizarPorCarrera(dias),
+          this.estadisticasService.obtenerRegistrosPorRango(rango),
+          this.estadisticasService.obtenerDistribucionMotivos(rango),
+          this.estadisticasService.analizarPorCarrera(rango),
         ]);
 
       this.tendenciaSemanal = tendencia;
-      this.heatmapData = heatmap;
+      this.aplicarHeatmap(heatmap);
       this.topAlumnos = top;
       this.insights = insights;
       this.diaPredicho = prediccion;
@@ -313,15 +373,34 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
     const registros = await this.obtenerRegistrosTopAlumnos();
     const hoy = new Date();
-    const inicio = new Date(hoy);
-    if (this.topPeriodo > 0) inicio.setDate(hoy.getDate() - this.topPeriodo);
-    else inicio.setFullYear(2020);
+    let inicio: Date;
+    if (this.topPeriodo > 0) {
+      inicio = this.estadisticasService.crearRangoUltimosDias(this.topPeriodo).inicio;
+    } else {
+      // Histórico: usa la fecha del registro más antiguo (o 1 año atrás como fallback).
+      const fechas = registros.map(r => new Date(r.fechaHora).getTime());
+      inicio = fechas.length > 0
+        ? new Date(Math.min(...fechas))
+        : new Date(hoy.getTime() - 365 * 24 * 60 * 60 * 1000);
+    }
+
+    // Mapear topAlumnos al shape que espera el report service
+    const topParaReporte = this.topAlumnos.map((t, i) => ({
+      posicion: i + 1,
+      matricula: t.alumno.matricula,
+      nombreCompleto: this.obtenerNombreCompleto(t),
+      carrera: t.alumno.carrera,
+      totalVisitas: t.totalVisitas,
+      ultimaVisita: t.ultimaVisita,
+      motivoFrecuente: t.motivoFrecuente,
+    }));
 
     await reportService.generarReporteAccesos(registros, {
       tipo: 'personalizado',
       titulo: 'Top 5 Alumnos Más Frecuentes',
       fechaInicio: inicio,
       fechaFin: hoy,
+      topAlumnos: topParaReporte,
     });
     this.toastService.success('PDF exportado correctamente');
   }
@@ -333,9 +412,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     let registros = todosRegistros.filter(r => matriculasTop.has(r.matricula));
 
     if (this.topPeriodo > 0) {
-      const inicio = new Date();
-      inicio.setDate(inicio.getDate() - this.topPeriodo);
-      registros = registros.filter(r => new Date(r.fechaHora) >= inicio);
+      const rango = this.estadisticasService.crearRangoUltimosDias(this.topPeriodo);
+      const ini = rango.inicio.getTime();
+      const fin = rango.fin.getTime();
+      registros = registros.filter(r => {
+        const t = new Date(r.fechaHora).getTime();
+        return t >= ini && t <= fin;
+      });
     }
 
     return registros.sort((a, b) =>
@@ -357,6 +440,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     if (!this.chartDiarioRef || !this.datosDiarios) return;
 
     this.chartDiario?.destroy();
+    this.chartDiario = null;
 
     const ctx = this.chartDiarioRef.nativeElement.getContext('2d');
     if (!ctx) return;
@@ -403,9 +487,10 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
             ticks: {
               color: 'rgba(200, 230, 240, 0.5)',
               font: { family: "'DM Sans', sans-serif", size: 11 },
-              maxRotation: this.periodoSeleccionado > 30 ? 45 : 0,
+              maxRotation: this.datosDiarios.granularidad === 'dia' &&
+                           this.datosDiarios.etiquetas.length > 14 ? 45 : 0,
               autoSkip: true,
-              maxTicksLimit: this.periodoSeleccionado > 30 ? 15 : undefined,
+              maxTicksLimit: 18,
             },
           },
           y: {
@@ -424,9 +509,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaMotivos(): void {
     if (!this.chartMotivosRef || !this.distribucionMotivos) return;
-    if (this.distribucionMotivos.cantidades.length === 0) return;
 
+    // Destruir SIEMPRE antes de cualquier early-return: evita que la
+    // gráfica anterior quede "fantasma" al cambiar a un período sin datos.
     this.chartMotivos?.destroy();
+    this.chartMotivos = null;
+
+    if (this.distribucionMotivos.cantidades.length === 0) return;
 
     const ctx = this.chartMotivosRef.nativeElement.getContext('2d');
     if (!ctx) return;
@@ -482,9 +571,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private renderizarGraficaCarreras(): void {
-    if (!this.chartCarrerasRef || this.datosCarreras.length === 0) return;
+    if (!this.chartCarrerasRef) return;
 
+    // Destruir SIEMPRE antes del early-return por datos vacíos.
     this.chartCarreras?.destroy();
+    this.chartCarreras = null;
+
+    if (this.datosCarreras.length === 0) return;
 
     const ctx = this.chartCarrerasRef.nativeElement.getContext('2d');
     if (!ctx) return;

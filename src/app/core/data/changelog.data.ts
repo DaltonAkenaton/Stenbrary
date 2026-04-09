@@ -49,6 +49,65 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.8.1',
+    fecha: '2026-04-07',
+    titulo: 'Estadísticas reparadas + UI pulida',
+    resumen:
+      'Reparación profunda del módulo de Estadísticas y un par de detalles de UI: ahora el ' +
+      'rango de fechas personalizado funciona de verdad, las gráficas se agrupan inteligentemente ' +
+      'en períodos largos y el menú lateral ya no oculta el botón de Configuración.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: el dashboard ya no se traba en blanco. Había una recursión en el caché ' +
+          'que impedía cargar los datos en algunas situaciones.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: el rango personalizado ahora respeta las fechas que elijas. Antes solo ' +
+          'tomaba el número de días y los aplicaba "desde hoy hacia atrás", ignorando tu selección.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: la gráfica de registros se agrupa automáticamente por día, semana o mes ' +
+          'según el largo del período, para que se entienda bien incluso en rangos largos.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: la comparación de tendencia ahora calcula correctamente el período ' +
+          'anterior con la misma duración que el actual, sea predefinido o personalizado.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: cargas más rápidas. El caché ya no dispara 8 consultas simultáneas a ' +
+          'la base de datos al abrir el dashboard.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: las gráficas de motivos y carreras ya no muestran datos "fantasma" al ' +
+          'cambiar a un período sin información.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Menú lateral: el botón de Configuración ya no se ocultaba al expandir el menú con ' +
+          'el botón de Novedades visible.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Configuración → Aforo: el campo de capacidad máxima ahora usa un selector con botones ' +
+          '+ y − en vez del input feo con flechas nativas.',
+      },
+    ],
+  },
+  {
     version: '3.8.0',
     fecha: '2026-04-07',
     titulo: 'Control de Aforo',

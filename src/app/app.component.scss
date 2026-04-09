@@ -204,7 +204,10 @@
   gap: 2px;
   overflow-y: auto;
   overflow-x: hidden;
-  flex: 1;
+  // flex: 1 1 auto + min-height: 0 → permite scroll cuando los items
+  // exceden la altura disponible, en vez de cortar el último item
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .nav-icon-wrap {
@@ -381,13 +384,18 @@
 }
 
 // ─── SPACER + FOOTER ─────────────────────────────────────
+// Spacer NO debe competir con .sidebar-nav (que tiene flex:1).
+// flex: 0 0 auto → solo ocupa lo necesario; el nav crece libremente
+// y empuja el footer hacia abajo cuando hay espacio sobrante.
 .sidebar-spacer {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .sidebar-footer {
   width: 100%;
   padding: 4px 0 12px;
+  flex-shrink: 0;
+  margin-top: auto;
 
   .nav-item.active {
     background: rgba(245, 166, 35, 0.10);
