@@ -1,8 +1,14 @@
 // ╔══════════════════════════════════════════════════════════════════════╗
 // ║  scanner.component.ts                                              ║
-// ║  Stenbrary v3.9.1 — Zoom de cámara + pipeline siempre agresivo    ║
+// ║  Stenbrary v3.11.0 — Lector USB HID + zoom + pipeline agresivo    ║
 // ║                                                                    ║
-// ║  NUEVO v3.9.1:                                                     ║
+// ║  NUEVO v3.11.0:                                                    ║
+// ║  - Soporte para escáneres USB tipo teclado (HID). Detecta tipeo    ║
+// ║    rápido (<50ms entre teclas) terminado en Enter y reusa el flujo ║
+// ║    del scanner de cámara. No interfiere con inputs manuales ni con ║
+// ║    diálogos abiertos.                                              ║
+// ║                                                                    ║
+// ║  Base v3.9.1:                                                      ║
 // ║  - Zoom digital de cámara (auto 2× + botones manuales UI)          ║
 // ║  - Pipeline agresivo SIEMPRE activo (ya no gateado por resolución) ║
 // ║  - Sharpening siempre ON (crítico para webcams de foco fijo)       ║
@@ -58,6 +64,10 @@ import { ConfigService } from '../../core/services/config.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { InvitadoNombreDialogComponent } from './invitado-nombre-dialog/invitado-nombre-dialog.component';
 import { QuioscoPinDialogComponent } from './quiosco-pin-dialog/quiosco-pin-dialog.component';
+import {
+  SalidaVisitanteDialogComponent,
+  SalidaVisitanteResultado,
+} from './salida-visitante-dialog/salida-visitante-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { verificarHorario } from '../../core/utils/horarios.utils';
 
@@ -296,6 +306,16 @@ export class ScannerComponent implements OnInit, OnDestroy {
   readonly salidaFlash = signal<{ nombre: string; duracion: string } | null>(null);
   private salidaFlashTimer: number | null = null;
 
+  // ── Visitantes con entrada abierta (para salida autónoma sin credencial) ──
+  // Se refresca al entrar al scanner y tras cada salida/registro. Solo se
+  // muestra el botón cuando esta lista tiene al menos un elemento.
+  readonly visitantesAbiertos = signal<Registro[]>([]);
+
+  // ── Recordatorio de respaldo: dismiss solo por sesión ─────────────────
+  // El banner reaparece al recargar la página. Se suprime permanentemente
+  // exportando el respaldo o subiendo el umbral en Configuración.
+  private respaldoDescartadoSesion = false;
+
   // ── Zoom de cámara (crítico para webcams de laptop con foco fijo) ─────
   zoomDisponible = false;
   zoomHardware   = false;  // true = zoom real de cámara, false = zoom por software
@@ -333,6 +353,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private rotCanvas: HTMLCanvasElement | null = null;
   private rotCtx: CanvasRenderingContext2D | null = null;
 
+  // ── Lector USB HID (escáner físico tipo teclado) ───────────────────────
+  // Los escáneres USB suelen reportarse como HID y "tipean" los caracteres
+  // seguidos de Enter. El tipeo es mucho más rápido que el de un humano
+  // (típicamente <30ms entre teclas) — esa diferencia es nuestra heurística.
+  private hidBuffer = '';
+  private hidLastKeyTs = 0;
+  private hidStartTs = 0;
+  private hidListener: ((e: KeyboardEvent) => void) | null = null;
+  /** Umbral máximo de tiempo entre teclas para considerarlas parte del mismo escaneo. */
+  private static readonly HID_MAX_GAP_MS = 50;
+  /** Duración máxima total de un escaneo HID (protege contra buffers viejos). */
+  private static readonly HID_MAX_TOTAL_MS = 1500;
+
   constructor(
     private databaseService: DatabaseService,
     private router: Router,
@@ -351,17 +384,98 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.detectarCapacidades();
+    this.registrarLectorHid();
     // Refrescar aforo al entrar al scanner para tener el conteo actualizado
     if (this.configService.aforoActivo) {
       this.aforoService.refrescar();
     }
+    this.refrescarVisitantesAbiertos();
   }
 
   ngOnDestroy(): void {
     this.detenerScanner();
+    this.desregistrarLectorHid();
     if (this.salidaFlashTimer !== null) {
       clearTimeout(this.salidaFlashTimer);
       this.salidaFlashTimer = null;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // LECTOR USB HID (escáner físico como teclado)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  private registrarLectorHid(): void {
+    this.hidListener = (e: KeyboardEvent) => this.onHidKeyDown(e);
+    document.addEventListener('keydown', this.hidListener, true);
+  }
+
+  private desregistrarLectorHid(): void {
+    if (this.hidListener) {
+      document.removeEventListener('keydown', this.hidListener, true);
+      this.hidListener = null;
+    }
+    this.hidBuffer = '';
+  }
+
+  /**
+   * Handler global de keydown. Descarta el evento si:
+   *   - El foco está en un input/textarea/contenteditable (tipeo manual).
+   *   - Hay un diálogo abierto (la confirmación u otro modal tiene el control).
+   *   - El scanner está en cooldown o procesando.
+   *
+   * Acumula caracteres mientras las pulsaciones sean rápidas (<50ms de gap).
+   * Al recibir Enter con un buffer válido, lo procesa como si viniera del
+   * scanner de cámara — mismo flujo de confirmación + búsqueda.
+   */
+  private onHidKeyDown(e: KeyboardEvent): void {
+    // 1. No robar input al usuario cuando escribe en un campo.
+    const target = e.target as HTMLElement | null;
+    if (target) {
+      const tag = target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) {
+        this.hidBuffer = '';
+        return;
+      }
+    }
+
+    // 2. No competir con diálogos abiertos (confirmación, invitado, PIN, etc.).
+    if (this.dialog.openDialogs.length > 0) {
+      this.hidBuffer = '';
+      return;
+    }
+
+    // 3. Si ya estamos procesando una detección, ignorar.
+    if (this.enCooldown || this.isDetecting) return;
+
+    const ahora = performance.now();
+    const key = e.key;
+
+    // Reset si la última tecla fue hace mucho → era tipeo humano o ruido.
+    if (ahora - this.hidLastKeyTs > ScannerComponent.HID_MAX_GAP_MS && this.hidBuffer.length > 0) {
+      this.hidBuffer = '';
+    }
+
+    if (key === 'Enter') {
+      const candidato = this.hidBuffer;
+      const duracion = ahora - this.hidStartTs;
+      this.hidBuffer = '';
+      // Validar: al menos 2 caracteres y duración total razonable (es un escáner, no un humano).
+      if (candidato.length >= 2 && duracion <= ScannerComponent.HID_MAX_TOTAL_MS) {
+        const normalizada = normalizarMatricula(candidato);
+        if (esMatriculaValidaScanner(normalizada)) {
+          e.preventDefault();
+          this.ngZone.run(() => this.procesarDeteccion(normalizada, 'usb-hid'));
+        }
+      }
+      return;
+    }
+
+    // Solo caracteres útiles para una matrícula (dígitos + prefijo alfabético).
+    if (key.length === 1 && /[0-9a-zA-Z]/.test(key)) {
+      if (this.hidBuffer.length === 0) this.hidStartTs = ahora;
+      this.hidBuffer += key;
+      this.hidLastKeyTs = ahora;
     }
   }
 
@@ -1127,10 +1241,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
     console.log(`✅ Detectado [${fuente}]: ${texto}`);
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     this.soundService.beepScan();
-    this.detenerScanner();
+    // Solo detener (y eventualmente reanudar) la cámara si estaba activa.
+    // Para detecciones por USB HID, la cámara puede no haberse iniciado.
+    const habiaCamara = this.scannerActivo;
+    if (habiaCamara) this.detenerScanner();
     this.ngZone.run(() => {
       this.toastService.success(`Código detectado: ${texto}`);
-      this.mostrarConfirmacionMatricula(texto);
+      this.mostrarConfirmacionMatricula(texto, habiaCamara);
     });
   }
 
@@ -1159,7 +1276,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // CONFIRMACIÓN Y NAVEGACIÓN
   // ═══════════════════════════════════════════════════════════════════════
 
-  private mostrarConfirmacionMatricula(matricula: string): void {
+  private mostrarConfirmacionMatricula(matricula: string, reiniciarCamara = true): void {
     const dialogRef = this.dialog.open(ConfirmacionMatriculaDialogComponent, {
       width: '350px',
       data: { matricula },
@@ -1176,7 +1293,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         setTimeout(() => {
           this.ultimoQrEscaneado = '';
           this.enCooldown = false;
-          this.iniciarScanner();
+          if (reiniciarCamara) this.iniciarScanner();
         }, 1500);
       }
     });
@@ -1198,7 +1315,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
  
-    this.mostrarConfirmacionMatricula(matriculaNormalizada);
+    // Solo pedir reanudar la cámara si estaba activa al momento del envío manual.
+    this.mostrarConfirmacionMatricula(matriculaNormalizada, this.scannerActivo);
   }
 
   private async procesarMatricula(matricula: string): Promise<void> {
@@ -1380,6 +1498,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
       // Overlay no modal: se disipa solo para no bloquear al siguiente usuario.
       this.mostrarFlashSalida(registro.nombreCompleto, duracionTexto);
 
+      // Mantener actualizada la lista de visitantes con entrada abierta
+      // (el registro cerrado puede haber sido un visitante).
+      this.refrescarVisitantesAbiertos();
+
       this.resetEstado();
     } catch (err: any) {
       console.error('Error al registrar salida:', err);
@@ -1387,6 +1509,58 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.toastService.error('Error al registrar la salida. Intenta de nuevo.');
       this.resetEstado();
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SALIDA AUTÓNOMA DE VISITANTE
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Refresca la lista de visitantes (matricula='INVITADO') con entrada
+   * abierta del día. Silencioso: un fallo se ignora — el botón simplemente
+   * no aparecerá. Llamar al entrar al scanner y tras cada salida.
+   */
+  private async refrescarVisitantesAbiertos(): Promise<void> {
+    try {
+      const abiertos = await this.databaseService.obtenerRegistrosAbiertoHoy();
+      this.visitantesAbiertos.set(
+        abiertos.filter(r => r.matricula === 'INVITADO' && !r.horaSalida),
+      );
+    } catch {
+      this.visitantesAbiertos.set([]);
+    }
+  }
+
+  /**
+   * Abre el dialog con la lista de visitantes con entrada abierta. Al
+   * seleccionar uno, cierra su registro reutilizando `procesarSalida()`.
+   */
+  async abrirSalidaVisitante(): Promise<void> {
+    const lista = this.visitantesAbiertos();
+    if (lista.length === 0) {
+      this.toastService.info('No hay visitantes con entrada abierta');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(SalidaVisitanteDialogComponent, {
+      width: '440px',
+      maxWidth: '92vw',
+      data: { visitantes: lista },
+      disableClose: false,
+      panelClass: 'quiosco-dialog-panel',
+    });
+
+    const resultado: SalidaVisitanteResultado | null | undefined =
+      await dialogRef.afterClosed().toPromise();
+    if (!resultado) return;
+
+    const registro = lista.find(r => r.id === resultado.registroId);
+    if (!registro) {
+      this.toastService.error('No se encontró el visitante en la lista');
+      return;
+    }
+
+    await this.procesarSalida(registro);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1407,6 +1581,33 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.ngZone.run(() => this.salidaFlash.set(null));
       this.salidaFlashTimer = null;
     }, 1800);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // RECORDATORIO DE RESPALDO
+  // ═══════════════════════════════════════════════════════════════════════
+
+  mostrarRecordatorioRespaldo(): boolean {
+    if (this.respaldoDescartadoSesion) return false;
+    // Re-lee el signal para mantener reactividad al exportar.
+    void this.configService.ultimoRespaldoSignal();
+    return this.configService.recordatorioRespaldoPendiente;
+  }
+
+  textoRecordatorioRespaldo(): string {
+    const dias = this.configService.diasSinRespaldo();
+    if (dias === null) return 'Aún no has hecho ningún respaldo. Exporta tus datos para evitar pérdidas.';
+    if (dias === 0)   return 'Hoy no has respaldado. Exporta tus datos antes de cerrar la sesión.';
+    if (dias === 1)   return 'Hace 1 día sin respaldar. Exporta tus datos para evitar pérdidas.';
+    return `Hace ${dias} días sin respaldar. Exporta tus datos para evitar pérdidas.`;
+  }
+
+  descartarRecordatorioRespaldo(): void {
+    this.respaldoDescartadoSesion = true;
+  }
+
+  irAConfiguracionRespaldo(): void {
+    this.router.navigate(['/configuracion'], { fragment: 'respaldo' });
   }
 
   private resetEstado(): void {

@@ -11,6 +11,7 @@
 
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
+import { ConfigService } from './config.service';
 import { Alumno, Registro, Motivo } from '../models';
 
 export interface BackupData {
@@ -48,7 +49,10 @@ export interface ResultadoImportacion {
 })
 export class BackupService {
 
-  constructor(private databaseService: DatabaseService) {}
+  constructor(
+    private databaseService: DatabaseService,
+    private configService: ConfigService,
+  ) {}
 
   // ═══════════════════════════════════════════════
   // EXPORTAR
@@ -95,6 +99,10 @@ export class BackupService {
       URL.revokeObjectURL(url);
 
       console.log('✅ Backup exportado:', nombreArchivo);
+      // Registrar el timestamp para el recordatorio de respaldo.
+      // Se hace después de disparar la descarga para no marcar como "hecho"
+      // si la construcción del blob falló.
+      this.configService.registrarRespaldoHecho();
       return { exito: true, nombreArchivo };
     } catch (error) {
       console.error('❌ Error al exportar backup:', error);

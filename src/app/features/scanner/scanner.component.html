@@ -15,6 +15,27 @@
      (touchcancel)="pressUpQuiosco()">
 
   <!-- ══════════════════════════════════════════════════
+       RECORDATORIO DE RESPALDO (solo si está vencido y
+       no ha sido descartado en esta sesión)
+  ══════════════════════════════════════════════════ -->
+  @if (mostrarRecordatorioRespaldo() && !escaneando) {
+    <div class="respaldo-banner" role="status">
+      <mat-icon>cloud_off</mat-icon>
+      <div class="respaldo-text">
+        <span class="respaldo-titulo">Respaldo pendiente</span>
+        <span class="respaldo-detalle">{{ textoRecordatorioRespaldo() }}</span>
+      </div>
+      <button class="respaldo-btn" (click)="irAConfiguracionRespaldo()">
+        <mat-icon>download</mat-icon>
+        Exportar
+      </button>
+      <button class="respaldo-close" (click)="descartarRecordatorioRespaldo()" aria-label="Descartar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════
        INDICADOR DE AFORO (solo si está activo)
   ══════════════════════════════════════════════════ -->
   @if (aforoService.activo() && !escaneando) {
@@ -140,6 +161,17 @@
             <mat-icon>login</mat-icon>
             Continuar como invitado
           </button>
+
+          @if (visitantesAbiertos().length > 0) {
+            <button
+              class="btn-guest-exit"
+              (click)="abrirSalidaVisitante()"
+              [disabled]="cargando">
+              <mat-icon>logout</mat-icon>
+              Marcar salida de visitante
+              <span class="guest-exit-count">{{ visitantesAbiertos().length }}</span>
+            </button>
+          }
         </div>
 
       </div>

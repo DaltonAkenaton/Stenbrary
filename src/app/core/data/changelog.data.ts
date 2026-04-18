@@ -49,6 +49,51 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.11.0',
+    fecha: '2026-04-18',
+    titulo: 'Lector USB, salida de visitantes y aviso de respaldo',
+    destacado: true,
+    resumen:
+      'Tres mejoras enfocadas en operación diaria: compatibilidad con escáneres USB ' +
+      'físicos, una forma clara de cerrar la visita de quien no trae credencial, y un ' +
+      'recordatorio visible cuando hace falta exportar una copia de seguridad.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Soporte para escáneres USB tipo teclado (HID). Si conectas un lector de código ' +
+          'de barras USB, ahora funciona sin abrir la cámara: el scanner detecta el tipeo ' +
+          'rápido terminado en Enter y procesa la matrícula con el mismo flujo de siempre. ' +
+          'No interfiere con el campo manual ni con los diálogos abiertos.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Salida autónoma de visitante: cuando hay visitantes con entrada abierta, en la ' +
+          'pantalla del scanner aparece el botón "Marcar salida de visitante" con un contador. ' +
+          'Abre una lista táctil con el nombre y la hora de llegada — el visitante (o el ' +
+          'encargado) toca su nombre y se cierra su registro. Útil sobre todo en modo quiosco ' +
+          'donde la vista "En Biblioteca" está oculta.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Recordatorio de respaldo: el sistema te avisa en la pantalla del scanner si pasan ' +
+          'más de N días sin exportar una copia de seguridad. El umbral se ajusta en ' +
+          'Configuración → Recordatorio de respaldo (presets 7/14/30/60 días + input libre, ' +
+          '0 = desactivado). El aviso se descarta por sesión o permanentemente exportando el ' +
+          'respaldo. Ideal para no perder datos si se borra el caché del navegador.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El scanner ya no vuelve a abrir la cámara después de cancelar una confirmación si ' +
+          'la detección vino del lector USB o del campo manual. Menos parpadeo, menos consumo ' +
+          'innecesario de cámara en instalaciones que no la usan.',
+      },
+    ],
+  },
+  {
     version: '3.10.1',
     fecha: '2026-04-17',
     titulo: 'Ajustes de visibilidad y UX',

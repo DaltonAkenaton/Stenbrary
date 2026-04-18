@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  config.service.ts                                   ║
-// ║  Stenbrary v3.9.0 — Quiosco + Horarios               ║
+// ║  Stenbrary v3.11.0 — Recordatorio de respaldo        ║
 // ║                                                      ║
 // ║  Persiste ajustes en localStorage.                   ║
 // ║  Gestiona:                                           ║
@@ -11,6 +11,9 @@
 // ║  - modoQuiosco / quioscoPin (v3.9.0)                 ║
 // ║  - horarioActivo / horarios / horarioModo (v3.9.0)   ║
 // ║  - celebracionActiva / celebracionProbabilidad       ║
+// ║  - umbralInactividadDias (v3.10.0)                   ║
+// ║  - umbralRecordatorioRespaldoDias + ultimoRespaldoTs ║
+// ║    (v3.11.0)                                         ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable, signal } from '@angular/core';
@@ -80,6 +83,12 @@ interface AppConfig {
   // ── Alertas de inactividad (v3.10.0) ──
   /** Umbral de días sin venir para considerar a un alumno "inactivo". 0 = desactivado. */
   umbralInactividadDias: number;
+
+  // ── Recordatorio de respaldo (v3.11.0) ──
+  /** Días sin exportar respaldo para mostrar recordatorio. 0 = desactivado. */
+  umbralRecordatorioRespaldoDias: number;
+  /** Timestamp (ms) del último respaldo exportado. 0 = nunca. */
+  ultimoRespaldoTs: number;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -97,6 +106,8 @@ const DEFAULT_CONFIG: AppConfig = {
   celebracionActiva: true,
   celebracionProbabilidad: 0.08,
   umbralInactividadDias: 30,
+  umbralRecordatorioRespaldoDias: 14,
+  ultimoRespaldoTs: 0,
 };
 
 const STORAGE_KEY = 'stenbrary-config';
@@ -113,6 +124,11 @@ export class ConfigService {
   private _modoQuiosco = signal(false);
   readonly modoQuioscoSignal = this._modoQuiosco.asReadonly();
 
+  // Signal reactivo del timestamp del último respaldo — permite que el banner
+  // de recordatorio desaparezca inmediatamente al exportar un backup.
+  private _ultimoRespaldoTs = signal(0);
+  readonly ultimoRespaldoSignal = this._ultimoRespaldoTs.asReadonly();
+
   setHayAutoClose(valor: boolean): void {
     this._hayAutoClose.set(valor);
   }
@@ -120,6 +136,7 @@ export class ConfigService {
   constructor() {
     this.config = this.cargar();
     this._modoQuiosco.set(this.config.modoQuiosco);
+    this._ultimoRespaldoTs.set(this.config.ultimoRespaldoTs);
   }
 
   get registroSalidaActivo(): boolean {
@@ -280,6 +297,51 @@ export class ConfigService {
   /** true cuando la función de alertas de inactividad está habilitada (umbral > 0). */
   get alertasInactividadActivas(): boolean {
     return this.config.umbralInactividadDias > 0;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // RECORDATORIO DE RESPALDO (v3.11.0)
+  // ═══════════════════════════════════════════════════════
+
+  get umbralRecordatorioRespaldoDias(): number {
+    return this.config.umbralRecordatorioRespaldoDias;
+  }
+
+  setUmbralRecordatorioRespaldoDias(dias: number): void {
+    this.config.umbralRecordatorioRespaldoDias = Math.max(0, Math.floor(dias) || 0);
+    this.guardar();
+  }
+
+  get ultimoRespaldoTs(): number {
+    return this.config.ultimoRespaldoTs;
+  }
+
+  /** Marca el respaldo como hecho ahora. Llamar desde BackupService al exportar. */
+  registrarRespaldoHecho(): void {
+    this.config.ultimoRespaldoTs = Date.now();
+    this._ultimoRespaldoTs.set(this.config.ultimoRespaldoTs);
+    this.guardar();
+  }
+
+  /** Días transcurridos desde el último respaldo. null si nunca se ha hecho. */
+  diasSinRespaldo(): number | null {
+    const ts = this.config.ultimoRespaldoTs;
+    if (!ts) return null;
+    const ms = Date.now() - ts;
+    return Math.floor(ms / (1000 * 60 * 60 * 24));
+  }
+
+  /**
+   * true cuando hay que mostrar el recordatorio:
+   * - Función activa (umbral > 0)
+   * - Y nunca se ha hecho un respaldo, o ya pasó el umbral.
+   */
+  get recordatorioRespaldoPendiente(): boolean {
+    const umbral = this.config.umbralRecordatorioRespaldoDias;
+    if (umbral <= 0) return false;
+    const dias = this.diasSinRespaldo();
+    if (dias === null) return true;
+    return dias >= umbral;
   }
 
   // ═══════════════════════════════════════════════════════

@@ -640,6 +640,68 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
         </p>
       </mat-card>
 
+      <!-- ═══ RECORDATORIO DE RESPALDO ═══ -->
+      <mat-card class="section-card" id="respaldo">
+        <div class="section-header">
+          <mat-icon>event_repeat</mat-icon>
+          <h2>Recordatorio de respaldo</h2>
+        </div>
+        <p class="section-desc">
+          El sistema te avisará en la pantalla principal si pasan más de X días sin que hagas
+          una copia de seguridad. Ajusta cada cuánto quieres el recordatorio.
+        </p>
+        <div class="auto-close-options">
+          @for (op of recordatorioRespaldoOpciones; track op.valor) {
+            <button class="auto-close-btn"
+                    [class.active]="configService.umbralRecordatorioRespaldoDias === op.valor"
+                    (click)="setUmbralRecordatorioRespaldo(op.valor)">
+              {{ op.etiqueta }}
+            </button>
+          }
+        </div>
+        <div class="aforo-input-row" style="margin-top: 14px;">
+          <label for="respaldoDias">Días personalizado</label>
+          <div class="aforo-stepper" style="max-width: 260px;">
+            <button type="button"
+                    class="stepper-btn"
+                    (click)="setUmbralRecordatorioRespaldo(configService.umbralRecordatorioRespaldoDias - 1)"
+                    [disabled]="configService.umbralRecordatorioRespaldoDias <= 0"
+                    matTooltip="Disminuir 1 día"
+                    matTooltipPosition="above">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <input id="respaldoDias"
+                   type="number"
+                   min="0"
+                   max="3650"
+                   step="1"
+                   class="aforo-number-input"
+                   [ngModel]="configService.umbralRecordatorioRespaldoDias"
+                   (ngModelChange)="setUmbralRecordatorioRespaldo($event)"
+                   placeholder="0">
+            <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">días</span>
+            <button type="button"
+                    class="stepper-btn"
+                    (click)="setUmbralRecordatorioRespaldo(configService.umbralRecordatorioRespaldoDias + 1)"
+                    matTooltip="Aumentar 1 día"
+                    matTooltipPosition="above">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+        <p class="section-hint">
+          <mat-icon>info</mat-icon>
+          @if (configService.umbralRecordatorioRespaldoDias === 0) {
+            Recordatorio desactivado.
+          } @else {
+            Avisar si pasan más de {{ configService.umbralRecordatorioRespaldoDias }} día(s) sin respaldar.
+            @if (diasSinRespaldoTexto()) {
+              <br>{{ diasSinRespaldoTexto() }}
+            }
+          }
+        </p>
+      </mat-card>
+
       <!-- ═══ BACKUP ═══ -->
       <mat-card class="section-card">
         <div class="section-header">
@@ -1477,6 +1539,36 @@ export class ConfiguracionComponent implements OnInit {
     } else {
       this.toastService.info(`Umbral de inactividad: ${n} días`);
     }
+  }
+
+  // ═══════════════════════════════════════════════
+  // RECORDATORIO DE RESPALDO (v3.11.0)
+  // ═══════════════════════════════════════════════
+
+  readonly recordatorioRespaldoOpciones = [
+    { valor: 0,  etiqueta: 'Desactivado' },
+    { valor: 7,  etiqueta: '7 días' },
+    { valor: 14, etiqueta: '14 días' },
+    { valor: 30, etiqueta: '30 días' },
+    { valor: 60, etiqueta: '60 días' },
+  ];
+
+  setUmbralRecordatorioRespaldo(dias: number): void {
+    const n = Math.max(0, Math.min(3650, Math.floor(dias) || 0));
+    this.configService.setUmbralRecordatorioRespaldoDias(n);
+    if (n === 0) {
+      this.toastService.info('Recordatorio de respaldo desactivado');
+    } else {
+      this.toastService.info(`Recordatorio cada ${n} día(s)`);
+    }
+  }
+
+  diasSinRespaldoTexto(): string {
+    const dias = this.configService.diasSinRespaldo();
+    if (dias === null) return 'Aún no se ha hecho ningún respaldo.';
+    if (dias === 0) return 'Último respaldo: hoy.';
+    if (dias === 1) return 'Último respaldo: hace 1 día.';
+    return `Último respaldo: hace ${dias} días.`;
   }
 
   // ═══════════════════════════════════════════════
