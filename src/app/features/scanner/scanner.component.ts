@@ -1,17 +1,31 @@
 // ╔══════════════════════════════════════════════════════════════════════╗
 // ║  scanner.component.ts                                              ║
-// ║  Stenbrary v3.6.2 — Duplicados + Registro de salida               ║
+// ║  Stenbrary v3.9.1 — Zoom de cámara + pipeline siempre agresivo    ║
 // ║                                                                    ║
-// ║  NUEVO v3.6.2:                                                     ║
-// ║  - Detección de registros duplicados (últimos 30 min)              ║
-// ║  - Dialog con 3 opciones: Salida / Nuevo acceso / Cancelar        ║
-// ║  - Registro de hora de salida en registro existente                ║
-// ║  - Invitados excluidos de la verificación                          ║
+// ║  NUEVO v3.9.1:                                                     ║
+// ║  - Zoom digital de cámara (auto 2× + botones manuales UI)          ║
+// ║  - Pipeline agresivo SIEMPRE activo (ya no gateado por resolución) ║
+// ║  - Sharpening siempre ON (crítico para webcams de foco fijo)       ║
+// ║  - Detector nativo SIEMPRE prueba canvas preprocesado + Otsu       ║
+// ║  - Umbral low-res subido a 1400px (cubre webcams de laptop)        ║
+// ║                                                                    ║
+// ║  Base v3.9.0:                                                      ║
+// ║  - Detección automática de resolución (low-res ≤800px)             ║
+// ║  - Upscaling agresivo (2×–3×) para webcams de laptop              ║
+// ║  - Sharpening por software (unsharp mask) para foco fijo           ║
+// ║  - Binarización Otsu: umbral óptimo calculado del histograma       ║
+// ║  - Corrección de rotación ±3°/±5° para credenciales inclinadas     ║
+// ║  - Escaneo por franjas horizontales (scanlines a 40/50/60%)        ║
+// ║  - Detección de barcode invertido (colores negados)                ║
+// ║  - Tracking de estrategias exitosas (priorización adaptativa)      ║
+// ║  - Optimización de exposición vía Camera API                       ║
+// ║  - Detector nativo con fallback a canvas preprocesado + Otsu       ║
+// ║  - Presupuesto e intervalo adaptativos según resolución            ║
 // ╚══════════════════════════════════════════════════════════════════════╝
 
 import {
   Component, OnInit, OnDestroy,
-  ViewChild, ElementRef, NgZone
+  ViewChild, ElementRef, NgZone, signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -43,13 +57,20 @@ import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { InvitadoNombreDialogComponent } from './invitado-nombre-dialog/invitado-nombre-dialog.component';
+import { QuioscoPinDialogComponent } from './quiosco-pin-dialog/quiosco-pin-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { verificarHorario } from '../../core/utils/horarios.utils';
 
 
 
 // ── Constantes ──────────────────────────────────────────────────────────────
-const SCAN_INTERVAL_MS     = 160; // más frecuente que 200ms para mejor respuesta
-const DUPLICADO_UMBRAL_MIN = 30;
+const SCAN_INTERVAL_MS         = 160; // más frecuente que 200ms para mejor respuesta
+const SCAN_INTERVAL_LOWRES_MS  = 120; // cámaras de baja resolución procesan más rápido → escanear más seguido
+const DUPLICADO_UMBRAL_MIN     = 30;
+// Umbral de "baja resolución" para upscaling agresivo en Otsu/strip/rotation.
+// 1400px cubre todas las webcams de laptop (que típicamente reportan 1280×720
+// pero tienen óptica pobre) y solo excluye cámaras HD reales de ≥1920px.
+const LOWRES_THRESHOLD         = 1400;
 
 /**
  * Estrategias de preprocesado optimizadas para CODE 128 (credenciales UAT).
@@ -60,8 +81,11 @@ const DUPLICADO_UMBRAL_MIN = 30;
  *   - Suficiente resolución horizontal (upscaling ayuda en webcams ≤640px)
  *
  * Orden de prioridad: de mayor probabilidad de éxito a menor.
- * El presupuesto de 45ms por frame limita cuántas se ejecutan,
+ * El presupuesto por frame limita cuántas se ejecutan,
  * por eso el orden importa.
+ *
+ * En cámaras de baja resolución (≤800px ancho), se inyectan automáticamente
+ * estrategias con upscaling agresivo (2×–3×) al principio de la lista.
  */
 const PREPROCESS_STRATEGIES: Array<{ filter: string; scale: number; label: string }> = [
   // 1. Equilibrado — mejor punto de partida para la mayoría de condiciones
@@ -80,6 +104,163 @@ const PREPROCESS_STRATEGIES: Array<{ filter: string; scale: number; label: strin
   //    solo llega aquí si ninguna estrategia anterior funcionó
   { filter: 'blur(0.4px) grayscale(100%) contrast(240%) brightness(98%)', scale: 1, label: 'denoise' },
 ];
+
+/**
+ * Estrategias adicionales para cámaras de baja resolución.
+ * Se anteponen a PREPROCESS_STRATEGIES cuando videoWidth ≤ LOWRES_THRESHOLD.
+ * El upscaling agresivo (2×–3×) compensa la falta de píxeles del sensor,
+ * dándole al decoder de ZXing más resolución horizontal para distinguir barras.
+ */
+const LOWRES_EXTRA_STRATEGIES: Array<{ filter: string; scale: number; label: string }> = [
+  // Upscale 2× + contraste moderado: balance general para laptops
+  { filter: 'grayscale(100%) contrast(220%) brightness(105%)', scale: 2,   label: 'lowres-2x'       },
+  // Upscale 2.5× + alto contraste: laptop con webcam 480p en baja iluminación
+  { filter: 'grayscale(100%) contrast(260%) brightness(100%)', scale: 2.5, label: 'lowres-2.5x'     },
+  // Upscale 3× + contraste extremo: el último recurso para webcams muy malas (e.g. 320×240)
+  { filter: 'grayscale(100%) contrast(300%) brightness(95%)',  scale: 3,   label: 'lowres-3x'       },
+];
+
+// ── Ángulos de corrección de rotación ────────────────────────────────────
+// Code 128 es estrictamente horizontal — una inclinación de 3–5° es suficiente
+// para que el decoder falle. Estos ángulos cubren inclinaciones reales comunes
+// cuando el usuario sostiene la credencial a mano.
+const ROTATION_ANGLES = [0, -3, 3, -5, 5]; // grados — 0 siempre primero
+
+// ── Máximo de éxitos a recordar para priorizar estrategias ───────────────
+const STRATEGY_HISTORY_SIZE = 8;
+
+/**
+ * Aplica un kernel de sharpening (unsharp mask simplificado) a un canvas.
+ * Clave para webcams de laptop con lente de foco fijo — el barcode aparece
+ * ligeramente borroso y esto recupera los bordes de las barras.
+ *
+ * El kernel usado es:
+ *   [ 0, -1,  0]
+ *   [-1,  5, -1]
+ *   [ 0, -1,  0]
+ *
+ * Intensidad controlada por `strength` (0–1). 0.4 es un buen balance entre
+ * nitidez recuperada y ruido amplificado.
+ */
+function sharpenCanvas(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  strength: number = 0.4
+): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const src = imageData.data;
+  const dst = new Uint8ClampedArray(src);
+
+  const w4 = width * 4; // bytes per row
+
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idx = y * w4 + x * 4;
+      // Solo canal rojo (ya es grayscale, R=G=B)
+      const center = src[idx];
+      const top    = src[idx - w4];
+      const bottom = src[idx + w4];
+      const left   = src[idx - 4];
+      const right  = src[idx + 4];
+
+      // Kernel: 5*center - (top + bottom + left + right)
+      const sharpened = center + strength * (4 * center - top - bottom - left - right);
+      const clamped = sharpened < 0 ? 0 : sharpened > 255 ? 255 : sharpened;
+
+      dst[idx]     = clamped; // R
+      dst[idx + 1] = clamped; // G
+      dst[idx + 2] = clamped; // B
+      // Alpha unchanged
+    }
+  }
+
+  imageData.data.set(dst);
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/**
+ * Binarización Otsu — calcula el umbral óptimo para separar barras de espacios.
+ *
+ * A diferencia de CSS contrast() que aplica una curva lineal fija, Otsu analiza
+ * el histograma real de la imagen y encuentra el punto de corte que MINIMIZA
+ * la varianza intra-clase entre píxeles claros y oscuros. Resultado:
+ * - En iluminación uniforme: umbral perfecto, barras nítidas
+ * - En iluminación desigual: mejor que contrast() fijo (aunque no tan bueno como
+ *   adaptive threshold, que es demasiado costoso para tiempo real)
+ *
+ * Es EL estándar de preprocesado para decodificación de barcodes en la industria.
+ */
+function otsuBinarize(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const totalPixels = width * height;
+
+  // 1. Construir histograma (solo canal R, ya es grayscale)
+  const histogram = new Uint32Array(256);
+  for (let i = 0; i < data.length; i += 4) {
+    histogram[data[i]]++;
+  }
+
+  // 2. Calcular umbral Otsu
+  let sumTotal = 0;
+  for (let i = 0; i < 256; i++) sumTotal += i * histogram[i];
+
+  let sumBack = 0;
+  let wBack = 0;
+  let maxVariance = 0;
+  let threshold = 128; // fallback
+
+  for (let t = 0; t < 256; t++) {
+    wBack += histogram[t];
+    if (wBack === 0) continue;
+    const wFore = totalPixels - wBack;
+    if (wFore === 0) break;
+
+    sumBack += t * histogram[t];
+    const meanBack = sumBack / wBack;
+    const meanFore = (sumTotal - sumBack) / wFore;
+    const variance = wBack * wFore * (meanBack - meanFore) * (meanBack - meanFore);
+
+    if (variance > maxVariance) {
+      maxVariance = variance;
+      threshold = t;
+    }
+  }
+
+  // 3. Binarizar
+  for (let i = 0; i < data.length; i += 4) {
+    const val = data[i] >= threshold ? 255 : 0;
+    data[i] = data[i + 1] = data[i + 2] = val;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/**
+ * Invierte los colores del canvas (negativo).
+ * Útil cuando la cámara produce una imagen con tonos invertidos
+ * (reflexiones, modo nocturno, etc.) donde las barras aparecen claras
+ * y los espacios oscuros.
+ */
+function invertCanvas(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    data[i]     = 255 - data[i];
+    data[i + 1] = 255 - data[i + 1];
+    data[i + 2] = 255 - data[i + 2];
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
 
 declare class BarcodeDetector {
   constructor(options?: { formats: string[] });
@@ -111,6 +292,18 @@ export class ScannerComponent implements OnInit, OnDestroy {
   linternaActiva     = false;
   linternaDisponible = false;
 
+  // ── Flash visual post-salida (refuerzo cuando el dispositivo está en silencio) ──
+  readonly salidaFlash = signal<{ nombre: string; duracion: string } | null>(null);
+  private salidaFlashTimer: number | null = null;
+
+  // ── Zoom de cámara (crítico para webcams de laptop con foco fijo) ─────
+  zoomDisponible = false;
+  zoomHardware   = false;  // true = zoom real de cámara, false = zoom por software
+  zoomActual     = 1;
+  zoomMin        = 1;
+  zoomMax        = 1;
+  zoomStep       = 0.5;
+
   private scannerActivo      = false;
   private mediaStream:       MediaStream | null = null;
   private loopFrameId:       number | null = null;
@@ -121,6 +314,24 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private nativeDetector:    BarcodeDetector | null = null;
   private browserReader:     BrowserMultiFormatReader | null = null;
   private usandoNativo       = false;
+
+  // ── Adaptación a resolución ────────────────────────────────────────────
+  private esLowRes           = false;  // true si videoWidth ≤ LOWRES_THRESHOLD
+  private effectiveStrategies: Array<{ filter: string; scale: number; label: string }> = PREPROCESS_STRATEGIES;
+  private effectiveScanInterval = SCAN_INTERVAL_MS;
+  private effectiveBudget    = 45;     // ms por frame — se aumenta en low-res
+  private sharpenEnabled     = false;  // se activa en low-res para recuperar bordes
+
+  // ── Tracking de estrategias exitosas ───────────────────────────────────
+  // Registra las últimas N estrategias que decodificaron con éxito.
+  // Si una estrategia domina el historial, se promueve al inicio de la lista
+  // para que se intente primero — reduce latencia de detección promedio.
+  private strategySuccessHistory: string[] = [];
+
+  // ── Canvas auxiliar para rotaciones ────────────────────────────────────
+  // Se crea una vez y se reutiliza para evitar GC en cada frame.
+  private rotCanvas: HTMLCanvasElement | null = null;
+  private rotCtx: CanvasRenderingContext2D | null = null;
 
   constructor(
     private databaseService: DatabaseService,
@@ -148,6 +359,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.detenerScanner();
+    if (this.salidaFlashTimer !== null) {
+      clearTimeout(this.salidaFlashTimer);
+      this.salidaFlashTimer = null;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -216,6 +431,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         const onReady = () => {
           video.removeEventListener('loadeddata', onReady);
           this.cargando = false;
+          this.adaptarAResolucion(video);
           this.toastService.info('Scanner activo — apunta al código de barras');
           this.detectarLinterna();
           this.iniciarLoop();
@@ -283,6 +499,185 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // ADAPTACIÓN A RESOLUCIÓN
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Detecta la resolución real de la cámara y adapta las estrategias de
+   * preprocesado para maximizar la tasa de detección.
+   *
+   * En cámaras de baja resolución (≤800px ancho, típico en laptops):
+   * - Se anteponen estrategias con upscaling agresivo (2×–3×)
+   * - Se activa sharpening por software (unsharp mask)
+   * - Se aumenta el presupuesto de tiempo por frame (más intentos)
+   * - Se reduce el intervalo entre escaneos (el procesamiento es más rápido
+   *   porque hay menos píxeles, así que podemos escanear más seguido)
+   */
+  private adaptarAResolucion(video: HTMLVideoElement): void {
+    const vw = video.videoWidth  || 640;
+    const vh = video.videoHeight || 480;
+    this.esLowRes = vw <= LOWRES_THRESHOLD;
+
+    // CAMBIO CRÍTICO (v3.9.1): Las webcams de laptop reportan 1280×720 pero
+    // tienen óptica de foco fijo que produce imágenes borrosas a corta distancia.
+    // El umbral de resolución NO es suficiente para detectar esto. Por lo tanto,
+    // SIEMPRE incluimos las estrategias agresivas y SIEMPRE activamos sharpening.
+    // El presupuesto de tiempo por frame previene bloqueos de UI.
+    this.effectiveStrategies = [...LOWRES_EXTRA_STRATEGIES, ...PREPROCESS_STRATEGIES];
+    this.effectiveScanInterval = this.esLowRes ? SCAN_INTERVAL_LOWRES_MS : SCAN_INTERVAL_MS;
+    this.effectiveBudget = this.esLowRes ? 70 : 60;
+    this.sharpenEnabled = true;
+    console.log(`📷 Cámara ${vw}×${vh} — pipeline agresivo activado: ${this.effectiveStrategies.length} estrategias, sharpening ON, budget ${this.effectiveBudget}ms`);
+
+    // Crear canvas auxiliar para rotaciones (reutilizable, evita GC)
+    this.rotCanvas = document.createElement('canvas');
+    this.rotCtx = this.rotCanvas.getContext('2d', { willReadFrequently: true });
+
+    // Optimizar exposición y zoom para barcode scanning
+    this.optimizarExposicionCamara();
+    this.detectarYAplicarZoom();
+  }
+
+  /**
+   * Configura zoom — hardware si la cámara lo soporta, software (crop+scale)
+   * en caso contrario. CRÍTICO para webcams de laptop: el foco fijo no permite
+   * enfocar objetos cerca, pero el zoom efectivamente "acerca" el barcode.
+   *
+   * El zoom por software se aplica al video visible (CSS transform) Y al
+   * pipeline de decodificación (ROI recortada + escalada).
+   *
+   * Auto-aplica zoom 2× al inicio.
+   */
+  private async detectarYAplicarZoom(): Promise<void> {
+    // 1. Intentar zoom por hardware
+    try {
+      const track = this.mediaStream?.getVideoTracks()[0];
+      if (track) {
+        const caps = track.getCapabilities?.() as any;
+        if (caps?.zoom) {
+          this.zoomMin  = caps.zoom.min ?? 1;
+          this.zoomMax  = caps.zoom.max ?? 1;
+          this.zoomStep = caps.zoom.step ?? 0.5;
+          if (this.zoomMax > this.zoomMin) {
+            this.zoomDisponible = true;
+            this.zoomHardware = true;
+            const autoZoom = Math.min(2, this.zoomMax);
+            await track.applyConstraints({ advanced: [{ zoom: autoZoom } as any] });
+            this.zoomActual = autoZoom;
+            console.log(`📷 Zoom HARDWARE [${this.zoomMin}×–${this.zoomMax}×] — auto-zoom ${autoZoom}×`);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Zoom hardware no aplicable:', err);
+    }
+
+    // 2. Fallback: zoom por software (crop + scale)
+    // Arranca en 1× (sin degradación visual) — el usuario puede subirlo si
+    // lo necesita. El zoom software no añade detalle real, solo recorta
+    // el centro para que el decodificador trabaje sobre un área más chica.
+    this.zoomDisponible = true;
+    this.zoomHardware   = false;
+    this.zoomMin        = 1;
+    this.zoomMax        = 3;
+    this.zoomStep       = 0.5;
+    this.zoomActual     = 1;
+    this.aplicarZoomSoftware();
+    console.log(`📷 Zoom SOFTWARE disponible [${this.zoomMin}×–${this.zoomMax}×]`);
+  }
+
+  /**
+   * Aplica zoom por software: escala el <video> con CSS transform.
+   * El pipeline de detección lee internamente `zoomActual` y ajusta su ROI.
+   */
+  private aplicarZoomSoftware(): void {
+    const video = this.videoElement?.nativeElement;
+    if (!video) return;
+    video.style.transform = `scale(${this.zoomActual})`;
+    video.style.transformOrigin = 'center center';
+  }
+
+  async aumentarZoom(): Promise<void> {
+    if (!this.zoomDisponible) return;
+    const nuevo = Math.min(this.zoomMax, this.zoomActual + this.zoomStep);
+    await this.aplicarZoom(nuevo);
+  }
+
+  async reducirZoom(): Promise<void> {
+    if (!this.zoomDisponible) return;
+    const nuevo = Math.max(this.zoomMin, this.zoomActual - this.zoomStep);
+    await this.aplicarZoom(nuevo);
+  }
+
+  private async aplicarZoom(valor: number): Promise<void> {
+    this.zoomActual = valor;
+    if (this.zoomHardware) {
+      try {
+        const track = this.mediaStream?.getVideoTracks()[0];
+        if (!track) return;
+        await track.applyConstraints({ advanced: [{ zoom: valor } as any] });
+      } catch (err) {
+        console.warn('Error al aplicar zoom hardware:', err);
+      }
+    } else {
+      this.aplicarZoomSoftware();
+    }
+  }
+
+  /**
+   * Intenta optimizar los parámetros de la cámara para escaneo de barcodes.
+   * Usa la API de MediaStreamTrack.applyConstraints() con advanced para:
+   * - Foco continuo (mantener barcode enfocado)
+   * - Exposición continua (adaptarse a la iluminación)
+   * - Compensación de exposición (evitar sobreexposición que blanquea las barras)
+   * - White balance continuo
+   *
+   * No todas las cámaras soportan estos controles — se aplica best-effort.
+   */
+  private async optimizarExposicionCamara(): Promise<void> {
+    try {
+      const track = this.mediaStream?.getVideoTracks()[0];
+      if (!track) return;
+      const caps = track.getCapabilities?.() as any;
+      if (!caps) return;
+
+      const advanced: any[] = [];
+
+      // Foco continuo — esencial para webcams que lo soportan
+      if (caps.focusMode?.includes('continuous')) {
+        advanced.push({ focusMode: 'continuous' });
+      }
+
+      // Exposición continua — se adapta a cambios de iluminación
+      if (caps.exposureMode?.includes('continuous')) {
+        advanced.push({ exposureMode: 'continuous' });
+      }
+
+      // White balance continuo
+      if (caps.whiteBalanceMode?.includes('continuous')) {
+        advanced.push({ whiteBalanceMode: 'continuous' });
+      }
+
+      // Compensación de exposición: ligeramente subexpuesta para evitar
+      // que las barras se blanqueen por sobreexposición. Solo si soportado.
+      if (caps.exposureCompensation) {
+        const min = caps.exposureCompensation.min ?? -2;
+        // Apuntar a -0.5 EV: reduce sobreexposición sin oscurecer demasiado
+        const target = Math.max(min, -0.5);
+        advanced.push({ exposureCompensation: target });
+      }
+
+      if (advanced.length > 0) {
+        await track.applyConstraints({ advanced });
+        console.log('📷 Exposición optimizada:', advanced.map(a => Object.keys(a).join(',')).join(' + '));
+      }
+    } catch {
+      // Best-effort: si la cámara no lo soporta, silenciar
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // LINTERNA
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -317,7 +712,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     const tick = (ts: number) => {
       if (!this.scannerActivo) return;
 
-      if (!this.enCooldown && ts - this.lastScanTs >= SCAN_INTERVAL_MS) {
+      if (!this.enCooldown && ts - this.lastScanTs >= this.effectiveScanInterval) {
         this.lastScanTs = ts;
         if (this.usandoNativo) this.detectarConNativo();
         else this.detectarConZXingBrowser();
@@ -338,12 +733,74 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     this.isDetecting = true;
     try {
+      // ── Intento 1: detección directa sobre el video ──────────────
       const resultados = await this.nativeDetector.detect(video);
       for (const barcode of resultados) {
         const texto = barcode.rawValue.trim();
         if (this.esMatriculaValida(texto)) {
           this.procesarDeteccion(texto, `nativo:${barcode.format}`);
           return;
+        }
+      }
+
+      // ── Intento 2: canvas preprocesado con sharpen + contrast ──────
+      // El BarcodeDetector nativo acepta ImageBitmapSource, que incluye canvas.
+      // SIEMPRE lo intentamos — incluso en cámaras "de alta resolución" los
+      // lentes de laptop producen imágenes borrosas que el detector nativo
+      // rechaza pero sí decodifica cuando se le pasa un canvas preprocesado.
+      {
+        const canvas = this.canvasElement?.nativeElement;
+        if (!canvas) return;
+
+        const vw = video.videoWidth || 640;
+        const vh = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+
+        // Aplicar zoom software si está activo
+        const zoomCrop = (!this.zoomHardware && this.zoomActual > 1) ? this.zoomActual : 1;
+        const effW = Math.floor(vw / zoomCrop);
+        const effH = Math.floor(vh / zoomCrop);
+        const offX = Math.floor((vw - effW) / 2);
+        const offY = Math.floor((vh - effH) / 2);
+
+        const roiX  = offX + Math.floor(effW * 0.05);
+        const roiY  = offY + Math.floor(effH * 0.25);
+        const roiW  = Math.floor(effW * 0.90);
+        const roiH  = Math.floor(effH * 0.50);
+        const scale = 2.5;
+        const tw = Math.round(roiW * scale);
+        const th = Math.round(roiH * scale);
+        canvas.width  = tw;
+        canvas.height = th;
+        ctx.filter = 'grayscale(100%) contrast(250%) brightness(105%)';
+        ctx.drawImage(video, roiX, roiY, roiW, roiH, 0, 0, tw, th);
+        ctx.filter = 'none';
+        sharpenCanvas(ctx, tw, th, 0.35);
+
+        const resultadosCanvas = await this.nativeDetector.detect(canvas);
+        for (const barcode of resultadosCanvas) {
+          const texto = barcode.rawValue.trim();
+          if (this.esMatriculaValida(texto)) {
+            this.procesarDeteccion(texto, `nativo-canvas:${barcode.format}`);
+            return;
+          }
+        }
+
+        // ── Intento 3: Otsu binarization para nativo ──────────────────
+        // Redibujamos en grayscale y aplicamos Otsu para un resultado
+        // perfectamente binarizado (blanco/negro puro).
+        ctx.filter = 'grayscale(100%)';
+        ctx.drawImage(video, roiX, roiY, roiW, roiH, 0, 0, tw, th);
+        ctx.filter = 'none';
+        otsuBinarize(ctx, tw, th);
+
+        const resultadosOtsu = await this.nativeDetector.detect(canvas);
+        for (const barcode of resultadosOtsu) {
+          const texto = barcode.rawValue.trim();
+          if (this.esMatriculaValida(texto)) {
+            this.procesarDeteccion(texto, `nativo-otsu:${barcode.format}`);
+            return;
+          }
         }
       }
     } catch (err: any) {
@@ -363,36 +820,47 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (vw === 0 || vh === 0) return;
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    const total = PREPROCESS_STRATEGIES.length;
+    const strategies = this.getOrderedStrategies();
+    const total = strategies.length;
 
-    /**
-     * Presupuesto de tiempo por frame: 45ms máximo.
-     * Sin este límite, 7 estrategias × 2 zonas = 14 decodes síncronos
-     * pueden bloquear el hilo principal hasta 1,100ms en cámaras lentas.
-     *
-     * Rotación de estrategia inicial: cada frame empieza en un índice
-     * distinto para que todas las estrategias obtengan intentos equitativos
-     * aunque el presupuesto se agote en la primera ronda.
-     */
-    const BUDGET_MS = 45;
+    const BUDGET_MS = this.effectiveBudget;
     const t0 = performance.now();
+
+    // ── Zoom software: recorta ROI al centro proporcional al factor ────
+    // Si zoom es software y > 1, recortamos la región central del video
+    // que correspondería al encuadre visible con el scale CSS aplicado.
+    // Ejemplo: zoom 2× → recortamos centro 50% × 50% como "frame efectivo".
+    const zoomCrop = (!this.zoomHardware && this.zoomActual > 1) ? this.zoomActual : 1;
+    const effW = Math.floor(vw / zoomCrop);
+    const effH = Math.floor(vh / zoomCrop);
+    const offX = Math.floor((vw - effW) / 2);
+    const offY = Math.floor((vh - effH) / 2);
+
+    // ═════════════════════════════════════════════════════════════════════
+    // FASE 1: Estrategias con filtros CSS + sharpening (como antes, mejorado)
+    // ═════════════════════════════════════════════════════════════════════
 
     for (let i = 0; i < total; i++) {
       if (performance.now() - t0 > BUDGET_MS) break;
 
-      const strategy = PREPROCESS_STRATEGIES[(this.zxingStrategyIdx + i) % total];
+      const strategy = strategies[(this.zxingStrategyIdx + i) % total];
 
-      // ── Frame completo ──────────────────────────────────────────────
-      const tw = Math.round(vw * strategy.scale);
-      const th = Math.round(vh * strategy.scale);
+      // ── Frame completo (ajustado por zoom software) ─────────────────
+      const tw = Math.round(effW * strategy.scale);
+      const th = Math.round(effH * strategy.scale);
       canvas.width  = tw;
       canvas.height = th;
       ctx.filter = strategy.filter;
-      ctx.drawImage(video, 0, 0, tw, th);
+      ctx.drawImage(video, offX, offY, effW, effH, 0, 0, tw, th);
       ctx.filter = 'none';
+
+      if (this.sharpenEnabled && strategy.scale >= 1.5) {
+        sharpenCanvas(ctx, tw, th, 0.4);
+      }
 
       const fullResult = this.intentarDecodeCanvas(canvas);
       if (fullResult) {
+        this.registrarExito(strategy.label);
         this.procesarDeteccion(fullResult, `zxing:${strategy.label}:full`);
         return;
       }
@@ -400,10 +868,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
       if (performance.now() - t0 > BUDGET_MS) break;
 
       // ── ROI central horizontal (82% ancho, 42% alto, centrado) ──────
-      const roiX  = Math.floor(vw * 0.09);
-      const roiY  = Math.floor(vh * 0.29);
-      const roiW  = Math.floor(vw * 0.82);
-      const roiH  = Math.floor(vh * 0.42);
+      const roiX  = offX + Math.floor(effW * 0.09);
+      const roiY  = offY + Math.floor(effH * 0.29);
+      const roiW  = Math.floor(effW * 0.82);
+      const roiH  = Math.floor(effH * 0.42);
       const roiTW = Math.round(roiW * strategy.scale);
       const roiTH = Math.round(roiH * strategy.scale);
       canvas.width  = roiTW;
@@ -412,30 +880,224 @@ export class ScannerComponent implements OnInit, OnDestroy {
       ctx.drawImage(video, roiX, roiY, roiW, roiH, 0, 0, roiTW, roiTH);
       ctx.filter = 'none';
 
+      if (this.sharpenEnabled && strategy.scale >= 1.5) {
+        sharpenCanvas(ctx, roiTW, roiTH, 0.4);
+      }
+
       const roiResult = this.intentarDecodeCanvas(canvas);
       if (roiResult) {
+        this.registrarExito(strategy.label);
         this.procesarDeteccion(roiResult, `zxing:${strategy.label}:roi`);
         return;
       }
     }
 
-    // Avanzar el índice de rotación para el siguiente frame
     this.zxingStrategyIdx = (this.zxingStrategyIdx + 1) % total;
+
+    // ═════════════════════════════════════════════════════════════════════
+    // FASE 2: Binarización Otsu — umbral óptimo calculado del histograma
+    // Reemplaza el "adivinar" del contrast() CSS con matemáticas.
+    // Se aplica sobre ROI central para máximo impacto y mínimo costo.
+    // ═════════════════════════════════════════════════════════════════════
+
+    if (performance.now() - t0 <= BUDGET_MS) {
+      const roiX  = offX + Math.floor(effW * 0.05);
+      const roiY  = offY + Math.floor(effH * 0.25);
+      const roiW  = Math.floor(effW * 0.90);
+      const roiH  = Math.floor(effH * 0.50);
+      const otsuScale = this.esLowRes ? 2.5 : 1;
+      const otsuW = Math.round(roiW * otsuScale);
+      const otsuH = Math.round(roiH * otsuScale);
+      canvas.width  = otsuW;
+      canvas.height = otsuH;
+      ctx.filter = 'grayscale(100%)';
+      ctx.drawImage(video, roiX, roiY, roiW, roiH, 0, 0, otsuW, otsuH);
+      ctx.filter = 'none';
+
+      if (this.sharpenEnabled) sharpenCanvas(ctx, otsuW, otsuH, 0.3);
+      otsuBinarize(ctx, otsuW, otsuH);
+
+      const otsuResult = this.intentarDecodeCanvas(canvas);
+      if (otsuResult) {
+        this.registrarExito('otsu');
+        this.procesarDeteccion(otsuResult, 'zxing:otsu:roi');
+        return;
+      }
+
+      // Otsu invertido — por si la cámara produce barras claras sobre fondo oscuro
+      if (performance.now() - t0 <= BUDGET_MS) {
+        invertCanvas(ctx, otsuW, otsuH);
+        const invertResult = this.intentarDecodeCanvas(canvas);
+        if (invertResult) {
+          this.registrarExito('otsu-inv');
+          this.procesarDeteccion(invertResult, 'zxing:otsu-inv:roi');
+          return;
+        }
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // FASE 3: Franjas horizontales (scanlines)
+    // Code 128 es 1D — toda la información está en una sola línea horizontal.
+    // Franjas angostas a 3 alturas distintas con upscaling agresivo.
+    // ═════════════════════════════════════════════════════════════════════
+
+    if (performance.now() - t0 <= BUDGET_MS) {
+      const stripH   = Math.max(Math.floor(effH * 0.10), 24);
+      const stripScale = this.esLowRes ? 3 : 1.5;
+      // Cobertura completa del encuadre (no solo centro) — el barcode puede
+      // estar en cualquier parte cuando el usuario sostiene la credencial
+      // con la mano. Probamos del 30% al 70% del frame en pasos de 10%.
+      const stripPositions = [0.30, 0.40, 0.50, 0.60, 0.70];
+
+      for (const yFrac of stripPositions) {
+        if (performance.now() - t0 > BUDGET_MS) break;
+
+        const srcY = offY + Math.floor(effH * yFrac - stripH / 2);
+        const tw2 = Math.round(effW * stripScale);
+        const th2 = Math.round(stripH * stripScale);
+        canvas.width  = tw2;
+        canvas.height = th2;
+        ctx.filter = 'grayscale(100%) contrast(250%) brightness(105%)';
+        ctx.drawImage(video, offX, srcY, effW, stripH, 0, 0, tw2, th2);
+        ctx.filter = 'none';
+
+        if (this.sharpenEnabled) sharpenCanvas(ctx, tw2, th2, 0.5);
+
+        const stripResult = this.intentarDecodeCanvas(canvas);
+        if (stripResult) {
+          this.registrarExito('strip');
+          this.procesarDeteccion(stripResult, `zxing:strip:${Math.round(yFrac * 100)}`);
+          return;
+        }
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // FASE 4: Corrección de rotación
+    // Si la credencial está inclinada ±3°–5°, Code 128 no se decodifica.
+    // Rotamos el canvas y reintentamos. Solo se intenta si hay presupuesto
+    // (normalmente llega aquí en frames donde las fases 1-3 fueron rápidas).
+    // ═════════════════════════════════════════════════════════════════════
+
+    if (performance.now() - t0 <= BUDGET_MS && this.rotCanvas && this.rotCtx) {
+      const roiX  = offX + Math.floor(effW * 0.05);
+      const roiY  = offY + Math.floor(effH * 0.20);
+      const roiW  = Math.floor(effW * 0.90);
+      const roiH  = Math.floor(effH * 0.60);
+      const rotScale = this.esLowRes ? 2 : 1;
+
+      for (const angle of ROTATION_ANGLES) {
+        if (angle === 0) continue; // ya se probó sin rotación en fases anteriores
+        if (performance.now() - t0 > BUDGET_MS) break;
+
+        const rad = (angle * Math.PI) / 180;
+        const tw3 = Math.round(roiW * rotScale);
+        const th3 = Math.round(roiH * rotScale);
+        this.rotCanvas.width  = tw3;
+        this.rotCanvas.height = th3;
+
+        this.rotCtx.filter = 'grayscale(100%) contrast(220%) brightness(105%)';
+        this.rotCtx.save();
+        this.rotCtx.translate(tw3 / 2, th3 / 2);
+        this.rotCtx.rotate(rad);
+        this.rotCtx.drawImage(video, roiX, roiY, roiW, roiH, -tw3 / 2, -th3 / 2, tw3, th3);
+        this.rotCtx.restore();
+        this.rotCtx.filter = 'none';
+
+        const rotResult = this.intentarDecodeRotCanvas();
+        if (rotResult) {
+          this.registrarExito(`rot${angle}`);
+          this.procesarDeteccion(rotResult, `zxing:rot${angle}:roi`);
+          return;
+        }
+      }
+    }
 
     // ── Fallback raw sin filtro (si el código ya tiene buen contraste) ──
     if (performance.now() - t0 <= BUDGET_MS) {
-      canvas.width  = vw;
-      canvas.height = vh;
+      canvas.width  = effW;
+      canvas.height = effH;
       ctx.filter = 'none';
-      ctx.drawImage(video, 0, 0, vw, vh);
+      ctx.drawImage(video, offX, offY, effW, effH, 0, 0, effW, effH);
       const rawResult = this.intentarDecodeCanvas(canvas);
-      if (rawResult) this.procesarDeteccion(rawResult, 'zxing:raw:full');
+      if (rawResult) {
+        this.registrarExito('raw');
+        this.procesarDeteccion(rawResult, 'zxing:raw:full');
+      }
+    }
+  }
+
+  /**
+   * Retorna las estrategias ordenadas por probabilidad de éxito.
+   * Si una estrategia tiene éxitos recientes, se promueve al inicio.
+   */
+  private getOrderedStrategies(): Array<{ filter: string; scale: number; label: string }> {
+    if (this.strategySuccessHistory.length < 3) return this.effectiveStrategies;
+
+    // Contar éxitos por estrategia
+    const counts = new Map<string, number>();
+    for (const label of this.strategySuccessHistory) {
+      counts.set(label, (counts.get(label) || 0) + 1);
+    }
+
+    // Si alguna estrategia tiene ≥50% de los éxitos, promoverla
+    const threshold = Math.floor(this.strategySuccessHistory.length * 0.5);
+    let bestLabel = '';
+    let bestCount = 0;
+    for (const [label, count] of counts) {
+      if (count > bestCount) { bestCount = count; bestLabel = label; }
+    }
+
+    if (bestCount >= threshold && bestLabel) {
+      const idx = this.effectiveStrategies.findIndex(s => s.label === bestLabel);
+      if (idx > 0) {
+        // Mover al frente sin mutar el array original
+        const reordered = [...this.effectiveStrategies];
+        const [promoted] = reordered.splice(idx, 1);
+        reordered.unshift(promoted);
+        return reordered;
+      }
+    }
+
+    return this.effectiveStrategies;
+  }
+
+  /**
+   * Registra un éxito de estrategia para el tracking de priorización.
+   */
+  private registrarExito(label: string): void {
+    this.strategySuccessHistory.push(label);
+    if (this.strategySuccessHistory.length > STRATEGY_HISTORY_SIZE) {
+      this.strategySuccessHistory.shift();
     }
   }
 
   private intentarDecodeCanvas(canvas: HTMLCanvasElement): string | null {
     try {
       const result = this.browserReader!.decodeFromCanvas(canvas);
+      if (result) {
+        const texto = result.getText().trim();
+        if (this.esMatriculaValida(texto)) return texto;
+      }
+    } catch (e: any) {
+      if (!(e instanceof NotFoundException) && e?.name !== 'NotFoundException') {
+        if (e?.message && !e.message.includes('No MultiFormat Readers')) {
+          console.warn('ZXing decode error:', e.message);
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Intenta decodificar desde el canvas auxiliar de rotación.
+   * Separado para evitar confusión con el canvas principal del componente.
+   */
+  private intentarDecodeRotCanvas(): string | null {
+    if (!this.rotCanvas || !this.browserReader) return null;
+    try {
+      const result = this.browserReader.decodeFromCanvas(this.rotCanvas);
       if (result) {
         const texto = result.getText().trim();
         if (this.esMatriculaValida(texto)) return texto;
@@ -487,6 +1149,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (this.mediaStream) { this.mediaStream.getTracks().forEach(t => t.stop()); this.mediaStream = null; }
     this.nativeDetector = null;
     this.browserReader = null;
+    this.rotCanvas = null;
+    this.rotCtx = null;
     this.escaneando = false;
     this.linternaDisponible = false;
   }
@@ -539,6 +1203,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   private async procesarMatricula(matricula: string): Promise<void> {
     try {
+      // ── Verificar horario operativo antes de cualquier consulta a BD ──
+      if (!this.verificarHorarioOperativo()) {
+        this.resetEstado();
+        return;
+      }
+
       this.cargando = true;
       this.error = null;
       this.loadingService.show('Buscando alumno...');
@@ -597,6 +1267,23 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.router.navigate(['/seleccion-motivo']);
 
       } else {
+        // Caso de borde: en modo salida (o quiosco) un ID no reconocido
+        // probablemente sea un visitante que intenta marcar salida sin
+        // tener credencial propia. No lo enviamos a "registrar alumno"
+        // porque no existe un registro de entrada que cerrar.
+        const enModoSalida = this.configService.registroSalidaActivo;
+        const enQuiosco = this.configService.modoQuioscoSignal();
+        if (enModoSalida || enQuiosco) {
+          this.soundService.beepError();
+          if (navigator.vibrate) navigator.vibrate(150);
+          this.toastService.warning(
+            'ID no reconocido. Si es visitante, contacte al encargado',
+            5000,
+          );
+          this.resetEstado();
+          return;
+        }
+
         this.toastService.info('Alumno no registrado. Procede a registrarlo');
         sessionStorage.setItem('matriculaTemp', matricula);
         this.router.navigate(['/registro-alumno']);
@@ -635,6 +1322,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
         hour: '2-digit', minute: '2-digit',
       });
 
+      const enQuiosco = this.configService.modoQuioscoSignal();
+
       const data: RegistroDuplicadoData = {
         nombreAlumno: `${alumno.nombre} ${alumno.apellidoPaterno}`,
         matricula: alumno.matricula,
@@ -643,10 +1332,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
         minutosTranscurridos,
         registroId: registroReciente.id,
         yaRegistroSalida: !!registroReciente.horaSalida,
+        modoQuiosco: enQuiosco,
       };
 
       const dialogRef = this.dialog.open(RegistroDuplicadoDialogComponent, {
-        width: '380px',
+        width: enQuiosco ? '440px' : '380px',
         data,
         disableClose: true,
       });
@@ -686,6 +1376,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
         `¡Salida registrada! Estancia: ${duracionTexto}`
       );
 
+      // Refuerzo visual (útil cuando el dispositivo está en silencio).
+      // Overlay no modal: se disipa solo para no bloquear al siguiente usuario.
+      this.mostrarFlashSalida(registro.nombreCompleto, duracionTexto);
+
       this.resetEstado();
     } catch (err: any) {
       console.error('Error al registrar salida:', err);
@@ -698,6 +1392,22 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════════════════════════════
   // UTILIDADES
   // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Activa el overlay de confirmación de salida (check verde + nombre +
+   * duración). Se auto-oculta tras 1800ms para no bloquear al siguiente
+   * usuario. Seguro contra llamadas consecutivas: reinicia el timer.
+   */
+  private mostrarFlashSalida(nombre: string, duracion: string): void {
+    if (this.salidaFlashTimer !== null) {
+      clearTimeout(this.salidaFlashTimer);
+    }
+    this.salidaFlash.set({ nombre, duracion });
+    this.salidaFlashTimer = window.setTimeout(() => {
+      this.ngZone.run(() => this.salidaFlash.set(null));
+      this.salidaFlashTimer = null;
+    }, 1800);
+  }
 
   private resetEstado(): void {
     this.cargando = false;
@@ -806,6 +1516,78 @@ export class ScannerComponent implements OnInit, OnDestroy {
       `Aforo lleno (${ocupacion}/${capacidad}) — entrada permitida con alerta`
     );
     return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // HORARIO OPERATIVO + MODO QUIOSCO (v3.9.0)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Verifica si el horario actual permite registrar entradas.
+   * Retorna true si puede continuar, false si debe abortar.
+   *
+   * Comportamiento según `horarioModo`:
+   * - 'advertir': muestra toast warning y permite continuar
+   * - 'bloquear': muestra toast error y aborta
+   *
+   * Si `horarioActivo` es false, siempre retorna true.
+   */
+  private verificarHorarioOperativo(): boolean {
+    if (!this.configService.horarioActivo) return true;
+
+    const verif = verificarHorario(new Date(), this.configService.horarios);
+    if (verif.abierto) return true;
+
+    const sufijo = verif.proximaApertura ? ` Próxima apertura: ${verif.proximaApertura}.` : '';
+    const mensaje = (verif.mensaje || 'Fuera de horario.') + sufijo;
+
+    this.soundService.beepError();
+
+    if (this.configService.horarioModo === 'bloquear') {
+      this.toastService.error(mensaje);
+      return false;
+    }
+
+    this.toastService.warning(mensaje + ' (Registro permitido con alerta)');
+    return true;
+  }
+
+  // ── Gesto secreto para salir del modo quiosco ──
+  // El template debe llamar `pressDownQuiosco()` en mousedown/touchstart sobre
+  // el header del scanner y `pressUpQuiosco()` en mouseup/touchend/leave.
+  // Tras 3 segundos sostenidos, se abre el dialog de PIN.
+
+  private pressTimer: any = null;
+  pressActivo = false;
+
+  pressDownQuiosco(): void {
+    if (!this.configService.modoQuiosco) return;
+    this.pressActivo = true;
+    this.pressTimer = setTimeout(() => {
+      this.pressActivo = false;
+      this.abrirDialogSalidaQuiosco();
+    }, 3000);
+  }
+
+  pressUpQuiosco(): void {
+    this.pressActivo = false;
+    if (this.pressTimer) {
+      clearTimeout(this.pressTimer);
+      this.pressTimer = null;
+    }
+  }
+
+  private abrirDialogSalidaQuiosco(): void {
+    const ref = this.dialog.open<QuioscoPinDialogComponent, unknown, boolean>(
+      QuioscoPinDialogComponent,
+      { width: '340px', disableClose: false }
+    );
+    ref.afterClosed().subscribe((ok) => {
+      if (ok) {
+        this.configService.setModoQuiosco(false);
+        this.toastService.success('Modo quiosco desactivado');
+      }
+    });
   }
 
   private interpretarErrorCamara(err: any): string {

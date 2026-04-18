@@ -26,6 +26,8 @@ export interface RegistroDuplicadoData {
   registroId: string;
   /** true si el registro ya tiene hora de salida */
   yaRegistroSalida: boolean;
+  /** true cuando el dialog se abre en modo quiosco: botones gigantes, texto amigable, sin Cancelar explícito */
+  modoQuiosco?: boolean;
 }
 
 /** Resultado del dialog */
@@ -41,61 +43,94 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
     MatIconModule,
   ],
   template: `
-    <div class="dialog-container">
+    <div class="dialog-container" [class.quiosco]="data.modoQuiosco">
 
       <div class="dialog-icon">
-        <mat-icon>history</mat-icon>
+        <mat-icon>{{ data.modoQuiosco ? 'waving_hand' : 'history' }}</mat-icon>
       </div>
 
-      <h2 class="dialog-title">Acceso reciente detectado</h2>
+      <h2 class="dialog-title">
+        @if (data.modoQuiosco) {
+          ¡Hola, {{ data.nombreAlumno }}!
+        } @else {
+          Acceso reciente detectado
+        }
+      </h2>
 
-      <div class="registro-info">
-        <div class="info-row">
-          <span class="info-label">Alumno</span>
-          <span class="info-value">{{ data.nombreAlumno }}</span>
+      @if (data.modoQuiosco) {
+        <p class="quiosco-subtitle">
+          Ya tienes una entrada activa desde hace
+          <strong>{{ data.minutosTranscurridos }} min</strong>.
+        </p>
+      } @else {
+        <div class="registro-info">
+          <div class="info-row">
+            <span class="info-label">Alumno</span>
+            <span class="info-value">{{ data.nombreAlumno }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Matrícula</span>
+            <span class="info-value mono">{{ data.matricula }}</span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-row">
+            <span class="info-label">Entrada</span>
+            <span class="info-value highlight">hace {{ data.minutosTranscurridos }} min</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Actividad</span>
+            <span class="info-value">{{ data.motivoAnterior }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Hora</span>
+            <span class="info-value">{{ data.horaRegistro }}</span>
+          </div>
         </div>
-        <div class="info-row">
-          <span class="info-label">Matrícula</span>
-          <span class="info-value mono">{{ data.matricula }}</span>
-        </div>
-        <div class="info-divider"></div>
-        <div class="info-row">
-          <span class="info-label">Entrada</span>
-          <span class="info-value highlight">hace {{ data.minutosTranscurridos }} min</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Actividad</span>
-          <span class="info-value">{{ data.motivoAnterior }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Hora</span>
-          <span class="info-value">{{ data.horaRegistro }}</span>
-        </div>
-      </div>
+      }
 
       <p class="dialog-message">
-        @if (!data.yaRegistroSalida) {
-          ¿Quieres registrar tu salida o un nuevo acceso?
+        @if (data.modoQuiosco) {
+          @if (!data.yaRegistroSalida) {
+            ¿Qué quieres hacer?
+          } @else {
+            Ya marcaste tu salida. ¿Nuevo acceso?
+          }
         } @else {
-          Ya registraste salida en este acceso. ¿Registrar un nuevo acceso?
+          @if (!data.yaRegistroSalida) {
+            ¿Quieres registrar tu salida o un nuevo acceso?
+          } @else {
+            Ya registraste salida en este acceso. ¿Registrar un nuevo acceso?
+          }
         }
       </p>
 
-      <div class="dialog-actions">
+      <div class="dialog-actions" [class.vertical]="data.modoQuiosco">
         @if (!data.yaRegistroSalida) {
           <button class="btn-salida" (click)="registrarSalida()">
             <mat-icon>logout</mat-icon>
-            Registrar salida
+            @if (data.modoQuiosco) {
+              Marcar mi salida
+            } @else {
+              Registrar salida
+            }
           </button>
         }
         <button class="btn-nuevo" (click)="nuevoAcceso()">
           <mat-icon>login</mat-icon>
-          Nuevo acceso
+          @if (data.modoQuiosco) {
+            Es una visita nueva
+          } @else {
+            Nuevo acceso
+          }
         </button>
       </div>
 
       <button class="btn-cancelar" (click)="cancelar()">
-        Cancelar
+        @if (data.modoQuiosco) {
+          No era yo — cerrar
+        } @else {
+          Cancelar
+        }
       </button>
 
     </div>
@@ -210,6 +245,110 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
     .btn-cancelar:hover { background: rgba(255,255,255,0.04); color: var(--text-secondary); }
 
     .btn-salida mat-icon, .btn-nuevo mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+    /* ═══ MODO QUIOSCO: touch-friendly + amigable para el alumno ═══ */
+    .dialog-container.quiosco {
+      gap: 20px;
+      padding: 36px 28px 28px;
+      max-width: 440px;
+    }
+
+    .dialog-container.quiosco .dialog-icon {
+      width: 88px; height: 88px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(0, 200, 215, 0.20), rgba(0, 169, 158, 0.10));
+      border-color: rgba(0, 200, 215, 0.35);
+      box-shadow: 0 0 32px rgba(0, 200, 215, 0.18);
+    }
+
+    .dialog-container.quiosco .dialog-icon mat-icon {
+      font-size: 44px; width: 44px; height: 44px;
+      color: var(--cyan-400);
+    }
+
+    .dialog-container.quiosco .dialog-title {
+      font-size: 26px;
+      letter-spacing: -0.4px;
+      line-height: 1.15;
+    }
+
+    .quiosco-subtitle {
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin: -4px 0 0;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .quiosco-subtitle strong {
+      color: var(--amber-300);
+      font-weight: 700;
+    }
+
+    .dialog-container.quiosco .dialog-message {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .dialog-actions.vertical {
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 20px;
+    }
+
+    .dialog-container.quiosco .btn-salida,
+    .dialog-container.quiosco .btn-nuevo {
+      width: 100%;
+      padding: 18px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 14px;
+      gap: 10px;
+    }
+
+    .dialog-container.quiosco .btn-salida mat-icon,
+    .dialog-container.quiosco .btn-nuevo mat-icon {
+      font-size: 22px; width: 22px; height: 22px;
+    }
+
+    /* En quiosco, la salida es la acción esperada — destacar más */
+    .dialog-container.quiosco .btn-salida {
+      order: -1;
+      padding: 22px 20px;
+      font-size: 18px;
+      box-shadow: 0 6px 22px rgba(245, 166, 35, 0.35);
+    }
+
+    /* "Nueva visita" como secundario: estilo más sobrio en quiosco */
+    .dialog-container.quiosco .btn-nuevo {
+      background: transparent;
+      border: 1.5px solid rgba(0, 200, 215, 0.35);
+      color: var(--cyan-400);
+      box-shadow: none;
+    }
+
+    .dialog-container.quiosco .btn-nuevo:hover {
+      background: rgba(0, 200, 215, 0.08);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Cancelar: muy discreto — el alumno no debe usarlo salvo error */
+    .dialog-container.quiosco .btn-cancelar {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-color: transparent;
+      background: transparent;
+      padding: 6px 12px;
+      opacity: 0.6;
+    }
+
+    .dialog-container.quiosco .btn-cancelar:hover {
+      opacity: 1;
+      background: rgba(255,255,255,0.03);
+    }
   `]
 })
 export class RegistroDuplicadoDialogComponent {

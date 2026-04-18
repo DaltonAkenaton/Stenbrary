@@ -9,7 +9,7 @@
 
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
-import { Registro } from '../models';
+import { Alumno, Registro } from '../models';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -554,5 +554,228 @@ export class ReportService {
   private generarNombreArchivo(opciones: OpcionesReporte): string {
     const fecha = new Date().toISOString().split('T')[0];
     return `reporte_${opciones.tipo}_stenbrary_${fecha}.pdf`;
+  }
+
+  // ═══════════════════════════════════════════════
+  // CONSTANCIA DE ALUMNO (PDF individual)
+  // ═══════════════════════════════════════════════
+
+  /**
+   * Genera una constancia PDF con el historial de visitas de un alumno.
+   * Incluye datos personales, período, stats (visitas, horas acumuladas)
+   * y tabla cronológica descendente.
+   */
+  async generarConstanciaAlumno(
+    alumno: Alumno,
+    registros: Registro[],
+    opciones?: {
+      nombreInstitucion?: string;
+      desde?: Date;
+      hasta?: Date;
+      folio?: string;
+    }
+  ): Promise<void> {
+    const doc = new jsPDF('portrait', 'mm', 'letter');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 18;
+
+    // Filtrar por rango si viene
+    const inicio = opciones?.desde ? new Date(opciones.desde) : null;
+    if (inicio) inicio.setHours(0, 0, 0, 0);
+    const fin = opciones?.hasta ? new Date(opciones.hasta) : null;
+    if (fin) fin.setHours(23, 59, 59, 999);
+
+    const registrosFiltrados = registros.filter(r => {
+      const f = new Date(r.fechaHora);
+      if (inicio && f < inicio) return false;
+      if (fin && f > fin) return false;
+      return true;
+    });
+
+    // Stats
+    const totalVisitas = registrosFiltrados.length;
+    const conDuracion = registrosFiltrados.filter(r => typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0);
+    const totalMinutos = conDuracion.reduce((a, r) => a + (r.duracionMinutos || 0), 0);
+    const horas = Math.floor(totalMinutos / 60);
+    const minutos = totalMinutos % 60;
+
+    // ── HEADER ──
+    let y = 20;
+    doc.setDrawColor(0, 200, 215);
+    doc.setLineWidth(1.5);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 10;
+
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text('STENBRARY', margin, y);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120, 120, 120);
+    doc.text('Sistema de control de acceso a biblioteca', margin, y + 6);
+
+    const institucion = (opciones?.nombreInstitucion || '').trim();
+    if (institucion) {
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Institución: ${institucion}`, margin, y + 11);
+    }
+
+    const ahora = new Date();
+    const fechaGen = ahora.toLocaleString('es-MX', {
+      day: '2-digit', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Generado: ${fechaGen}`, pageWidth - margin, y, { align: 'right' });
+    if (opciones?.folio) {
+      doc.text(`Folio: ${opciones.folio}`, pageWidth - margin, y + 5, { align: 'right' });
+    }
+    y += institucion ? 20 : 16;
+
+    // Título
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('CONSTANCIA DE VISITAS A BIBLIOTECA', pageWidth / 2, y, { align: 'center' });
+    y += 10;
+
+    // ── DATOS DEL ALUMNO ──
+    const nombreCompleto = `${alumno.nombre} ${alumno.apellidoPaterno} ${alumno.apellidoMaterno}`.trim();
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+
+    const introParrafo =
+      `Por medio de la presente se hace constar que el/la alumno(a) ` +
+      `${nombreCompleto}, con matrícula ${alumno.matricula} de la carrera de ` +
+      `${alumno.carrera} (${alumno.grado}° ${alumno.grupo}, turno ${alumno.turno}), ` +
+      `ha acudido a la biblioteca conforme al detalle que se presenta a continuación.`;
+
+    const lineasIntro = doc.splitTextToSize(introParrafo, pageWidth - margin * 2);
+    doc.text(lineasIntro, margin, y);
+    y += lineasIntro.length * 5 + 4;
+
+    // Período
+    const formatear = (d: Date) => d.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+    let textoPeriodo: string;
+    if (inicio && fin) {
+      textoPeriodo = `Período: ${formatear(inicio)} — ${formatear(fin)}`;
+    } else if (registrosFiltrados.length > 0) {
+      const fechas = registrosFiltrados.map(r => new Date(r.fechaHora).getTime());
+      textoPeriodo = `Período: ${formatear(new Date(Math.min(...fechas)))} — ${formatear(new Date(Math.max(...fechas)))}`;
+    } else {
+      textoPeriodo = 'Período: sin registros';
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(60, 60, 60);
+    doc.text(textoPeriodo, margin, y);
+    y += 8;
+
+    // ── STATS ──
+    const statBoxW = (pageWidth - margin * 2 - 8) / 3;
+    const statBoxH = 20;
+    const dibujarStat = (x: number, etiqueta: string, valor: string) => {
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(x, y, statBoxW, statBoxH, 2, 2, 'FD');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(120, 120, 120);
+      doc.text(etiqueta, x + 4, y + 6);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text(valor, x + 4, y + 15);
+    };
+
+    dibujarStat(margin, 'Visitas totales', String(totalVisitas));
+    dibujarStat(margin + statBoxW + 4, 'Horas acumuladas', `${horas}h ${minutos}m`);
+    dibujarStat(margin + (statBoxW + 4) * 2, 'Visitas con duración', `${conDuracion.length}`);
+    y += statBoxH + 8;
+
+    // ── TABLA ──
+    if (registrosFiltrados.length > 0) {
+      const filas = registrosFiltrados
+        .slice()
+        .sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime())
+        .map(r => {
+          const fecha = new Date(r.fechaHora);
+          const motivo = r.motivoNombres?.join(', ') || r.motivoNombre || '—';
+          const entrada = fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+          const salida = r.horaSalida
+            ? new Date(r.horaSalida).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+            : '—';
+          const dur = typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0
+            ? (r.duracionMinutos >= 60
+                ? `${Math.floor(r.duracionMinutos / 60)}h ${r.duracionMinutos % 60}m`
+                : `${r.duracionMinutos}m`)
+            : '—';
+          return [
+            fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+            entrada,
+            salida,
+            dur,
+            motivo,
+          ];
+        });
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Fecha', 'Entrada', 'Salida', 'Duración', 'Actividad']],
+        body: filas,
+        margin: { left: margin, right: margin },
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [0, 200, 215], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: {
+          0: { cellWidth: 26 },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 22, halign: 'center' },
+        },
+      });
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+    } else {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(150, 150, 150);
+      doc.text('Sin visitas registradas en el período.', margin, y);
+      y += 10;
+    }
+
+    // ── CIERRE / FIRMA ──
+    y = this.verificarEspacioPagina(doc, y, 40);
+    y += 10;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Se extiende la presente constancia a los ${ahora.getDate()} días del mes de ` +
+      `${ahora.toLocaleDateString('es-MX', { month: 'long' })} de ${ahora.getFullYear()}.`,
+      margin, y
+    );
+    y += 20;
+
+    // Línea de firma
+    const anchoFirma = 70;
+    const xFirma = (pageWidth - anchoFirma) / 2;
+    doc.setDrawColor(120, 120, 120);
+    doc.setLineWidth(0.4);
+    doc.line(xFirma, y, xFirma + anchoFirma, y);
+    y += 5;
+    doc.setFontSize(9);
+    doc.text('Coordinación de Biblioteca', pageWidth / 2, y, { align: 'center' });
+
+    // Footer
+    this.dibujarFooterTodasPaginas(doc, pageWidth, margin);
+
+    const fechaSlug = ahora.toISOString().split('T')[0];
+    doc.save(`constancia_${alumno.matricula}_${fechaSlug}.pdf`);
   }
 }

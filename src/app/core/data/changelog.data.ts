@@ -49,6 +49,169 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.10.1',
+    fecha: '2026-04-17',
+    titulo: 'Ajustes de visibilidad y UX',
+    resumen:
+      'Mejoras pequeñas pero de alto impacto para que la coordinadora siempre sepa qué pasó en ' +
+      'el sistema: feedback explícito al guardar, confirmación visual de salida (útil con el ' +
+      'dispositivo en silencio), y manejo correcto del caso del visitante que no tiene credencial.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Confirmación visual de salida: al registrar una salida, aparece un "check verde" con el ' +
+          'nombre del alumno y la duración de su estancia. Se disipa solo en menos de 2 segundos y ' +
+          'no bloquea al siguiente usuario — pensado para bibliotecas donde el dispositivo suele ' +
+          'estar en silencio.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nombre de institución editable desde Configuración → Identidad de la Institución. Ese ' +
+          'es el texto que aparece en la constancia PDF. Si lo dejas vacío, los documentos se ' +
+          'generan sin etiqueta institucional.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Manejo de visitantes en modo salida: si se escanea un ID no reconocido mientras el ' +
+          'módulo de salida (o el modo quiosco) está activo, el sistema muestra "ID no reconocido. ' +
+          'Si es visitante, contacte al encargado" en lugar de redirigir a registro de alumno.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Detalle de registro: la Duración ya no muestra "No disponible". Si el alumno aún está ' +
+          'en la biblioteca (sin salida registrada) aparece "En curso…" resaltado; si ya salió, se ' +
+          'muestra el tiempo real en formato "Xh Ymin", recalculándolo desde las fechas si el ' +
+          'valor guardado viniera vacío.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Feedback al guardar el umbral default en la vista de Inactivos: ahora aparece un toast ' +
+          '"Configuración predeterminada actualizada" en lugar de desaparecer el botón sin aviso.',
+      },
+    ],
+  },
+  {
+    version: '3.10.0',
+    fecha: '2026-04-16',
+    titulo: 'Horas acumuladas + Constancias + Alertas de inactividad',
+    destacado: true,
+    resumen:
+      'Tres funciones pensadas para darle peso administrativo al sistema: ahora cada alumno ' +
+      'acumula horas de biblioteca visibles en su perfil, la coordinación puede descargar una ' +
+      'constancia PDF oficial con ese historial, y una nueva vista de "Inactivos" identifica a ' +
+      'quienes llevan tiempo sin venir — con umbral totalmente configurable.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Horas acumuladas por alumno: en el perfil aparecen dos nuevas tarjetas — horas totales ' +
+          '(suma de la duración de todas las visitas con salida registrada) y duración promedio ' +
+          'por visita. Solo aparecen si el registro de salida está activo.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Constancia PDF del alumno: botón "Constancia" en el perfil genera un documento oficial ' +
+          'con datos personales, período de visitas, stats y tabla cronológica completa. Listo ' +
+          'para entregar como comprobante a servicio social o tutores.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva vista Inactivos (menú Consulta): lista los alumnos activos que no han venido en ' +
+          'X días. El umbral se ajusta en vivo (presets 7/15/30/60/90/180 + input libre sin ' +
+          'límites arbitrarios) y se puede guardar como default del sistema. Los alumnos que ' +
+          'nunca han venido aparecen marcados aparte.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Salida autónoma en Modo Quiosco: ahora el alumno puede marcar su salida sin coordinador. ' +
+          'Al re-escanear su credencial con una entrada activa, aparece un dialog grande, ' +
+          'touch-friendly, con saludo personalizado y dos botones claros: "Marcar mi salida" ' +
+          '(principal, destacado) y "Es una visita nueva" (secundario). El "Cancelar" queda ' +
+          'discreto para evitar errores y el flujo nunca registra duplicados por accidente.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Vista de Inactivos renovada: buscador por nombre/matrícula, filtro por carrera, ' +
+          'ordenamiento (más/menos inactivos, nombre, carrera), toggle lista/tarjetas, ' +
+          'badge de gravedad con tres niveles (normal/medio/alto/nunca) y tema oscuro ' +
+          'consistente con el resto del sistema.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Perfil del alumno: las estadísticas ahora incluyen tooltips explicativos y subtítulos ' +
+          'con contexto (cuántos días desde la última visita, cómo se calcula el promedio semanal, ' +
+          'etc.). Adiós a los números sin explicación.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Constancia PDF: el encabezado ya no pinta el nombre de institución como subtítulo ' +
+          'principal (causaba confusión si quedaba con un valor de prueba). Ahora muestra ' +
+          '"Sistema de control de acceso a biblioteca" fijo y, si hay nombre de institución ' +
+          'configurado, aparece debajo con etiqueta "Institución: ..." claramente identificada.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Principio de flexibilidad: los ajustes numéricos del sistema ofrecen valores sugeridos ' +
+          'como atajos pero siempre permiten escribir cualquier número dentro del rango natural. ' +
+          'El coordinador manda sobre los defaults.',
+      },
+    ],
+  },
+  {
+    version: '3.9.0',
+    fecha: '2026-04-16',
+    titulo: 'Modo Quiosco + Horarios + Animación celebratoria',
+    destacado: true,
+    resumen:
+      'Tres funciones nuevas pensadas para instituciones que dejan el sistema corriendo todo el día: ' +
+      'Modo Quiosco para tablets dedicadas, Horarios de Operación para evitar registros fuera de ' +
+      'turno, y una animación celebratoria sorpresa al estilo Microsoft Teams para darle calidez al flujo.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Modo Quiosco: activable desde Configuración. Oculta menú, barra superior y barra inferior ' +
+          'para dejar solo el scanner. Al activar el modo, el sistema redirige automáticamente al ' +
+          'scanner. Se sale con pulsación larga (3 s) + PIN configurable de 4 a 6 dígitos. ' +
+          'Los alumnos registran salida normalmente re-escaneando su credencial — el scanner ya ' +
+          'detecta entradas abiertas y ofrece el dialog de salida.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Horarios de Operación: define apertura y cierre por día de la semana. Fuera de horario el ' +
+          'sistema puede solo advertir (toast) o bloquear el registro por completo. Ideal para evitar ' +
+          'registros accidentales antes de abrir o después de cerrar.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Animación celebratoria: al registrar un acceso aparece, de vez en cuando, una lluvia de ' +
+          'confeti con una frase motivadora — como los reconocimientos de Microsoft Teams. ' +
+          'Hay atajos rápidos (3%, 8%, 15%, 30%) y un input libre para elegir cualquier ' +
+          'porcentaje entre 0 y 100%. Puede desactivarse por completo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Configuración: reorganización de secciones para agrupar lo operativo (aforo, quiosco, horarios) ' +
+          'arriba y dejar mantenimiento y respaldos más abajo.',
+      },
+    ],
+  },
+  {
     version: '3.8.1',
     fecha: '2026-04-07',
     titulo: 'Estadísticas reparadas + UI pulida',

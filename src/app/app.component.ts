@@ -10,7 +10,7 @@
 // ║  - Configuración en sección Administración            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, effect } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -77,7 +77,26 @@ export class AppComponent implements OnInit, OnDestroy {
     private swUpdate: SwUpdate,
     public configService: ConfigService,
     public changelogService: ChangelogService,
-  ) {}
+  ) {
+    // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
+    effect(() => {
+      if (this.configService.modoQuioscoSignal()) {
+        const url = this.router.url.split('?')[0];
+        if (!this.rutasPermitidasEnQuiosco().some(r => url.startsWith(r))) {
+          this.router.navigate(['/scanner']);
+        }
+      }
+    });
+  }
+
+  /** Rutas accesibles mientras el modo quiosco está activo.
+   *  Solo el flujo de registro del alumno. Para consultar /presencia u otras
+   *  vistas admin, el coordinador debe desactivar el modo (PIN) primero —
+   *  así se evita exponer el PIN al teclearlo frente a alumnos en consultas
+   *  frecuentes. */
+  private rutasPermitidasEnQuiosco(): string[] {
+    return ['/scanner', '/seleccion-motivo', '/registro-alumno'];
+  }
 
   ngOnInit(): void {
     // Listeners de conexión
@@ -94,12 +113,22 @@ export class AppComponent implements OnInit, OnDestroy {
         });
     }
 
-    // Auto-cerrar sidebar en móvil al navegar
+    // Auto-cerrar sidebar en móvil al navegar + forzar /scanner en modo quiosco
     this.routerSub = this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe(() => {
+      .subscribe((evt) => {
         if (window.innerWidth < 768) {
           this.isSidebarExpanded.set(false);
+        }
+
+        // En modo quiosco, redirigir a /scanner cualquier ruta que no sea
+        // parte del flujo (scanner, selección, registro) ni /presencia cuando
+        // el registro de salida está activo (acceso admin vía PIN).
+        if (this.configService.modoQuioscoSignal()) {
+          const url = (evt as NavigationEnd).urlAfterRedirects.split('?')[0];
+          if (!this.rutasPermitidasEnQuiosco().some(r => url.startsWith(r))) {
+            this.router.navigate(['/scanner']);
+          }
         }
       });
   }
@@ -139,10 +168,11 @@ export class AppComponent implements OnInit, OnDestroy {
       {
         title: 'Consulta',
         items: [
-          { icon: 'dashboard',  label: 'Resumen',      route: '/dashboard'    },
-          { icon: 'groups',     label: 'Alumnos',      route: '/alumnos'      },
-          { icon: 'history',    label: 'Registros',    route: '/registros'    },
-          { icon: 'bar_chart',  label: 'Estadísticas', route: '/estadisticas' },
+          { icon: 'dashboard',             label: 'Resumen',      route: '/dashboard'    },
+          { icon: 'groups',                label: 'Alumnos',      route: '/alumnos'      },
+          { icon: 'history',               label: 'Registros',    route: '/registros'    },
+          { icon: 'bar_chart',             label: 'Estadísticas', route: '/estadisticas' },
+          { icon: 'notifications_paused', label: 'Inactivos',    route: '/inactivos'    },
         ],
       },
       {
@@ -192,6 +222,8 @@ export class AppComponent implements OnInit, OnDestroy {
       '/configuracion':     'Configuración',
       '/importar-alumnos':  'Importar Alumnos',
       '/presencia':         'En Biblioteca Ahora',
+      '/novedades':         'Novedades',
+      '/inactivos':         'Alumnos Inactivos',
     };
     const url = this.router.url.split('?')[0];
     if (url.startsWith('/detalle-alumno')) return 'Detalle del Alumno';

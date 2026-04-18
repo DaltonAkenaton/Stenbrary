@@ -1,0 +1,272 @@
+<div class="inactivos-container">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <mat-icon>notifications_paused</mat-icon>
+      </div>
+      <div>
+        <h1>Alumnos inactivos</h1>
+        <p class="header-subtitle">
+          Alumnos activos sin visita reciente a biblioteca
+        </p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="vista-toggle" role="group" aria-label="Cambiar vista">
+        <button type="button" class="vista-btn"
+                [class.active]="vista() === 'lista'"
+                (click)="setVista('lista')"
+                matTooltip="Ver como lista">
+          <mat-icon>view_list</mat-icon>
+        </button>
+        <button type="button" class="vista-btn"
+                [class.active]="vista() === 'cards'"
+                (click)="setVista('cards')"
+                matTooltip="Ver como tarjetas">
+          <mat-icon>grid_view</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UMBRAL -->
+  <section class="panel umbral-panel">
+    <div class="panel-title">
+      <mat-icon>tune</mat-icon>
+      <div>
+        <h3>Umbral de inactividad</h3>
+        <p>Días sin venir para considerar al alumno "inactivo". Los presets son atajos; el campo admite cualquier valor.</p>
+      </div>
+    </div>
+
+    <div class="presets-row">
+      @for (p of presets; track p) {
+        <button type="button"
+                class="preset-chip"
+                [class.activo]="umbralDias() === p"
+                (click)="setUmbral(p)">
+          {{ p }} días
+        </button>
+      }
+    </div>
+
+    <div class="stepper-row">
+      <button type="button" class="step-btn"
+              (click)="setUmbral(umbralDias() - 1)"
+              [disabled]="umbralDias() <= 1"
+              matTooltip="Reducir 1 día">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <input type="number"
+             min="1"
+             max="3650"
+             class="step-input"
+             [ngModel]="umbralDias()"
+             (ngModelChange)="setUmbral($event)"
+             aria-label="Días de inactividad" />
+      <span class="step-suffix">días</span>
+      <button type="button" class="step-btn"
+              (click)="setUmbral(umbralDias() + 1)"
+              matTooltip="Agregar 1 día">
+        <mat-icon>add</mat-icon>
+      </button>
+      @if (configService.umbralInactividadDias !== umbralDias()) {
+        <button type="button" class="btn-ghost"
+                (click)="guardarComoDefault()"
+                matTooltip="Guardar este umbral como default del sistema">
+          <mat-icon>save</mat-icon>
+          Guardar default
+        </button>
+      }
+    </div>
+  </section>
+
+  <!-- FILTROS -->
+  <section class="filtros-panel">
+    <div class="buscador">
+      <mat-icon class="buscador-icono">search</mat-icon>
+      <input type="text"
+             placeholder="Buscar por nombre o matrícula…"
+             [ngModel]="busqueda()"
+             (ngModelChange)="busqueda.set($event)"
+             aria-label="Buscar" />
+      @if (busqueda()) {
+        <button class="limpiar-btn" (click)="busqueda.set('')" aria-label="Limpiar búsqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div class="filtro-item">
+      <label>Carrera</label>
+      <select [ngModel]="filtroCarrera()" (ngModelChange)="filtroCarrera.set($event)">
+        <option value="">Todas</option>
+        @for (c of carrerasDisponibles(); track c) {
+          <option [value]="c">{{ c }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filtro-item">
+      <label>Orden</label>
+      <select [ngModel]="orden()" (ngModelChange)="orden.set($event)">
+        @for (o of opcionesOrden; track o.valor) {
+          <option [value]="o.valor">{{ o.etiqueta }}</option>
+        }
+      </select>
+    </div>
+
+    @if (busqueda() || filtroCarrera()) {
+      <button class="btn-ghost" (click)="limpiarFiltros()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Limpiar
+      </button>
+    }
+  </section>
+
+  <!-- RESUMEN -->
+  <div class="summary-row">
+    <div class="summary-chip">
+      <mat-icon>group_off</mat-icon>
+      <strong>{{ inactivosBase().length }}</strong>
+      {{ inactivosBase().length === 1 ? 'alumno' : 'alumnos' }} ≥ {{ umbralDias() }}d
+    </div>
+
+    @if (inactivosFiltrados().length !== inactivosBase().length) {
+      <div class="summary-chip filtered">
+        <mat-icon>filter_alt</mat-icon>
+        {{ inactivosFiltrados().length }} en la vista actual
+      </div>
+    }
+
+    @if (nuncaHanVenido() > 0) {
+      <div class="summary-chip warn">
+        <mat-icon>warning_amber</mat-icon>
+        {{ nuncaHanVenido() }} nunca han venido
+      </div>
+    }
+  </div>
+
+  <!-- CONTENIDO -->
+  @if (cargando()) {
+    <div class="empty-state">
+      <mat-icon>hourglass_empty</mat-icon>
+      <p>Cargando alumnos…</p>
+    </div>
+  } @else if (inactivosFiltrados().length === 0) {
+    <div class="empty-state feliz">
+      <mat-icon>check_circle</mat-icon>
+      <h3>
+        @if (inactivosBase().length === 0) {
+          ¡Nadie está inactivo!
+        } @else {
+          Sin resultados con los filtros actuales
+        }
+      </h3>
+      <p>
+        @if (inactivosBase().length === 0) {
+          Ningún alumno activo supera el umbral de {{ umbralDias() }} días.
+        } @else {
+          Ajusta la búsqueda o la carrera para ver más alumnos.
+        }
+      </p>
+    </div>
+  } @else if (vista() === 'lista') {
+
+    <!-- VISTA LISTA -->
+    <div class="lista">
+      @for (item of inactivosFiltrados(); track item.alumno.matricula) {
+        <a class="fila"
+           [routerLink]="['/detalle-alumno', item.alumno.matricula]">
+          <div class="fila-avatar">{{ iniciales(item.alumno) }}</div>
+          <div class="fila-info">
+            <h4>{{ nombreCompleto(item.alumno) }}</h4>
+            <p class="meta">
+              <span class="matricula">{{ item.alumno.matricula }}</span>
+              <span class="sep">·</span>
+              <span>{{ item.alumno.carrera }}</span>
+              <span class="sep">·</span>
+              <span>{{ item.alumno.grado }}° {{ item.alumno.grupo }}</span>
+            </p>
+            <p class="ultima">
+              <mat-icon>event</mat-icon>
+              @if (item.ultimaVisita) {
+                Última: {{ formatearFecha(item.ultimaVisita) }}
+              } @else {
+                Sin visitas registradas
+              }
+            </p>
+          </div>
+
+          <div class="badge" [class]="'grav-' + gravedadBadge(item.diasSinVenir)">
+            @if (isFinite(item.diasSinVenir)) {
+              <strong>{{ item.diasSinVenir }}</strong>
+              <span>días sin venir</span>
+            } @else {
+              <strong>—</strong>
+              <span>nunca</span>
+            }
+          </div>
+
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </a>
+      }
+    </div>
+
+  } @else {
+
+    <!-- VISTA CARDS -->
+    <div class="cards-grid">
+      @for (item of inactivosFiltrados(); track item.alumno.matricula) {
+        <a class="card"
+           [class]="'grav-' + gravedadBadge(item.diasSinVenir)"
+           [routerLink]="['/detalle-alumno', item.alumno.matricula]">
+          <div class="card-top">
+            <div class="card-avatar">{{ iniciales(item.alumno) }}</div>
+            <div class="card-badge">
+              @if (isFinite(item.diasSinVenir)) {
+                <strong>{{ item.diasSinVenir }}</strong>
+                <span>días</span>
+              } @else {
+                <strong>—</strong>
+                <span>nunca</span>
+              }
+            </div>
+          </div>
+
+          <h4 class="card-nombre">{{ nombreCompleto(item.alumno) }}</h4>
+          <p class="card-matricula">{{ item.alumno.matricula }}</p>
+
+          <div class="card-meta">
+            <span>
+              <mat-icon>school</mat-icon>
+              {{ item.alumno.carrera }}
+            </span>
+            <span>
+              <mat-icon>groups</mat-icon>
+              {{ item.alumno.grado }}° {{ item.alumno.grupo }}
+            </span>
+            <span>
+              <mat-icon>event</mat-icon>
+              @if (item.ultimaVisita) {
+                {{ formatearFecha(item.ultimaVisita) }}
+              } @else {
+                Sin visitas
+              }
+            </span>
+          </div>
+
+          <div class="card-cta">
+            Ver perfil
+            <mat-icon>arrow_forward</mat-icon>
+          </div>
+        </a>
+      }
+    </div>
+
+  }
+
+</div>

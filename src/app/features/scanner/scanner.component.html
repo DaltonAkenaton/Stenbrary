@@ -6,7 +6,13 @@
   para que visitantes externos puedan registrar su entrada.
 -->
 
-<div class="scanner-container">
+<div class="scanner-container"
+     (mousedown)="pressDownQuiosco()"
+     (mouseup)="pressUpQuiosco()"
+     (mouseleave)="pressUpQuiosco()"
+     (touchstart)="pressDownQuiosco()"
+     (touchend)="pressUpQuiosco()"
+     (touchcancel)="pressUpQuiosco()">
 
   <!-- ══════════════════════════════════════════════════
        INDICADOR DE AFORO (solo si está activo)
@@ -176,6 +182,24 @@
       <!-- Controles flotantes -->
       <div class="scanner-controls">
 
+        @if (zoomDisponible) {
+          <button
+            class="btn-zoom"
+            (click)="reducirZoom()"
+            [disabled]="zoomActual <= zoomMin"
+            aria-label="Reducir zoom">
+            <mat-icon>zoom_out</mat-icon>
+          </button>
+          <div class="zoom-indicator">{{ zoomActual.toFixed(1) }}×</div>
+          <button
+            class="btn-zoom"
+            (click)="aumentarZoom()"
+            [disabled]="zoomActual >= zoomMax"
+            aria-label="Aumentar zoom">
+            <mat-icon>zoom_in</mat-icon>
+          </button>
+        }
+
         @if (linternaDisponible) {
           <button
             class="btn-torch"
@@ -213,6 +237,26 @@
         <mat-icon>refresh</mat-icon>
         Reintentar
       </button>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════
+       FLASH DE CONFIRMACIÓN DE SALIDA (refuerzo visual
+       cuando el dispositivo está en silencio). No bloquea
+       interacción — se disipa solo en ~1.8s.
+  ══════════════════════════════════════════════════ -->
+  @if (salidaFlash(); as flash) {
+    <div class="salida-flash" role="status" aria-live="polite">
+      <div class="salida-flash-card">
+        <div class="salida-flash-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="salida-flash-text">
+          <span class="salida-flash-title">Salida registrada</span>
+          <span class="salida-flash-name">{{ flash.nombre }}</span>
+          <span class="salida-flash-meta">Estancia: {{ flash.duracion }}</span>
+        </div>
+      </div>
     </div>
   }
 

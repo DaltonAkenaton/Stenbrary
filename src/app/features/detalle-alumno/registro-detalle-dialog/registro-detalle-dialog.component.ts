@@ -55,8 +55,10 @@ export interface RegistroDetalleDialogData {
             <mat-icon>logout</mat-icon>
             <div>
               <span class="label">Salida</span>
-              <span class="value" [class.sin-dato]="!data.registro.horaSalida">
-                {{ data.registro.horaSalida ? formatearHora(data.registro.horaSalida) : 'No registrada' }}
+              <span class="value"
+                    [class.sin-dato]="!data.registro.horaSalida"
+                    [class.en-curso]="!data.registro.horaSalida">
+                {{ data.registro.horaSalida ? formatearHora(data.registro.horaSalida) : 'En curso…' }}
               </span>
             </div>
           </div>
@@ -64,11 +66,13 @@ export interface RegistroDetalleDialogData {
 
         <div class="info-row">
           <div class="info-item">
-            <mat-icon>timer</mat-icon>
+            <mat-icon>{{ data.registro.horaSalida ? 'timer' : 'hourglass_top' }}</mat-icon>
             <div>
               <span class="label">Duración</span>
-              <span class="value" [class.sin-dato]="!data.registro.duracionMinutos">
-                {{ data.registro.duracionMinutos ? formatearDuracion(data.registro.duracionMinutos) : 'No disponible' }}
+              <span class="value"
+                    [class.sin-dato]="!data.registro.horaSalida"
+                    [class.en-curso]="!data.registro.horaSalida">
+                {{ textoDuracion() }}
               </span>
             </div>
           </div>
@@ -214,6 +218,13 @@ export interface RegistroDetalleDialogData {
       font-weight: 400;
     }
 
+    .value.en-curso {
+      color: #F5A623;
+      font-style: normal;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
     .motivo-badge {
       color: var(--cyan-500, #00C8D7);
     }
@@ -247,9 +258,35 @@ export class RegistroDetalleDialogComponent {
   }
 
   formatearDuracion(minutos: number): string {
-    if (minutos < 60) return `${minutos} min`;
-    const h = Math.floor(minutos / 60);
-    const m = minutos % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    const total = Math.max(0, Math.floor(minutos));
+    if (total < 1) return '< 1 min';
+    if (total < 60) return `${total} min`;
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return m > 0 ? `${h}h ${m}min` : `${h}h`;
+  }
+
+  /**
+   * Texto de duración robusto:
+   * - Sin horaSalida → "En curso…"
+   * - Con ambas fechas → usa duracionMinutos; si viene vacío, lo
+   *   recalcula desde las fechas para no mostrar "No disponible".
+   */
+  textoDuracion(): string {
+    const reg = this.data.registro;
+    if (!reg.horaSalida) return 'En curso…';
+
+    const minutosGuardados = reg.duracionMinutos;
+    if (typeof minutosGuardados === 'number' && minutosGuardados >= 0) {
+      return this.formatearDuracion(minutosGuardados);
+    }
+
+    const entrada = new Date(reg.fechaHora).getTime();
+    const salida = new Date(reg.horaSalida).getTime();
+    if (isNaN(entrada) || isNaN(salida) || salida < entrada) {
+      return 'En curso…';
+    }
+    const diffMin = Math.round((salida - entrada) / 60000);
+    return this.formatearDuracion(diffMin);
   }
 }

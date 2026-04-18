@@ -92,6 +92,12 @@ export const routes: Routes = [
     title: 'Stenbrary — Novedades',
   },
   {
+    path: 'inactivos',
+    loadComponent: () =>
+      import('./features/inactivos/inactivos.component').then(m => m.InactivosComponent),
+    title: 'Stenbrary — Inactivos',
+  },
+  {
     path: 'detalle-alumno/:matricula',
     loadComponent: () =>
       import('./features/detalle-alumno/detalle-alumno.component').then(m => m.DetalleAlumnoComponent),

@@ -23,6 +23,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { Alumno, Registro } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
+import { ReportService } from '../../core/services/report.service';
 import { EditarAlumnoDialogComponent } from './editar-alumno-dialog/editar-alumno-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { RegistroDetalleDialogComponent } from './registro-detalle-dialog/registro-detalle-dialog.component';
@@ -33,6 +34,9 @@ interface EstadisticasAlumno {
   motivoFrecuente: string;
   promedioSemanal: number;
   visitasPorMotivo: { motivo: string; cantidad: number }[];
+  totalMinutos: number;
+  visitasConDuracion: number;
+  duracionPromedio: number;
 }
 
 @Component({
@@ -69,6 +73,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     private toastService: ToastService,
     private loadingService: LoadingService,
     public configService: ConfigService,
+    private reportService: ReportService,
   ) {}
 
   // ═══════════════════════════════════════════════
@@ -140,9 +145,18 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
         motivoFrecuente: 'N/A',
         promedioSemanal: 0,
         visitasPorMotivo: [],
+        totalMinutos: 0,
+        visitasConDuracion: 0,
+        duracionPromedio: 0,
       };
       return;
     }
+
+    const conDuracion = this.registros.filter(
+      r => typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0
+    );
+    const totalMinutos = conDuracion.reduce((a, r) => a + (r.duracionMinutos || 0), 0);
+    const duracionPromedio = conDuracion.length > 0 ? totalMinutos / conDuracion.length : 0;
 
     const totalVisitas = this.registros.length;
 
@@ -187,7 +201,53 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
       motivoFrecuente,
       promedioSemanal,
       visitasPorMotivo,
+      totalMinutos,
+      visitasConDuracion: conDuracion.length,
+      duracionPromedio,
     };
+  }
+
+  formatearHoras(minutos: number): string {
+    if (!minutos || minutos < 1) return '0m';
+    const h = Math.floor(minutos / 60);
+    const m = Math.round(minutos % 60);
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
+  }
+
+  diasDesdeUltimaVisita(): number {
+    if (!this.estadisticas?.ultimaVisita) return 0;
+    const ms = Date.now() - new Date(this.estadisticas.ultimaVisita).getTime();
+    return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+  }
+
+  tooltipPromedioSemanal(): string {
+    if (!this.estadisticas || !this.registros.length) return '';
+    const v = this.estadisticas.totalVisitas;
+    const p = this.estadisticas.promedioSemanal;
+    return (
+      `En promedio, el alumno visita la biblioteca ${p} ${p === 1 ? 'vez' : 'veces'} por semana. ` +
+      `Cálculo: ${v} visitas totales entre las semanas transcurridas ` +
+      `desde su primera visita hasta la última.`
+    );
+  }
+
+  async descargarConstancia(): Promise<void> {
+    if (!this.alumno) return;
+    try {
+      this.loadingService.show('Generando constancia...');
+      await this.reportService.generarConstanciaAlumno(this.alumno, this.registros, {
+        nombreInstitucion: this.configService.nombreInstitucion,
+        folio: `${this.alumno.matricula}-${Date.now().toString(36).toUpperCase()}`,
+      });
+      this.loadingService.hide();
+      this.toastService.success('Constancia generada');
+    } catch (error) {
+      this.loadingService.hide();
+      console.error('❌ Error al generar constancia:', error);
+      this.toastService.error('No se pudo generar la constancia');
+    }
   }
 
   // ═══════════════════════════════════════════════

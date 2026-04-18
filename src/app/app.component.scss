@@ -843,3 +843,28 @@
 .sidebar-footer .version-info {
   pointer-events: auto;
 }
+
+// ═══════════════════════════════════════════════════════════
+// MODO QUIOSCO (v3.9.0)
+// Oculta toda la navegación y deja solo el contenido (scanner).
+// El usuario solo puede salir vía gesto secreto + PIN.
+// ═══════════════════════════════════════════════════════════
+.app-shell.kiosk-mode {
+  .sidebar,
+  .topbar,
+  .topbar-separator,
+  .bottom-nav,
+  .sidebar-backdrop,
+  .hamburger-btn {
+    display: none !important;
+  }
+
+  .main-area {
+    width: 100vw;
+  }
+
+  .content-area {
+    height: 100vh;
+  }
+}
+

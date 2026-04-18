@@ -22,6 +22,8 @@ import { Alumno, Motivo, Registro } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
+import { ConfigService } from '../../core/services/config.service';
+import { CelebrationComponent } from '../../shared/components/celebration/celebration.component';
 
 @Component({
   selector: 'app-seleccion-motivo',
@@ -33,7 +35,8 @@ import { SoundService } from '../../core/services/sound.service';
     MatIconModule,
     MatProgressSpinnerModule,
     MatRippleModule,
-    MatTooltipModule
+    MatTooltipModule,
+    CelebrationComponent,
   ],
   templateUrl: './seleccion-motivo.component.html',
   styleUrl: './seleccion-motivo.component.scss'
@@ -53,12 +56,16 @@ export class SeleccionMotivoComponent implements OnInit {
   registroExitoso = false;
   error: string | null = null;
 
+  /** Controla la visibilidad de la animación de celebración aleatoria. */
+  mostrarCelebracion = false;
+
   constructor(
     private databaseService: DatabaseService,
     private router: Router,
     private toastService: ToastService,
     private soundService: SoundService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private configService: ConfigService,
   ) {}
 
   // ═══════════════════════════════════════════════
@@ -182,10 +189,17 @@ export class SeleccionMotivoComponent implements OnInit {
       this.registroExitoso = true;
       sessionStorage.removeItem('alumnoActual');
 
-      // Redirect rápido (1.5s)
-      setTimeout(() => {
-        this.router.navigate(['/scanner']);
-      }, 1500);
+      // Animación celebratoria con baja probabilidad (configurable)
+      const debeCelebrar = this.configService.celebracionActiva
+        && Math.random() < this.configService.celebracionProbabilidad;
+
+      if (debeCelebrar) {
+        this.mostrarCelebracion = true;
+        // Redirect retrasado para dejar terminar la animación
+        setTimeout(() => this.router.navigate(['/scanner']), 2500);
+      } else {
+        setTimeout(() => this.router.navigate(['/scanner']), 1500);
+      }
 
     } catch (error) {
       console.error('❌ Error al crear registro:', error);

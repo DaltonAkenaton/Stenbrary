@@ -955,4 +955,101 @@ export class DatabaseService {
       return 0;
     }
   }
+
+  /**
+   * Suma horas acumuladas de un alumno a partir de `duracionMinutos`.
+   * Ignora registros sin duración (entradas sin salida).
+   * Si se pasan `desde`/`hasta` filtra por rango (inclusive).
+   */
+  async obtenerHorasAcumuladas(
+    matricula: string,
+    desde?: Date,
+    hasta?: Date
+  ): Promise<{
+    totalMinutos: number;
+    totalHoras: number;
+    visitasConDuracion: number;
+    duracionPromedio: number;
+  }> {
+    try {
+      const registros = await this.obtenerRegistrosPorAlumno(matricula);
+
+      const inicio = desde ? new Date(desde) : null;
+      if (inicio) inicio.setHours(0, 0, 0, 0);
+      const fin = hasta ? new Date(hasta) : null;
+      if (fin) fin.setHours(23, 59, 59, 999);
+
+      const conDuracion = registros.filter(r => {
+        if (typeof r.duracionMinutos !== 'number' || r.duracionMinutos <= 0) return false;
+        const fecha = new Date(r.fechaHora);
+        if (inicio && fecha < inicio) return false;
+        if (fin && fecha > fin) return false;
+        return true;
+      });
+
+      const totalMinutos = conDuracion.reduce((acc, r) => acc + (r.duracionMinutos || 0), 0);
+      const visitasConDuracion = conDuracion.length;
+      const duracionPromedio = visitasConDuracion > 0 ? totalMinutos / visitasConDuracion : 0;
+
+      return {
+        totalMinutos,
+        totalHoras: totalMinutos / 60,
+        visitasConDuracion,
+        duracionPromedio,
+      };
+    } catch (error) {
+      console.error('❌ Error al calcular horas acumuladas:', error);
+      return { totalMinutos: 0, totalHoras: 0, visitasConDuracion: 0, duracionPromedio: 0 };
+    }
+  }
+
+  /**
+   * Devuelve alumnos activos cuya última visita supera `diasUmbral` días
+   * (o que nunca han visitado, en cuyo caso `ultimaVisita` es null y
+   * `diasSinVenir` es Infinity → ordenados al final como "nunca").
+   * Ordenado por `diasSinVenir` descendente.
+   */
+  async obtenerAlumnosInactivos(diasUmbral: number): Promise<Array<{
+    alumno: Alumno;
+    ultimaVisita: Date | null;
+    diasSinVenir: number;
+  }>> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+
+      const alumnos = await this.db.getAll('alumnos');
+      const activos = alumnos.filter(a => a.activo !== false);
+      const todosRegistros = await this.db.getAll('registros');
+
+      const ahora = Date.now();
+      const MS_DIA = 1000 * 60 * 60 * 24;
+
+      // Mapa matricula → última fecha
+      const ultimaPorMatricula = new Map<string, number>();
+      for (const r of todosRegistros) {
+        const t = new Date(r.fechaHora).getTime();
+        const prev = ultimaPorMatricula.get(r.matricula);
+        if (prev === undefined || t > prev) ultimaPorMatricula.set(r.matricula, t);
+      }
+
+      const resultado = activos
+        .map(alumno => {
+          const t = ultimaPorMatricula.get(alumno.matricula);
+          if (t === undefined) {
+            return { alumno, ultimaVisita: null, diasSinVenir: Infinity };
+          }
+          const dias = Math.floor((ahora - t) / MS_DIA);
+          return { alumno, ultimaVisita: new Date(t), diasSinVenir: dias };
+        })
+        .filter(r => r.diasSinVenir >= diasUmbral)
+        .sort((a, b) => b.diasSinVenir - a.diasSinVenir);
+
+      console.log(`😴 Alumnos inactivos (≥${diasUmbral}d):`, resultado.length);
+      return resultado;
+    } catch (error) {
+      console.error('❌ Error al obtener alumnos inactivos:', error);
+      return [];
+    }
+  }
 }

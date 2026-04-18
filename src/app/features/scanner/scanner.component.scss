@@ -299,6 +299,9 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  // Soporte para zoom por software (transform: scale aplicado vía JS)
+  transition: transform 0.2s ease-out;
+  transform-origin: center center;
 }
 
 // ─── OVERLAY ─────────────────────────────────────────────
@@ -453,6 +456,39 @@
       background: rgba(255, 214, 0, 0.30);
     }
   }
+}
+
+// ── Botones de zoom ──────────────────────────────────────
+.btn-zoom {
+  @extend %floating-btn;
+  background: rgba(0, 200, 215, 0.18);
+  border: 1px solid rgba(0, 200, 215, 0.38);
+  color: #5EEAF5;
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 200, 215, 0.30);
+    transform: scale(1.08);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.zoom-indicator {
+  min-width: 44px;
+  padding: 4px 8px;
+  font-family: $font-mono;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: #5EEAF5;
+  background: rgba(0, 200, 215, 0.12);
+  border: 1px solid rgba(0, 200, 215, 0.30);
+  border-radius: 22px;
+  backdrop-filter: blur(8px);
+  letter-spacing: 0.5px;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -712,4 +748,131 @@
   .aforo-banner[data-estado="alto"] & { background: linear-gradient(90deg, #F5A623, #FFC36E); }
   .aforo-banner[data-estado="lleno"] &,
   .aforo-banner[data-estado="sobreaforo"] & { background: linear-gradient(90deg, #F05252, #FF7878); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FLASH VISUAL DE CONFIRMACIÓN DE SALIDA
+// Refuerzo visual cuando el sonido está desactivado (biblioteca).
+// Overlay no modal: pointer-events: none para no bloquear el
+// siguiente escaneo; se disipa solo.
+// ═══════════════════════════════════════════════════════════
+.salida-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(14, 176, 123, 0.18), rgba(14, 176, 123, 0) 70%);
+  animation: flash-fade 1.8s ease forwards;
+  padding: $spacing-md;
+}
+
+.salida-flash-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 26px;
+  background: linear-gradient(135deg, rgba(14, 176, 123, 0.95), rgba(11, 196, 183, 0.95));
+  border-radius: 18px;
+  box-shadow:
+    0 20px 60px rgba(14, 176, 123, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  color: #ffffff;
+  min-width: 280px;
+  max-width: 90vw;
+  animation: flash-pop 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.salida-flash-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: flash-check 0.6s ease;
+
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    color: #ffffff;
+  }
+}
+
+.salida-flash-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.salida-flash-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.salida-flash-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.salida-flash-meta {
+  font-size: 0.82rem;
+  opacity: 0.92;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes flash-pop {
+  0%   { transform: scale(0.7) translateY(-8px); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes flash-check {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flash-fade {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .salida-flash-card {
+    min-width: 0;
+    width: 100%;
+    padding: 14px 18px;
+    gap: 12px;
+  }
+  .salida-flash-icon {
+    width: 44px;
+    height: 44px;
+    mat-icon { font-size: 28px; width: 28px; height: 28px; }
+  }
+  .salida-flash-name { font-size: 1rem; max-width: 60vw; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .salida-flash,
+  .salida-flash-card,
+  .salida-flash-icon {
+    animation: none;
+  }
+  .salida-flash { opacity: 1; transition: opacity 0.3s ease 1.5s; }
 }

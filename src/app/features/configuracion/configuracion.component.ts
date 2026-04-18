@@ -1,23 +1,17 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  configuracion.component.ts                          ║
-// ║  Stenbrary v3.6.2 — Configuración completa           ║
+// ║  Stenbrary v3.9.0 — Configuración completa           ║
 // ║                                                      ║
-// ║  NUEVO v3.6.2:                                       ║
-// ║  - Sección de sonido de confirmación (toggle on/off) ║
-// ║  - Eliminación masiva (LimpiezaRegistrosComponent)   ║
-// ║  - confirm() → ConfirmDialogComponent                ║
-// ║                                                      ║
-// ║  PRESERVADO de v3.4.1:                               ║
-// ║  - Info del sistema con conteos y almacenamiento     ║
-// ║  - Backup/Restore con preview y merge/replace        ║
-// ║  - Limpieza de motivos duplicados                    ║
-// ║  - Zona peligrosa (eliminar todo)                    ║
+// ║  NUEVO v3.9.0:                                       ║
+// ║  - Modo Quiosco (toggle + PIN configurable)          ║
+// ║  - Horarios de Operación (editor por día + modo)     ║
+// ║  - Animación Celebratoria (toggle + frecuencia)      ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,7 +23,8 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
-import { ConfigService, AforoModo } from '../../core/services/config.service';
+import { ConfigService, AforoModo, HorarioModo, HorarioDia } from '../../core/services/config.service';
+import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
 import { ChangelogService } from '../../core/services/changelog.service';
 import {
   BackupService,
@@ -45,6 +40,7 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -124,6 +120,52 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
             Funciona sin internet
           </span>
         </div>
+      </mat-card>
+
+      <!-- ═══ IDENTIDAD DE LA INSTITUCIÓN ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>apartment</mat-icon>
+          <h2>Identidad de la Institución</h2>
+        </div>
+        <p class="section-desc">
+          Nombre que aparecerá en los <strong style="color:#E8F4F8">documentos exportados</strong>
+          (constancia en PDF, reportes). Déjalo vacío si no quieres mostrar una institución.
+        </p>
+
+        <div class="aforo-input-row" style="margin-top: 6px;">
+          <label for="nombreInstitucion">Nombre de la institución</label>
+          <div class="aforo-stepper" style="max-width: 420px;">
+            <input id="nombreInstitucion"
+                   type="text"
+                   maxlength="80"
+                   class="aforo-number-input"
+                   style="text-align:left; padding-left: 12px;"
+                   [ngModel]="nombreInstitucionBorrador"
+                   (ngModelChange)="nombreInstitucionBorrador = $event"
+                   (blur)="guardarNombreInstitucion()"
+                   (keyup.enter)="guardarNombreInstitucion()"
+                   placeholder="Ej: Universidad Autónoma de Tamaulipas">
+            @if (nombreInstitucionBorrador) {
+              <button type="button"
+                      class="stepper-btn"
+                      (click)="limpiarNombreInstitucion()"
+                      matTooltip="Borrar nombre"
+                      matTooltipPosition="above">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+
+        <p class="section-hint" *ngIf="!configService.nombreInstitucion">
+          <mat-icon>info</mat-icon>
+          Sin institución configurada — los documentos se generarán sin etiqueta institucional.
+        </p>
+        <p class="section-hint" *ngIf="configService.nombreInstitucion" style="color: rgba(0,200,215,0.5)">
+          <mat-icon>check_circle</mat-icon>
+          Actualmente: <strong>{{ configService.nombreInstitucion }}</strong>
+        </p>
       </mat-card>
 
       <!-- ═══ SONIDO DE CONFIRMACIÓN ═══ -->
@@ -292,6 +334,278 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
             </p>
           </div>
         </div>
+      </mat-card>
+
+      <!-- ═══ MODO QUIOSCO ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>tablet_android</mat-icon>
+          <h2>Modo Quiosco</h2>
+        </div>
+        <p class="section-desc">
+          Pensado para una <strong style="color:#E8F4F8">tablet o computadora dedicada</strong> a la
+          entrada de la biblioteca. Oculta el menú lateral, la barra superior y la barra inferior
+          para dejar solo el scanner y el flujo de registro. El personal podrá salir del modo con
+          una <strong>pulsación larga (3 s)</strong> en cualquier área del scanner y el PIN configurado.
+        </p>
+        <div class="sound-toggle">
+          <span class="sound-status">
+            {{ configService.modoQuiosco ? 'Activado' : 'Desactivado' }}
+          </span>
+          <button class="btn-inline"
+            [class.btn-inline-active]="configService.modoQuiosco"
+            (click)="toggleModoQuiosco()">
+            <mat-icon>{{ configService.modoQuiosco ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            {{ configService.modoQuiosco ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+
+        <div *ngIf="configService.modoQuiosco" style="margin-top: 18px;">
+          <div class="aforo-input-row">
+            <label for="quioscoPin">PIN de salida (4–6 dígitos)</label>
+            <div class="aforo-stepper" style="max-width: 220px;">
+              <input id="quioscoPin"
+                     type="text"
+                     inputmode="numeric"
+                     maxlength="6"
+                     class="aforo-number-input"
+                     [ngModel]="configService.quioscoPin"
+                     (ngModelChange)="setQuioscoPin($event)"
+                     placeholder="0000">
+            </div>
+          </div>
+          <p class="section-hint" *ngIf="!configService.quioscoPin" style="color:#F5A623;">
+            <mat-icon>warning</mat-icon>
+            Sin PIN configurado — cualquiera podrá salir del modo quiosco.
+          </p>
+          <p class="section-hint" *ngIf="configService.quioscoPin" style="color: rgba(0,200,215,0.5)">
+            <mat-icon>lock</mat-icon>
+            PIN activo — pulsación larga + PIN para salir.
+          </p>
+        </div>
+      </mat-card>
+
+      <!-- ═══ HORARIOS DE OPERACIÓN ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>schedule</mat-icon>
+          <h2>Horarios de Operación</h2>
+        </div>
+        <p class="section-desc">
+          Define el <strong style="color:#E8F4F8">horario de apertura</strong> de la biblioteca por
+          día. Fuera de horario, el scanner mostrará una advertencia o bloqueará el registro según
+          el modo elegido. Útil para evitar registros accidentales antes de abrir o después de cerrar.
+        </p>
+        <div class="sound-toggle">
+          <span class="sound-status">
+            {{ configService.horarioActivo ? 'Activado' : 'Desactivado' }}
+          </span>
+          <button class="btn-inline"
+            [class.btn-inline-active]="configService.horarioActivo"
+            (click)="toggleHorarioActivo()">
+            <mat-icon>{{ configService.horarioActivo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            {{ configService.horarioActivo ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+
+        <div *ngIf="configService.horarioActivo" style="margin-top: 18px;">
+          <!-- Modo de comportamiento -->
+          <div class="section-header" style="margin-bottom: 10px;">
+            <mat-icon>policy</mat-icon>
+            <h2 style="font-size: 0.95rem;">Fuera de horario</h2>
+          </div>
+          <div class="auto-close-options">
+            @for (op of opcionesHorarioModo; track op.valor) {
+              <button class="auto-close-btn"
+                [class.active]="configService.horarioModo === op.valor"
+                (click)="setHorarioModo(op.valor)"
+                [matTooltip]="op.descripcion"
+                matTooltipPosition="above">
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+
+          <!-- Editor por día -->
+          <div class="section-header" style="margin: 22px 0 10px;">
+            <mat-icon>calendar_view_week</mat-icon>
+            <h2 style="font-size: 0.95rem;">Horario semanal</h2>
+          </div>
+          <div class="horarios-grid">
+            @for (dia of diasSemana; track dia.indice) {
+              <div class="horario-row" [class.cerrado]="configService.horarios[dia.indice].cerrado">
+                <div class="horario-dia">{{ dia.nombre }}</div>
+                <div class="horario-controls">
+                  <button class="btn-inline horario-toggle"
+                    [class.btn-inline-active]="!configService.horarios[dia.indice].cerrado"
+                    (click)="toggleDiaCerrado(dia.indice)">
+                    {{ configService.horarios[dia.indice].cerrado ? 'Cerrado' : 'Abierto' }}
+                  </button>
+                  <input type="time"
+                    class="horario-input"
+                    [disabled]="configService.horarios[dia.indice].cerrado"
+                    [ngModel]="configService.horarios[dia.indice].apertura"
+                    (ngModelChange)="setHorarioCampo(dia.indice, 'apertura', $event)">
+                  <span class="horario-sep">→</span>
+                  <input type="time"
+                    class="horario-input"
+                    [disabled]="configService.horarios[dia.indice].cerrado"
+                    [ngModel]="configService.horarios[dia.indice].cierre"
+                    (ngModelChange)="setHorarioCampo(dia.indice, 'cierre', $event)">
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- ═══ ANIMACIÓN CELEBRATORIA ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>celebration</mat-icon>
+          <h2>Animación celebratoria</h2>
+        </div>
+        <p class="section-desc">
+          Después de un registro exitoso, el sistema puede mostrar una <strong style="color:#E8F4F8">animación
+          sorpresa</strong> con confeti — al estilo de los reconocimientos de Microsoft Teams.
+          Es opcional y de baja probabilidad para que se sienta especial sin volverse molesta.
+        </p>
+        <div class="sound-toggle">
+          <span class="sound-status">
+            {{ configService.celebracionActiva ? 'Activada' : 'Desactivada' }}
+          </span>
+          <button class="btn-inline"
+            [class.btn-inline-active]="configService.celebracionActiva"
+            (click)="toggleCelebracion()">
+            <mat-icon>{{ configService.celebracionActiva ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            {{ configService.celebracionActiva ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+
+        <div *ngIf="configService.celebracionActiva" style="margin-top: 18px;">
+          <div class="section-header" style="margin-bottom: 10px;">
+            <mat-icon>casino</mat-icon>
+            <h2 style="font-size: 0.95rem;">Frecuencia</h2>
+          </div>
+
+          <!-- Atajos rápidos -->
+          <div class="auto-close-options">
+            @for (op of opcionesCelebracion; track op.valor) {
+              <button class="auto-close-btn"
+                [class.active]="celebracionMatch(op.valor)"
+                (click)="setCelebracionPorcentaje(op.valor * 100)">
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+
+          <!-- Input libre -->
+          <div class="aforo-input-row" style="margin-top: 14px;">
+            <label for="celebracionPct">Porcentaje personalizado</label>
+            <div class="aforo-stepper" style="max-width: 260px;">
+              <button type="button"
+                      class="stepper-btn"
+                      (click)="setCelebracionPorcentaje(porcentajeCelebracion - 1)"
+                      [disabled]="porcentajeCelebracion <= 0"
+                      matTooltip="Disminuir 1%"
+                      matTooltipPosition="above">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <input id="celebracionPct"
+                     type="number"
+                     min="0"
+                     max="100"
+                     step="1"
+                     class="aforo-number-input"
+                     [ngModel]="porcentajeCelebracion"
+                     (ngModelChange)="setCelebracionPorcentaje($event)"
+                     placeholder="0">
+              <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">%</span>
+              <button type="button"
+                      class="stepper-btn"
+                      (click)="setCelebracionPorcentaje(porcentajeCelebracion + 1)"
+                      [disabled]="porcentajeCelebracion >= 100"
+                      matTooltip="Aumentar 1%"
+                      matTooltipPosition="above">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <p class="section-hint">
+            <mat-icon>info</mat-icon>
+            Aproximadamente <strong>{{ porcentajeCelebracion }}%</strong> de los registros mostrarán animación.
+            @if (porcentajeCelebracion === 0) {
+              (0% = desactivada)
+            } @else if (porcentajeCelebracion === 100) {
+              (siempre se muestra)
+            }
+          </p>
+        </div>
+      </mat-card>
+
+      <!-- ═══ ALERTAS DE INACTIVIDAD (v3.10.0) ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>notifications_paused</mat-icon>
+          <h2>Alertas de inactividad</h2>
+        </div>
+        <p class="section-desc">
+          Define a partir de cuántos días sin venir un alumno se considera
+          <strong style="color:#E8F4F8">inactivo</strong>. La lista aparece en
+          <a routerLink="/inactivos" style="color:#00C8D7;text-decoration:none;">Consulta → Inactivos</a>.
+          Los presets son atajos; el input admite cualquier número.
+        </p>
+
+        <div class="auto-close-options">
+          @for (op of opcionesUmbralInactividad; track op.valor) {
+            <button class="auto-close-btn"
+              [class.active]="configService.umbralInactividadDias === op.valor"
+              (click)="setUmbralInactividad(op.valor)">
+              {{ op.etiqueta }}
+            </button>
+          }
+        </div>
+
+        <div class="aforo-input-row" style="margin-top: 14px;">
+          <label for="umbralInactividad">Días personalizados</label>
+          <div class="aforo-stepper" style="max-width: 260px;">
+            <button type="button"
+                    class="stepper-btn"
+                    (click)="setUmbralInactividad(configService.umbralInactividadDias - 1)"
+                    [disabled]="configService.umbralInactividadDias <= 0"
+                    matTooltip="Disminuir 1 día"
+                    matTooltipPosition="above">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <input id="umbralInactividad"
+                   type="number"
+                   min="0"
+                   max="3650"
+                   step="1"
+                   class="aforo-number-input"
+                   [ngModel]="configService.umbralInactividadDias"
+                   (ngModelChange)="setUmbralInactividad($event)"
+                   placeholder="0">
+            <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">días</span>
+            <button type="button"
+                    class="stepper-btn"
+                    (click)="setUmbralInactividad(configService.umbralInactividadDias + 1)"
+                    matTooltip="Aumentar 1 día"
+                    matTooltipPosition="above">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <p class="section-hint">
+          <mat-icon>info</mat-icon>
+          @if (configService.umbralInactividadDias === 0) {
+            Las alertas están <strong>desactivadas</strong>. La vista de Inactivos seguirá disponible con umbral ajustable en vivo.
+          } @else {
+            Alumnos con más de <strong>{{ configService.umbralInactividadDias }} días</strong> sin venir aparecerán en la lista de Inactivos.
+          }
+        </p>
       </mat-card>
 
       <!-- ═══ COMPORTAMIENTO DEL ESCÁNER ═══ -->
@@ -928,6 +1242,42 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       .aforo-stepper { width: 100%; }
       .aforo-number-input { flex: 1; width: auto; }
     }
+
+    /* ── Horarios semanales ── */
+    .horarios-grid { display: flex; flex-direction: column; gap: 8px; }
+    .horario-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      background: #0a1420;
+      border: 1px solid rgba(0, 200, 215, 0.08);
+      border-radius: 10px;
+      &.cerrado { opacity: 0.55; }
+    }
+    .horario-dia {
+      flex: 0 0 90px;
+      font-size: 0.85rem; font-weight: 600; color: #E8F4F8;
+    }
+    .horario-controls {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;
+    }
+    .horario-toggle { min-width: 78px; justify-content: center; }
+    .horario-input {
+      background: #06101c;
+      border: 1px solid rgba(0, 200, 215, 0.18);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: #E8F4F8;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
+      &:focus { outline: none; border-color: rgba(0, 200, 215, 0.5); }
+    }
+    .horario-sep { color: rgba(200, 230, 240, 0.35); font-size: 0.85rem; }
+    @media (max-width: 480px) {
+      .horario-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .horario-dia { flex: none; }
+      .horario-controls { width: 100%; }
+    }
   `],
 })
 export class ConfiguracionComponent implements OnInit {
@@ -955,6 +1305,9 @@ export class ConfiguracionComponent implements OnInit {
   nombreArchivoSeleccionado = '';
   resultadoImportacion: ResultadoImportacion | null = null;
 
+  // Identidad: borrador editable (se confirma al blur / Enter).
+  nombreInstitucionBorrador = '';
+
   constructor(
     private databaseService: DatabaseService,
     private backupService: BackupService,
@@ -965,10 +1318,33 @@ export class ConfiguracionComponent implements OnInit {
     public changelogService: ChangelogService,
     private dialog: MatDialog,
     private router: Router,
-  ) {}
+  ) {
+    this.nombreInstitucionBorrador = this.configService.nombreInstitucion;
+  }
 
   async ngOnInit(): Promise<void> {
     await this.cargarInfo();
+  }
+
+  // ═══════════════════════════════════════════════
+  // IDENTIDAD DE LA INSTITUCIÓN
+  // ═══════════════════════════════════════════════
+
+  guardarNombreInstitucion(): void {
+    const nuevo = (this.nombreInstitucionBorrador || '').trim();
+    if (nuevo === this.configService.nombreInstitucion) return;
+    this.configService.setNombreInstitucion(nuevo);
+    this.nombreInstitucionBorrador = nuevo;
+    this.toastService.success(
+      nuevo
+        ? 'Nombre de institución actualizado'
+        : 'Nombre de institución eliminado',
+    );
+  }
+
+  limpiarNombreInstitucion(): void {
+    this.nombreInstitucionBorrador = '';
+    this.guardarNombreInstitucion();
   }
 
   // ═══════════════════════════════════════════════
@@ -1081,6 +1457,29 @@ export class ConfiguracionComponent implements OnInit {
   }
 
   // ═══════════════════════════════════════════════
+  // ALERTAS DE INACTIVIDAD (v3.10.0)
+  // ═══════════════════════════════════════════════
+
+  readonly opcionesUmbralInactividad = [
+    { valor: 7,   etiqueta: '7 días' },
+    { valor: 15,  etiqueta: '15 días' },
+    { valor: 30,  etiqueta: '30 días' },
+    { valor: 60,  etiqueta: '60 días' },
+    { valor: 90,  etiqueta: '90 días' },
+    { valor: 180, etiqueta: '6 meses' },
+  ];
+
+  setUmbralInactividad(dias: number): void {
+    const n = Math.max(0, Math.min(3650, Math.floor(dias) || 0));
+    this.configService.setUmbralInactividadDias(n);
+    if (n === 0) {
+      this.toastService.info('Alertas de inactividad desactivadas');
+    } else {
+      this.toastService.info(`Umbral de inactividad: ${n} días`);
+    }
+  }
+
+  // ═══════════════════════════════════════════════
   // CONTROL DE AFORO
   // ═══════════════════════════════════════════════
 
@@ -1121,6 +1520,108 @@ export class ConfiguracionComponent implements OnInit {
     this.configService.setAforoModo(modo);
     const op = this.opcionesAforoModo.find(o => o.valor === modo);
     if (op) this.toastService.info(`Modo de aforo: ${op.etiqueta}`);
+  }
+
+  // ═══════════════════════════════════════════════
+  // MODO QUIOSCO (v3.9.0)
+  // ═══════════════════════════════════════════════
+
+  toggleModoQuiosco(): void {
+    const nuevo = !this.configService.modoQuiosco;
+    this.configService.setModoQuiosco(nuevo);
+    this.toastService.info(
+      nuevo
+        ? 'Modo quiosco activado — pulsación larga + PIN para salir'
+        : 'Modo quiosco desactivado'
+    );
+  }
+
+  setQuioscoPin(valor: string): void {
+    this.configService.setQuioscoPin(valor);
+  }
+
+  // ═══════════════════════════════════════════════
+  // HORARIOS DE OPERACIÓN (v3.9.0)
+  // ═══════════════════════════════════════════════
+
+  readonly diasSemana = DIAS_SEMANA.map((nombre, indice) => ({ indice, nombre }));
+
+  readonly opcionesHorarioModo: { valor: HorarioModo; etiqueta: string; descripcion: string }[] = [
+    {
+      valor: 'advertir',
+      etiqueta: 'Solo advertir',
+      descripcion: 'Muestra un toast de advertencia pero permite registrar.',
+    },
+    {
+      valor: 'bloquear',
+      etiqueta: 'Bloquear',
+      descripcion: 'Bloquea el registro fuera del horario configurado.',
+    },
+  ];
+
+  toggleHorarioActivo(): void {
+    const nuevo = !this.configService.horarioActivo;
+    this.configService.setHorarioActivo(nuevo);
+    this.toastService.info(
+      nuevo ? 'Horarios de operación activados' : 'Horarios desactivados'
+    );
+  }
+
+  setHorarioModo(modo: HorarioModo): void {
+    this.configService.setHorarioModo(modo);
+    const op = this.opcionesHorarioModo.find(o => o.valor === modo);
+    if (op) this.toastService.info(`Fuera de horario: ${op.etiqueta}`);
+  }
+
+  toggleDiaCerrado(dia: number): void {
+    const actual = this.configService.horarios[dia];
+    this.configService.setHorarioDia(dia, { ...actual, cerrado: !actual.cerrado });
+  }
+
+  setHorarioCampo(dia: number, campo: 'apertura' | 'cierre', valor: string): void {
+    const actual = this.configService.horarios[dia];
+    this.configService.setHorarioDia(dia, { ...actual, [campo]: valor });
+  }
+
+  // ═══════════════════════════════════════════════
+  // CELEBRACIÓN (v3.9.0)
+  // ═══════════════════════════════════════════════
+
+  readonly opcionesCelebracion = [
+    { valor: 0.03, etiqueta: 'Rara (3%)' },
+    { valor: 0.08, etiqueta: 'Normal (8%)' },
+    { valor: 0.15, etiqueta: 'Frecuente (15%)' },
+    { valor: 0.30, etiqueta: 'Muy frecuente (30%)' },
+  ];
+
+  get porcentajeCelebracion(): number {
+    return Math.round(this.configService.celebracionProbabilidad * 100);
+  }
+
+  celebracionMatch(valor: number): boolean {
+    // Match exacto (redondeado al 1%) entre el preset y el valor actual.
+    return Math.round(this.configService.celebracionProbabilidad * 100) === Math.round(valor * 100);
+  }
+
+  toggleCelebracion(): void {
+    const nuevo = !this.configService.celebracionActiva;
+    this.configService.setCelebracionActiva(nuevo);
+    this.toastService.info(
+      nuevo ? 'Animación celebratoria activada' : 'Animación celebratoria desactivada'
+    );
+  }
+
+  setCelebracionProbabilidad(valor: number): void {
+    this.configService.setCelebracionProbabilidad(valor);
+    this.toastService.info(`Frecuencia: ~${Math.round(valor * 100)}%`);
+  }
+
+  /** Recibe un porcentaje 0-100 (libre) y lo convierte a probabilidad 0-1. */
+  setCelebracionPorcentaje(pct: number | string): void {
+    const num = typeof pct === 'string' ? parseFloat(pct) : pct;
+    if (isNaN(num)) return;
+    const acotado = Math.max(0, Math.min(100, Math.round(num)));
+    this.configService.setCelebracionProbabilidad(acotado / 100);
   }
 
   // ═══════════════════════════════════════════════

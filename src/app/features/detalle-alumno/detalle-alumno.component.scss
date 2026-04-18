@@ -290,6 +290,16 @@
       background: linear-gradient(135deg, $cyan-400, $teal-400);
       box-shadow: 0 4px 16px rgba(0, 200, 215, 0.2);
     }
+
+    &.horas {
+      background: linear-gradient(135deg, $success-color, darken($success-color, 10%));
+      box-shadow: 0 4px 16px rgba(14, 176, 123, 0.25);
+    }
+
+    &.duracion {
+      background: linear-gradient(135deg, $teal-600, $cyan-600);
+      box-shadow: 0 4px 16px rgba(0, 169, 158, 0.25);
+    }
   }
 
   .stat-content {
@@ -305,6 +315,14 @@
       margin: 2px 0 0;
       color: $text-secondary;
       font-size: 0.8rem;
+    }
+
+    .stat-hint {
+      display: block;
+      margin-top: 2px;
+      color: $text-secondary;
+      font-size: 0.7rem;
+      opacity: 0.75;
     }
   }
 }

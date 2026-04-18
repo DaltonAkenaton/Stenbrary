@@ -55,6 +55,12 @@
             <mat-icon>edit</mat-icon>
             Editar
           </button>
+          <button mat-stroked-button (click)="descargarConstancia()"
+                  [disabled]="!registros.length"
+                  matTooltip="Descargar constancia PDF de visitas">
+            <mat-icon>picture_as_pdf</mat-icon>
+            Constancia
+          </button>
           <button mat-raised-button
                   [color]="alumno.activo ? 'warn' : 'accent'"
                   (click)="alumno.activo ? desactivarAlumno() : reactivarAlumno()"
@@ -115,17 +121,22 @@
 
     <!-- Estadísticas -->
     <div class="stats-grid" *ngIf="estadisticas">
-      <mat-card class="stat-card">
+      <mat-card class="stat-card"
+                matTooltip="Número total de veces que el alumno ha registrado entrada a la biblioteca, desde su primera visita hasta hoy."
+                matTooltipPosition="above">
         <div class="stat-icon visitas">
           <mat-icon>login</mat-icon>
         </div>
         <div class="stat-content">
           <h3>{{ estadisticas.totalVisitas }}</h3>
-          <p>Visitas Totales</p>
+          <p>Visitas totales</p>
+          <span class="stat-hint">histórico completo</span>
         </div>
       </mat-card>
 
-      <mat-card class="stat-card">
+      <mat-card class="stat-card"
+                matTooltip="Fecha del acceso más reciente del alumno a la biblioteca."
+                matTooltipPosition="above">
         <div class="stat-icon ultima">
           <mat-icon>schedule</mat-icon>
         </div>
@@ -134,27 +145,67 @@
             {{ formatearFechaCorta(estadisticas.ultimaVisita) }}
           </h3>
           <h3 *ngIf="!estadisticas.ultimaVisita">N/A</h3>
-          <p>Última Visita</p>
+          <p>Última visita</p>
+          <span class="stat-hint" *ngIf="estadisticas.ultimaVisita">
+            hace {{ diasDesdeUltimaVisita() }}
+            {{ diasDesdeUltimaVisita() === 1 ? 'día' : 'días' }}
+          </span>
         </div>
       </mat-card>
 
-      <mat-card class="stat-card">
+      <mat-card class="stat-card"
+                matTooltip="Actividad o motivo que el alumno declaró más veces al registrar sus visitas."
+                matTooltipPosition="above">
         <div class="stat-icon motivo">
           <mat-icon>star</mat-icon>
         </div>
         <div class="stat-content">
           <h3>{{ estadisticas.motivoFrecuente }}</h3>
-          <p>Motivo Más Frecuente</p>
+          <p>Motivo más frecuente</p>
+          <span class="stat-hint">sobre sus {{ estadisticas.totalVisitas }} visitas</span>
         </div>
       </mat-card>
 
-      <mat-card class="stat-card">
+      <mat-card class="stat-card"
+                [matTooltip]="tooltipPromedioSemanal()"
+                matTooltipPosition="above"
+                matTooltipClass="multiline-tooltip">
         <div class="stat-icon promedio">
           <mat-icon>trending_up</mat-icon>
         </div>
         <div class="stat-content">
           <h3>{{ estadisticas.promedioSemanal }}</h3>
-          <p>Promedio Semanal</p>
+          <p>Visitas por semana</p>
+          <span class="stat-hint">
+            promedio desde su 1ª visita
+            <mat-icon class="hint-help"
+                      [matTooltip]="tooltipPromedioSemanal()"
+                      matTooltipClass="multiline-tooltip">help_outline</mat-icon>
+          </span>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card" *ngIf="configService.registroSalidaActivo">
+        <div class="stat-icon horas">
+          <mat-icon>hourglass_bottom</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ formatearHoras(estadisticas.totalMinutos) }}</h3>
+          <p>Horas acumuladas</p>
+          <span class="stat-hint" *ngIf="estadisticas.visitasConDuracion > 0">
+            en {{ estadisticas.visitasConDuracion }}
+            {{ estadisticas.visitasConDuracion === 1 ? 'visita' : 'visitas' }}
+          </span>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card" *ngIf="configService.registroSalidaActivo && estadisticas.visitasConDuracion > 0">
+        <div class="stat-icon duracion">
+          <mat-icon>timer</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ formatearHoras(estadisticas.duracionPromedio) }}</h3>
+          <p>Duración promedio</p>
         </div>
       </mat-card>
     </div>

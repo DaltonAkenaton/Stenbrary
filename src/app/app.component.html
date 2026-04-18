@@ -10,7 +10,9 @@
   - Banner de actualización PWA con bindings correctos
 -->
 
-<div class="app-shell" [class.sidebar-expanded]="isSidebarExpanded()">
+<div class="app-shell"
+     [class.sidebar-expanded]="isSidebarExpanded()"
+     [class.kiosk-mode]="configService.modoQuioscoSignal()">
 
   <!-- ══════════════════════════════════════════════════════
        SIDEBAR — Navegación lateral persistente
