@@ -86,15 +86,17 @@ export interface RegistroDetalleDialogData {
           </div>
         </div>
 
-        <div class="info-row" *ngIf="data.registro.dispositivo">
-          <div class="info-item full-width">
-            <mat-icon>devices</mat-icon>
-            <div>
-              <span class="label">Dispositivo</span>
-              <span class="value">{{ data.registro.dispositivo }}</span>
+        @if (data.registro.dispositivo) {
+          <div class="info-row">
+            <div class="info-item full-width">
+              <mat-icon>devices</mat-icon>
+              <div>
+                <span class="label">Dispositivo</span>
+                <span class="value">{{ data.registro.dispositivo }}</span>
+              </div>
             </div>
           </div>
-        </div>
+        }
 
       </div>
     </mat-dialog-content>

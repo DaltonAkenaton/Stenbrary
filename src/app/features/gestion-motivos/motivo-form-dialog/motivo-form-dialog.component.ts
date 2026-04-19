@@ -79,12 +79,12 @@ interface ColorOpcion {
             <mat-hint align="end">
               {{ motivoForm.get('nombre')?.value?.length || 0 }}/50
             </mat-hint>
-            <mat-error *ngIf="motivoForm.get('nombre')?.hasError('required')">
-              El nombre es obligatorio
-            </mat-error>
-            <mat-error *ngIf="motivoForm.get('nombre')?.hasError('minlength')">
-              Mínimo 3 caracteres
-            </mat-error>
+            @if (motivoForm.get('nombre')?.hasError('required')) {
+              <mat-error>El nombre es obligatorio</mat-error>
+            }
+            @if (motivoForm.get('nombre')?.hasError('minlength')) {
+              <mat-error>Mínimo 3 caracteres</mat-error>
+            }
           </mat-form-field>
 
           <!-- Descripción -->

@@ -21,12 +21,14 @@ import { LoadingService } from '../../core/services/loading.service';
   standalone: true,
   imports: [CommonModule, MatProgressSpinnerModule],
   template: `
-    <div class="loading-overlay" *ngIf="isLoading">
-      <div class="loading-content">
-        <mat-spinner diameter="52"></mat-spinner>
-        <p class="loading-text">{{ message }}</p>
+    @if (isLoading) {
+      <div class="loading-overlay">
+        <div class="loading-content">
+          <mat-spinner diameter="52"></mat-spinner>
+          <p class="loading-text">{{ message }}</p>
+        </div>
       </div>
-    </div>
+    }
   `,
   styles: [`
     .loading-overlay {

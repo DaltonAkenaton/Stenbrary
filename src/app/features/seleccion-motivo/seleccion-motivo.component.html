@@ -34,15 +34,17 @@
 
         <h1 class="exito-titulo">¡Registro Exitoso!</h1>
 
-        <div class="exito-info" *ngIf="alumno">
-          <p class="exito-nombre">{{ obtenerNombreCorto() }}</p>
-          <p class="exito-detalle">
-            @if (!esInvitado) {
-              {{ alumno.matricula }} ·
-            }
-            {{ resumenMotivos }}
-          </p>
-        </div>
+        @if (alumno) {
+          <div class="exito-info">
+            <p class="exito-nombre">{{ obtenerNombreCorto() }}</p>
+            <p class="exito-detalle">
+              @if (!esInvitado) {
+                {{ alumno.matricula }} ·
+              }
+              {{ resumenMotivos }}
+            </p>
+          </div>
+        }
 
         <div class="exito-loader">
           <div class="exito-progress-bar">
@@ -66,20 +68,22 @@
       <aside class="panel-info" [class.has-selection]="haySeleccion">
 
         <!-- Tarjeta del alumno -->
-        <div class="student-card" *ngIf="alumno">
-          <div class="student-avatar" [class.guest]="esInvitado">
-            <mat-icon>{{ esInvitado ? 'person_outline' : 'person' }}</mat-icon>
+        @if (alumno) {
+          <div class="student-card">
+            <div class="student-avatar" [class.guest]="esInvitado">
+              <mat-icon>{{ esInvitado ? 'person_outline' : 'person' }}</mat-icon>
+            </div>
+            <div class="student-details">
+              <h3 class="student-name">{{ obtenerNombreCorto() }}</h3>
+              @if (!esInvitado) {
+                <span class="student-matricula">{{ alumno.matricula }}</span>
+                <span class="student-carrera">{{ alumno.carrera }}</span>
+              } @else {
+                <span class="student-guest-badge">Visitante sin credencial</span>
+              }
+            </div>
           </div>
-          <div class="student-details">
-            <h3 class="student-name">{{ obtenerNombreCorto() }}</h3>
-            @if (!esInvitado) {
-              <span class="student-matricula">{{ alumno.matricula }}</span>
-              <span class="student-carrera">{{ alumno.carrera }}</span>
-            } @else {
-              <span class="student-guest-badge">Visitante sin credencial</span>
-            }
-          </div>
-        </div>
+        }
 
         <!-- Link: matrícula incorrecta — SIEMPRE visible (sin necesidad de seleccionar) -->
         @if (!esInvitado) {
@@ -181,9 +185,11 @@
           </button>
           <div class="header-text">
             <h1>¿Para qué vienes?</h1>
-            <p class="subtitle" *ngIf="alumno">
-              {{ obtenerNombreCorto() }} — selecciona tu actividad
-            </p>
+            @if (alumno) {
+              <p class="subtitle">
+                {{ obtenerNombreCorto() }} — selecciona tu actividad
+              </p>
+            }
           </div>
         </div>
 

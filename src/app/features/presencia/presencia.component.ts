@@ -52,17 +52,19 @@ const REFRESH_MS = 30_000;
           </div>
           <div>
             <h1>En Biblioteca Ahora</h1>
-            <p class="header-subtitle" *ngIf="!cargando">
-              @if (registrosFiltrados.length > 0) {
-                <span class="count-badge">{{ registrosFiltrados.length }}</span>
-                {{ registrosFiltrados.length === 1 ? 'persona presente' : 'personas presentes' }}
-                @if (busqueda) { · filtrado de {{ registros.length }} }
-              } @else if (registros.length > 0) {
-                Sin resultados para "{{ busqueda }}"
-              } @else {
-                Nadie en este momento
-              }
-            </p>
+            @if (!cargando) {
+              <p class="header-subtitle">
+                @if (registrosFiltrados.length > 0) {
+                  <span class="count-badge">{{ registrosFiltrados.length }}</span>
+                  {{ registrosFiltrados.length === 1 ? 'persona presente' : 'personas presentes' }}
+                  @if (busqueda) { · filtrado de {{ registros.length }} }
+                } @else if (registros.length > 0) {
+                  Sin resultados para "{{ busqueda }}"
+                } @else {
+                  Nadie en este momento
+                }
+              </p>
+            }
           </div>
         </div>
 

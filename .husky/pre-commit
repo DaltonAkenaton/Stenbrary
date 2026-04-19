@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# Pre-commit ligero: type-check + guardrail de versión.
+# Los tests unitarios y el build completo se ejecutan en CI.
+
+echo "🔎 [pre-commit] Verificando versión (package.json ↔ CHANGELOG)..."
+npm run --silent check:version || exit 1
+
+echo "🔎 [pre-commit] Type-check (app)..."
+npx tsc --noEmit -p tsconfig.app.json || exit 1
+
+echo "🔎 [pre-commit] Type-check (spec)..."
+npx tsc --noEmit -p tsconfig.spec.json || exit 1
+
+echo "✅ [pre-commit] OK"

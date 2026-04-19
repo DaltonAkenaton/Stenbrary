@@ -9,7 +9,9 @@
     "test": "ng test",
     "test:ci": "ng test --watch=false --browsers=ChromeHeadlessCI --code-coverage",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "check:version": "node scripts/check-version.mjs",
+    "prepare": "husky"
   },
   "private": true,
   "dependencies": {
@@ -45,6 +47,8 @@
     "@types/jasmine": "~5.1.0",
     "@types/uuid": "^10.0.0",
     "@types/xlsx": "^0.0.35",
+    "fake-indexeddb": "^6.2.5",
+    "husky": "^9.1.7",
     "jasmine-core": "~5.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

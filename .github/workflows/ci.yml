@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Version guardrail (package.json ↔ CHANGELOG)
+        run: npm run check:version
+
       - name: Type-check (tsc --noEmit)
         run: npx tsc --noEmit -p tsconfig.json
 
