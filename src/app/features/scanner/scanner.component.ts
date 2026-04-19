@@ -311,11 +311,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // muestra el botón cuando esta lista tiene al menos un elemento.
   readonly visitantesAbiertos = signal<Registro[]>([]);
 
-  // ── Recordatorio de respaldo: dismiss solo por sesión ─────────────────
-  // El banner reaparece al recargar la página. Se suprime permanentemente
-  // exportando el respaldo o subiendo el umbral en Configuración.
-  private respaldoDescartadoSesion = false;
-
   // ── Zoom de cámara (crítico para webcams de laptop con foco fijo) ─────
   zoomDisponible = false;
   zoomHardware   = false;  // true = zoom real de cámara, false = zoom por software
@@ -1581,33 +1576,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.ngZone.run(() => this.salidaFlash.set(null));
       this.salidaFlashTimer = null;
     }, 1800);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // RECORDATORIO DE RESPALDO
-  // ═══════════════════════════════════════════════════════════════════════
-
-  mostrarRecordatorioRespaldo(): boolean {
-    if (this.respaldoDescartadoSesion) return false;
-    // Re-lee el signal para mantener reactividad al exportar.
-    void this.configService.ultimoRespaldoSignal();
-    return this.configService.recordatorioRespaldoPendiente;
-  }
-
-  textoRecordatorioRespaldo(): string {
-    const dias = this.configService.diasSinRespaldo();
-    if (dias === null) return 'Aún no has hecho ningún respaldo. Exporta tus datos para evitar pérdidas.';
-    if (dias === 0)   return 'Hoy no has respaldado. Exporta tus datos antes de cerrar la sesión.';
-    if (dias === 1)   return 'Hace 1 día sin respaldar. Exporta tus datos para evitar pérdidas.';
-    return `Hace ${dias} días sin respaldar. Exporta tus datos para evitar pérdidas.`;
-  }
-
-  descartarRecordatorioRespaldo(): void {
-    this.respaldoDescartadoSesion = true;
-  }
-
-  irAConfiguracionRespaldo(): void {
-    this.router.navigate(['/configuracion'], { fragment: 'respaldo' });
   }
 
   private resetEstado(): void {

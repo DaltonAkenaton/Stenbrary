@@ -23,6 +23,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
+import { AforoService } from '../../core/services/aforo.service';
 import { CelebrationComponent } from '../../shared/components/celebration/celebration.component';
 
 @Component({
@@ -48,6 +49,9 @@ export class SeleccionMotivoComponent implements OnInit {
   /** Motivos seleccionados (multi-select) */
   motivosSeleccionados: Motivo[] = [];
 
+  /** True si la selección proviene de preseleccionarMotivosRecientes (última visita del alumno). */
+  motivosPreseleccionados = false;
+
   /** Si el usuario es un invitado (sin matrícula) */
   esInvitado = false;
 
@@ -66,6 +70,7 @@ export class SeleccionMotivoComponent implements OnInit {
     private soundService: SoundService,
     private loadingService: LoadingService,
     private configService: ConfigService,
+    private aforoService: AforoService,
   ) {}
 
   // ═══════════════════════════════════════════════
@@ -92,6 +97,7 @@ export class SeleccionMotivoComponent implements OnInit {
   // CARGA DE MOTIVOS
   // ═══════════════════════════════════════════════
 
+
   async cargarMotivos(): Promise<void> {
     try {
       this.cargandoMotivos = true;
@@ -101,12 +107,49 @@ export class SeleccionMotivoComponent implements OnInit {
 
       if (this.motivos.length === 0) {
         this.toastService.warning('No hay actividades disponibles. Contacta al administrador.');
+      } else {
+        await this.preseleccionarMotivosRecientes();
       }
     } catch (error) {
       console.error('❌ Error al cargar motivos:', error);
       this.error = 'Error al cargar las actividades';
       this.cargandoMotivos = false;
       this.toastService.error('Error al cargar las actividades');
+    }
+  }
+
+  /**
+   * Preselecciona las actividades del último registro del alumno
+   * (dentro de los últimos 30 días) para ahorrar clics a alumnos habituales.
+   * Los invitados no se benefician porque no tienen historial asociable.
+   */
+  private async preseleccionarMotivosRecientes(): Promise<void> {
+    if (!this.alumno || this.esInvitado || this.alumno.matricula === 'INVITADO') return;
+
+    try {
+      const historicos = await this.databaseService.obtenerRegistrosPorAlumno(this.alumno.matricula);
+      if (!historicos.length) return;
+
+      const LIMITE_DIAS = 30;
+      const limiteMs = LIMITE_DIAS * 24 * 60 * 60 * 1000;
+      const ahora = Date.now();
+
+      const ordenados = historicos
+        .filter(r => ahora - new Date(r.fechaHora).getTime() <= limiteMs)
+        .sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
+
+      const ultimo = ordenados[0];
+      if (!ultimo) return;
+
+      const idsPrevios = ultimo.motivoIds?.length ? ultimo.motivoIds : [ultimo.motivoId];
+      const motivosVigentes = this.motivos.filter(m => m.id && idsPrevios.includes(m.id));
+
+      if (motivosVigentes.length > 0) {
+        this.motivosSeleccionados = motivosVigentes;
+        this.motivosPreseleccionados = true;
+      }
+    } catch (e) {
+      console.warn('No se pudo preseleccionar motivos recientes:', e);
     }
   }
 
@@ -123,6 +166,7 @@ export class SeleccionMotivoComponent implements OnInit {
     } else {
       this.motivosSeleccionados = [...this.motivosSeleccionados, motivo];
     }
+    this.motivosPreseleccionados = false;
   }
 
   estaSeleccionado(motivo: Motivo): boolean {
@@ -132,6 +176,7 @@ export class SeleccionMotivoComponent implements OnInit {
   deseleccionarMotivo(): void {
     if (this.registrando) return;
     this.motivosSeleccionados = [];
+    this.motivosPreseleccionados = false;
   }
 
   get haySeleccion(): boolean {
@@ -169,15 +214,30 @@ export class SeleccionMotivoComponent implements OnInit {
         motivoNombres: this.motivosSeleccionados.map(m => m.nombre),
       };
 
-      await this.databaseService.crearRegistro(nuevoRegistro);
+      const registroCreado = await this.databaseService.crearRegistro(nuevoRegistro);
 
       const displayName = this.esInvitado
         ? (this.alumno.nombre !== 'Visitante' ? this.alumno.nombre : 'Visitante')
         : this.alumno.nombre;
       console.log('🎉 Registro completado:', displayName, '-', this.resumenMotivos);
 
+      // En modo quiosco no mostramos "Deshacer" — el toast queda visible
+      // mientras el siguiente alumno se forma; un botón Deshacer expuesto ahí
+      // sería un vector de borrado accidental o malintencionado.
+      const mostrarUndo = !this.configService.modoQuioscoSignal();
+
       this.toastService.success(
-        `¡Registro exitoso! ${displayName} — ${this.resumenMotivos}`
+        `¡Registro exitoso! ${displayName} — ${this.resumenMotivos}`,
+        mostrarUndo
+          ? {
+              duration: 30000,
+              action: {
+                label: 'Deshacer',
+                icon: 'undo',
+                handler: () => this.deshacerRegistro(registroCreado.id, displayName),
+              },
+            }
+          : undefined,
       );
 
       // Feedback háptico
@@ -205,6 +265,18 @@ export class SeleccionMotivoComponent implements OnInit {
       console.error('❌ Error al crear registro:', error);
       this.registrando = false;
       this.toastService.error('Error al guardar el registro. Intenta de nuevo.');
+    }
+  }
+
+  private async deshacerRegistro(registroId: string, displayName: string): Promise<void> {
+    try {
+      await this.databaseService.eliminarRegistro(registroId);
+      if (this.configService.aforoActivo) {
+        await this.aforoService.refrescar();
+      }
+      this.toastService.info(`Registro de ${displayName} deshecho`);
+    } catch {
+      this.toastService.error('No se pudo deshacer el registro');
     }
   }
 

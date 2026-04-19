@@ -388,6 +388,152 @@
 }
 
 // ═══════════════════════════════════════════════════
+// LOGROS / INSIGNIAS
+// ═══════════════════════════════════════════════════
+
+.logros-card {
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+
+  .logros-header {
+    @include flex-between;
+    margin-bottom: $spacing-lg;
+
+    h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: $text-primary;
+
+      mat-icon { color: #F5A623; }
+    }
+
+    .logros-count {
+      padding: 4px 10px;
+      background: rgba($cyan-500, 0.10);
+      border: 1px solid rgba($cyan-500, 0.25);
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: $cyan-400;
+      font-family: $font-mono;
+    }
+  }
+
+  .logros-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: $spacing-lg;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+  }
+
+  .logro-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    mat-icon { font-size: 26px; width: 26px; height: 26px; }
+
+    div { display: flex; flex-direction: column; line-height: 1.15; }
+  }
+
+  .logro-stat-valor {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: $text-primary;
+    font-family: $font-display;
+  }
+
+  .logro-stat-label {
+    font-size: 0.72rem;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .insignias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 12px;
+  }
+
+  .insignia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    text-align: center;
+    opacity: 0.5;
+    transition: opacity 200ms, transform 200ms;
+
+    &.obtenida {
+      opacity: 1;
+      border-color: rgba($cyan-500, 0.18);
+      background: rgba($cyan-500, 0.04);
+    }
+
+    &:hover { transform: translateY(-2px); }
+  }
+
+  .insignia-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+
+    mat-icon { font-size: 24px; width: 24px; height: 24px; }
+  }
+
+  .insignia-nombre {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: $text-primary;
+
+    &.muted { color: $text-muted; font-weight: 500; }
+  }
+
+  .insignia-desc {
+    font-size: 0.68rem;
+    color: $text-muted;
+  }
+
+  .proxima-insignia {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: $spacing-lg;
+    padding: 10px 14px;
+    background: rgba($cyan-500, 0.06);
+    border: 1px solid rgba($cyan-500, 0.18);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: $text-secondary;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: $cyan-500;
+      flex-shrink: 0;
+    }
+
+    strong { color: $cyan-400; font-weight: 700; }
+  }
+}
+
+// ═══════════════════════════════════════════════════
 // HISTORIAL
 // ═══════════════════════════════════════════════════
 

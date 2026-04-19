@@ -27,6 +27,8 @@ import { ReportService } from '../../core/services/report.service';
 import { EditarAlumnoDialogComponent } from './editar-alumno-dialog/editar-alumno-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { RegistroDetalleDialogComponent } from './registro-detalle-dialog/registro-detalle-dialog.component';
+import { RegistroEditarDialogComponent, RegistroEditarResultado } from './registro-editar-dialog/registro-editar-dialog.component';
+import { calcularLogros, LogrosAlumno } from '../../core/utils/insignias.utils';
 
 interface EstadisticasAlumno {
   totalVisitas: number;
@@ -59,6 +61,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   alumno: Alumno | null = null;
   registros: Registro[] = [];
   estadisticas: EstadisticasAlumno | null = null;
+  logros: LogrosAlumno | null = null;
   cargando = true;
   error: string | null = null;
   enBibliotecaAhora = false;
@@ -115,6 +118,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
 
       this.registros = await this.databaseService.obtenerRegistrosPorAlumno(matricula);
       this.calcularEstadisticas();
+      this.logros = calcularLogros(this.registros);
 
       // Verificar si el alumno está actualmente en la biblioteca
       if (this.configService.registroSalidaActivo) {
@@ -374,6 +378,27 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
       width: '480px',
       data: { registro },
     });
+  }
+
+  async editarRegistro(registro: Registro, ev?: Event): Promise<void> {
+    ev?.stopPropagation();
+    const ref = this.dialog.open(RegistroEditarDialogComponent, {
+      width: '520px',
+      data: { registro },
+    });
+    const resultado = await ref.afterClosed().toPromise() as RegistroEditarResultado | undefined;
+    if (!resultado) return;
+
+    try {
+      this.loadingService.show('Guardando cambios...');
+      await this.databaseService.actualizarRegistroManual(registro.id, resultado);
+      this.loadingService.hide();
+      this.toastService.success('Registro actualizado');
+      if (this.alumno) await this.cargarDatosAlumno(this.alumno.matricula);
+    } catch {
+      this.loadingService.hide();
+      this.toastService.error('No se pudo actualizar el registro');
+    }
   }
 
   // ═══════════════════════════════════════════════

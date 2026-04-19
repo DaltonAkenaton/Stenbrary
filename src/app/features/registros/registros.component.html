@@ -202,6 +202,18 @@
           </td>
         </ng-container>
 
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="acciones-col"></th>
+          <td mat-cell *matCellDef="let r" class="acciones-col">
+            <button mat-icon-button
+                    class="btn-editar"
+                    (click)="editarRegistro(r, $event)"
+                    matTooltip="Editar registro">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="columnas"></tr>
         <tr mat-row *matRowDef="let row; columns: columnas;"
             class="clickable-row"

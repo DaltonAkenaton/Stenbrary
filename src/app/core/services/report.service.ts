@@ -13,7 +13,7 @@ import { Alumno, Registro } from '../models';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-export type TipoReporte = 'diario' | 'semanal' | 'mensual' | 'personalizado';
+export type TipoReporte = 'diario' | 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
 export interface FiltrosReporte {
   busqueda?: string;
@@ -207,17 +207,21 @@ export class ReportService {
     let y = startY;
 
     const totalRegistros = registros.length;
-    const matriculasUnicas = new Set(registros.map(r => r.matricula)).size;
-    const carrerasUnicas = new Set(registros.map(r => r.carrera)).size;
-    const motivosUnicos = new Set(registros.map(r => r.motivoNombre)).size;
+    const registrosAlumnos = registros.filter(r => r.matricula !== 'INVITADO');
+    const registrosVisitantes = registros.filter(r => r.matricula === 'INVITADO');
+    const alumnosUnicos = new Set(registrosAlumnos.map(r => r.matricula)).size;
+    const visitasVisitantes = registrosVisitantes.length;
+    const carrerasUnicas = new Set(
+      registrosAlumnos.map(r => r.carrera).filter(c => c && c !== 'Visitante')
+    ).size;
 
     const boxWidth = (pageWidth - margin * 2 - 12) / 4;
     const boxHeight = 22;
     const stats = [
       { valor: totalRegistros.toString(), label: 'Total Registros' },
-      { valor: matriculasUnicas.toString(), label: 'Alumnos Únicos' },
+      { valor: alumnosUnicos.toString(), label: 'Alumnos Únicos' },
+      { valor: visitasVisitantes.toString(), label: 'Visitantes' },
       { valor: carrerasUnicas.toString(), label: 'Carreras' },
-      { valor: motivosUnicos.toString(), label: 'Actividades' },
     ];
 
     stats.forEach((stat, i) => {
@@ -396,6 +400,8 @@ export class ReportService {
   ): number {
     const porCarrera = new Map<string, { visitas: number; alumnos: Set<string> }>();
     registros.forEach(r => {
+      // Excluir visitantes del resumen por carrera (no tienen carrera real)
+      if (r.matricula === 'INVITADO') return;
       const data = porCarrera.get(r.carrera) || { visitas: 0, alumnos: new Set() };
       data.visitas++;
       data.alumnos.add(r.matricula);
@@ -521,6 +527,7 @@ export class ReportService {
       case 'diario': return 'Reporte Diario de Accesos';
       case 'semanal': return 'Reporte Semanal de Accesos';
       case 'mensual': return 'Reporte Mensual de Accesos';
+      case 'anual': return 'Reporte Anual de Accesos';
       default: return 'Reporte de Accesos';
     }
   }
@@ -546,6 +553,11 @@ export class ReportService {
         const hace30 = new Date(hoy);
         hace30.setDate(hace30.getDate() - 30);
         return `Período: ${formatear(hace30)} — ${formatear(hoy)}`;
+      }
+      case 'anual': {
+        const hace365 = new Date(hoy);
+        hace365.setDate(hace365.getDate() - 365);
+        return `Período: ${formatear(hace365)} — ${formatear(hoy)}`;
       }
       default: return `Fecha: ${formatear(hoy)}`;
     }

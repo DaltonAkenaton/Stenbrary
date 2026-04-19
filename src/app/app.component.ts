@@ -10,17 +10,21 @@
 // ║  - Configuración en sección Administración            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, signal, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, effect, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatRippleModule } from '@angular/material/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { ConfigService } from './core/services/config.service';
 import { ChangelogService } from './core/services/changelog.service';
+import { GlobalSearchDialogComponent } from './shared/components/global-search/global-search-dialog.component';
+import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-shortcuts/keyboard-shortcuts-dialog.component';
+import { ToastContainerComponent } from './shared/components/toast-container.component';
 
 interface NavItem {
   icon: string;
@@ -43,7 +47,9 @@ interface NavSection {
     RouterLinkActive,
     MatIconModule,
     MatTooltipModule,
-    MatRippleModule
+    MatRippleModule,
+    MatDialogModule,
+    ToastContainerComponent,
 ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -75,6 +81,7 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private swUpdate: SwUpdate,
+    private dialog: MatDialog,
     public configService: ConfigService,
     public changelogService: ChangelogService,
   ) {
@@ -150,6 +157,86 @@ export class AppComponent implements OnInit, OnDestroy {
 
   descartarActualizacion(): void {
     this.hayActualizacion = false;
+  }
+
+  // ─── BÚSQUEDA GLOBAL (Ctrl+K / icono topbar) ────────────
+  abrirBusquedaGlobal(): void {
+    if (this.configService.modoQuioscoSignal()) return;
+    if (this.dialog.openDialogs.some(d => d.componentInstance instanceof GlobalSearchDialogComponent)) {
+      return;
+    }
+    this.dialog.open(GlobalSearchDialogComponent, {
+      width: 'auto',
+      maxWidth: '92vw',
+      autoFocus: false,
+      panelClass: 'global-search-panel',
+    });
+  }
+
+  // ─── AYUDA DE ATAJOS (? o icono topbar) ─────────────────
+  abrirAyudaAtajos(): void {
+    if (this.configService.modoQuioscoSignal()) return;
+    if (this.dialog.openDialogs.some(d => d.componentInstance instanceof KeyboardShortcutsDialogComponent)) {
+      return;
+    }
+    this.dialog.open(KeyboardShortcutsDialogComponent, {
+      maxWidth: '92vw',
+      autoFocus: false,
+      panelClass: 'keyboard-shortcuts-panel',
+    });
+  }
+
+  /** Mapa Alt+N → ruta de navegación rápida. */
+  private readonly atajosNavegacion: Record<string, string> = {
+    '1': '/scanner',
+    '2': '/dashboard',
+    '3': '/alumnos',
+    '4': '/registros',
+    '5': '/estadisticas',
+    '6': '/presencia',
+    '0': '/configuracion',
+  };
+
+  @HostListener('document:keydown', ['$event'])
+  onGlobalKey(ev: KeyboardEvent): void {
+    // Si hay un campo editable con foco, ignorar shortcuts de letra/número sueltos
+    // (Ctrl+K y Alt+N se disparan de todos modos — no colisionan con typing).
+    const target = ev.target as HTMLElement | null;
+    const enCampoEditable = !!target && (
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT' ||
+      target.isContentEditable
+    );
+
+    // Ctrl/Cmd + K → búsqueda global
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'k') {
+      ev.preventDefault();
+      this.abrirBusquedaGlobal();
+      return;
+    }
+
+    // En modo quiosco no se activan más atajos — evita navegación accidental
+    // al conectarse un escáner USB que emite teclas.
+    if (this.configService.modoQuioscoSignal()) return;
+
+    // '?' → ayuda de atajos (solo si no estás escribiendo)
+    if (!enCampoEditable && ev.key === '?' && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+      ev.preventDefault();
+      this.abrirAyudaAtajos();
+      return;
+    }
+
+    // Alt + número → navegación rápida
+    if (ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey) {
+      const ruta = this.atajosNavegacion[ev.key];
+      if (ruta) {
+        // /presencia solo si el módulo de salida está activo
+        if (ruta === '/presencia' && !this.configService.registroSalidaActivo) return;
+        ev.preventDefault();
+        this.router.navigate([ruta]);
+      }
+    }
   }
 
   // ─── NAVEGACIÓN POR SECCIONES ────────────────────────────

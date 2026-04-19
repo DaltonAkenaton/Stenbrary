@@ -49,6 +49,81 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.12.0',
+    fecha: '2026-04-18',
+    titulo: 'Herramientas de seguimiento, edición y personalización',
+    destacado: true,
+    resumen:
+      'Paquete grande de mejoras centrado en productividad diaria: cerrar la jornada en un clic, ' +
+      'editar registros a mano, buscar alumnos desde cualquier pantalla, deshacer el último registro, ' +
+      'reportes por periodo en PDF, insignias de asistencia, preselección de actividades recientes ' +
+      'y atajos de teclado para moverte más rápido.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Cierre en lote al final del día: botón "Cerrar todas" en la vista En Biblioteca que ' +
+          'registra la salida con la hora actual a todos los alumnos que aún tienen entrada abierta. ' +
+          'Ideal para terminar la jornada sin escanear uno por uno.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Edición manual de un registro: desde el historial (Registros y detalle de alumno) ' +
+          'puedes corregir la hora de entrada, la hora de salida y las actividades de un registro. ' +
+          'La duración se recalcula automáticamente.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Búsqueda global en la barra superior: botón con atajo Ctrl+K que abre un buscador ' +
+          'instantáneo de alumnos (por matrícula o nombre) y de registros del día. Navegas al ' +
+          'detalle con un clic o con las teclas de flecha + Enter.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Deshacer último registro: después de confirmar una actividad aparece un toast con ' +
+          'botón "Deshacer" durante 30 segundos. Útil si se registra por error la actividad ' +
+          'equivocada. (Oculto en modo quiosco para evitar borrados accidentales por alumnos).',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Reportes por periodo en PDF: en Estadísticas puedes elegir diario, semanal, mensual o ' +
+          'anual y generar un PDF con resumen, top alumnos y actividades más frecuentes del periodo. ' +
+          'Los visitantes ya aparecen contados aparte, sin mezclarse con los alumnos únicos.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Atajos de teclado globales: Ctrl+K para búsqueda, Alt+1-6/0 para ir al Scanner, Resumen, ' +
+          'Alumnos, Registros, Estadísticas, En Biblioteca y Configuración. Un nuevo icono de ayuda ' +
+          'en la barra superior abre la lista completa (también con la tecla "?").',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Insignias y rachas en el detalle del alumno: 12 logros distribuidos en tres ' +
+          'categorías (días consecutivos, horas acumuladas, visitas totales) con niveles ' +
+          'bronce → plata → oro → platino. Una motivación sutil para asistencia recurrente.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Preselección de actividades recientes: al escanear a un alumno habitual se marcan ' +
+          'automáticamente las actividades de su última visita (dentro de los últimos 30 días). ' +
+          'Reduce clics a un solo paso de confirmación para quienes vienen a lo mismo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El aviso de respaldo pendiente se movió del Scanner al Resumen. Ya no interrumpe el ' +
+          'registro de alumnos y queda oculto en modo quiosco, donde antes aparecía sin necesidad.',
+      },
+    ],
+  },
+  {
     version: '3.11.0',
     fecha: '2026-04-18',
     titulo: 'Lector USB, salida de visitantes y aviso de respaldo',

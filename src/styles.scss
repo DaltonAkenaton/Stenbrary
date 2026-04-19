@@ -385,6 +385,20 @@ router-outlet + * {
   }
 }
 
+// ─── GLOBAL SEARCH PALETTE ────────────────────────────────
+.global-search-panel,
+.keyboard-shortcuts-panel {
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+  .mat-mdc-dialog-surface,
+  .mdc-dialog__container { padding: 0 !important; }
+  mat-dialog-container { padding: 0 !important; }
+}
+
 // ─── DIALOGS ─────────────────────────────────────────────
 .mat-mdc-dialog-container {
   .mdc-dialog__surface {
@@ -522,3 +536,4 @@ router-outlet + * {
   background: transparent !important;
   color: $text-secondary !important;
 }
+

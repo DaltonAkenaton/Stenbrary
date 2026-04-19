@@ -711,6 +711,73 @@ export class DatabaseService {
     }
   }
 
+  /**
+   * Elimina un registro por id. Usado por el "Deshacer" del scanner.
+   */
+  async eliminarRegistro(registroId: string): Promise<void> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+      await this.db.delete('registros', registroId);
+    } catch (error) {
+      console.error('❌ Error al eliminar registro:', error);
+      throw error;
+    }
+  }
+
+  // ==================== EDICIÓN MANUAL ====================
+
+  /**
+   * Edita manualmente un registro existente (hora entrada, salida, motivos).
+   * Recalcula duracionMinutos si ambas fechas están presentes. Limpia
+   * cierreAutomatico al confirmarse manualmente.
+   */
+  async actualizarRegistroManual(
+    registroId: string,
+    cambios: {
+      fechaHora?: Date;
+      horaSalida?: Date | null;
+      motivoIds?: string[];
+      motivoNombres?: string[];
+      motivoId?: string;
+      motivoNombre?: string;
+    }
+  ): Promise<Registro> {
+    try {
+      await this.inicializar();
+      if (!this.db) throw new Error('Base de datos no inicializada');
+
+      const registro = await this.db.get('registros', registroId);
+      if (!registro) throw new Error('Registro no encontrado');
+
+      if (cambios.fechaHora) registro.fechaHora = new Date(cambios.fechaHora);
+
+      if (cambios.horaSalida === null) {
+        registro.horaSalida = undefined;
+        registro.duracionMinutos = undefined;
+      } else if (cambios.horaSalida) {
+        registro.horaSalida = new Date(cambios.horaSalida);
+      }
+
+      if (registro.horaSalida) {
+        const ms = new Date(registro.horaSalida).getTime() - new Date(registro.fechaHora).getTime();
+        registro.duracionMinutos = Math.max(0, Math.round(ms / 60000));
+        registro.cierreAutomatico = false;
+      }
+
+      if (cambios.motivoIds) registro.motivoIds = cambios.motivoIds;
+      if (cambios.motivoNombres) registro.motivoNombres = cambios.motivoNombres;
+      if (cambios.motivoId) registro.motivoId = cambios.motivoId;
+      if (cambios.motivoNombre) registro.motivoNombre = cambios.motivoNombre;
+
+      await this.db.put('registros', registro);
+      return registro;
+    } catch (error) {
+      console.error('❌ Error al actualizar registro:', error);
+      throw error;
+    }
+  }
+
   // ==================== REGISTRO DE SALIDA ====================
 
   /**

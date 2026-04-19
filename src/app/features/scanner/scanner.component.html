@@ -15,27 +15,6 @@
      (touchcancel)="pressUpQuiosco()">
 
   <!-- ══════════════════════════════════════════════════
-       RECORDATORIO DE RESPALDO (solo si está vencido y
-       no ha sido descartado en esta sesión)
-  ══════════════════════════════════════════════════ -->
-  @if (mostrarRecordatorioRespaldo() && !escaneando) {
-    <div class="respaldo-banner" role="status">
-      <mat-icon>cloud_off</mat-icon>
-      <div class="respaldo-text">
-        <span class="respaldo-titulo">Respaldo pendiente</span>
-        <span class="respaldo-detalle">{{ textoRecordatorioRespaldo() }}</span>
-      </div>
-      <button class="respaldo-btn" (click)="irAConfiguracionRespaldo()">
-        <mat-icon>download</mat-icon>
-        Exportar
-      </button>
-      <button class="respaldo-close" (click)="descartarRecordatorioRespaldo()" aria-label="Descartar">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-  }
-
-  <!-- ══════════════════════════════════════════════════
        INDICADOR DE AFORO (solo si está activo)
   ══════════════════════════════════════════════════ -->
   @if (aforoService.activo() && !escaneando) {

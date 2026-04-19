@@ -26,6 +26,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { Registro, Alumno, Motivo } from '../../core/models';
 import { ExportService } from '../../core/services/export.service';
 import { RegistroDetalleDialogComponent } from '../detalle-alumno/registro-detalle-dialog/registro-detalle-dialog.component';
+import { RegistroEditarDialogComponent, RegistroEditarResultado } from '../detalle-alumno/registro-editar-dialog/registro-editar-dialog.component';
 
 type RangoFecha = 'hoy' | 'semana' | 'mes' | 'todo' | 'personalizado';
 
@@ -76,10 +77,10 @@ export class RegistrosComponent implements OnInit {
   filasPorPagina = 30;
 
   // ─── TABLA ─────────────────────────────────────────────
-columnas: string[] = [                                          
-      'fechaHora', 'matricula', 'nombre', 'carrera',               
-      'motivo', 'salida', 'duracion'                                
-    ];  
+columnas: string[] = [
+      'fechaHora', 'matricula', 'nombre', 'carrera',
+      'motivo', 'salida', 'duracion', 'acciones'
+    ];
   constructor(
   private databaseService: DatabaseService,
   private toastService: ToastService,
@@ -242,6 +243,25 @@ columnas: string[] = [
       width: '480px',
       data: { registro },
     });
+  }
+
+  // ─── EDITAR ────────────────────────────────────────────
+  async editarRegistro(registro: Registro, ev?: Event): Promise<void> {
+    ev?.stopPropagation();
+    const ref = this.dialog.open(RegistroEditarDialogComponent, {
+      width: '520px',
+      data: { registro },
+    });
+    const resultado = await ref.afterClosed().toPromise() as RegistroEditarResultado | undefined;
+    if (!resultado) return;
+
+    try {
+      await this.databaseService.actualizarRegistroManual(registro.id, resultado);
+      this.toastService.success('Registro actualizado');
+      await this.cargarDatos();
+    } catch {
+      this.toastService.error('No se pudo actualizar el registro');
+    }
   }
 
   // ─── EXPORTAR CSV (FIX v3.4: escapar campos) ──────────

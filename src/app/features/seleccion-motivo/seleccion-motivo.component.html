@@ -104,6 +104,13 @@
         @if (haySeleccion) {
           <div class="confirm-panel">
 
+            @if (motivosPreseleccionados) {
+              <div class="preseleccion-hint">
+                <mat-icon>history</mat-icon>
+                <span>Preseleccionadas de tu última visita</span>
+              </div>
+            }
+
             <!-- Chips compactos de motivos seleccionados -->
             <div class="confirm-chips">
               @for (m of motivosSeleccionados; track m.id) {

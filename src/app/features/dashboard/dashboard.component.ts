@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatabaseService } from '../../core/services/database.service';
 import { AforoService } from '../../core/services/aforo.service';
+import { ConfigService } from '../../core/services/config.service';
 import { Alumno, Registro, Motivo } from '../../core/models';
 
 interface QuickStat {
@@ -74,11 +75,42 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
   private readonly REFRESH_MS = 30_000; // 30 segundos
 
+  respaldoDescartadoSesion = false;
+
   constructor(
     private databaseService: DatabaseService,
     public aforoService: AforoService,
+    public configService: ConfigService,
     private router: Router,
   ) {}
+
+  // ═══════════════════════════════════════════════
+  // RECORDATORIO DE RESPALDO
+  // (oculto en modo quiosco — el coordinador lo ve al salir del modo).
+  // ═══════════════════════════════════════════════
+
+  mostrarRecordatorioRespaldo(): boolean {
+    if (this.respaldoDescartadoSesion) return false;
+    if (this.configService.modoQuioscoSignal()) return false;
+    void this.configService.ultimoRespaldoSignal();
+    return this.configService.recordatorioRespaldoPendiente;
+  }
+
+  textoRecordatorioRespaldo(): string {
+    const dias = this.configService.diasSinRespaldo();
+    if (dias === null) return 'Aún no has hecho ningún respaldo. Exporta tus datos para evitar pérdidas.';
+    if (dias === 0)   return 'Hoy no has respaldado. Exporta tus datos antes de cerrar la sesión.';
+    if (dias === 1)   return 'Hace 1 día sin respaldar. Exporta tus datos para evitar pérdidas.';
+    return `Hace ${dias} días sin respaldar. Exporta tus datos para evitar pérdidas.`;
+  }
+
+  descartarRecordatorioRespaldo(): void {
+    this.respaldoDescartadoSesion = true;
+  }
+
+  irAConfiguracionRespaldo(): void {
+    this.router.navigate(['/configuracion'], { fragment: 'respaldo' });
+  }
 
   // ═══════════════════════════════════════════════
   // LIFECYCLE

@@ -123,6 +123,18 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     { dias: 0,   label: 'Todo' },
   ];
 
+  // ─── Reporte por período ─────────────────────────
+  tipoReporte: 'diario' | 'semanal' | 'mensual' | 'anual' = 'mensual';
+  mesesDisponibles: { valor: string; label: string }[] = [];
+  aniosDisponibles: { valor: string; label: string }[] = [];
+  mesReporteSeleccionado = '';
+  anioReporteSeleccionado = '';
+  /** Fecha para reporte diario (YYYY-MM-DD). Default: hoy. */
+  fechaReporteDiario = '';
+  /** Fecha que define la semana (cualquier día dentro de ella). */
+  fechaReporteSemana = '';
+  generandoReporte = false;
+
   private datosListos = false;
 
   constructor(
@@ -343,10 +355,230 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.cargando = false;
       this.datosListos = true;
 
+      await this.construirMesesDisponibles();
       setTimeout(() => this.renderizarGraficas(), 50);
     } catch (error) {
       console.error('❌ Error al cargar estadísticas avanzadas:', error);
       this.cargando = false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // REPORTE POR PERIODO (diario/semanal/mensual/anual)
+  // ═══════════════════════════════════════════════
+
+  private async construirMesesDisponibles(): Promise<void> {
+    const todos = await this.databaseService.obtenerTodosLosRegistros();
+    const meses = new Set<string>();
+    const años = new Set<string>();
+    for (const r of todos) {
+      const d = new Date(r.fechaHora);
+      meses.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      años.add(String(d.getFullYear()));
+    }
+
+    // Incluir el actual aunque no tenga registros
+    const hoy = new Date();
+    meses.add(`${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`);
+    años.add(String(hoy.getFullYear()));
+
+    const mesesOrdenados = [...meses].sort().reverse();
+    const añosOrdenados = [...años].sort().reverse();
+    const nombresMes = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+    this.mesesDisponibles = mesesOrdenados.map(valor => {
+      const [y, m] = valor.split('-').map(Number);
+      return { valor, label: `${nombresMes[m - 1]} ${y}` };
+    });
+    this.aniosDisponibles = añosOrdenados.map(valor => ({ valor, label: valor }));
+
+    if (!this.mesReporteSeleccionado && this.mesesDisponibles.length > 0) {
+      this.mesReporteSeleccionado = this.mesesDisponibles[0].valor;
+    }
+    if (!this.anioReporteSeleccionado && this.aniosDisponibles.length > 0) {
+      this.anioReporteSeleccionado = this.aniosDisponibles[0].valor;
+    }
+    if (!this.fechaReporteDiario) {
+      const y = hoy.getFullYear();
+      const m = String(hoy.getMonth() + 1).padStart(2, '0');
+      const d = String(hoy.getDate()).padStart(2, '0');
+      this.fechaReporteDiario = `${y}-${m}-${d}`;
+    }
+    if (!this.fechaReporteSemana) {
+      this.fechaReporteSemana = this.fechaReporteDiario;
+    }
+  }
+
+  /** Inicio del día local (00:00:00). */
+  private inicioDia(d: Date): Date {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  }
+
+  /** Fin del día local (23:59:59.999). */
+  private finDia(d: Date): Date {
+    const x = new Date(d);
+    x.setHours(23, 59, 59, 999);
+    return x;
+  }
+
+  /** Lunes de la semana que contiene a `d` (ISO: lunes a domingo). */
+  private inicioSemana(d: Date): Date {
+    const x = this.inicioDia(d);
+    const dow = x.getDay(); // 0=dom, 1=lun, ..., 6=sáb
+    const diff = dow === 0 ? -6 : 1 - dow;
+    x.setDate(x.getDate() + diff);
+    return x;
+  }
+
+  /** Calcula el rango [inicio, fin] y la etiqueta humana para el reporte actual. */
+  private calcularRangoReporte(): { inicio: Date; fin: Date; etiqueta: string } | null {
+    const nombresMes = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+
+    if (this.tipoReporte === 'diario') {
+      if (!this.fechaReporteDiario) return null;
+      const d = new Date(this.fechaReporteDiario + 'T00:00:00');
+      if (isNaN(d.getTime())) return null;
+      return {
+        inicio: this.inicioDia(d),
+        fin: this.finDia(d),
+        etiqueta: d.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }),
+      };
+    }
+
+    if (this.tipoReporte === 'semanal') {
+      if (!this.fechaReporteSemana) return null;
+      const d = new Date(this.fechaReporteSemana + 'T00:00:00');
+      if (isNaN(d.getTime())) return null;
+      const inicio = this.inicioSemana(d);
+      const fin = this.finDia(new Date(inicio.getTime() + 6 * 86400000));
+      const fmt = (x: Date) => x.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+      return { inicio, fin, etiqueta: `Semana del ${fmt(inicio)} al ${fmt(fin)} ${fin.getFullYear()}` };
+    }
+
+    if (this.tipoReporte === 'mensual') {
+      if (!this.mesReporteSeleccionado) return null;
+      const [y, m] = this.mesReporteSeleccionado.split('-').map(Number);
+      return {
+        inicio: new Date(y, m - 1, 1, 0, 0, 0, 0),
+        fin: new Date(y, m, 0, 23, 59, 59, 999),
+        etiqueta: `${nombresMes[m - 1]} ${y}`,
+      };
+    }
+
+    if (this.tipoReporte === 'anual') {
+      if (!this.anioReporteSeleccionado) return null;
+      const y = Number(this.anioReporteSeleccionado);
+      return {
+        inicio: new Date(y, 0, 1, 0, 0, 0, 0),
+        fin: new Date(y, 11, 31, 23, 59, 59, 999),
+        etiqueta: `Año ${y}`,
+      };
+    }
+
+    return null;
+  }
+
+  get puedeGenerarReporte(): boolean {
+    return !!this.calcularRangoReporte();
+  }
+
+  get labelBotonReporte(): string {
+    switch (this.tipoReporte) {
+      case 'diario': return this.generandoReporte ? 'Generando...' : 'Reporte diario';
+      case 'semanal': return this.generandoReporte ? 'Generando...' : 'Reporte semanal';
+      case 'mensual': return this.generandoReporte ? 'Generando...' : 'Reporte mensual';
+      case 'anual':   return this.generandoReporte ? 'Generando...' : 'Reporte anual';
+    }
+  }
+
+  private calcularTopDelMes(registrosMes: any[], limite: number) {
+    const porMat = new Map<string, any[]>();
+    for (const r of registrosMes) {
+      const arr = porMat.get(r.matricula) || [];
+      arr.push(r);
+      porMat.set(r.matricula, arr);
+    }
+
+    const top: Array<{
+      posicion: number; matricula: string; nombreCompleto: string;
+      carrera: string; totalVisitas: number; ultimaVisita: Date; motivoFrecuente: string;
+    }> = [];
+
+    porMat.forEach((regs, mat) => {
+      if (mat === 'INVITADO') return;
+      const motivos = new Map<string, number>();
+      regs.forEach(r => motivos.set(r.motivoNombre, (motivos.get(r.motivoNombre) || 0) + 1));
+      let motivoFrecuente = 'N/A'; let maxC = 0;
+      motivos.forEach((c, m) => { if (c > maxC) { maxC = c; motivoFrecuente = m; } });
+      const ultima = new Date(Math.max(...regs.map(r => new Date(r.fechaHora).getTime())));
+      top.push({
+        posicion: 0,
+        matricula: mat,
+        nombreCompleto: regs[0].nombreCompleto,
+        carrera: regs[0].carrera,
+        totalVisitas: regs.length,
+        ultimaVisita: ultima,
+        motivoFrecuente,
+      });
+    });
+
+    top.sort((a, b) => b.totalVisitas - a.totalVisitas);
+    return top.slice(0, limite).map((t, i) => ({ ...t, posicion: i + 1 }));
+  }
+
+  async generarReportePeriodo(): Promise<void> {
+    if (this.generandoReporte) return;
+    const rango = this.calcularRangoReporte();
+    if (!rango) {
+      this.toastService.warning('Selecciona un periodo válido');
+      return;
+    }
+
+    this.generandoReporte = true;
+    try {
+      const todos = await this.databaseService.obtenerTodosLosRegistros();
+      const delRango = todos.filter(r => {
+        const t = new Date(r.fechaHora).getTime();
+        return t >= rango.inicio.getTime() && t <= rango.fin.getTime();
+      });
+
+      if (delRango.length === 0) {
+        this.toastService.warning('No hay registros en el periodo seleccionado');
+        return;
+      }
+
+      const topParaReporte = this.calcularTopDelMes(delRango, 10);
+
+      const { ReportService } = await import('../../core/services/report.service');
+      const reportService = new ReportService(this.databaseService);
+
+      const titulosPorTipo: Record<string, string> = {
+        diario: `Reporte Diario — ${rango.etiqueta}`,
+        semanal: `Reporte Semanal — ${rango.etiqueta}`,
+        mensual: `Reporte Mensual — ${rango.etiqueta}`,
+        anual: `Reporte Anual — ${rango.etiqueta}`,
+      };
+
+      await reportService.generarReporteAccesos(delRango, {
+        tipo: this.tipoReporte,
+        titulo: titulosPorTipo[this.tipoReporte],
+        fechaInicio: rango.inicio,
+        fechaFin: rango.fin,
+        topAlumnos: topParaReporte,
+      });
+      this.toastService.success(`Reporte generado (${delRango.length} registros)`);
+    } catch (e) {
+      console.error(e);
+      this.toastService.error('No se pudo generar el reporte');
+    } finally {
+      this.generandoReporte = false;
     }
   }
 

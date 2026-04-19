@@ -34,6 +34,13 @@ import { ToastService, Toast } from '../../core/services/toast.service';
           <p class="toast-message">{{ toast.message }}</p>
         </div>
 
+        <ng-container *ngIf="toast.action">
+          <button class="toast-action" (click)="runAction(toast)">
+            <mat-icon *ngIf="toast.action.icon">{{ toast.action.icon }}</mat-icon>
+            {{ toast.action.label }}
+          </button>
+        </ng-container>
+
         <button class="toast-close" (click)="removeToast(toast.id)">
           <mat-icon>close</mat-icon>
         </button>
@@ -104,6 +111,25 @@ import { ToastService, Toast } from '../../core/services/toast.service';
       line-height: 1.45;
       color: #E8F4F8;
       font-family: 'DM Sans', sans-serif;
+    }
+
+    .toast-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      background: rgba(0, 200, 215, 0.12);
+      border: 1px solid rgba(0, 200, 215, 0.3);
+      border-radius: 8px;
+      color: #00C8D7;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 150ms;
+      flex-shrink: 0;
+      mat-icon { font-size: 15px; width: 15px; height: 15px; }
+      &:hover { background: rgba(0, 200, 215, 0.2); }
     }
 
     .toast-close {
@@ -215,6 +241,14 @@ export class ToastContainerComponent implements OnInit, OnDestroy {
       this.timers.delete(id);
     }
     this.toasts = this.toasts.filter(t => t.id !== id);
+  }
+
+  runAction(toast: Toast): void {
+    try {
+      toast.action?.handler();
+    } finally {
+      this.removeToast(toast.id);
+    }
   }
 
   getIcon(type: Toast['type']): string {

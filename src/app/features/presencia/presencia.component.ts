@@ -83,6 +83,15 @@ const REFRESH_MS = 30_000;
             <mat-icon>refresh</mat-icon>
             <span class="btn-text">Actualizar</span>
           </button>
+          @if (registros.length > 0) {
+            <button class="btn-outline btn-close-all"
+                    (click)="cerrarTodas()"
+                    [disabled]="cargando"
+                    matTooltip="Cerrar todas las entradas abiertas">
+              <mat-icon>done_all</mat-icon>
+              <span class="btn-text">Cerrar todas</span>
+            </button>
+          }
         </div>
       </div>
 
@@ -319,6 +328,12 @@ const REFRESH_MS = 30_000;
       mat-icon { font-size: 16px; width: 16px; height: 16px; }
       &:hover:not(:disabled) { background: rgba(0,200,215,.15); }
       &:disabled { opacity: .4; cursor: not-allowed; }
+    }
+    .btn-close-all {
+      background: rgba(245,166,35,.08);
+      border-color: rgba(245,166,35,.25);
+      color: #F5A623;
+      &:hover:not(:disabled) { background: rgba(245,166,35,.15); }
     }
     @media (max-width: 480px) { .btn-text { display: none; } }
 
@@ -694,6 +709,55 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       this.loadingService.hide();
       this.toastService.error('Error al registrar la salida');
     }
+  }
+
+  async cerrarTodas(): Promise<void> {
+    const total = this.registros.length;
+    if (total === 0) return;
+
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      data: {
+        titulo: 'Cerrar todas las entradas',
+        mensaje: `Se registrará la salida de ${total} ${total === 1 ? 'persona' : 'personas'} con la hora actual. Útil al finalizar la jornada. ¿Continuar?`,
+        variante: 'warning',
+        textoConfirmar: `Cerrar ${total}`,
+        icono: 'done_all',
+      } as ConfirmDialogData,
+    });
+
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
+
+    this.loadingService.show(`Cerrando ${total} entradas...`);
+    let exitosos = 0;
+    let fallidos = 0;
+    const aCerrar = [...this.registros];
+
+    for (const r of aCerrar) {
+      try {
+        if (r.cierreAutomatico === true) {
+          await this.databaseService.confirmarCierreAutomatico(r.id);
+        } else {
+          await this.databaseService.registrarSalida(r.id);
+        }
+        exitosos++;
+      } catch {
+        fallidos++;
+      }
+    }
+
+    this.loadingService.hide();
+    if (exitosos > 0) {
+      this.soundService.beepSalida();
+      if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    }
+    if (fallidos === 0) {
+      this.toastService.success(`${exitosos} ${exitosos === 1 ? 'entrada cerrada' : 'entradas cerradas'}`);
+    } else {
+      this.toastService.error(`${exitosos} cerradas, ${fallidos} con error`);
+    }
+    await this.cargar();
   }
 
   getMotivos(r: Registro): string[] {

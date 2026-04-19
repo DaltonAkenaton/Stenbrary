@@ -12,6 +12,92 @@
   padding: $spacing-lg;
 }
 
+// ─── BANNER RECORDATORIO DE RESPALDO ─────────────────────
+// Movido desde scanner a dashboard en v3.12.0 — ya no interrumpe
+// el flujo de registro, aparece solo en la vista de resumen.
+.respaldo-banner {
+  margin-bottom: $spacing-md;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(245, 166, 35, 0.08);
+  border: 1px solid rgba(245, 166, 35, 0.32);
+  border-radius: $border-radius-md;
+  color: $text-primary;
+
+  > mat-icon {
+    color: $amber-color;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .respaldo-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .respaldo-titulo {
+    font-family: $font-display;
+    font-size: 13px;
+    font-weight: 700;
+    color: $amber-color;
+    letter-spacing: 0.02em;
+  }
+  .respaldo-detalle {
+    font-size: 12.5px;
+    color: $text-secondary;
+    line-height: 1.35;
+  }
+
+  .respaldo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(245, 166, 35, 0.2);
+    color: $amber-color;
+    border: 1px solid rgba(245, 166, 35, 0.45);
+    border-radius: $border-radius-sm;
+    font-family: $font-body;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background $transition-fast;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    &:hover { background: rgba(245, 166, 35, 0.32); }
+  }
+
+  .respaldo-close {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    color: $text-muted;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    &:hover { background: rgba(255,255,255,0.06); color: $text-primary; }
+  }
+
+  @media (max-width: $breakpoint-xs) {
+    flex-wrap: wrap;
+    .respaldo-text { flex-basis: 100%; order: 0; }
+    .respaldo-btn  { order: 1; }
+    .respaldo-close { order: 2; margin-left: auto; }
+  }
+}
+
 // ─── HEADER ──────────────────────────────────────────────
 .page-header {
   display: flex;

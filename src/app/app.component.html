@@ -126,6 +126,28 @@
       </button>
       <h1 class="topbar-title">{{ currentPageTitle }}</h1>
       <div class="topbar-end">
+        <!-- Búsqueda global -->
+        <button
+          class="topbar-search-btn"
+          (click)="abrirBusquedaGlobal()"
+          matTooltip="Buscar (Ctrl+K)"
+          matTooltipPosition="below"
+          aria-label="Abrir búsqueda global">
+          <mat-icon>search</mat-icon>
+          <span class="search-label">Buscar</span>
+          <span class="search-kbd">Ctrl+K</span>
+        </button>
+
+        <!-- Ayuda de atajos de teclado -->
+        <button
+          class="topbar-help-btn"
+          (click)="abrirAyudaAtajos()"
+          matTooltip="Atajos de teclado (?)"
+          matTooltipPosition="below"
+          aria-label="Ver atajos de teclado">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+
         <!-- Badge de estado — reactivo a navigator.onLine -->
         @if (isOnline()) {
           <span
@@ -202,5 +224,8 @@
       <span class="bottom-nav-label">Más</span>
     </button>
   </nav>
+
+  <!-- Toasts globales (incluye botón "Deshacer" tras registrar) -->
+  <app-toast-container />
 
 </div>

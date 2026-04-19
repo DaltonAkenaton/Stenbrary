@@ -44,6 +44,41 @@
           </button>
         </div>
       }
+
+      <div class="reporte-mensual-wrap">
+        <select class="date-input mes-select" [(ngModel)]="tipoReporte">
+          <option value="diario">Diario</option>
+          <option value="semanal">Semanal</option>
+          <option value="mensual">Mensual</option>
+          <option value="anual">Anual</option>
+        </select>
+
+        @if (tipoReporte === 'diario') {
+          <input type="date" class="date-input" [(ngModel)]="fechaReporteDiario">
+        } @else if (tipoReporte === 'semanal') {
+          <input type="date" class="date-input" [(ngModel)]="fechaReporteSemana"
+                 matTooltip="Cualquier día dentro de la semana a reportar">
+        } @else if (tipoReporte === 'mensual') {
+          <select class="date-input mes-select" [(ngModel)]="mesReporteSeleccionado">
+            @for (m of mesesDisponibles; track m.valor) {
+              <option [value]="m.valor">{{ m.label }}</option>
+            }
+          </select>
+        } @else if (tipoReporte === 'anual') {
+          <select class="date-input mes-select" [(ngModel)]="anioReporteSeleccionado">
+            @for (a of aniosDisponibles; track a.valor) {
+              <option [value]="a.valor">{{ a.label }}</option>
+            }
+          </select>
+        }
+
+        <button class="btn-aplicar" (click)="generarReportePeriodo()"
+                [disabled]="generandoReporte || !puedeGenerarReporte"
+                matTooltip="Genera un PDF con estadísticas del periodo seleccionado">
+          <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">picture_as_pdf</mat-icon>
+          {{ labelBotonReporte }}
+        </button>
+      </div>
     </div>
   </div>
 
