@@ -1,13 +1,10 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  RUTA: src/app/shared/components/toast-container/    ║
 // ║        toast-container.component.ts                  ║
-// ║  Stenbrary v3.6 — Dark theme fix                     ║
+// ║  Stenbrary v3.12.1 — Control-flow moderno            ║
 // ║                                                      ║
-// ║  FIX: Fondo blanco → dark theme consistente          ║
-// ║  - Toast con fondo oscuro y borde de color           ║
-// ║  - Colores: cyan (success), rojo (error),            ║
-// ║    amarillo (warning), azul (info)                   ║
-// ║  - Texto claro, ícono X claro                        ║
+// ║  Migración *ngIf/*ngFor → @if/@for (convención).     ║
+// ║  Toast dark theme + acciones (undo) + auto-close.    ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
@@ -22,29 +19,30 @@ import { ToastService, Toast } from '../../core/services/toast.service';
   imports: [CommonModule, MatIconModule],
   template: `
     <div class="toast-container">
-      <div
-        *ngFor="let toast of toasts"
-        [class]="'toast toast-' + toast.type">
+      @for (toast of toasts; track toast.id) {
+        <div [class]="'toast toast-' + toast.type">
+          <div class="toast-icon">
+            <mat-icon>{{ getIcon(toast.type) }}</mat-icon>
+          </div>
 
-        <div class="toast-icon">
-          <mat-icon>{{ getIcon(toast.type) }}</mat-icon>
-        </div>
+          <div class="toast-content">
+            <p class="toast-message">{{ toast.message }}</p>
+          </div>
 
-        <div class="toast-content">
-          <p class="toast-message">{{ toast.message }}</p>
-        </div>
+          @if (toast.action) {
+            <button class="toast-action" (click)="runAction(toast)">
+              @if (toast.action.icon) {
+                <mat-icon>{{ toast.action.icon }}</mat-icon>
+              }
+              {{ toast.action.label }}
+            </button>
+          }
 
-        <ng-container *ngIf="toast.action">
-          <button class="toast-action" (click)="runAction(toast)">
-            <mat-icon *ngIf="toast.action.icon">{{ toast.action.icon }}</mat-icon>
-            {{ toast.action.label }}
+          <button class="toast-close" (click)="removeToast(toast.id)">
+            <mat-icon>close</mat-icon>
           </button>
-        </ng-container>
-
-        <button class="toast-close" (click)="removeToast(toast.id)">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
