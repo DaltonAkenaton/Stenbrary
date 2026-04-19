@@ -43,8 +43,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
-import { BrowserMultiFormatReader } from '@zxing/browser';
-import { DecodeHintType, BarcodeFormat, NotFoundException } from '@zxing/library';
+// zxing se carga dinámicamente solo cuando el BarcodeDetector nativo no
+// está disponible (v3.12.1). Evita meter ~500KB en el chunk del scanner
+// cuando el dispositivo ya soporta el decoder nativo del browser.
+import type { BrowserMultiFormatReader } from '@zxing/browser';
+
+interface ZxingLib {
+  BrowserMultiFormatReader: typeof import('@zxing/browser').BrowserMultiFormatReader;
+  DecodeHintType: typeof import('@zxing/library').DecodeHintType;
+  BarcodeFormat: typeof import('@zxing/library').BarcodeFormat;
+  NotFoundException: typeof import('@zxing/library').NotFoundException;
+}
 
 import { DatabaseService } from '../../core/services/database.service';
 import { ConfirmacionMatriculaDialogComponent } from './confirmacion-matricula-dialog/confirmacion-matricula-dialog.component';
@@ -328,6 +337,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private zxingStrategyIdx   = 0;      // rotación de estrategias entre frames
   private nativeDetector:    BarcodeDetector | null = null;
   private browserReader:     BrowserMultiFormatReader | null = null;
+  private zxingLib:          ZxingLib | null = null;  // cargado on-demand en fallback
   private usandoNativo       = false;
 
   // ── Adaptación a resolución ────────────────────────────────────────────
@@ -496,6 +506,26 @@ export class ScannerComponent implements OnInit, OnDestroy {
     console.log('⚠️ Sin BarcodeDetector nativo → @zxing/browser');
   }
 
+  /**
+   * Carga dinámica de @zxing/browser + @zxing/library.
+   * Solo se invoca en el fallback (cuando BarcodeDetector nativo falta).
+   * Cachea el módulo para no reimportar en reinicios de cámara.
+   */
+  private async cargarZxing(): Promise<ZxingLib> {
+    if (this.zxingLib) return this.zxingLib;
+    const [browserMod, libMod] = await Promise.all([
+      import('@zxing/browser'),
+      import('@zxing/library'),
+    ]);
+    this.zxingLib = {
+      BrowserMultiFormatReader: browserMod.BrowserMultiFormatReader,
+      DecodeHintType: libMod.DecodeHintType,
+      BarcodeFormat: libMod.BarcodeFormat,
+      NotFoundException: libMod.NotFoundException,
+    };
+    return this.zxingLib;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // INICIAR SCANNER
   // ═══════════════════════════════════════════════════════════════════════
@@ -516,16 +546,16 @@ export class ScannerComponent implements OnInit, OnDestroy {
           formats: ['code_128', 'code_39'],
         });
       } else {
-        const hints = new Map<DecodeHintType, any>();
+        const zx = await this.cargarZxing();
+        const hints = new Map<number, any>();
         // Restringir a Code 128 + Code 39 reduce el trabajo de ZXing 5–8×
         // frente a intentar los 10 formatos originales.
-        // Si en el futuro se confirma que solo es Code 128, eliminar CODE_39.
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-          BarcodeFormat.CODE_128,
-          BarcodeFormat.CODE_39,
+        hints.set(zx.DecodeHintType.POSSIBLE_FORMATS, [
+          zx.BarcodeFormat.CODE_128,
+          zx.BarcodeFormat.CODE_39,
         ]);
-        hints.set(DecodeHintType.TRY_HARDER, true);
-        this.browserReader = new BrowserMultiFormatReader(hints);
+        hints.set(zx.DecodeHintType.TRY_HARDER, true);
+        this.browserReader = new zx.BrowserMultiFormatReader(hints);
       }
 
       this.mediaStream = await this.obtenerCamara();
@@ -1190,7 +1220,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
         if (this.esMatriculaValida(texto)) return texto;
       }
     } catch (e: any) {
-      if (!(e instanceof NotFoundException) && e?.name !== 'NotFoundException') {
+      const NFE = this.zxingLib?.NotFoundException;
+      if ((!NFE || !(e instanceof NFE)) && e?.name !== 'NotFoundException') {
         if (e?.message && !e.message.includes('No MultiFormat Readers')) {
           console.warn('ZXing decode error:', e.message);
         }
@@ -1212,7 +1243,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
         if (this.esMatriculaValida(texto)) return texto;
       }
     } catch (e: any) {
-      if (!(e instanceof NotFoundException) && e?.name !== 'NotFoundException') {
+      const NFE = this.zxingLib?.NotFoundException;
+      if ((!NFE || !(e instanceof NFE)) && e?.name !== 'NotFoundException') {
         if (e?.message && !e.message.includes('No MultiFormat Readers')) {
           console.warn('ZXing decode error:', e.message);
         }

@@ -13,12 +13,14 @@
 
 import { ErrorHandler, Injectable, inject, NgZone } from '@angular/core';
 import { ToastService } from './toast.service';
+import { ErrorReporterService } from './error-reporter.service';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
 
   private toastService = inject(ToastService);
   private ngZone = inject(NgZone);
+  private reporter = inject(ErrorReporterService);
 
   /** Errores recientes para evitar spam de toasts */
   private erroresRecientes = new Set<string>();
@@ -29,6 +31,11 @@ export class GlobalErrorHandler implements ErrorHandler {
 
     // Log completo en consola (para debug)
     console.error('🔴 Error no manejado:', error);
+
+    // Reporte remoto (no-op si no hay endpoint configurado).
+    // Se dispara incluso para errores repetidos — el dedupe de abajo
+    // es solo para el toast, no para métricas reales.
+    this.reporter.report(error);
 
     // Evitar mostrar el mismo error repetidamente
     if (this.erroresRecientes.has(mensaje)) return;
