@@ -33,6 +33,7 @@ import {
 } from '../../core/services/backup.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
+import { DatosPruebaComponent } from './datos-prueba.component';
 
 @Component({
   selector: 'app-configuracion',
@@ -49,6 +50,7 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
     MatChipsModule,
     MatDialogModule,
     LimpiezaRegistrosComponent,
+    DatosPruebaComponent,
   ],
   template: `
     <div class="config-container">
@@ -821,6 +823,11 @@ import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
       <!-- ═══ ELIMINACIÓN MASIVA DE REGISTROS ═══ -->
       <mat-card class="section-card">
         <app-limpieza-registros />
+      </mat-card>
+
+      <!-- ═══ DATOS DE PRUEBA ═══ -->
+      <mat-card class="section-card">
+        <app-datos-prueba />
       </mat-card>
 
       <!-- ═══ MANTENIMIENTO ═══ -->

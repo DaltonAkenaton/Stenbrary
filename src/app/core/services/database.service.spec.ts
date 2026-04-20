@@ -223,9 +223,26 @@ describe('DatabaseService', () => {
   });
 
   describe('cerrarEntradasAntiguas', () => {
+    // Congelamos "ahora" al mediodía para que "hace N horas" siempre
+    // caiga en el día actual (evita flake entre 00:00 y ~05:00 AM).
+    const ahoraFijo = (() => {
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      return d;
+    })();
+
+    beforeEach(() => {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(ahoraFijo);
+    });
+
+    afterEach(() => {
+      jasmine.clock().uninstall();
+    });
+
     it('cierra entradas que superan el umbral (entrada antigua hoy)', async () => {
-      // Entrada abierta de hace 5h (hoy, antes que el umbral de 4h)
-      const hace5h = new Date(Date.now() - 5 * 60 * 60 * 1000);
+      // Entrada abierta de hace 5h (hoy, supera el umbral de 4h)
+      const hace5h = new Date(ahoraFijo.getTime() - 5 * 60 * 60 * 1000);
       await crearRegistroConFecha(db, '1000014', hace5h);
 
       const cerrados = await db.cerrarEntradasAntiguas(4);
@@ -237,14 +254,14 @@ describe('DatabaseService', () => {
     });
 
     it('no cierra entradas dentro del umbral', async () => {
-      const hace1h = new Date(Date.now() - 60 * 60 * 1000);
+      const hace1h = new Date(ahoraFijo.getTime() - 60 * 60 * 1000);
       await crearRegistroConFecha(db, '1000015', hace1h);
       const cerrados = await db.cerrarEntradasAntiguas(4);
       expect(cerrados).toBe(0);
     });
 
     it('no hace nada si horasUmbral <= 0 (feature off)', async () => {
-      const hace10h = new Date(Date.now() - 10 * 60 * 60 * 1000);
+      const hace10h = new Date(ahoraFijo.getTime() - 10 * 60 * 60 * 1000);
       await crearRegistroConFecha(db, '1000016', hace10h);
       const cerrados = await db.cerrarEntradasAntiguas(0);
       expect(cerrados).toBe(0);
