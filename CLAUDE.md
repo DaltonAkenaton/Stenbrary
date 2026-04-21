@@ -33,11 +33,34 @@ npx ng lint
 npx ng generate component features/nombre --standalone --style=scss
 ```
 
-No hay test suite activa. Existen algunos archivos `.spec.ts` generados por el CLI (`app.component.spec.ts`, `scanner.component.spec.ts`, `dashboard.component.spec.ts`) pero no se ejecutan como parte del flujo — no asumir cobertura de tests.
+```bash
+# Tests unitarios (headless)
+npx ng test --watch=false --browsers=ChromeHeadlessCI
+
+# Type-check sin build
+npx tsc --noEmit -p tsconfig.app.json
+npx tsc --noEmit -p tsconfig.spec.json
+
+# Guardrail de versión (package.json ↔ CHANGELOG)
+node scripts/check-version.mjs
+
+# E2E smoke (Playwright)
+npx playwright test
+```
+
+Suite activa: **69 specs unitarios en verde** (`matricula.utils`, `horarios.utils`, `insignias.utils`, `database.service`). 4 smoke E2E con Playwright. CI GitHub Actions (`.github/workflows/ci.yml`). Husky v9 pre-commit (version guardrail + type-check app/spec).
 
 ## Arquitectura
 
-**Stenbrary** es una PWA Angular 18 offline-first para control de acceso a biblioteca (UAT). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: `3.10.0` (ver `package.json`; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
+**Stenbrary** es una PWA Angular 18 offline-first para control de acceso a biblioteca (UAT). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: `3.12.0` (ver `package.json`; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
+
+### Documentación del proyecto (capas)
+
+- **`src/app/core/data/changelog.data.ts`** — novedades visibles al usuario final. Alimenta el badge "Novedades" y la vista `/novedades`.
+- **`DEVLOG.md`** — crónica técnica del desarrollo (por tanda de trabajo). Qué se hizo / descubrió / decidió / sigue. Se actualiza al cerrar cada tanda.
+- **`docs/PRUEBAS-MANUALES.md`** — checklist exhaustivo (300+ items, 27 áreas) para pruebas manuales. Se marca antes de cada release.
+- **`docs/ESTADO.md`** — snapshot de features implementadas + pendientes con prioridad. Fuente para planear roadmap.
+- **`docs/adr/`** — Architecture Decision Records (futuro, por ahora vacío).
 
 ### Proceso de novedades (release workflow)
 
@@ -64,7 +87,7 @@ Todas las rutas usan `loadComponent()` (lazy). Redirige `''` → `/scanner`, wil
 | `/registros` | `RegistrosComponent` | Historial global |
 | `/estadisticas` | `DashboardEjecutivoComponent` | Analítica avanzada |
 | `/gestion-motivos` | `GestionMotivosComponent` | CRUD de motivos |
-| `/configuracion` | `ConfiguracionComponent` | Incluye `limpieza-registros.component` |
+| `/configuracion` | `ConfiguracionComponent` | Incluye `limpieza-registros.component` y `datos-prueba.component` |
 | `/importar-alumnos` | `ImportarAlumnosComponent` | Bulk import (xlsx) |
 | `/presencia` | `PresenciaComponent` | Solo visible si `registroSalidaActivo` |
 | `/novedades` | `NovedadesComponent` | Muestra CHANGELOG |
@@ -142,7 +165,9 @@ Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los p
 - `ExportService`, `ReportService` — PDF (`jspdf`/`jspdf-autotable`) y Excel (`xlsx`).
 - `EstadisticasAvanzadasService` — tendencias, heatmap, top alumnos, insights, distribución por motivo/carrera.
 - `PwaUpdateService` — integrado también directamente en `AppComponent` vía `SwUpdate.versionUpdates`.
+- `ErrorReporterService` — cola offline en localStorage, drena en evento `online`. Endpoint configurable por environment. Cero costo de bundle si no se configura. Wired al `GlobalErrorHandler`.
 - `GlobalErrorHandler` — provider en `app.config.ts`.
+- `DatosPruebaService` — generador de alumnos/registros sintéticos con modelo UAT (3 períodos, vacaciones, festivos, Semana Santa, horario 7–22, turnos 66/22/12). Matrícula `9000001+` + `dispositivo: 'SEED-TEST'` como marcadores para limpieza selectiva. **Calendario hardcoded** — cuando se venda a otra universidad, abstraer a `CalendarioEscolarService` configurable desde UI (pendiente en `docs/ESTADO.md`).
 
 ### Scanner (dual-mode, `features/scanner/scanner.component.ts`)
 

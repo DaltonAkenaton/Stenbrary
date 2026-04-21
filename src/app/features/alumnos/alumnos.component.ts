@@ -59,6 +59,7 @@ export class AlumnosComponent implements OnInit {
     grado: '',
     grupo: '',
     turno: '',
+    estado: '' as '' | 'activos' | 'inactivos',
   });
 
   // Opciones únicas extraídas de los datos reales
@@ -141,6 +142,8 @@ export class AlumnosComponent implements OnInit {
     if (f.grado) resultado = resultado.filter(a => a.grado === Number(f.grado));
     if (f.grupo) resultado = resultado.filter(a => a.grupo === f.grupo);
     if (f.turno) resultado = resultado.filter(a => a.turno === f.turno);
+    if (f.estado === 'activos') resultado = resultado.filter(a => a.activo !== false);
+    else if (f.estado === 'inactivos') resultado = resultado.filter(a => a.activo === false);
 
     return resultado;
   }
@@ -156,7 +159,7 @@ export class AlumnosComponent implements OnInit {
 
   get hayFiltrosActivos(): boolean {
     const f = this.filtros();
-    return !!(f.busqueda || f.carrera || f.grado || f.grupo || f.turno);
+    return !!(f.busqueda || f.carrera || f.grado || f.grupo || f.turno || f.estado);
   }
 
   // ─── ACCIONES DE FILTRO ────────────────────────────────
@@ -165,8 +168,14 @@ export class AlumnosComponent implements OnInit {
     this.paginaActual.set(0);
   }
 
+  /** Limpia un filtro individual sin tocar los demás. */
+  limpiarFiltro(campo: 'busqueda' | 'carrera' | 'grado' | 'grupo' | 'turno' | 'estado'): void {
+    this.filtros.update(f => ({ ...f, [campo]: '' }));
+    this.paginaActual.set(0);
+  }
+
   limpiarFiltros(): void {
-    this.filtros.set({ busqueda: '', carrera: '', grado: '', grupo: '', turno: '' });
+    this.filtros.set({ busqueda: '', carrera: '', grado: '', grupo: '', turno: '', estado: '' });
     this.paginaActual.set(0);
   }
 

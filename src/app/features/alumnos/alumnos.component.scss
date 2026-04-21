@@ -250,6 +250,41 @@ h1 {
   }
 }
 
+.filtros-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+
+  .filtro-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px 4px 10px;
+    background: rgba($cyan-500, 0.10);
+    border: 1px solid rgba($cyan-500, 0.24);
+    color: $cyan-400;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      opacity: 0.7;
+    }
+
+    &:hover {
+      background: rgba($cyan-500, 0.18);
+
+      mat-icon { opacity: 1; }
+    }
+  }
+}
+
 // ─── TABLA ───────────────────────────────────────────────
 .tabla-container {
   background: $navy-800;

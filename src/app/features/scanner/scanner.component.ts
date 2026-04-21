@@ -388,6 +388,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════════════════════════════
 
   ngOnInit(): void {
+    // Hard reset de estados transitorios al entrar al scanner. Protege contra
+    // casos donde una ruta previa dejó el loading global encendido o `cargando`
+    // en true por un flujo cortado (registro → motivo → regreso).
+    this.loadingService.hide();
+    this.cargando = false;
+    this.error = null;
+
     this.detectarCapacidades();
     this.registrarLectorHid();
     // Refrescar aforo al entrar al scanner para tener el conteo actualizado
@@ -1303,7 +1310,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // CONFIRMACIÓN Y NAVEGACIÓN
   // ═══════════════════════════════════════════════════════════════════════
 
-  private mostrarConfirmacionMatricula(matricula: string, reiniciarCamara = true): void {
+  private mostrarConfirmacionMatricula(
+    matricula: string,
+    reiniciarCamara = true,
+    origen: 'camara' | 'manual' = 'camara',
+  ): void {
     const dialogRef = this.dialog.open(ConfirmacionMatriculaDialogComponent, {
       width: '350px',
       data: { matricula },
@@ -1312,7 +1323,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado === true) {
-        this.procesarMatricula(matricula);
+        this.procesarMatricula(matricula, origen);
       } else {
         this.toastService.warning('Escaneo cancelado');
         // Auto-reiniciar tras 1.5s: da tiempo para que el usuario retire
@@ -1343,10 +1354,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
     }
  
     // Solo pedir reanudar la cámara si estaba activa al momento del envío manual.
-    this.mostrarConfirmacionMatricula(matriculaNormalizada, this.scannerActivo);
+    this.mostrarConfirmacionMatricula(matriculaNormalizada, this.scannerActivo, 'manual');
   }
 
-  private async procesarMatricula(matricula: string): Promise<void> {
+  private async procesarMatricula(
+    matricula: string,
+    origen: 'camara' | 'manual' = 'camara',
+  ): Promise<void> {
     try {
       // ── Verificar horario operativo antes de cualquier consulta a BD ──
       if (!this.verificarHorarioOperativo()) {
@@ -1412,13 +1426,14 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.router.navigate(['/seleccion-motivo']);
 
       } else {
-        // Caso de borde: en modo salida (o quiosco) un ID no reconocido
-        // probablemente sea un visitante que intenta marcar salida sin
-        // tener credencial propia. No lo enviamos a "registrar alumno"
-        // porque no existe un registro de entrada que cerrar.
+        // Caso de borde: SOLO cuando el ID viene de la cámara (escaneo físico)
+        // y el modo salida/quiosco está activo, lo tratamos como visitante
+        // colado. En input manual ("¿Olvidaste tu credencial?") el alumno
+        // está declarando explícitamente su matrícula → si no existe, va a
+        // registro normal.
         const enModoSalida = this.configService.registroSalidaActivo;
         const enQuiosco = this.configService.modoQuioscoSignal();
-        if (enModoSalida || enQuiosco) {
+        if (origen === 'camara' && (enModoSalida || enQuiosco)) {
           this.soundService.beepError();
           if (navigator.vibrate) navigator.vibrate(150);
           this.toastService.warning(

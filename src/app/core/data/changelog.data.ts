@@ -49,6 +49,63 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.12.1',
+    fecha: '2026-04-20',
+    titulo: 'Ronda 1 de pulido: bugs y detalles de uso',
+    resumen:
+      'Ajustes de detalle detectados durante pruebas manuales: selección múltiple más fluida ' +
+      'en pantallas angostas, aforo que se actualiza solo al volver a la pestaña, filtros más ' +
+      'completos en Alumnos y confirmaciones para no perder datos a medio capturar.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'En Biblioteca: el aforo y la lista ahora se actualizan automáticamente al volver ' +
+          'a la pestaña, sin necesidad de recargar. Además ya no se cuentan los registros ' +
+          'cerrados automáticamente que están pendientes de revisión.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'En Biblioteca: el aviso "X entradas cerradas" ya no se repite cada vez que entras ' +
+          'a la vista. Se muestra solo cuando realmente hay nuevas entradas que cerrar.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Selección de actividades: en pantallas angostas ya puedes marcar varias ' +
+          'actividades sin que la hoja inferior bloquee los clics. También se ve correctamente ' +
+          'sobre la barra lateral en pantallas medianas.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Scanner: el indicador de carga ya no se queda pegado al volver del acceso sin ' +
+          'credencial u otros flujos. La pantalla queda lista para escanear de inmediato.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Registro de alumno: si escribes datos y presionas Cancelar, ahora pide ' +
+          'confirmación antes de descartar lo capturado. Si el formulario está vacío cierra ' +
+          'sin preguntar.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Alumnos: nuevo filtro Estado (Activos / Inactivos) y chips con botón X para ' +
+          'quitar cada filtro individualmente sin tener que limpiar todos.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Configuración → Datos de prueba: al generar o limpiar datos el conteo en ' +
+          '"Información del Sistema" se actualiza al terminar, y la etiqueta de progreso ' +
+          'refleja si estás generando o eliminando.',
+      },
+    ],
+  },
+  {
     version: '3.12.0',
     fecha: '2026-04-18',
     titulo: 'Herramientas de seguimiento, edición y personalización',

@@ -827,7 +827,7 @@ import { DatosPruebaComponent } from './datos-prueba.component';
 
       <!-- ═══ DATOS DE PRUEBA ═══ -->
       <mat-card class="section-card">
-        <app-datos-prueba />
+        <app-datos-prueba (datosCambiaron)="cargarInfo()" />
       </mat-card>
 
       <!-- ═══ MANTENIMIENTO ═══ -->

@@ -910,6 +910,9 @@ export class DatabaseService {
       let cerrados = 0;
 
       for (const r of abiertas) {
+        // Omitir entradas ya cerradas (con horaSalida) — incluye las que
+        // cierreAutomatico ya marcó y esperan confirmación manual.
+        if (r.horaSalida) continue;
         const edad = ahora - new Date(r.fechaHora).getTime();
         if (edad >= limiteMs) {
           r.horaSalida = new Date(new Date(r.fechaHora).getTime() + limiteMs);

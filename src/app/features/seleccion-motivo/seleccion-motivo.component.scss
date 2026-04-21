@@ -744,7 +744,6 @@
 // MOBILE — Bottom sheet de confirmación
 // ═══════════════════════════════════════════════════
 
-.mobile-backdrop,
 .mobile-confirm-sheet {
   display: none;
 
@@ -753,21 +752,18 @@
   }
 }
 
-.mobile-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 90;
-  animation: fadeIn 200ms ease both;
-}
-
 .mobile-confirm-sheet {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 91;
+  // Arriba del sidebar fijo ($z-sidebar = 200).
+  z-index: 210;
+
+  // En rango medio (sidebar fijo 64px), evitar que el sheet quede bajo el sidebar.
+  @media (min-width: $breakpoint-sm) and (max-width: $breakpoint-md) {
+    left: $sidebar-width;
+  }
   background: $navy-800;
   border-top: 1px solid $border-glow;
   border-radius: 24px 24px 0 0;

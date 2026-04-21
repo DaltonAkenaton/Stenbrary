@@ -181,7 +181,12 @@ export class RegistroAlumnoComponent implements OnInit {
     }
   }
 
-  cancelar(): void {
+  async cancelar(): Promise<void> {
+    if (this.tieneCamposLlenados()) {
+      const confirmado = await this.pedirConfirmacionDescartar();
+      if (!confirmado) return;
+    }
+
     sessionStorage.removeItem('matriculaTemp');
 
     if (this.vieneDelScanner) {
@@ -191,6 +196,41 @@ export class RegistroAlumnoComponent implements OnInit {
       this.registroForm.reset();
       this.toastService.info('Formulario limpiado');
     }
+  }
+
+  /**
+   * True si algún campo (excepto la matrícula bloqueada prellenada por el
+   * scanner) tiene contenido. Si el usuario venía del scanner y todavía no ha
+   * tocado nada, no hay nada que perder.
+   */
+  private tieneCamposLlenados(): boolean {
+    const valores = this.registroForm.getRawValue();
+    const campos = ['nombre', 'apellidoPaterno', 'apellidoMaterno', 'carrera', 'grado', 'grupo', 'turno'];
+    const alguno = campos.some((c) => {
+      const v = valores[c];
+      return typeof v === 'string' ? v.trim() !== '' : v !== null && v !== undefined && v !== '';
+    });
+    // Si NO viene del scanner, también considerar la matrícula.
+    if (!this.vieneDelScanner) {
+      const m = (valores.matricula ?? '').toString().trim();
+      if (m !== '') return true;
+    }
+    return alguno;
+  }
+
+  private async pedirConfirmacionDescartar(): Promise<boolean> {
+    const data: ConfirmDialogData = {
+      titulo: this.vieneDelScanner ? 'Cancelar registro' : 'Limpiar formulario',
+      mensaje: this.vieneDelScanner
+        ? 'Perderás los datos que ya capturaste. ¿Seguro que quieres cancelar?'
+        : 'Se borrarán todos los campos. ¿Continuar?',
+      variante: 'warning',
+      textoConfirmar: this.vieneDelScanner ? 'Sí, cancelar' : 'Sí, limpiar',
+      textoCancelar: 'Seguir editando',
+      icono: 'warning',
+    };
+    const ref = this.dialog.open(ConfirmDialogComponent, { width: '420px', data });
+    return (await ref.afterClosed().toPromise()) === true;
   }
 
   private marcarCamposComoTocados(): void {

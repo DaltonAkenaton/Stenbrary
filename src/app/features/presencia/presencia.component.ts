@@ -606,6 +606,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
+  private visibilityListener: (() => void) | null = null;
   private cargando_ = false; // debounce guard
   ahora = new Date();
 
@@ -623,11 +624,22 @@ export class PresenciaComponent implements OnInit, OnDestroy {
     await this.cargar();
     this.refreshTimer = setInterval(() => this.cargar(), REFRESH_MS);
     this.tickTimer = setInterval(() => { this.ahora = new Date(); }, 60_000);
+
+    // Recargar al volver a la pestaña (visibilitychange) — evita que el aforo
+    // se quede desactualizado si el usuario hizo cambios en otra ventana.
+    this.visibilityListener = () => {
+      if (document.visibilityState === 'visible') this.cargar();
+    };
+    document.addEventListener('visibilitychange', this.visibilityListener);
   }
 
   ngOnDestroy(): void {
     if (this.refreshTimer) clearInterval(this.refreshTimer);
     if (this.tickTimer) clearInterval(this.tickTimer);
+    if (this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+      this.visibilityListener = null;
+    }
   }
 
   async cargar(): Promise<void> {
@@ -649,8 +661,12 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       this.configService.setHayAutoClose(
         this.registros.some(r => r.cierreAutomatico === true)
       );
-      // Sincronizar aforo con el conteo recién obtenido
-      this.aforoService.setOcupacion(this.registros.length);
+      // Sincronizar aforo con el conteo recién obtenido.
+      // Solo personas realmente dentro — descuenta las que ya cerró el sistema
+      // automáticamente (esperan confirmación manual pero ya se fueron).
+      this.aforoService.setOcupacion(
+        this.registros.filter(r => !r.horaSalida).length,
+      );
     } catch {
       this.toastService.error('Error al cargar la presencia');
     } finally {
@@ -706,7 +722,9 @@ export class PresenciaComponent implements OnInit, OnDestroy {
 
       this.registros = this.registros.filter(r => r.id !== registro.id);
       this.configService.setHayAutoClose(this.registros.some(r => r.cierreAutomatico === true));
-      this.aforoService.setOcupacion(this.registros.length);
+      this.aforoService.setOcupacion(
+        this.registros.filter(r => !r.horaSalida).length,
+      );
     } catch {
       this.loadingService.hide();
       this.toastService.error('Error al registrar la salida');

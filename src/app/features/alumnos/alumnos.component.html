@@ -116,13 +116,60 @@
         </mat-select>
       </mat-form-field>
 
+      <mat-form-field appearance="outline" class="filtro-field">
+        <mat-label>Estado</mat-label>
+        <mat-select
+          [ngModel]="filtros().estado"
+          (ngModelChange)="actualizarFiltro('estado', $event)">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="activos">Activos</mat-option>
+          <mat-option value="inactivos">Inactivos</mat-option>
+        </mat-select>
+      </mat-form-field>
+
       @if (hayFiltrosActivos) {
         <button class="btn-clear-filters" (click)="limpiarFiltros()">
           <mat-icon>filter_alt_off</mat-icon>
-          Limpiar
+          Limpiar todos
         </button>
       }
     </div>
+
+    <!-- Chips de filtros activos (click en X limpia el individual) -->
+    @if (hayFiltrosActivos) {
+      <div class="filtros-chips">
+        @if (filtros().carrera) {
+          <button class="filtro-chip" (click)="limpiarFiltro('carrera')">
+            Carrera: {{ filtros().carrera }}
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        @if (filtros().grado) {
+          <button class="filtro-chip" (click)="limpiarFiltro('grado')">
+            Grado: {{ filtros().grado }}°
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        @if (filtros().grupo) {
+          <button class="filtro-chip" (click)="limpiarFiltro('grupo')">
+            Grupo: {{ filtros().grupo }}
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        @if (filtros().turno) {
+          <button class="filtro-chip" (click)="limpiarFiltro('turno')">
+            Turno: {{ filtros().turno }}
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        @if (filtros().estado) {
+          <button class="filtro-chip" (click)="limpiarFiltro('estado')">
+            Estado: {{ filtros().estado === 'activos' ? 'Activos' : 'Inactivos' }}
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    }
   </div>
 
   <!-- ── LOADING ── -->

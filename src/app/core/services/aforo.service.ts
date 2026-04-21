@@ -68,11 +68,16 @@ export class AforoService {
   /**
    * Recalcula la ocupación leyendo de la base de datos.
    * Llamar después de crear/cerrar registros o al entrar a vistas que muestran aforo.
+   *
+   * NOTA: descuenta las entradas ya cerradas por `cierreAutomatico` (esas
+   * personas YA se fueron — solo esperan la confirmación manual del personal).
+   * Si no las descontáramos, el aforo reportaría sobreaforo fantasma.
    */
   async refrescar(): Promise<void> {
     try {
       const abiertos = await this.databaseService.obtenerRegistrosAbiertoHoy();
-      this._ocupacion.set(abiertos.length);
+      const ocupacionReal = abiertos.filter((r) => !r.horaSalida).length;
+      this._ocupacion.set(ocupacionReal);
     } catch (error) {
       console.error('AforoService.refrescar:', error);
     }

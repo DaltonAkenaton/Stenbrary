@@ -7,12 +7,15 @@
 // ║  sintéticos (rango matrícula 9000001+, dispositivo    ║
 // ║  SEED-TEST) para probar el sistema con volumen real.  ║
 // ║                                                      ║
+// ║  Usa el modelo UAT del servicio (3 períodos, verano   ║
+// ║  con pocos inscritos, vacaciones respetadas,          ║
+// ║  horario 7–22, turnos ponderados 2/3 matutino).       ║
+// ║                                                      ║
 // ║  FLEXIBILIDAD (CLAUDE.md): presets como atajos +      ║
-// ║  inputs libres con su rango natural, sin límites      ║
-// ║  arbitrarios más allá de los técnicos del servicio.   ║
+// ║  inputs libres con rangos naturales.                  ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -36,7 +39,13 @@ import {
   ConfirmDialogData,
 } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
-type PresetVolumen = 'personalizado' | 'pequeno' | 'medio' | 'grande' | 'estres';
+type PresetVolumen =
+  | 'personalizado'
+  | 'pequeno'
+  | 'medio'
+  | 'uat'
+  | 'historico12m'
+  | 'historico30m';
 
 interface PresetConfig {
   label: string;
@@ -47,25 +56,35 @@ interface PresetConfig {
 const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
   pequeno: {
     label: 'Pequeño',
-    descripcion: '25 alumnos · 14 días · ~125 registros',
-    config: { cantidadAlumnos: 25, ventanaDias: 14, densidadMedia: 5 },
+    descripcion: '100 alumnos · 30 días · ligero',
+    config: { cantidadAlumnos: 100, ventanaDias: 30, registrosPorAlumnoPorMes: 2 },
   },
   medio: {
-    label: 'Medio (recomendado)',
-    descripcion: '100 alumnos · 30 días · ~500 registros',
-    config: { cantidadAlumnos: 100, ventanaDias: 30, densidadMedia: 5 },
+    label: 'Medio',
+    descripcion: '500 alumnos · 180 días · ~6 meses',
+    config: { cantidadAlumnos: 500, ventanaDias: 180, registrosPorAlumnoPorMes: 2 },
   },
-  grande: {
-    label: 'Grande',
-    descripcion: '300 alumnos · 90 días · ~2100 registros',
-    config: { cantidadAlumnos: 300, ventanaDias: 90, densidadMedia: 7 },
+  uat: {
+    label: 'Tu universidad (UAT)',
+    descripcion: '2554 alumnos · 30 días · caso real',
+    config: { cantidadAlumnos: 2554, ventanaDias: 30, registrosPorAlumnoPorMes: 2 },
   },
-  estres: {
-    label: 'Estrés',
-    descripcion: '1000 alumnos · 180 días · ~10000 registros',
-    config: { cantidadAlumnos: 1000, ventanaDias: 180, densidadMedia: 10 },
+  historico12m: {
+    label: 'Histórico 12 meses',
+    descripcion: '2500 alumnos · 365 días',
+    config: { cantidadAlumnos: 2500, ventanaDias: 365, registrosPorAlumnoPorMes: 1.5 },
+  },
+  historico30m: {
+    label: 'Histórico 30 meses (extremo)',
+    descripcion: '2500 alumnos · 900 días · stress',
+    config: { cantidadAlumnos: 2500, ventanaDias: 900, registrosPorAlumnoPorMes: 1.5 },
   },
 };
+
+// Estimación empírica: 2 writes IndexedDB por registro × ~5ms ≈ 10ms/registro.
+const MS_POR_REGISTRO = 10;
+// Crear alumnos: ~5ms cada uno.
+const MS_POR_ALUMNO = 5;
 
 @Component({
   selector: 'app-datos-prueba',
@@ -94,8 +113,9 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
         <div>
           <h3>Datos de prueba</h3>
           <p class="section-desc">
-            Genera alumnos y registros sintéticos para validar el sistema con volumen.
-            Matrículas en rango <code>9000001+</code> · fácil de limpiar.
+            Genera alumnos y registros sintéticos con calendario real UAT
+            (3 períodos, vacaciones, festivos, horario 7–22).
+            Matrículas <code>9000001+</code> · fácil de limpiar.
           </p>
         </div>
       </div>
@@ -144,11 +164,11 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
             matInput
             type="number"
             min="1"
-            max="1000"
+            max="3000"
             [(ngModel)]="config.cantidadAlumnos"
             (ngModelChange)="onConfigChange()"
             [disabled]="generando()">
-          <span matSuffix>/ máx 1000</span>
+          <span matSuffix>/ máx 3000</span>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -157,43 +177,51 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
             matInput
             type="number"
             min="1"
-            max="365"
+            max="1095"
             [(ngModel)]="config.ventanaDias"
             (ngModelChange)="onConfigChange()"
             [disabled]="generando()">
-          <span matSuffix>días</span>
+          <span matSuffix>días (máx 3 años)</span>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Registros promedio por alumno</mat-label>
+          <mat-label>Registros por alumno / mes</mat-label>
           <input
             matInput
             type="number"
             min="0.1"
             max="50"
-            step="0.5"
-            [(ngModel)]="config.densidadMedia"
+            step="0.1"
+            [(ngModel)]="config.registrosPorAlumnoPorMes"
             (ngModelChange)="onConfigChange()"
             [disabled]="generando()">
-          <span matSuffix>λ Poisson</span>
+          <span matSuffix>λ</span>
         </mat-form-field>
       </div>
 
       <!-- Estimación -->
       <div class="estimacion">
         <mat-icon>insights</mat-icon>
-        <span>
-          Estimación: <strong>{{ config.cantidadAlumnos }}</strong> alumnos,
-          ~<strong>{{ estimadoRegistros() }}</strong> registros distribuidos en
-          <strong>{{ config.ventanaDias }}</strong> días.
-        </span>
+        <div class="estimacion-texto">
+          <div>
+            ~<strong>{{ estimadoRegistros() }}</strong> registros para
+            <strong>{{ config.cantidadAlumnos }}</strong> alumnos en
+            <strong>{{ config.ventanaDias }}</strong> días.
+          </div>
+          <div class="estimacion-tiempo">
+            Tiempo estimado: <strong>{{ tiempoEstimadoLabel() }}</strong>
+            @if (advertenciaTiempo()) {
+              <span class="advertencia">· {{ advertenciaTiempo() }}</span>
+            }
+          </div>
+        </div>
       </div>
 
       <!-- Progreso -->
       @if (generando() && progreso()) {
         <div class="progreso-box">
           <div class="progreso-label">
-            <span>{{ etiquetaFase(progreso()!.fase) }}</span>
+            <span>{{ etiquetaFase(progreso()!.fase, operacion()) }}</span>
             <span class="progreso-count">{{ progreso()!.actual }} / {{ progreso()!.total }}</span>
           </div>
           <mat-progress-bar
@@ -251,6 +279,7 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
       --text-primary: #E8F4F8;
       --text-secondary: rgba(200, 230, 240, 0.65);
       --text-muted: rgba(160, 200, 215, 0.40);
+      --warn-color: #F5A623;
       --font-body: 'DM Sans', sans-serif;
       --font-mono: 'Space Mono', monospace;
     }
@@ -375,7 +404,7 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
 
     .estimacion {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       padding: 10px 14px;
       background: var(--navy-700);
@@ -390,6 +419,23 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
       font-size: 18px;
       width: 18px;
       height: 18px;
+      margin-top: 2px;
+    }
+
+    .estimacion-texto {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .estimacion-tiempo {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .advertencia {
+      color: var(--warn-color);
+      font-weight: 600;
     }
 
     .estimacion strong {
@@ -512,9 +558,12 @@ export class DatosPruebaComponent implements OnInit {
   presetSeleccionado: PresetVolumen = 'medio';
   config: DatosPruebaConfig = { ...PRESETS.medio.config };
 
+  @Output() datosCambiaron = new EventEmitter<void>();
+
   conteo = signal<ConteoDatosPrueba>({ alumnos: 0, registros: 0 });
   cargandoConteo = signal(true);
   generando = signal(false);
+  operacion = signal<'generando' | 'limpiando' | null>(null);
   progreso = signal<DatosPruebaProgreso | null>(null);
 
   porcentajeProgreso = computed(() => {
@@ -523,16 +572,39 @@ export class DatosPruebaComponent implements OnInit {
     return Math.round((p.actual / p.total) * 100);
   });
 
-  estimadoRegistros = computed(() =>
-    Math.round(this.config.cantidadAlumnos * this.config.densidadMedia),
-  );
+  estimadoRegistros = computed(() => {
+    if (!this.configValida()) return 0;
+    try {
+      return this.datosPruebaService.estimarRegistros(this.config);
+    } catch {
+      return 0;
+    }
+  });
+
+  tiempoEstimadoLabel = computed(() => {
+    const regs = this.estimadoRegistros();
+    const ms = this.config.cantidadAlumnos * MS_POR_ALUMNO + regs * MS_POR_REGISTRO;
+    const seg = ms / 1000;
+    if (seg < 60) return `~${Math.round(seg)} segundos`;
+    const min = seg / 60;
+    if (min < 60) return `~${min.toFixed(1)} minutos`;
+    const hr = min / 60;
+    return `~${hr.toFixed(1)} horas`;
+  });
+
+  advertenciaTiempo = computed(() => {
+    const regs = this.estimadoRegistros();
+    if (regs > 80000) return 'Proceso muy largo. Déjalo correr en segundo plano.';
+    if (regs > 30000) return 'Proceso largo. Paciencia.';
+    return '';
+  });
 
   configValida = computed(() => {
     const c = this.config;
     return (
-      c.cantidadAlumnos >= 1 && c.cantidadAlumnos <= 1000 &&
-      c.ventanaDias >= 1 && c.ventanaDias <= 365 &&
-      c.densidadMedia >= 0.1 && c.densidadMedia <= 50
+      c.cantidadAlumnos >= 1 && c.cantidadAlumnos <= 3000 &&
+      c.ventanaDias >= 1 && c.ventanaDias <= 1095 &&
+      c.registrosPorAlumnoPorMes >= 0.1 && c.registrosPorAlumnoPorMes <= 50
     );
   });
 
@@ -553,11 +625,20 @@ export class DatosPruebaComponent implements OnInit {
   }
 
   onConfigChange(): void {
-    // Si el usuario toca los campos, pasamos a modo personalizado
     this.presetSeleccionado = 'personalizado';
   }
 
-  etiquetaFase(fase: DatosPruebaProgreso['fase']): string {
+  etiquetaFase(
+    fase: DatosPruebaProgreso['fase'],
+    op: 'generando' | 'limpiando' | null,
+  ): string {
+    if (op === 'limpiando') {
+      switch (fase) {
+        case 'alumnos': return 'Eliminando alumnos...';
+        case 'registros': return 'Eliminando registros...';
+        case 'listo': return 'Completado';
+      }
+    }
     switch (fase) {
       case 'alumnos': return 'Creando alumnos...';
       case 'registros': return 'Generando registros...';
@@ -570,7 +651,11 @@ export class DatosPruebaComponent implements OnInit {
 
     const confirmado = await this.confirmar({
       titulo: 'Generar datos de prueba',
-      mensaje: `Se crearán ~${this.config.cantidadAlumnos} alumnos y ~${this.estimadoRegistros()} registros con matrículas en el rango 9000001+. No afecta datos reales.`,
+      mensaje:
+        `Se crearán ~${this.config.cantidadAlumnos} alumnos y ` +
+        `~${this.estimadoRegistros()} registros (${this.tiempoEstimadoLabel()}). ` +
+        `Respeta calendario UAT: vacaciones, festivos, verano con 15% asistencia. ` +
+        `No afecta datos reales.`,
       variante: 'info',
       textoConfirmar: 'Generar',
       icono: 'auto_awesome',
@@ -578,6 +663,7 @@ export class DatosPruebaComponent implements OnInit {
     if (!confirmado) return;
 
     this.generando.set(true);
+    this.operacion.set('generando');
     this.progreso.set({ fase: 'alumnos', actual: 0, total: this.config.cantidadAlumnos });
 
     try {
@@ -588,6 +674,7 @@ export class DatosPruebaComponent implements OnInit {
         `Listo: ${resultado.alumnosCreados} alumnos y ${resultado.registrosCreados} registros creados`,
       );
       await this.refrescarConteo();
+      this.datosCambiaron.emit();
     } catch (err) {
       console.error('[DatosPrueba] Error al generar:', err);
       this.toast.error(
@@ -595,6 +682,7 @@ export class DatosPruebaComponent implements OnInit {
       );
     } finally {
       this.generando.set(false);
+      this.operacion.set(null);
       this.progreso.set(null);
     }
   }
@@ -613,6 +701,7 @@ export class DatosPruebaComponent implements OnInit {
     if (!confirmado) return;
 
     this.generando.set(true);
+    this.operacion.set('limpiando');
     this.progreso.set({ fase: 'registros', actual: 0, total: registros });
 
     try {
@@ -623,11 +712,13 @@ export class DatosPruebaComponent implements OnInit {
         `${borrados.registros} registros y ${borrados.alumnos} alumnos eliminados`,
       );
       await this.refrescarConteo();
+      this.datosCambiaron.emit();
     } catch (err) {
       console.error('[DatosPrueba] Error al limpiar:', err);
       this.toast.error('Error al limpiar datos de prueba');
     } finally {
       this.generando.set(false);
+      this.operacion.set(null);
       this.progreso.set(null);
     }
   }

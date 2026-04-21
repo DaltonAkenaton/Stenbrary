@@ -134,3 +134,75 @@ performance con volumen realista sin clickear a mano.
 **Estado de la suite:** 69/69 tests verde. Build prod 0 warnings.
 
 **Commit:** (pendiente al momento de escribir esto)
+
+---
+
+## 2026-04-20 — Calendario UAT en generador + lista maestra de pruebas
+
+Refinamiento del generador A1 con modelo realista basado en el calendario
+escolar UAT 2026 (foto compartida por el coordinador), y entrega de la
+"lista de mandado" para pruebas manuales end-to-end.
+
+**Hecho:**
+- `datos-prueba.service.ts` reescrito con modelo UAT:
+  - 3 períodos lectivos: primavera (12-ene → 15-may), verano
+    (01-jun → 15-jul), otoño (17-ago → 07-dic).
+  - Verano: solo 15% de alumnos activos (refleja "200–400 inscritos
+    en cursos de verano" dicho por coordinador).
+  - Festivos oficiales MX + UAT excluidos (01-ene, 05-feb, 16-mar,
+    01-may, 05-may, 16-sep, 02-nov, 16-nov, 12-dic, 25-dic).
+  - Semana Santa aproximada (25-mar → 05-abr): 0 registros.
+  - Domingos cerrado · sábado 30% operación.
+  - Horario 7:00–22:00 (antes era 7–20).
+  - Turnos ponderados: 66% Matutino, 22% Vespertino, 12% Mixto
+    (antes uniforme 33/33/33).
+  - `horaSalida` acotada a hora de cierre — no deja registros que
+    salen a las 23:00 con entrada legítima a las 21:00.
+  - Semántica de λ cambió: "registros por alumno por mes" (antes
+    "registros totales promedio por alumno"). Más intuitivo cuando
+    la ventana es 30m vs 30 días.
+  - Aproximación Normal de Poisson para λ > 30 (Box-Muller), antes
+    Knuth se volvía lento.
+  - Caps subidos: 3000 alumnos (antes 1000), 1095 días (antes 365).
+  - Método público `estimarRegistros(config)` para UI previa.
+  - Método público `construirCalendario(ventanaDias)` para
+    debugging y futuras vistas.
+- `datos-prueba.component.ts` actualizado:
+  - Nuevos presets: Pequeño (100/30), Medio (500/180),
+    Tu universidad UAT (2554/30), Histórico 12m (2500/365),
+    Histórico 30m (2500/900).
+  - Label renombrado: "Registros por alumno / mes".
+  - Estimación de tiempo (~10ms por registro × 2 writes IDB).
+  - Advertencia visible cuando >30k y >80k registros.
+- `docs/PRUEBAS-MANUALES.md` — checklist de 300+ items cubriendo
+  27 áreas (setup, generador, scanner, registros, dashboard,
+  /presencia, /inactivos, configuración, exportación, PWA,
+  performance, edge cases, accesibilidad, escenario real UAT).
+
+**Descubierto:**
+- El calendario UAT usa 3 períodos (no 2 semestres), corregido.
+- `actualizarRegistroManual` acepta `horaSalida` — bien. Pero
+  `crearRegistro` NO acepta `fechaHora` custom, por eso seguimos
+  con el patrón "crear + actualizar" (2 writes/registro).
+  Pendiente: `crearRegistrosBatch()` como optimización.
+
+**Decidido:**
+- Calendario UAT HARDCODED en constantes del servicio (no en
+  ConfigService). Razón: es infra de testing, no config de
+  producción. Cuando se venda a otra universidad, se abstraerá
+  a un `CalendarioEscolarService` configurable por el coordinador.
+- No se agregaron tests unitarios al servicio de seed porque el
+  valor viene de probar con datos reales contra las vistas
+  (integración), no de tests aislados de distribuciones.
+- Pruebas de distribución (no registros en domingos, no en
+  festivos, etc.) quedan como parte del checklist manual
+  (sección 1.6).
+
+**Siguiente:**
+- Ejecutar checklist con preset "Histórico 30m" para encontrar
+  los bugs reales bajo volumen.
+- Implementar `crearRegistrosBatch()` si tiempos > 15 min son
+  frustrantes.
+- A2: migración `DB_VERSION = 2` (fechas string→Date + store audit).
+
+**Commits:** (pendiente)
