@@ -549,6 +549,46 @@ h1 {
   opacity: 0.5;
 }
 
+.action-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba($warn-color, 0.20);
+  background: rgba($warn-color, 0.06);
+  color: $warn-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover { background: rgba($warn-color, 0.14); transform: scale(1.05); }
+  &:active { transform: scale(0.95); }
+}
+
+.card-action-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba($warn-color, 0.20);
+  background: rgba($warn-color, 0.08);
+  color: $warn-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover { background: rgba($warn-color, 0.18); }
+}
+
 // ─── CARDS ───────────────────────────────────────────────
 .cards-grid {
   display: grid;

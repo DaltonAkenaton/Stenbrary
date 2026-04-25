@@ -49,6 +49,61 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.13.0',
+    fecha: '2026-04-25',
+    titulo: 'Más rapidez en listados, identidad propia y nuevas acciones',
+    destacado: true,
+    resumen:
+      'Listados de Registros y Alumnos ahora se sienten fluidos incluso con miles de filas. ' +
+      'Se agregaron acciones útiles para alumnos inactivos, un filtro de "Ayer" y la app ya ' +
+      'tiene su propio icono cuando la instalas como aplicación.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Registros y Alumnos: el scroll y el cambio de filtros ahora se sienten fluidos ' +
+          'incluso con decenas de miles de registros. Internamente las fechas y los textos ' +
+          'que se muestran en cada fila se calculan una sola vez, no en cada movimiento.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Inactivos: el listado se mueve fluido aunque tengas cientos de alumnos en la lista. ' +
+          'Búsqueda y filtros responden al instante.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Inactivos: nuevo botón en cada fila/tarjeta para desactivar al alumno directamente ' +
+          'desde aquí, sin tener que entrar a su perfil.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Inactivos: nuevo botón "Excel" en la cabecera para exportar la lista visible ' +
+          '(respeta los filtros de búsqueda y carrera).',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Registros: nuevo filtro rápido "Ayer" entre "Hoy" y "7 días". Útil para revisar ' +
+          'el cierre del día anterior en un solo clic.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'La app instalada (PWA) ahora muestra su propio icono y nombre "Stenbrary" en lugar ' +
+          'del icono de Angular. Tema visual de la app actualizado al navy del sistema.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Scanner manual: una matrícula con más de 12 dígitos ya no se aceptaba como válida. ' +
+          'Ahora muestra el mensaje de error correcto.',
+      },
+    ],
+  },
+  {
     version: '3.12.1',
     fecha: '2026-04-20',
     titulo: 'Ronda 1 de pulido: bugs y detalles de uso',

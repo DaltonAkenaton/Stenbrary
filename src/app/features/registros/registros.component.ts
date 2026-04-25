@@ -7,7 +7,7 @@
 // ║  - exportarCSV() escapa campos con comas/comillas    ║
 // ╚══════════════════════════════════════════════════════╝
 import { ReportService, TipoReporte } from '../../core/services/report.service';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +28,45 @@ import { ExportService } from '../../core/services/export.service';
 import { RegistroDetalleDialogComponent } from '../detalle-alumno/registro-detalle-dialog/registro-detalle-dialog.component';
 import { RegistroEditarDialogComponent, RegistroEditarResultado } from '../detalle-alumno/registro-editar-dialog/registro-editar-dialog.component';
 
-type RangoFecha = 'hoy' | 'semana' | 'mes' | 'todo' | 'personalizado';
+type RangoFecha = 'hoy' | 'ayer' | 'semana' | 'mes' | 'todo' | 'personalizado';
+
+/**
+ * Registro extendido con strings precomputadas para la tabla.
+ * Construido una sola vez en `cargarDatos()`, evita formatear en cada render.
+ */
+type RegistroRender = Registro & {
+  _fechaTs: number;
+  _fechaDateStr: string;     // "12/04/2026"
+  _horaEntradaStr: string;   // "14:30"
+  _horaSalidaStr: string;    // "16:45" o ""
+  _duracionStr: string;      // "2h 15m" o ""
+};
+
+const FMT_FECHA = new Intl.DateTimeFormat('es-MX', {
+  day: '2-digit', month: '2-digit', year: 'numeric',
+});
+const FMT_HORA = new Intl.DateTimeFormat('es-MX', {
+  hour: '2-digit', minute: '2-digit',
+});
+
+function formatearDuracionStr(minutos: number): string {
+  if (minutos < 60) return `${minutos} min`;
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function buildRegistroRender(r: Registro): RegistroRender {
+  const entrada = new Date(r.fechaHora);
+  const salida = r.horaSalida ? new Date(r.horaSalida) : null;
+  return Object.assign(r, {
+    _fechaTs: entrada.getTime(),
+    _fechaDateStr: FMT_FECHA.format(entrada),
+    _horaEntradaStr: FMT_HORA.format(entrada),
+    _horaSalidaStr: salida ? FMT_HORA.format(salida) : '',
+    _duracionStr: r.duracionMinutos != null ? formatearDuracionStr(r.duracionMinutos) : '',
+  }) as RegistroRender;
+}
 
 @Component({
   selector: 'app-registros',
@@ -53,7 +91,11 @@ type RangoFecha = 'hoy' | 'semana' | 'mes' | 'todo' | 'personalizado';
 export class RegistrosComponent implements OnInit {
 
   // ─── DATA ──────────────────────────────────────────────
-  todosRegistros: Registro[] = [];
+  // Signals para que `computed()` se invalide automáticamente en filtros.
+  // Cada registro precomputa lo que mostrará la tabla — evita que
+  // `formatearFecha`/`formatearHora` se ejecuten en cada change-detection
+  // tick (con 30 filas × 8 columnas eso era el lag del scroll).
+  todosRegistros = signal<RegistroRender[]>([]);
   todosAlumnos: Alumno[] = [];
   motivos: Motivo[] = [];
   cargando = true;
@@ -66,9 +108,13 @@ export class RegistrosComponent implements OnInit {
     carrera: '',
   });
 
-  // Rango personalizado
-  fechaPersonalizadaInicio = '';
-  fechaPersonalizadaFin = '';
+  // Rango personalizado (signals para que disparen el computed)
+  fechaPersonalizadaInicioSig = signal('');
+  fechaPersonalizadaFinSig = signal('');
+  get fechaPersonalizadaInicio(): string { return this.fechaPersonalizadaInicioSig(); }
+  set fechaPersonalizadaInicio(v: string) { this.fechaPersonalizadaInicioSig.set(v); this.paginaActual.set(0); }
+  get fechaPersonalizadaFin(): string { return this.fechaPersonalizadaFinSig(); }
+  set fechaPersonalizadaFin(v: string) { this.fechaPersonalizadaFinSig.set(v); this.paginaActual.set(0); }
 
   carrerasUnicas = signal<string[]>([]);
 
@@ -105,7 +151,8 @@ columnas: string[] = [
         this.databaseService.obtenerMotivosActivos(),
       ]);
 
-      this.todosRegistros = registros;
+      // Precomputar timestamp y strings de display una sola vez por registro
+      this.todosRegistros.set(registros.map(buildRegistroRender));
       this.todosAlumnos = alumnos;
       this.motivos = motivos;
 
@@ -120,63 +167,76 @@ columnas: string[] = [
     }
   }
 
-  // ─── FILTRADO ──────────────────────────────────────────
-  get registrosFiltrados(): Registro[] {
+  // ─── FILTRADO (memoizado con computed) ─────────────────
+  // Una sola pasada por los 90k registros por cambio de filtro/data.
+  registrosFiltradosSig = computed<RegistroRender[]>(() => {
     const f = this.filtros();
-    let resultado = [...this.todosRegistros];
+    const todos = this.todosRegistros();
 
-    const ahora = new Date();
-    const inicioHoy = new Date(ahora);
+    const inicioHoy = new Date();
     inicioHoy.setHours(0, 0, 0, 0);
 
+    let tsMin = -Infinity;
+    let tsMax = Infinity;
+
     if (f.rangoFecha === 'hoy') {
-      resultado = resultado.filter(r => new Date(r.fechaHora) >= inicioHoy);
+      tsMin = inicioHoy.getTime();
+    } else if (f.rangoFecha === 'ayer') {
+      const ayer = new Date(inicioHoy); ayer.setDate(ayer.getDate() - 1);
+      tsMin = ayer.getTime();
+      tsMax = inicioHoy.getTime() - 1;
     } else if (f.rangoFecha === 'semana') {
-      const inicioSemana = new Date(inicioHoy);
-      inicioSemana.setDate(inicioSemana.getDate() - 7);
-      resultado = resultado.filter(r => new Date(r.fechaHora) >= inicioSemana);
+      const d = new Date(inicioHoy); d.setDate(d.getDate() - 7);
+      tsMin = d.getTime();
     } else if (f.rangoFecha === 'mes') {
-      const inicioMes = new Date(inicioHoy);
-      inicioMes.setDate(inicioMes.getDate() - 30);
-      resultado = resultado.filter(r => new Date(r.fechaHora) >= inicioMes);
+      const d = new Date(inicioHoy); d.setDate(d.getDate() - 30);
+      tsMin = d.getTime();
     } else if (f.rangoFecha === 'personalizado') {
-      if (this.fechaPersonalizadaInicio) {
-        const inicio = new Date(this.fechaPersonalizadaInicio);
-        inicio.setHours(0, 0, 0, 0);
-        resultado = resultado.filter(r => new Date(r.fechaHora) >= inicio);
-      }
-      if (this.fechaPersonalizadaFin) {
-        const fin = new Date(this.fechaPersonalizadaFin);
-        fin.setHours(23, 59, 59, 999);
-        resultado = resultado.filter(r => new Date(r.fechaHora) <= fin);
-      }
+      const ini = this.fechaPersonalizadaInicioSig();
+      const fin = this.fechaPersonalizadaFinSig();
+      if (ini) { const d = new Date(ini); d.setHours(0, 0, 0, 0); tsMin = d.getTime(); }
+      if (fin) { const d = new Date(fin); d.setHours(23, 59, 59, 999); tsMax = d.getTime(); }
     }
 
-    if (f.busqueda.trim()) {
-      const termino = f.busqueda.toLowerCase().trim();
-      resultado = resultado.filter(r =>
-        r.matricula.toLowerCase().includes(termino) ||
-        r.nombreCompleto.toLowerCase().includes(termino)
-      );
+    const termino = f.busqueda.trim().toLowerCase();
+    const motivoFiltro = f.motivo;
+    const carreraFiltro = f.carrera;
+
+    // Una sola pasada, sin construir Date objects (usa _fechaTs precomputado)
+    const resultado: RegistroRender[] = [];
+    for (const r of todos) {
+      if (r._fechaTs < tsMin || r._fechaTs > tsMax) continue;
+      if (motivoFiltro && r.motivoNombre !== motivoFiltro) continue;
+      if (carreraFiltro && r.carrera !== carreraFiltro) continue;
+      if (termino) {
+        const m = r.matricula.toLowerCase();
+        const n = r.nombreCompleto.toLowerCase();
+        if (!m.includes(termino) && !n.includes(termino)) continue;
+      }
+      resultado.push(r);
     }
-
-    if (f.motivo) resultado = resultado.filter(r => r.motivoNombre === f.motivo);
-    if (f.carrera) resultado = resultado.filter(r => r.carrera === f.carrera);
-
     return resultado;
+  });
+
+  get registrosFiltrados(): RegistroRender[] {
+    return this.registrosFiltradosSig();
   }
 
-  get registrosPaginados(): Registro[] {
+  registrosPaginadosSig = computed<RegistroRender[]>(() => {
     const inicio = this.paginaActual() * this.filasPorPagina;
-    return this.registrosFiltrados.slice(inicio, inicio + this.filasPorPagina);
+    return this.registrosFiltradosSig().slice(inicio, inicio + this.filasPorPagina);
+  });
+
+  get registrosPaginados(): RegistroRender[] {
+    return this.registrosPaginadosSig();
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.registrosFiltrados.length / this.filasPorPagina);
+    return Math.ceil(this.registrosFiltradosSig().length / this.filasPorPagina);
   }
 
   get finPagina(): number {
-    return Math.min((this.paginaActual() + 1) * this.filasPorPagina, this.registrosFiltrados.length);
+    return Math.min((this.paginaActual() + 1) * this.filasPorPagina, this.registrosFiltradosSig().length);
   }
 
   get hayFiltrosActivos(): boolean {
@@ -229,6 +289,7 @@ columnas: string[] = [
   get etiquetaRango(): string {
     const map: Record<RangoFecha, string> = {
       hoy: 'Hoy',
+      ayer: 'Ayer',
       semana: 'Últimos 7 días',
       mes: 'Últimos 30 días',
       todo: 'Todo el historial',

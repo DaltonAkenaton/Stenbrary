@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Stenbrary — App Icon
+    Paleta del design system (_variables.scss):
+      navy-950 #04090F  navy-700 #142033  navy-500 #243A5E
+      cyan-500 #00C8D7  cyan-300 #5DE4EC  teal-400 #0BC4B7
+    Concepto: monograma "S" sobre cubo navy con borde glow cyan,
+    representa "stack" de libros + identidad Cyan Cube del proyecto.
+    Usa ratio safe-area de 80% para PWA maskable.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#142033"/>
+      <stop offset="100%" stop-color="#04090F"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5DE4EC"/>
+      <stop offset="50%" stop-color="#00C8D7"/>
+      <stop offset="100%" stop-color="#0BC4B7"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#00C8D7" stop-opacity="0.30"/>
+      <stop offset="60%" stop-color="#00C8D7" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#00C8D7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Fondo lleno (cubre safe-area maskable) -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+
+  <!-- Marco interior con esquinas redondeadas (zona segura icono) -->
+  <rect x="56" y="56" width="400" height="400" rx="88" ry="88"
+        fill="#0D1626" stroke="#00C8D7" stroke-opacity="0.30" stroke-width="3"/>
+
+  <!--
+    Monograma "S" estilizada — trazo limpio con gradiente cyan.
+    Construida con un path manual para que se vea bien en 72×72.
+  -->
+  <g transform="translate(256 256)">
+    <!-- Glow detrás de la S -->
+    <circle r="120" fill="url(#glow)"/>
+    <!--
+      "S" geométrica: dos arcos conectados.
+      Coordenadas centradas en (0,0), tamaño ~220px de alto.
+    -->
+    <path d="
+      M 70 -90
+      C 70 -120, 30 -130, -10 -130
+      C -60 -130, -90 -100, -90 -60
+      C -90 -20, -60 0, -10 10
+      C 40 20, 70 30, 70 70
+      C 70 100, 40 130, -10 130
+      C -60 130, -90 110, -90 80
+    "
+    fill="none"
+    stroke="url(#accent)"
+    stroke-width="44"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+  </g>
+
+  <!-- Acento decorativo: línea inferior tipo "underline" -->
+  <rect x="180" y="408" width="152" height="4" rx="2"
+        fill="#00C8D7" fill-opacity="0.55"/>
+</svg>

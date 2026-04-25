@@ -7,7 +7,7 @@
 // ║  - exportarCSV() escapa campos con comas/comillas    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -49,7 +49,12 @@ import { ExportService } from '../../core/services/export.service';
 export class AlumnosComponent implements OnInit {
 
   // ─── DATA ──────────────────────────────────────────────
-  todosAlumnos: Alumno[] = [];
+  // Signal + computed: el filtrado se memoiza y solo se re-ejecuta si cambian
+  // los filtros o la data base. Antes era un getter que recorría 2500 alumnos
+  // decenas de veces por segundo en cada change detection.
+  todosAlumnosSig = signal<Alumno[]>([]);
+  get todosAlumnos(): Alumno[] { return this.todosAlumnosSig(); }
+  set todosAlumnos(v: Alumno[]) { this.todosAlumnosSig.set(v); }
   cargando = true;
 
   // ─── FILTROS ───────────────────────────────────────────
@@ -122,39 +127,60 @@ export class AlumnosComponent implements OnInit {
     }
   }
 
-  // ─── FILTRADO ──────────────────────────────────────────
-  get alumnosFiltrados(): Alumno[] {
+  // ─── FILTRADO (memoizado con computed) ─────────────────
+  alumnosFiltradosSig = computed<Alumno[]>(() => {
     const f = this.filtros();
-    let resultado = [...this.todosAlumnos];
+    const todos = this.todosAlumnosSig();
 
-    if (f.busqueda.trim()) {
-      const termino = f.busqueda.toLowerCase().trim();
-      resultado = resultado.filter(a =>
-        a.matricula.toLowerCase().includes(termino) ||
-        a.nombre.toLowerCase().includes(termino) ||
-        a.apellidoPaterno.toLowerCase().includes(termino) ||
-        a.apellidoMaterno.toLowerCase().includes(termino) ||
-        `${a.nombre} ${a.apellidoPaterno} ${a.apellidoMaterno}`.toLowerCase().includes(termino)
-      );
+    const termino = f.busqueda.trim().toLowerCase();
+    const carrera = f.carrera;
+    const gradoNum = f.grado ? Number(f.grado) : null;
+    const grupo = f.grupo;
+    const turno = f.turno;
+    const estado = f.estado;
+
+    // Una sola pasada en lugar de 5–6 .filter() encadenados
+    const resultado: Alumno[] = [];
+    for (const a of todos) {
+      if (carrera && a.carrera !== carrera) continue;
+      if (gradoNum !== null && a.grado !== gradoNum) continue;
+      if (grupo && a.grupo !== grupo) continue;
+      if (turno && a.turno !== turno) continue;
+      if (estado === 'activos' && a.activo === false) continue;
+      if (estado === 'inactivos' && a.activo !== false) continue;
+      if (termino) {
+        const m = a.matricula.toLowerCase();
+        const n = a.nombre.toLowerCase();
+        const ap = a.apellidoPaterno.toLowerCase();
+        const am = a.apellidoMaterno.toLowerCase();
+        if (
+          !m.includes(termino) &&
+          !n.includes(termino) &&
+          !ap.includes(termino) &&
+          !am.includes(termino) &&
+          !`${n} ${ap} ${am}`.includes(termino)
+        ) continue;
+      }
+      resultado.push(a);
     }
-
-    if (f.carrera) resultado = resultado.filter(a => a.carrera === f.carrera);
-    if (f.grado) resultado = resultado.filter(a => a.grado === Number(f.grado));
-    if (f.grupo) resultado = resultado.filter(a => a.grupo === f.grupo);
-    if (f.turno) resultado = resultado.filter(a => a.turno === f.turno);
-    if (f.estado === 'activos') resultado = resultado.filter(a => a.activo !== false);
-    else if (f.estado === 'inactivos') resultado = resultado.filter(a => a.activo === false);
-
     return resultado;
+  });
+
+  get alumnosFiltrados(): Alumno[] {
+    return this.alumnosFiltradosSig();
   }
 
-  get alumnosPaginados(): Alumno[] {
+  alumnosPaginadosSig = computed<Alumno[]>(() => {
     const inicio = this.paginaActual() * this.filasPorPagina;
-    return this.alumnosFiltrados.slice(inicio, inicio + this.filasPorPagina);
+    return this.alumnosFiltradosSig().slice(inicio, inicio + this.filasPorPagina);
+  });
+
+  get alumnosPaginados(): Alumno[] {
+    return this.alumnosPaginadosSig();
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.alumnosFiltrados.length / this.filasPorPagina);
+    return Math.ceil(this.alumnosFiltradosSig().length / this.filasPorPagina);
   }
 
   get hayFiltrosActivos(): boolean {

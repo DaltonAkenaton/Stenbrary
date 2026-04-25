@@ -15,6 +15,13 @@
     </div>
 
     <div class="header-actions">
+      <button type="button" class="btn-ghost"
+              (click)="exportarExcel()"
+              [disabled]="inactivosFiltrados().length === 0"
+              matTooltip="Exportar lista actual a Excel">
+        <mat-icon>download</mat-icon>
+        Excel
+      </button>
       <div class="vista-toggle" role="group" aria-label="Cambiar vista">
         <button type="button" class="vista-btn"
                 [class.active]="vista() === 'lista'"
@@ -181,9 +188,9 @@
       @for (item of inactivosFiltrados(); track item.alumno.matricula) {
         <a class="fila"
            [routerLink]="['/detalle-alumno', item.alumno.matricula]">
-          <div class="fila-avatar">{{ iniciales(item.alumno) }}</div>
+          <div class="fila-avatar">{{ item._iniciales }}</div>
           <div class="fila-info">
-            <h4>{{ nombreCompleto(item.alumno) }}</h4>
+            <h4>{{ item._nombreCompleto }}</h4>
             <p class="meta">
               <span class="matricula">{{ item.alumno.matricula }}</span>
               <span class="sep">·</span>
@@ -193,16 +200,16 @@
             </p>
             <p class="ultima">
               <mat-icon>event</mat-icon>
-              @if (item.ultimaVisita) {
-                Última: {{ formatearFecha(item.ultimaVisita) }}
+              @if (item._ultimaVisitaStr) {
+                Última: {{ item._ultimaVisitaStr }}
               } @else {
                 Sin visitas registradas
               }
             </p>
           </div>
 
-          <div class="badge" [class]="'grav-' + gravedadBadge(item.diasSinVenir)">
-            @if (isFinite(item.diasSinVenir)) {
+          <div class="badge" [class]="'grav-' + item._gravedad">
+            @if (item._isFinite) {
               <strong>{{ item.diasSinVenir }}</strong>
               <span>días sin venir</span>
             } @else {
@@ -210,6 +217,13 @@
               <span>nunca</span>
             }
           </div>
+
+          <button type="button"
+                  class="action-btn"
+                  (click)="marcarComoInactivo(item.alumno, $event)"
+                  matTooltip="Desactivar alumno">
+            <mat-icon>person_off</mat-icon>
+          </button>
 
           <mat-icon class="chevron">chevron_right</mat-icon>
         </a>
@@ -222,12 +236,12 @@
     <div class="cards-grid">
       @for (item of inactivosFiltrados(); track item.alumno.matricula) {
         <a class="card"
-           [class]="'grav-' + gravedadBadge(item.diasSinVenir)"
+           [class]="'grav-' + item._gravedad"
            [routerLink]="['/detalle-alumno', item.alumno.matricula]">
           <div class="card-top">
-            <div class="card-avatar">{{ iniciales(item.alumno) }}</div>
+            <div class="card-avatar">{{ item._iniciales }}</div>
             <div class="card-badge">
-              @if (isFinite(item.diasSinVenir)) {
+              @if (item._isFinite) {
                 <strong>{{ item.diasSinVenir }}</strong>
                 <span>días</span>
               } @else {
@@ -237,7 +251,7 @@
             </div>
           </div>
 
-          <h4 class="card-nombre">{{ nombreCompleto(item.alumno) }}</h4>
+          <h4 class="card-nombre">{{ item._nombreCompleto }}</h4>
           <p class="card-matricula">{{ item.alumno.matricula }}</p>
 
           <div class="card-meta">
@@ -251,8 +265,8 @@
             </span>
             <span>
               <mat-icon>event</mat-icon>
-              @if (item.ultimaVisita) {
-                {{ formatearFecha(item.ultimaVisita) }}
+              @if (item._ultimaVisitaStr) {
+                {{ item._ultimaVisitaStr }}
               } @else {
                 Sin visitas
               }
@@ -263,6 +277,13 @@
             Ver perfil
             <mat-icon>arrow_forward</mat-icon>
           </div>
+
+          <button type="button"
+                  class="card-action-btn"
+                  (click)="marcarComoInactivo(item.alumno, $event)"
+                  matTooltip="Desactivar alumno">
+            <mat-icon>person_off</mat-icon>
+          </button>
         </a>
       }
     </div>

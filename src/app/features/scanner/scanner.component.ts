@@ -66,7 +66,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { Alumno, Registro } from '../../core/models';
 
-import { esMatriculaValidaScanner, normalizarMatricula } from '../../core/utils/matricula.utils';
+import { esMatriculaValidaScanner, normalizarMatricula, validarMatricula } from '../../core/utils/matricula.utils';
 
 import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
@@ -1344,17 +1344,15 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
  
-    // Normalizar: "a2299990001" → "2299990001"
-    const matriculaNormalizada = normalizarMatricula(input);
- 
-    // Validar formato
-    if (!esMatriculaValidaScanner(matriculaNormalizada)) {
-      this.toastService.error('Formato de matrícula no válido. Debe tener al menos 7 dígitos.');
+    // Validación completa (aplica min Y max de dígitos, acepta prefijo a/A)
+    const resultado = validarMatricula(input);
+    if (!resultado.valida) {
+      this.toastService.error(resultado.error || 'Formato de matrícula no válido');
       return;
     }
- 
+
     // Solo pedir reanudar la cámara si estaba activa al momento del envío manual.
-    this.mostrarConfirmacionMatricula(matriculaNormalizada, this.scannerActivo, 'manual');
+    this.mostrarConfirmacionMatricula(resultado.matriculaLimpia, this.scannerActivo, 'manual');
   }
 
   private async procesarMatricula(
