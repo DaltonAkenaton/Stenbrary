@@ -21,6 +21,8 @@ import {
   AfterViewInit,
   ViewChild,
   ElementRef,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   computed,
   signal,
 } from '@angular/core';
@@ -82,6 +84,7 @@ interface OpcionPreset {
   ],
   templateUrl: './dashboard-ejecutivo.component.html',
   styleUrl: './dashboard-ejecutivo.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDestroy {
   cargando = true;
@@ -106,12 +109,40 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   heatmapHoras: number[] = [];
   heatmapRango: RangoFechas | null = null;
   heatmapFechasPorDia: Map<string, Date[]> = new Map();
+  /** Pre-computado: matriz [día][hora] → cantidad. Evita .find() en cada render. */
+  heatmapMatriz: Record<string, Record<number, number>> = {};
+  /** Pre-computado: matriz [día][hora] → clase de intensidad. */
+  heatmapClases: Record<string, Record<number, string>> = {};
+  /** Pre-computado: máximo del heatmap (no Math.max() en cada llamada). */
+  heatmapMaximo = 0;
+  /** Día y hora del pico (para marcar con estrella). */
+  heatmapPicoDia: string | null = null;
+  heatmapPicoHora: number | null = null;
+  /** Día/hora valle (mínimo dentro de horas con datos). */
+  heatmapValleDia: string | null = null;
+  heatmapValleHora: number | null = null;
+
   topAlumnos: TopAlumno[] = [];
   insights: Insight[] = [];
   diaPredicho = '';
   datosDiarios?: DatosDiarios;
+  /** Para gráfica diaria: índices de etiquetas que son domingo (resaltar). */
+  diariosDomingoIdx: number[] = [];
   distribucionMotivos?: DistribucionMotivos;
   datosCarreras: DatosCarrera[] = [];
+
+  // ─── Sparklines (cache de últimos N puntos por KPI) ──
+  sparkRegistros: number[] = [];
+  sparkAlumnosUnicos: number[] = [];
+  sparkPromedio: number[] = [];
+
+  // ─── Métricas nuevas (Tier B) ────────────────────
+  kpiTiempoEstanciaPromedio = 0; // minutos
+  kpiTasaRetencion = 0; // % alumnos con ≥3 visitas
+  kpiCrecimiento12m: { mes: string; cantidad: number }[] = [];
+  kpiDistribucionTurnos: { turno: string; cantidad: number; porcentaje: number; color: string }[] = [];
+  kpiTopMotivo: { nombre: string; cantidad: number; porcentaje: number } | null = null;
+  kpiAlumnosUnaSolaVisita = 0;
 
   // ─── KPIs fijos derivados ─────────────────────────
   kpiTotalRegistros = 0;
@@ -216,11 +247,14 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     private toastService: ToastService,
     private configService: ConfigService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   async ngOnInit(): Promise<void> {
     this.kpiUmbralInactividad = this.configService.umbralInactividadDias || 30;
     await this.cargarDatos();
+    await this.cargarCrecimiento12m();
+    this.cdr.markForCheck();
   }
 
   ngAfterViewInit(): void {
@@ -473,6 +507,66 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.heatmapHoras = resultado.horas;
     this.heatmapRango = resultado.rango;
     this.heatmapFechasPorDia = resultado.fechasPorDia;
+
+    // Pre-computar matriz [día][hora] → cantidad para acceso O(1)
+    // Antes: .find() sobre 105 elementos por cada celda en cada render.
+    const matriz: Record<string, Record<number, number>> = {};
+    let maximo = 0;
+    let picoCantidad = -1;
+    let picoDia: string | null = null;
+    let picoHora: number | null = null;
+    let valleCantidad = Infinity;
+    let valleDia: string | null = null;
+    let valleHora: number | null = null;
+
+    for (const dia of this.diasSemana) {
+      matriz[dia] = {};
+      for (const hora of this.heatmapHoras) {
+        matriz[dia][hora] = 0;
+      }
+    }
+    for (const item of resultado.data) {
+      if (matriz[item.dia] && matriz[item.dia][item.hora] !== undefined) {
+        matriz[item.dia][item.hora] = item.cantidad;
+        if (item.cantidad > maximo) maximo = item.cantidad;
+        if (item.cantidad > picoCantidad) {
+          picoCantidad = item.cantidad;
+          picoDia = item.dia;
+          picoHora = item.hora;
+        }
+        if (item.cantidad > 0 && item.cantidad < valleCantidad) {
+          valleCantidad = item.cantidad;
+          valleDia = item.dia;
+          valleHora = item.hora;
+        }
+      }
+    }
+
+    // Pre-computar clases de intensidad por celda
+    const clases: Record<string, Record<number, string>> = {};
+    for (const dia of this.diasSemana) {
+      clases[dia] = {};
+      for (const hora of this.heatmapHoras) {
+        clases[dia][hora] = this.calcularClaseIntensidad(matriz[dia][hora], maximo);
+      }
+    }
+
+    this.heatmapMatriz = matriz;
+    this.heatmapClases = clases;
+    this.heatmapMaximo = maximo;
+    this.heatmapPicoDia = picoCantidad > 0 ? picoDia : null;
+    this.heatmapPicoHora = picoCantidad > 0 ? picoHora : null;
+    this.heatmapValleDia = isFinite(valleCantidad) ? valleDia : null;
+    this.heatmapValleHora = isFinite(valleCantidad) ? valleHora : null;
+  }
+
+  private calcularClaseIntensidad(cantidad: number, maximo: number): string {
+    if (cantidad === 0 || maximo === 0) return 'intensidad-0';
+    const porcentaje = cantidad / maximo;
+    if (porcentaje <= 0.2) return 'intensidad-1';
+    if (porcentaje <= 0.4) return 'intensidad-2';
+    if (porcentaje <= 0.7) return 'intensidad-3';
+    return 'intensidad-4';
   }
 
   // ─── Top alumnos período ─────────────────────────
@@ -541,15 +635,145 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         this.kpiAlumnosInactivos = 0;
       }
 
+      // ─── TIER B: métricas avanzadas ──────────────────
+      this.calcularMetricasAvanzadas(registrosCrudos, rango);
+      this.calcularSparklines(registrosCrudos, rango);
+      // diariosDomingoIdx (Tier A: tinte de domingos en barras diarias)
+      this.diariosDomingoIdx = this.calcularDomingosDelGrafico(rango, diarios);
+
       this.cargando = false;
       this.datosListos = true;
+      this.cdr.markForCheck();
 
       await this.construirMesesDisponibles();
       setTimeout(() => this.renderizarGraficas(), 50);
     } catch (error) {
       console.error('❌ Error al cargar estadísticas avanzadas:', error);
       this.cargando = false;
+      this.cdr.markForCheck();
     }
+  }
+
+  /** Tier B: tiempo estancia, retención, distribución turnos, top motivo, una sola visita, crecimiento 12m. */
+  private calcularMetricasAvanzadas(registros: any[], rango: RangoFechas): void {
+    // Tiempo estancia promedio
+    const conDuracion = registros.filter(r => typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0);
+    this.kpiTiempoEstanciaPromedio = conDuracion.length > 0
+      ? Math.round(conDuracion.reduce((s, r) => s + r.duracionMinutos, 0) / conDuracion.length)
+      : 0;
+
+    // Retención: alumnos del período con ≥3 visitas
+    const visitasPorMatricula = new Map<string, number>();
+    for (const r of registros) {
+      if (r.matricula === 'INVITADO') continue;
+      visitasPorMatricula.set(r.matricula, (visitasPorMatricula.get(r.matricula) || 0) + 1);
+    }
+    const totalUnicos = visitasPorMatricula.size;
+    let recurrentes = 0;
+    let unaSolaVisita = 0;
+    visitasPorMatricula.forEach(v => {
+      if (v >= 3) recurrentes++;
+      if (v === 1) unaSolaVisita++;
+    });
+    this.kpiTasaRetencion = totalUnicos > 0 ? Math.round((recurrentes / totalUnicos) * 100) : 0;
+    this.kpiAlumnosUnaSolaVisita = unaSolaVisita;
+
+    // Distribución por turno
+    const turnos = new Map<string, number>();
+    for (const r of registros) {
+      const t = r.turno || 'Sin turno';
+      turnos.set(t, (turnos.get(t) || 0) + 1);
+    }
+    const totalTurnos = registros.length;
+    const coloresTurno: Record<string, string> = {
+      'Matutino': '#0BC4B7', 'Vespertino': '#F5A623', 'Mixto': '#6366F1', 'Sin turno': '#64748B',
+    };
+    this.kpiDistribucionTurnos = Array.from(turnos.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([turno, cantidad]) => ({
+        turno, cantidad,
+        porcentaje: totalTurnos > 0 ? parseFloat((cantidad / totalTurnos * 100).toFixed(1)) : 0,
+        color: coloresTurno[turno] || '#64748B',
+      }));
+
+    // Top motivo del período
+    const motivos = new Map<string, number>();
+    for (const r of registros) {
+      const m = r.motivoNombre || 'Sin motivo';
+      motivos.set(m, (motivos.get(m) || 0) + 1);
+    }
+    let topMotivoNombre = ''; let topMotivoCantidad = 0;
+    motivos.forEach((c, n) => { if (c > topMotivoCantidad) { topMotivoCantidad = c; topMotivoNombre = n; } });
+    this.kpiTopMotivo = topMotivoCantidad > 0 ? {
+      nombre: topMotivoNombre, cantidad: topMotivoCantidad,
+      porcentaje: registros.length > 0 ? parseFloat((topMotivoCantidad / registros.length * 100).toFixed(1)) : 0,
+    } : null;
+  }
+
+  /** Tier B: crecimiento mensual (últimos 12 meses, independiente del filtro). */
+  private async cargarCrecimiento12m(): Promise<void> {
+    const todos = await this.databaseService.obtenerTodosLosRegistros();
+    const hoy = new Date();
+    const meses: { mes: string; cantidad: number; key: string }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      const nombresAbr = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      meses.push({ mes: `${nombresAbr[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`, cantidad: 0, key });
+    }
+    const mapa = new Map(meses.map(m => [m.key, m]));
+    for (const r of todos) {
+      const d = new Date(r.fechaHora);
+      const k = `${d.getFullYear()}-${d.getMonth()}`;
+      const mes = mapa.get(k);
+      if (mes) mes.cantidad++;
+    }
+    this.kpiCrecimiento12m = meses.map(({ mes, cantidad }) => ({ mes, cantidad }));
+  }
+
+  /** Tier A: sparklines — últimos N puntos para mostrar mini-trazos junto a KPIs. */
+  private calcularSparklines(registros: any[], rango: RangoFechas): void {
+    // Spark de registros: dividir el rango en buckets (máx 30)
+    const dias = this.estadisticasService.diasEnRango(rango);
+    const buckets = Math.min(30, Math.max(7, dias));
+    const inicioMs = rango.inicio.getTime();
+    const finMs = rango.fin.getTime();
+    const ancho = (finMs - inicioMs) / buckets;
+
+    const counts = new Array(buckets).fill(0);
+    const unicosPorBucket: Set<string>[] = Array.from({ length: buckets }, () => new Set());
+    for (const r of registros) {
+      const t = new Date(r.fechaHora).getTime();
+      const idx = Math.min(buckets - 1, Math.max(0, Math.floor((t - inicioMs) / ancho)));
+      counts[idx]++;
+      if (r.matricula !== 'INVITADO') unicosPorBucket[idx].add(r.matricula);
+    }
+    this.sparkRegistros = counts;
+    this.sparkAlumnosUnicos = unicosPorBucket.map(s => s.size);
+    // Promedio: registros por bucket dividido entre días que cubre cada bucket
+    const diasPorBucket = Math.max(1, dias / buckets);
+    this.sparkPromedio = counts.map(c => parseFloat((c / diasPorBucket).toFixed(1)));
+  }
+
+  /** Altura % para una barra del crecimiento 12m (relativa al máximo). */
+  alturaBarraCrecimiento(cantidad: number): number {
+    if (this.kpiCrecimiento12m.length === 0) return 0;
+    const max = Math.max(...this.kpiCrecimiento12m.map(m => m.cantidad), 1);
+    return Math.max(2, (cantidad / max) * 100);
+  }
+
+  /** Tier A: índices del array `etiquetas` que corresponden a domingo. */
+  private calcularDomingosDelGrafico(rango: RangoFechas, diarios: DatosDiarios): number[] {
+    if (diarios.granularidad !== 'dia') return [];
+    const idxs: number[] = [];
+    const cursor = new Date(rango.inicio);
+    let i = 0;
+    while (cursor <= rango.fin && i < diarios.etiquetas.length) {
+      if (cursor.getDay() === 0) idxs.push(i);
+      cursor.setDate(cursor.getDate() + 1);
+      i++;
+    }
+    return idxs;
   }
 
   // ═══════════════════════════════════════════════
@@ -895,13 +1119,22 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.chartDiario = null;
     const ctx = this.chartDiarioRef.nativeElement.getContext('2d');
     if (!ctx) return;
+
+    // Tier A: tinte distintivo en domingos (rojizo suave) vs días lectivos (cyan)
+    const domingoSet = new Set(this.diariosDomingoIdx);
+    const cantidades = this.datosDiarios.cantidades;
+    const bg = cantidades.map((_, i) =>
+      domingoSet.has(i) ? 'rgba(240, 82, 82, 0.35)' : 'rgba(0, 200, 215, 0.6)');
+    const border = cantidades.map((_, i) =>
+      domingoSet.has(i) ? '#F05252' : '#00C8D7');
+
     this.chartDiario = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: this.datosDiarios.etiquetas,
         datasets: [{
-          label: 'Registros', data: this.datosDiarios.cantidades,
-          backgroundColor: 'rgba(0, 200, 215, 0.6)', borderColor: '#00C8D7',
+          label: 'Registros', data: cantidades,
+          backgroundColor: bg, borderColor: border,
           borderWidth: 2, borderRadius: 8, borderSkipped: false,
         }],
       },
@@ -1102,25 +1335,17 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // HELPERS
   // ═══════════════════════════════════════════════
 
+  /** Lectura O(1) desde la matriz pre-computada (antes era .find() O(n) por celda). */
   obtenerCantidadHeatmap(dia: string, hora: number): number {
-    const item = this.heatmapData.find(h => h.dia === dia && h.hora === hora);
-    return item ? item.cantidad : 0;
+    return this.heatmapMatriz[dia]?.[hora] ?? 0;
   }
 
-  obtenerClaseIntensidad(cantidad: number): string {
-    if (cantidad === 0) return 'intensidad-0';
-    const maximo = this.obtenerMaximoHeatmap();
-    if (maximo === 0) return 'intensidad-0';
-    const porcentaje = cantidad / maximo;
-    if (porcentaje <= 0.2) return 'intensidad-1';
-    if (porcentaje <= 0.4) return 'intensidad-2';
-    if (porcentaje <= 0.7) return 'intensidad-3';
-    return 'intensidad-4';
+  obtenerClaseIntensidad(dia: string, hora: number): string {
+    return this.heatmapClases[dia]?.[hora] ?? 'intensidad-0';
   }
 
-  obtenerMaximoHeatmap(): number {
-    if (this.heatmapData.length === 0) return 0;
-    return Math.max(...this.heatmapData.map(h => h.cantidad));
+  esPicoHeatmap(dia: string, hora: number): boolean {
+    return this.heatmapPicoDia === dia && this.heatmapPicoHora === hora;
   }
 
   obtenerIconoTendencia(): string {
@@ -1163,6 +1388,38 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   formatearFecha(fecha: Date): string {
     return new Date(fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+  }
+
+  /** Formatea minutos a "1h 25m" o "45 min". */
+  formatearDuracionMin(minutos: number): string {
+    if (minutos < 60) return `${minutos} min`;
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+
+  /** Sparkline: convierte un array de números a un path SVG escalado a (w,h). */
+  sparkPath(values: number[], w: number, h: number): string {
+    if (values.length === 0) return '';
+    const max = Math.max(...values, 1);
+    const stepX = values.length > 1 ? w / (values.length - 1) : 0;
+    return values.map((v, i) => {
+      const x = i * stepX;
+      const y = h - (v / max) * (h - 4) - 2;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+  }
+
+  /** Sparkline área: agrega cierre al baseline para usar como polígono fill. */
+  sparkArea(values: number[], w: number, h: number): string {
+    const path = this.sparkPath(values, w, h);
+    if (!path) return '';
+    return `0,${h} ${path} ${w},${h}`;
+  }
+
+  /** Tier A: marca columna (índice) como domingo en el bar chart diario. */
+  esDomingoEnGrafica(idx: number): boolean {
+    return this.diariosDomingoIdx.includes(idx);
   }
 
   obtenerNombreCompleto(alumno: TopAlumno): string {

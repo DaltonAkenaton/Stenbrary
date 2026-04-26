@@ -49,6 +49,95 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.15.0',
+    fecha: '2026-04-26',
+    titulo: 'Dashboard Ejecutivo nivel élite — métricas avanzadas + perf',
+    destacado: true,
+    resumen:
+      'Rediseño profundo del Dashboard Ejecutivo: tarjeta hero con número héroe ' +
+      'animado y sparkline, 7 KPIs (incluyendo retención, tiempo de estancia, ' +
+      'churn temprano), distribución por turno, crecimiento de los últimos 12 meses, ' +
+      'estrella en el día/hora pico del heatmap, día/hora valle, y optimización ' +
+      'profunda del scroll y rendering.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: scroll completamente fluido. El mapa de calor antes hacía ' +
+          'miles de búsquedas por segundo en cada movimiento — ahora todo está ' +
+          'pre-calculado al cargar.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: tarjeta hero gigante con el total del período, gradient ' +
+          'cyan-teal, animación de entrada y mini-gráfica (sparkline) de la ' +
+          'evolución dentro del período.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nuevo KPI "Tiempo promedio de estancia" — cuánto duran ' +
+          'las visitas en promedio (calculado de los registros con hora de salida).',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nuevo KPI "Tasa de retención" — % de alumnos del período ' +
+          'que volvieron 3 o más veces. Indicador clave de fidelización.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nuevo KPI "Una sola visita" — alumnos que vinieron solo ' +
+          'una vez (posible churn temprano).',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nuevo KPI "Motivo más frecuente" del período.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: gráfica "Distribución por turno" (Matutino / Vespertino / ' +
+          'Mixto) con barras horizontales y porcentajes.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: gráfica "Crecimiento — últimos 12 meses" con barras ' +
+          'mensuales para ver la salud del flujo a lo largo del año.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: estrella ★ dorada en la celda PICO del mapa de calor ' +
+          '(el día y hora con más visitas dentro del período del mapa).',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nueva línea "Día/hora valle" debajo del heatmap — ' +
+          'identifica el momento con menos actividad (útil para programar ' +
+          'mantenimiento, eventos o limpieza).',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: gráfica diaria con tinte rojizo distintivo en columnas ' +
+          'de domingo, fácil de distinguir de días lectivos.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: foco visible (focus rings) en todos los botones, soporte ' +
+          'para usuarios con "reducir movimiento" activado, e iconos de sección ' +
+          'unificados en cyan.',
+      },
+    ],
+  },
+  {
     version: '3.14.0',
     fecha: '2026-04-26',
     titulo: 'Dashboard Ejecutivo más claro, comparador A vs B y filtro por hora',

@@ -110,11 +110,11 @@
   <!-- ═══ CONTENIDO ═════════════════════════════════════ -->
   @if (!cargando) {
 
-    <!-- ─── KPIs FIJOS (siempre 4 tarjetas) ──────────── -->
-    <section class="kpis-grid">
-      <div class="kpi-card kpi-primary">
-        <div class="kpi-icon"><mat-icon>fact_check</mat-icon></div>
-        <div class="kpi-body">
+    <!-- ─── KPI HERO + tarjetas secundarias ───────── -->
+    <section class="kpis-hero" aria-live="polite">
+      <!-- HERO: Total registros -->
+      <div class="kpi-hero">
+        <div class="kpi-hero-left">
           <div class="kpi-label">
             Total de registros
             <mat-icon class="info-icon"
@@ -122,76 +122,159 @@
               help_outline
             </mat-icon>
           </div>
-          <div class="kpi-value">{{ kpiTotalRegistros }}</div>
-          <div class="kpi-sub">{{ kpiPromedioPorDia }} promedio por día</div>
+          <div class="kpi-hero-value">{{ kpiTotalRegistros | number }}</div>
+          <div class="kpi-hero-sub">
+            <strong>{{ kpiPromedioPorDia }}</strong> promedio por día ·
+            <strong>{{ kpiAlumnosUnicos | number }}</strong> alumnos únicos
+          </div>
+          @if (tendencia) {
+            <div class="kpi-hero-trend" [class]="'trend-' + obtenerColorTendencia()">
+              <mat-icon>{{ obtenerIconoTendencia() }}</mat-icon>
+              {{ obtenerTextoTendencia() }}
+            </div>
+          }
         </div>
-      </div>
-
-      <div class="kpi-card" [class]="'kpi-' + obtenerColorTendencia()">
-        <div class="kpi-icon"><mat-icon>{{ obtenerIconoTendencia() }}</mat-icon></div>
-        <div class="kpi-body">
-          <div class="kpi-label">
-            {{ labelTendencia }}
-            <mat-icon class="info-icon"
-                      matTooltip="Compara el total del período actual contra el período inmediatamente anterior de la misma duración. Ej: si filtras 30 días, lo compara contra los 30 días previos.">
-              help_outline
-            </mat-icon>
-          </div>
-          <div class="kpi-value">{{ obtenerTextoTendencia() }}</div>
-          <div class="kpi-sub" *ngIf="tendencia">
-            {{ tendencia.actual }} ahora · {{ tendencia.anterior }} antes
-          </div>
-        </div>
-      </div>
-
-      <div class="kpi-card kpi-info">
-        <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
-        <div class="kpi-body">
-          <div class="kpi-label">
-            Hora pico del período
-            <mat-icon class="info-icon"
-                      matTooltip="Combinación día-hora con más visitas dentro del período filtrado. Se calcula sumando los registros que cayeron en cada hora de cada día de la semana.">
-              help_outline
-            </mat-icon>
-          </div>
-          @if (kpiHoraPico) {
-            <div class="kpi-value">{{ kpiHoraPico.dia }} {{ formatHora(kpiHoraPico.hora) }}</div>
-            <div class="kpi-sub">{{ kpiHoraPico.cantidad }} visitas en ese momento</div>
-          } @else {
-            <div class="kpi-value muted">Sin datos</div>
-            <div class="kpi-sub">No hay registros en el período</div>
+        <div class="kpi-hero-spark">
+          @if (sparkRegistros.length > 0) {
+            <svg class="sparkline" viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
+              <polyline
+                [attr.points]="sparkPath(sparkRegistros, 200, 60)"
+                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+              <polygon
+                [attr.points]="sparkArea(sparkRegistros, 200, 60)"
+                fill="url(#sparkGradient)" opacity="0.35"/>
+              <defs>
+                <linearGradient id="sparkGradient" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="currentColor" stop-opacity="0.6"/>
+                  <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span class="spark-caption">Evolución dentro del período</span>
           }
         </div>
       </div>
 
-      <div class="kpi-card kpi-warning">
-        <div class="kpi-icon"><mat-icon>people_outline</mat-icon></div>
-        <div class="kpi-body">
-          <div class="kpi-label">
-            Alumnos inactivos
-            <mat-icon class="info-icon"
-                      [matTooltip]="'Alumnos activos que tienen historial pero NO han venido en los últimos ' + kpiUmbralInactividad + ' días. Este umbral se configura en /configuración (independiente del filtro de período).'">
-              help_outline
-            </mat-icon>
+      <!-- KPIs secundarios -->
+      <div class="kpis-grid">
+        <div class="kpi-card" [class]="'kpi-' + obtenerColorTendencia()">
+          <div class="kpi-icon"><mat-icon>{{ obtenerIconoTendencia() }}</mat-icon></div>
+          <div class="kpi-body">
+            <div class="kpi-label">
+              {{ labelTendencia }}
+              <mat-icon class="info-icon"
+                        matTooltip="Compara el total del período actual contra el período inmediatamente anterior de la misma duración.">
+                help_outline
+              </mat-icon>
+            </div>
+            <div class="kpi-value">{{ obtenerTextoTendencia() }}</div>
+            <div class="kpi-sub" *ngIf="tendencia">
+              {{ tendencia.actual | number }} ahora · {{ tendencia.anterior | number }} antes
+            </div>
           </div>
-          <div class="kpi-value">{{ kpiAlumnosInactivos }}</div>
-          <div class="kpi-sub">≥ {{ kpiUmbralInactividad }} días sin venir</div>
         </div>
-      </div>
 
-      <div class="kpi-card kpi-secondary">
-        <div class="kpi-icon"><mat-icon>group</mat-icon></div>
-        <div class="kpi-body">
-          <div class="kpi-label">
-            Alumnos únicos
-            <mat-icon class="info-icon"
-                      matTooltip="Cantidad de alumnos distintos que visitaron al menos una vez durante el período (no cuenta visitas repetidas, ni invitados).">
-              help_outline
-            </mat-icon>
+        <div class="kpi-card kpi-info">
+          <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
+          <div class="kpi-body">
+            <div class="kpi-label">
+              Hora pico
+              <mat-icon class="info-icon"
+                        matTooltip="Combinación día-hora con más visitas dentro del período filtrado.">
+                help_outline
+              </mat-icon>
+            </div>
+            @if (kpiHoraPico) {
+              <div class="kpi-value">{{ kpiHoraPico.dia }} {{ formatHora(kpiHoraPico.hora) }}</div>
+              <div class="kpi-sub">{{ kpiHoraPico.cantidad }} visitas</div>
+            } @else {
+              <div class="kpi-value muted">Sin datos</div>
+              <div class="kpi-sub">No hay registros</div>
+            }
           </div>
-          <div class="kpi-value">{{ kpiAlumnosUnicos }}</div>
-          <div class="kpi-sub">en el período seleccionado</div>
         </div>
+
+        <div class="kpi-card kpi-secondary">
+          <div class="kpi-icon"><mat-icon>timer</mat-icon></div>
+          <div class="kpi-body">
+            <div class="kpi-label">
+              Tiempo promedio de estancia
+              <mat-icon class="info-icon"
+                        matTooltip="Duración promedio de las visitas con hora de salida registrada (módulo de salida activo).">
+                help_outline
+              </mat-icon>
+            </div>
+            @if (kpiTiempoEstanciaPromedio > 0) {
+              <div class="kpi-value">{{ formatearDuracionMin(kpiTiempoEstanciaPromedio) }}</div>
+              <div class="kpi-sub">por visita</div>
+            } @else {
+              <div class="kpi-value muted">N/D</div>
+              <div class="kpi-sub">Sin tiempos de salida</div>
+            }
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-success">
+          <div class="kpi-icon"><mat-icon>repeat</mat-icon></div>
+          <div class="kpi-body">
+            <div class="kpi-label">
+              Tasa de retención
+              <mat-icon class="info-icon"
+                        matTooltip="Porcentaje de alumnos del período que volvieron 3 o más veces. Indicador de fidelización.">
+                help_outline
+              </mat-icon>
+            </div>
+            <div class="kpi-value">{{ kpiTasaRetencion }}<span class="kpi-unit">%</span></div>
+            <div class="kpi-sub">≥ 3 visitas en el período</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-warning">
+          <div class="kpi-icon"><mat-icon>people_outline</mat-icon></div>
+          <div class="kpi-body">
+            <div class="kpi-label">
+              Alumnos inactivos
+              <mat-icon class="info-icon"
+                        [matTooltip]="'Alumnos activos sin visita en los últimos ' + kpiUmbralInactividad + ' días (umbral configurado en /configuración).'">
+                help_outline
+              </mat-icon>
+            </div>
+            <div class="kpi-value">{{ kpiAlumnosInactivos | number }}</div>
+            <div class="kpi-sub">≥ {{ kpiUmbralInactividad }} días sin venir</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-info">
+          <div class="kpi-icon"><mat-icon>person_add_disabled</mat-icon></div>
+          <div class="kpi-body">
+            <div class="kpi-label">
+              Una sola visita
+              <mat-icon class="info-icon"
+                        matTooltip="Alumnos del período que visitaron exactamente una vez. Posible churn temprano si nunca regresan.">
+                help_outline
+              </mat-icon>
+            </div>
+            <div class="kpi-value">{{ kpiAlumnosUnaSolaVisita | number }}</div>
+            <div class="kpi-sub">visitaron solo 1 vez</div>
+          </div>
+        </div>
+
+        @if (kpiTopMotivo) {
+          <div class="kpi-card kpi-secondary">
+            <div class="kpi-icon"><mat-icon>star</mat-icon></div>
+            <div class="kpi-body">
+              <div class="kpi-label">
+                Motivo más frecuente
+                <mat-icon class="info-icon"
+                          matTooltip="Actividad principal seleccionada con más frecuencia en el período.">
+                  help_outline
+                </mat-icon>
+              </div>
+              <div class="kpi-value motivo">{{ kpiTopMotivo.nombre }}</div>
+              <div class="kpi-sub">{{ kpiTopMotivo.cantidad | number }} visitas · {{ kpiTopMotivo.porcentaje }}%</div>
+            </div>
+          </div>
+        }
       </div>
     </section>
 
@@ -506,18 +589,22 @@
             {{ hora }}:00
           </div>
 
-          <ng-container *ngFor="let dia of diasSemana">
+          @for (dia of diasSemana; track dia) {
             <div class="heatmap-dia">{{ etiquetaDia(dia) }}</div>
-            <div
-              *ngFor="let hora of heatmapHoras"
-              class="heatmap-cell"
-              [class]="obtenerClaseIntensidad(obtenerCantidadHeatmap(dia, hora))"
-              [matTooltip]="dia + ' ' + hora + ':00 — ' + obtenerCantidadHeatmap(dia, hora) + ' visitas'">
-              <span class="cell-value" *ngIf="obtenerCantidadHeatmap(dia, hora) > 0">
-                {{ obtenerCantidadHeatmap(dia, hora) }}
-              </span>
-            </div>
-          </ng-container>
+            @for (hora of heatmapHoras; track hora) {
+              <div class="heatmap-cell"
+                   [class]="obtenerClaseIntensidad(dia, hora)"
+                   [class.es-pico]="esPicoHeatmap(dia, hora)"
+                   [matTooltip]="dia + ' ' + formatHora(hora) + ' — ' + obtenerCantidadHeatmap(dia, hora) + ' visitas' + (esPicoHeatmap(dia, hora) ? ' · PICO DEL PERÍODO' : '')">
+                @if (obtenerCantidadHeatmap(dia, hora) > 0) {
+                  <span class="cell-value">{{ obtenerCantidadHeatmap(dia, hora) }}</span>
+                  @if (esPicoHeatmap(dia, hora)) {
+                    <span class="cell-star" aria-label="Pico">★</span>
+                  }
+                }
+              </div>
+            }
+          }
         </div>
       </div>
 
@@ -525,7 +612,73 @@
         <mat-icon>psychology</mat-icon>
         <span><strong>Predicción:</strong> {{ diaPredicho }} es típicamente el día más concurrido (basado en este mapa)</span>
       </div>
+
+      @if (heatmapValleDia && heatmapValleHora !== null) {
+        <div class="heatmap-valle">
+          <mat-icon>nights_stay</mat-icon>
+          <span><strong>Día/hora valle:</strong> {{ heatmapValleDia }} {{ formatHora(heatmapValleHora) }} — el momento con menos actividad. Ideal para mantenimiento o eventos.</span>
+        </div>
+      }
     </mat-card>
+
+    <!-- ─── DISTRIBUCIÓN POR TURNO + CRECIMIENTO 12m ─── -->
+    <div class="charts-row">
+      @if (kpiDistribucionTurnos.length > 0) {
+        <mat-card class="chart-card chart-narrow">
+          <div class="chart-header">
+            <h2>
+              <mat-icon>work_history</mat-icon>
+              Distribución por turno
+              <mat-icon class="info-icon"
+                        matTooltip="Porcentaje de visitas según el turno declarado por cada alumno (Matutino/Vespertino/Mixto).">
+                help_outline
+              </mat-icon>
+            </h2>
+          </div>
+          <div class="turnos-bars">
+            @for (t of kpiDistribucionTurnos; track t.turno) {
+              <div class="turno-row">
+                <div class="turno-label">
+                  <span class="turno-dot" [style.background]="t.color"></span>
+                  {{ t.turno }}
+                </div>
+                <div class="turno-bar-wrap">
+                  <div class="turno-bar" [style.width.%]="t.porcentaje" [style.background]="t.color"></div>
+                </div>
+                <div class="turno-numero">
+                  <strong>{{ t.cantidad | number }}</strong>
+                  <span>{{ t.porcentaje }}%</span>
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card>
+      }
+
+      @if (kpiCrecimiento12m.length > 0) {
+        <mat-card class="chart-card chart-wide">
+          <div class="chart-header">
+            <h2>
+              <mat-icon>show_chart</mat-icon>
+              Crecimiento — últimos 12 meses
+              <mat-icon class="info-icon"
+                        matTooltip="Total de visitas mes a mes durante el último año (independiente del filtro principal). Muestra la salud del flujo a lo largo del tiempo.">
+                help_outline
+              </mat-icon>
+            </h2>
+          </div>
+          <div class="crecimiento-bars">
+            @for (m of kpiCrecimiento12m; track m.mes; let idx = $index) {
+              <div class="crecimiento-col" [matTooltip]="m.mes + ': ' + m.cantidad + ' visitas'">
+                <div class="crecimiento-bar"
+                     [style.height.%]="alturaBarraCrecimiento(m.cantidad)"></div>
+                <div class="crecimiento-label">{{ m.mes }}</div>
+              </div>
+            }
+          </div>
+        </mat-card>
+      }
+    </div>
 
     <!-- ─── TOP ALUMNOS ──────────────────────────────── -->
     <mat-card class="top-alumnos-card">

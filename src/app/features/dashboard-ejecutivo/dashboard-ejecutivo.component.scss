@@ -7,7 +7,6 @@
 @import '../../../styles/mixins';
 
 .dashboard-ejecutivo-container {
-  min-height: 100vh;
   background: transparent;
   padding: $spacing-lg;
 }
@@ -51,123 +50,122 @@
     }
   }
 
-  .periodo-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-left: auto;
-    align-items: flex-end;
+}
+
+// ─── Estilos compartidos (date input, btn-aplicar, periodo-btn) ───
+// Los nuevos filtros (.filtros-card) y el comparador los reusan.
+.periodo-selector {
+  display: flex;
+  gap: 4px;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  padding: 3px;
+  flex-wrap: wrap;
+}
+
+.periodo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: $text-secondary;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 180ms, color 180ms;
+  font-family: inherit;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
   }
 
-  .periodo-selector {
-    display: flex;
-    gap: 4px;
-    background: $navy-800;
-    border: 1px solid $border-subtle;
-    border-radius: $border-radius-md;
-    padding: 3px;
-    flex-wrap: wrap;
-  }
-
-  .periodo-btn {
-    display: inline-flex;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: $text-secondary;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 200ms;
-    font-family: inherit;
-
-    &:hover {
-      color: $text-primary;
-      background: rgba($cyan-500, 0.06);
-    }
-
-    &.active {
-      background: rgba($cyan-500, 0.12);
-      color: $cyan-400;
-      font-weight: 600;
-    }
-  }
-
-  .rango-personalizado {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .date-input {
-    background: $navy-800;
-    border: 1px solid $border-subtle;
-    border-radius: 8px;
+  &:hover {
     color: $text-primary;
-    padding: 5px 10px;
-    font-family: $font-body;
-    font-size: 0.78rem;
-    outline: none;
-    transition: border-color 200ms;
-
-    &:focus {
-      border-color: $border-glow;
-    }
-
-    &::-webkit-calendar-picker-indicator {
-      filter: invert(0.7);
-      cursor: pointer;
-    }
+    background: rgba($cyan-500, 0.06);
   }
 
-  .date-separator {
-    color: $text-muted;
-    font-size: 0.85rem;
-  }
-
-  .btn-aplicar {
-    background: rgba($cyan-500, 0.12);
-    border: 1px solid rgba($cyan-500, 0.25);
-    border-radius: 8px;
+  &.active {
+    background: rgba($cyan-500, 0.14);
     color: $cyan-400;
-    padding: 5px 14px;
-    font-family: $font-body;
-    font-size: 0.78rem;
     font-weight: 600;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($cyan-500, 0.5);
+    outline-offset: 2px;
+  }
+}
+
+.date-input {
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: 8px;
+  color: $text-primary;
+  padding: 7px 10px;
+  font-family: $font-body;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 180ms;
+
+  &:focus {
+    border-color: $border-glow;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($cyan-500, 0.5);
+    outline-offset: 1px;
+  }
+
+  &::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
     cursor: pointer;
-    transition: all 200ms;
-    display: inline-flex;
-    align-items: center;
+  }
+}
 
-    &:hover:not(:disabled) {
-      background: rgba($cyan-500, 0.20);
-    }
+.date-separator {
+  color: $text-muted;
+  font-size: 0.85rem;
+}
 
-    &:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+.btn-aplicar {
+  background: rgba($cyan-500, 0.12);
+  border: 1px solid rgba($cyan-500, 0.25);
+  border-radius: 8px;
+  color: $cyan-400;
+  padding: 7px 14px;
+  font-family: $font-body;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 180ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
   }
 
-  .reporte-mensual-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
+  &:hover:not(:disabled) {
+    background: rgba($cyan-500, 0.20);
   }
 
-  .mes-select {
-    min-width: 150px;
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, rgba($cyan-500, 0.6) 50%),
-                      linear-gradient(135deg, rgba($cyan-500, 0.6) 50%, transparent 50%);
-    background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
-    background-size: 5px 5px, 5px 5px;
-    background-repeat: no-repeat;
-    padding-right: 24px;
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($cyan-500, 0.5);
+    outline-offset: 2px;
   }
 }
 
@@ -671,12 +669,28 @@
     height: 36px;
     border-radius: 4px;
     cursor: pointer;
-    transition: all $transition-fast;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
     position: relative;
+    will-change: transform;
 
     &:hover {
       transform: scale(1.15);
       z-index: 10;
+    }
+
+    &.es-pico {
+      box-shadow: 0 0 0 2px #FFD700, 0 0 16px rgba(255, 215, 0, 0.45);
+      z-index: 5;
+    }
+
+    .cell-star {
+      position: absolute;
+      top: 1px;
+      right: 3px;
+      font-size: 9px;
+      color: #FFD700;
+      text-shadow: 0 0 4px rgba(255, 215, 0, 0.6);
+      pointer-events: none;
     }
 
     .cell-value {
@@ -1248,6 +1262,11 @@
   }
 }
 
+// Iconos h2 unificados: cyan en TODAS las secciones (Tier C)
+.section-header-row h2 mat-icon {
+  color: $cyan-500 !important;
+}
+
 // ─── Acciones sobre el rango ─────────────────────────────
 .acciones-rango {
   display: flex;
@@ -1610,4 +1629,320 @@
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+// ═══ v3.15.0 — TIER A/B/C: HERO + SPARKLINES + MÉTRICAS ═══
+
+// ─── Hero KPI ────────────────────────────────────────────
+.kpis-hero {
+  margin-bottom: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.kpi-hero {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: $spacing-lg;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, $navy-700 0%, $navy-800 100%);
+  border: 1px solid rgba($cyan-500, 0.30);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba($cyan-500, 0.08) inset;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(ellipse, rgba($cyan-500, 0.10) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  @media (max-width: $breakpoint-md) {
+    grid-template-columns: 1fr;
+    gap: $spacing-md;
+  }
+}
+
+.kpi-hero-left {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .kpi-label {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $text-muted;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+
+  .kpi-hero-value {
+    font-family: $font-display;
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    font-weight: 800;
+    line-height: 1;
+    color: $text-primary;
+    letter-spacing: -0.02em;
+    margin: 4px 0;
+    background: linear-gradient(135deg, $cyan-300 0%, $cyan-500 60%, $teal-400 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: kpiPop 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .kpi-hero-sub {
+    color: $text-secondary;
+    font-size: 0.92rem;
+
+    strong { color: $text-primary; font-weight: 700; }
+  }
+
+  .kpi-hero-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    width: fit-content;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    &.trend-success {
+      background: rgba($success-color, 0.12);
+      color: $success-color;
+      border: 1px solid rgba($success-color, 0.25);
+    }
+    &.trend-warning {
+      background: rgba($warn-color, 0.12);
+      color: $warn-color;
+      border: 1px solid rgba($warn-color, 0.25);
+    }
+    &.trend-neutral {
+      background: rgba($text-muted, 0.10);
+      color: $text-muted;
+      border: 1px solid rgba($text-muted, 0.20);
+    }
+  }
+}
+
+.kpi-hero-spark {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  color: $cyan-500;
+
+  .sparkline {
+    width: 100%;
+    height: 80px;
+    display: block;
+  }
+
+  .spark-caption {
+    text-align: center;
+    color: $text-muted;
+    font-size: 0.72rem;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+@keyframes kpiPop {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+// ─── Unidad pequeña (% en KPIs) ──────────────────────────
+.kpi-value .kpi-unit {
+  font-size: 0.75em;
+  color: $text-muted;
+  margin-left: 2px;
+}
+
+.kpi-value.motivo {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  font-family: $font-body !important;
+}
+
+// ─── Distribución por turno ──────────────────────────────
+.turnos-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.turno-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 100px;
+  gap: 12px;
+  align-items: center;
+
+  .turno-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: $text-primary;
+    font-size: 0.88rem;
+    font-weight: 500;
+
+    .turno-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+  }
+
+  .turno-bar-wrap {
+    height: 14px;
+    background: $navy-800;
+    border-radius: 7px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .turno-bar {
+    height: 100%;
+    border-radius: 7px;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  .turno-numero {
+    text-align: right;
+    font-family: $font-mono;
+    font-size: 0.85rem;
+
+    strong {
+      color: $text-primary;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    span {
+      color: $text-muted;
+    }
+  }
+}
+
+// ─── Crecimiento 12m ─────────────────────────────────────
+.crecimiento-bars {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  align-items: flex-end;
+  height: 220px;
+  padding: 8px 0;
+}
+
+.crecimiento-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  cursor: pointer;
+  position: relative;
+
+  .crecimiento-bar {
+    width: 100%;
+    max-width: 36px;
+    background: linear-gradient(180deg, $cyan-400 0%, $cyan-600 100%);
+    border-radius: 6px 6px 0 0;
+    transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s;
+    margin-top: auto;
+    will-change: height;
+  }
+
+  .crecimiento-label {
+    margin-top: 6px;
+    font-size: 0.68rem;
+    color: $text-muted;
+    font-family: $font-mono;
+    text-align: center;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  &:hover .crecimiento-bar {
+    filter: brightness(1.25);
+  }
+}
+
+// ─── Heatmap valle ───────────────────────────────────────
+.heatmap-valle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+  padding: $spacing-md;
+  background: rgba($navy-600, 0.5);
+  border: 1px dashed $border-subtle;
+  border-radius: $border-radius-md;
+  color: $text-secondary;
+  font-size: 0.88rem;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: $text-muted;
+  }
+
+  strong { color: $text-primary; }
+}
+
+// ─── Focus rings (Tier C) ────────────────────────────────
+.kpi-card,
+.kpi-hero,
+.insight-card,
+.top-alumno-item {
+  &:focus-visible {
+    outline: 2px solid rgba($cyan-500, 0.6);
+    outline-offset: 3px;
+  }
+}
+
+button:focus-visible {
+  outline: 2px solid rgba($cyan-500, 0.55);
+  outline-offset: 2px;
+}
+
+// ─── Reduced motion (Tier C) ─────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .kpi-hero-value { animation: none; }
+  .heatmap-cell:hover { transform: none; }
+  .crecimiento-col:hover .crecimiento-bar { filter: none; }
 }
