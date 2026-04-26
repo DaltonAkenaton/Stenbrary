@@ -280,9 +280,15 @@
 
     <!-- ─── ACCIONES SOBRE LO VISIBLE ────────────────── -->
     <div class="acciones-rango">
-      <button class="btn-export" (click)="exportarLoQueVeo()" [disabled]="generandoReporte || kpiTotalRegistros === 0">
+      <button class="btn-export" (click)="exportarLoQueVeo()" [disabled]="generandoReporte || kpiTotalRegistros === 0"
+              matTooltip="Genera un PDF completo del rango activo (todas las secciones)">
         <mat-icon>picture_as_pdf</mat-icon>
-        Exportar PDF de lo que veo
+        Exportar PDF
+      </button>
+      <button class="btn-personalizar" (click)="personalizarPdf()" [disabled]="generandoReporte || kpiTotalRegistros === 0"
+              matTooltip="Elige qué secciones incluir en el PDF (resumen, tabla, gráficas, etc.)">
+        <mat-icon>tune</mat-icon>
+        Personalizar PDF...
       </button>
       <button class="btn-comparar" (click)="toggleComparador()">
         <mat-icon>{{ compararAbierto ? 'compare_arrows' : 'compare' }}</mat-icon>

@@ -475,6 +475,7 @@ export class DatosPruebaService {
       motivoId: motivoPrincipal.id!,
       motivoNombre: motivoPrincipal.nombre,
       ...(motivoIds.length > 1 ? { motivoIds, motivoNombres } : {}),
+      ...(plan.alumno.turno ? { turno: plan.alumno.turno } : {}),
       dispositivo: PRUEBA_DISPOSITIVO,
     });
 

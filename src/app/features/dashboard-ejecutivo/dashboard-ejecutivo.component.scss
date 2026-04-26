@@ -1308,6 +1308,16 @@
     }
   }
 
+  .btn-personalizar {
+    background: rgba($amber-color, 0.06);
+    border-color: rgba($amber-color, 0.25);
+    color: $amber-color;
+
+    &:hover:not(:disabled) {
+      background: rgba($amber-color, 0.14);
+    }
+  }
+
   .btn-comparar {
     background: rgba($cyan-500, 0.08);
     border-color: rgba($cyan-500, 0.30);
@@ -1319,6 +1329,14 @@
   }
 }
 
+// Dialog panel del PDF personalizado
+::ng-deep .pdf-dialog-panel .mat-mdc-dialog-surface {
+  background: $navy-700 !important;
+  border: 1px solid rgba($cyan-500, 0.25) !important;
+  border-radius: 16px !important;
+  padding: 0 !important;
+}
+
 // ─── Comparador A vs B ───────────────────────────────────
 .comparador-card {
   margin-bottom: 18px;
@@ -1326,6 +1344,45 @@
   background: $navy-700 !important;
   border: 1px solid rgba($cyan-500, 0.25) !important;
   border-radius: 16px !important;
+  animation: comparadorSlideDown 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+  overflow: hidden;
+}
+
+@keyframes comparadorSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scaleY(0.95);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    max-height: 2000px;
+  }
+}
+
+// Cada slot también entra suavemente
+.comparador-slot {
+  animation: slotFadeIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &.slot-a { animation-delay: 100ms; }
+  &.slot-b { animation-delay: 200ms; }
+}
+
+.comparador-diferencia {
+  animation: difPop 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 300ms;
+}
+
+@keyframes slotFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes difPop {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .comparador-header {
@@ -1369,6 +1426,14 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  &.slot-a {
+    border-left: 3px solid $cyan-500;
+  }
+
+  &.slot-b {
+    border-left: 3px solid $teal-400;
+  }
 }
 
 .slot-header {

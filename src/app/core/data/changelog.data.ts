@@ -49,6 +49,75 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.16.0',
+    fecha: '2026-04-26',
+    titulo: 'PDF a la medida, comparador con animación, fix turnos y más opciones',
+    destacado: true,
+    resumen:
+      'Ahora puedes elegir qué secciones incluir en el PDF (resumen, tabla, motivos, ' +
+      'turnos, carreras, top alumnos), el comparador trae nuevos atajos como Ayer, ' +
+      'Año pasado, Este semestre y Semestre anterior, se arregló la distribución por ' +
+      'turno (antes mostraba todo como "sin turno"), el botón "Generando..." ya no ' +
+      'se queda atascado, y se eliminaron tarjetas duplicadas en el dashboard.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nuevo botón "Personalizar PDF..." abre un diálogo con casillas ' +
+          'para incluir o excluir cada sección (resumen, tabla de registros, top alumnos, ' +
+          'distribución por carrera, motivo y turno). Ya no es "todo o nada".',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: el PDF ahora incluye una sección "Distribución por turno" con ' +
+          'porcentajes de Matutino / Vespertino / Mixto.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Comparador (estadísticas): nuevos atajos "Ayer", "Año pasado", "Este semestre" ' +
+          'y "Semestre anterior" — útiles para "Hoy vs Ayer", "Este año vs el pasado", etc. ' +
+          'Convención genérica de semestres: enero-junio y julio-diciembre.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Comparador (estadísticas): animación de apertura suave (slide-down + fade-in), ' +
+          'cada slot aparece con leve retraso para guiar la vista. Borde lateral cyan en A, ' +
+          'teal en B para identificar rápido.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: "Distribución por turno" ya no muestra todo como "Sin turno". ' +
+          'Los registros nuevos guardan el turno del alumno; los registros viejos lo ' +
+          'recuperan automáticamente desde la ficha del alumno.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: el botón "Generando..." de los reportes predefinidos ya se ' +
+          'reactiva correctamente al terminar. Antes podía quedar atascado en gris ' +
+          'aunque el PDF ya se hubiera descargado.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: eliminadas las tarjetas duplicadas en la sección de insights ' +
+          '(Alumnos Inactivos, Hora Pico y Tendencia ya estaban como KPIs fijos). Los ' +
+          'insights ahora solo aparecen para alertas extraordinarias (crecimiento >50%, ' +
+          'caída >50%, padrón con baja actividad >30%).',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: las gráficas ya no animan en cada cambio de filtro — solo en ' +
+          'la primera carga. El cambio de período se siente instantáneo.',
+      },
+    ],
+  },
+  {
     version: '3.15.0',
     fecha: '2026-04-26',
     titulo: 'Dashboard Ejecutivo nivel élite — métricas avanzadas + perf',

@@ -37,7 +37,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+import {
+  ExportarPdfDialogComponent,
+  ExportarPdfDialogData,
+  ExportarPdfDialogResult,
+} from './exportar-pdf-dialog/exportar-pdf-dialog.component';
+import { SeccionesReporte } from '../../core/services/report.service';
 import { Chart, registerables } from 'chart.js';
 import {
   EstadisticasAvanzadasService,
@@ -59,7 +66,7 @@ import { ConfigService } from '../../core/services/config.service';
 
 Chart.register(...registerables);
 
-type PresetRango = 'hoy' | 'semana' | 'semana-pasada' | 'mes-actual' | 'mes-pasado' | 'ultimos7' | 'ultimos14' | 'ultimos30' | 'ultimos90' | 'anio' | 'todo' | 'personalizado';
+type PresetRango = 'hoy' | 'ayer' | 'semana' | 'semana-pasada' | 'mes-actual' | 'mes-pasado' | 'ultimos7' | 'ultimos14' | 'ultimos30' | 'ultimos90' | 'anio' | 'anio-pasado' | 'semestre-actual' | 'semestre-pasado' | 'todo' | 'personalizado';
 
 interface OpcionPreset {
   key: PresetRango;
@@ -81,6 +88,7 @@ interface OpcionPreset {
     MatFormFieldModule,
     MatInputModule,
     MatExpansionModule,
+    MatDialogModule,
   ],
   templateUrl: './dashboard-ejecutivo.component.html',
   styleUrl: './dashboard-ejecutivo.component.scss',
@@ -220,18 +228,24 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   opcionesComparador: OpcionPreset[] = [
     { key: 'hoy', label: 'Hoy' },
+    { key: 'ayer', label: 'Ayer' },
     { key: 'semana', label: 'Esta semana' },
     { key: 'semana-pasada', label: 'Semana pasada' },
     { key: 'mes-actual', label: 'Este mes' },
     { key: 'mes-pasado', label: 'Mes pasado' },
+    { key: 'semestre-actual', label: 'Este semestre' },
+    { key: 'semestre-pasado', label: 'Semestre anterior' },
     { key: 'ultimos7', label: 'Últimos 7 días' },
     { key: 'ultimos30', label: 'Últimos 30 días' },
     { key: 'ultimos90', label: 'Últimos 90 días' },
     { key: 'anio', label: 'Este año' },
+    { key: 'anio-pasado', label: 'Año pasado' },
     { key: 'personalizado', label: 'Personalizado' },
   ];
 
   private datosListos = false;
+  /** True solo en el primer renderizado de gráficas; los re-renders no animan. */
+  private primerRenderHecho = false;
 
   // ─── Helpers de rango por preset ──────────────────
   diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -248,10 +262,16 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     private configService: ConfigService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private dialog: MatDialog,
   ) {}
 
   async ngOnInit(): Promise<void> {
     this.kpiUmbralInactividad = this.configService.umbralInactividadDias || 30;
+    // Pre-cargar mapa matrícula→turno para fallback de registros viejos
+    const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
+    for (const a of todosAlumnos) {
+      if (a.turno) this.turnoPorMatricula.set(a.matricula, a.turno);
+    }
     await this.cargarDatos();
     await this.cargarCrecimiento12m();
     this.cdr.markForCheck();
@@ -284,6 +304,14 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     switch (preset) {
       case 'hoy':
         return { inicio: inicioHoy, fin: finHoy };
+
+      case 'ayer': {
+        const ayer = new Date(inicioHoy);
+        ayer.setDate(ayer.getDate() - 1);
+        const ayerFin = new Date(ayer);
+        ayerFin.setHours(23, 59, 59, 999);
+        return { inicio: ayer, fin: ayerFin };
+      }
 
       case 'semana': {
         // Lunes a hoy
@@ -331,6 +359,47 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       case 'anio': {
         const inicio = new Date(hoy.getFullYear(), 0, 1, 0, 0, 0, 0);
         return { inicio, fin: finHoy };
+      }
+
+      case 'anio-pasado': {
+        const y = hoy.getFullYear() - 1;
+        return {
+          inicio: new Date(y, 0, 1, 0, 0, 0, 0),
+          fin: new Date(y, 11, 31, 23, 59, 59, 999),
+        };
+      }
+
+      case 'semestre-actual': {
+        // Convención genérica: 1er semestre = ene-jun, 2do semestre = jul-dic
+        const m = hoy.getMonth();
+        const y = hoy.getFullYear();
+        if (m < 6) {
+          return {
+            inicio: new Date(y, 0, 1, 0, 0, 0, 0),
+            fin: new Date(y, 5, 30, 23, 59, 59, 999),
+          };
+        }
+        return {
+          inicio: new Date(y, 6, 1, 0, 0, 0, 0),
+          fin: new Date(y, 11, 31, 23, 59, 59, 999),
+        };
+      }
+
+      case 'semestre-pasado': {
+        const m = hoy.getMonth();
+        const y = hoy.getFullYear();
+        if (m < 6) {
+          // Estamos en 1er sem; el anterior es 2do sem del año pasado
+          return {
+            inicio: new Date(y - 1, 6, 1, 0, 0, 0, 0),
+            fin: new Date(y - 1, 11, 31, 23, 59, 59, 999),
+          };
+        }
+        // Estamos en 2do sem; el anterior es 1er sem de este año
+        return {
+          inicio: new Date(y, 0, 1, 0, 0, 0, 0),
+          fin: new Date(y, 5, 30, 23, 59, 59, 999),
+        };
       }
 
       case 'todo':
@@ -654,6 +723,9 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     }
   }
 
+  /** Cache de matrícula → turno para fallback de registros viejos sin r.turno. */
+  private turnoPorMatricula: Map<string, string> = new Map();
+
   /** Tier B: tiempo estancia, retención, distribución turnos, top motivo, una sola visita, crecimiento 12m. */
   private calcularMetricasAvanzadas(registros: any[], rango: RangoFechas): void {
     // Tiempo estancia promedio
@@ -678,10 +750,11 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.kpiTasaRetencion = totalUnicos > 0 ? Math.round((recurrentes / totalUnicos) * 100) : 0;
     this.kpiAlumnosUnaSolaVisita = unaSolaVisita;
 
-    // Distribución por turno
+    // Distribución por turno: usa r.turno si existe, fallback al join con alumnos
+    // (registros viejos pre-v3.16.0 no tienen turno propagado).
     const turnos = new Map<string, number>();
     for (const r of registros) {
-      const t = r.turno || 'Sin turno';
+      const t = r.turno || this.turnoPorMatricula.get(r.matricula) || 'Sin turno';
       turnos.set(t, (turnos.get(t) || 0) + 1);
     }
     const totalTurnos = registros.length;
@@ -994,14 +1067,43 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.toastService.error('No se pudo generar el reporte');
     } finally {
       this.generandoReporte = false;
+      this.cdr.markForCheck();
     }
   }
 
-  /** Genera un PDF del rango activo del dashboard (lo que el usuario está viendo). */
+  /**
+   * Genera el PDF del rango activo (todo incluido).
+   * Para personalizar secciones, usar `personalizarPdf()`.
+   */
   async exportarLoQueVeo(): Promise<void> {
+    await this.generarPdfRangoActivo();
+  }
+
+  /** Abre el dialog de personalización antes de generar. */
+  async personalizarPdf(): Promise<void> {
+    if (!this.rangoActivo || this.generandoReporte) return;
+    const ref = this.dialog.open<ExportarPdfDialogComponent, ExportarPdfDialogData, ExportarPdfDialogResult>(
+      ExportarPdfDialogComponent,
+      {
+        data: {
+          totalRegistros: this.kpiTotalRegistros,
+          rangoEtiqueta: `${this.formatearFechaLarga(this.rangoActivo.inicio)} — ${this.formatearFechaLarga(this.rangoActivo.fin)}`,
+          hayTopAlumnos: this.topAlumnos.length > 0,
+        },
+        panelClass: 'pdf-dialog-panel',
+      },
+    );
+    const result = await ref.afterClosed().toPromise();
+    if (!result) return;
+    await this.generarPdfRangoActivo(result.secciones);
+  }
+
+  /** Genera el PDF del rango activo, opcionalmente con secciones específicas. */
+  private async generarPdfRangoActivo(secciones?: SeccionesReporte): Promise<void> {
     if (!this.rangoActivo) return;
     if (this.generandoReporte) return;
     this.generandoReporte = true;
+    this.cdr.markForCheck();
     try {
       const todos = await this.databaseService.obtenerTodosLosRegistros();
       const horaFiltro = this.horaFiltro;
@@ -1031,6 +1133,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         fechaInicio: this.rangoActivo.inicio,
         fechaFin: this.rangoActivo.fin,
         topAlumnos: topParaReporte,
+        secciones,
       });
       this.toastService.success(`PDF generado (${delRango.length} registros)`);
     } catch (e) {
@@ -1038,6 +1141,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.toastService.error('No se pudo generar el PDF');
     } finally {
       this.generandoReporte = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -1111,6 +1215,12 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.renderizarGraficaDiaria();
     this.renderizarGraficaMotivos();
     this.renderizarGraficaCarreras();
+    this.primerRenderHecho = true;
+  }
+
+  /** Duración de animación: full en primer mount (600ms), 0 en re-renders. */
+  private get animDuracion(): number {
+    return this.primerRenderHecho ? 0 : 600;
   }
 
   private renderizarGraficaDiaria(): void {
@@ -1140,6 +1250,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        animation: { duration: this.animDuracion },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -1194,6 +1305,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       },
       options: {
         responsive: true, maintainAspectRatio: false, cutout: '65%',
+        animation: { duration: this.animDuracion },
         plugins: {
           legend: {
             position: 'right',
@@ -1242,6 +1354,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       },
       options: {
         indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        animation: { duration: this.animDuracion },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -1312,6 +1425,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       },
       options: {
         responsive: true, maintainAspectRatio: false, cutout: '60%',
+        animation: { duration: 400 },
         plugins: {
           legend: {
             position: 'bottom',

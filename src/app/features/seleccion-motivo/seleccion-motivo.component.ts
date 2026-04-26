@@ -212,6 +212,8 @@ export class SeleccionMotivoComponent implements OnInit {
         motivoNombre: primero.nombre,
         motivoIds: this.motivosSeleccionados.map(m => m.id || ''),
         motivoNombres: this.motivosSeleccionados.map(m => m.nombre),
+        // v3.16.0 — copiar turno del alumno para analítica directa
+        ...(this.alumno.turno && !this.esInvitado ? { turno: this.alumno.turno } : {}),
       };
 
       const registroCreado = await this.databaseService.crearRegistro(nuevoRegistro);

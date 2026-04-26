@@ -129,6 +129,8 @@ Prioridad: **🔴 alta** · **🟡 media** · **🟢 baja**.
 - [ ] **UI en `/configuracion`**: editor de períodos lectivos (nombre, inicioMMDD, finMMDD, densidadFactor), festivos (lista editable), Semana Santa, horario apertura/cierre, probabilidad de asistencia en verano, ponderación de turnos.
 - [ ] **Defaults UAT** disponibles como preset al instalar.
 - [ ] **Plantillas preconfiguradas** para otras universidades comunes (a llenar cuando se tenga el primer cliente).
+- [ ] **Modalidad de períodos:** soporte para semestres (2/año), trimestres (3/año, ene-mar/abr-jun/jul-sep/oct-dic), cuatrimestres (3/año pero distintos), bimestres y módulos. El comparador del Dashboard Ejecutivo y los presets de período usan este servicio. Hoy "Semestre actual / Semestre anterior" en el comparador asume convención genérica ene-jun / jul-dic — al implementar este servicio, esos atajos se vuelven dinámicos según la modalidad configurada.
+- [ ] **Configurar días/meses con clases:** marcar qué meses hay actividad lectiva y cuáles son receso (vacaciones intersemestrales, festivos locales). Lo usan: el generador de seed (no inventa visitas en días sin clases), los reportes (resaltan/excluyen recesos), el dashboard (cálculo de promedios por día lectivo en lugar de día calendario).
 
 ### 2.3 UX y analítica 🟡
 

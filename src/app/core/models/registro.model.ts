@@ -37,4 +37,10 @@ export interface Registro {
   // ── Cierre automático (v3.7.0) ──
   // true cuando el sistema cerró la entrada por tiempo, no el alumno
   cierreAutomatico?: boolean;
+
+  // ── Turno del alumno al momento del registro (v3.16.0) ──
+  // Se copia desde Alumno.turno al crear. Permite analítica por turno
+  // sin tener que hacer join en cada query. Para registros viejos sin
+  // este campo, los componentes hacen fallback a Alumno.
+  turno?: 'Matutino' | 'Vespertino' | 'Mixto';
 }

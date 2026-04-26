@@ -32,6 +32,19 @@ export interface TopAlumnoReporte {
   motivoFrecuente: string;
 }
 
+/**
+ * Secciones opcionales del PDF (v3.16.0). Si una flag es false, esa sección
+ * se omite. Si `secciones` no se pasa, se incluyen las históricas (compat).
+ */
+export interface SeccionesReporte {
+  resumen?: boolean;        // Total registros, alumnos únicos, fechas
+  topAlumnos?: boolean;     // Tabla del top
+  tablaRegistros?: boolean; // Detalle fila por fila (puede ser larga)
+  carreras?: boolean;       // Resumen por carrera
+  motivos?: boolean;        // Resumen por motivo
+  turnos?: boolean;         // Resumen por turno (NUEVO v3.16.0)
+}
+
 export interface OpcionesReporte {
   tipo: TipoReporte;
   fechaInicio?: Date;
@@ -40,7 +53,18 @@ export interface OpcionesReporte {
   filtros?: FiltrosReporte;
   /** Si se pasa, el PDF añade una sección "Top Alumnos" antes del detalle. */
   topAlumnos?: TopAlumnoReporte[];
+  /** v3.16.0: control granular de qué secciones incluir. */
+  secciones?: SeccionesReporte;
 }
+
+const SECCIONES_DEFAULT: Required<SeccionesReporte> = {
+  resumen: true,
+  topAlumnos: true,
+  tablaRegistros: true,
+  carreras: true,
+  motivos: true,
+  turnos: true,
+};
 
 @Injectable({
   providedIn: 'root',
@@ -56,32 +80,93 @@ export class ReportService {
     const doc = new jsPDF('portrait', 'mm', 'letter');
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
+    const secciones = { ...SECCIONES_DEFAULT, ...(opciones.secciones || {}) };
 
     let y = this.dibujarHeader(doc, opciones, pageWidth, margin);
-    y = this.dibujarResumen(doc, registros, y, margin, pageWidth);
 
-    // Sección Top Alumnos (solo si se pasa el array)
-    if (opciones.topAlumnos && opciones.topAlumnos.length > 0) {
+    if (secciones.resumen) {
+      y = this.dibujarResumen(doc, registros, y, margin, pageWidth);
+    }
+
+    if (secciones.topAlumnos && opciones.topAlumnos && opciones.topAlumnos.length > 0) {
       y = this.verificarEspacioPagina(doc, y, 70);
       y = this.dibujarTopAlumnos(doc, opciones.topAlumnos, y, margin, pageWidth);
     }
 
-    y = this.verificarEspacioPagina(doc, y, 60);
-    const tituloRegistros = opciones.topAlumnos && opciones.topAlumnos.length > 0
-      ? 'Detalle de Visitas del Top'
-      : 'Detalle de Registros';
-    y = this.dibujarTablaRegistros(doc, registros, y, margin, tituloRegistros);
+    if (secciones.tablaRegistros) {
+      y = this.verificarEspacioPagina(doc, y, 60);
+      const tituloRegistros = secciones.topAlumnos && opciones.topAlumnos && opciones.topAlumnos.length > 0
+        ? 'Detalle de Visitas del Top'
+        : 'Detalle de Registros';
+      y = this.dibujarTablaRegistros(doc, registros, y, margin, tituloRegistros);
+    }
 
-    y = this.verificarEspacioPagina(doc, y, 60);
-    y = this.dibujarResumenCarreras(doc, registros, y, margin, pageWidth);
+    if (secciones.carreras) {
+      y = this.verificarEspacioPagina(doc, y, 60);
+      y = this.dibujarResumenCarreras(doc, registros, y, margin, pageWidth);
+    }
 
-    y = this.verificarEspacioPagina(doc, y, 60);
-    y = this.dibujarResumenMotivos(doc, registros, y, margin, pageWidth);
+    if (secciones.motivos) {
+      y = this.verificarEspacioPagina(doc, y, 60);
+      y = this.dibujarResumenMotivos(doc, registros, y, margin, pageWidth);
+    }
+
+    if (secciones.turnos) {
+      y = this.verificarEspacioPagina(doc, y, 60);
+      y = this.dibujarResumenTurnos(doc, registros, y, margin, pageWidth);
+    }
 
     this.dibujarFooterTodasPaginas(doc, pageWidth, margin);
 
     const nombreArchivo = this.generarNombreArchivo(opciones);
     doc.save(nombreArchivo);
+  }
+
+  /**
+   * Dibuja la sección de "Distribución por turno" (NUEVO v3.16.0).
+   * Usa registro.turno si existe; si no, "Sin turno".
+   */
+  private dibujarResumenTurnos(
+    doc: jsPDF,
+    registros: Registro[],
+    y: number,
+    margin: number,
+    pageWidth: number,
+  ): number {
+    if (registros.length === 0) return y;
+
+    const conteo = new Map<string, number>();
+    for (const r of registros) {
+      const t = (r as any).turno || 'Sin turno';
+      conteo.set(t, (conteo.get(t) || 0) + 1);
+    }
+    if (conteo.size === 0) return y;
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text('Distribución por turno', margin, y);
+    y += 6;
+
+    const ordenado = Array.from(conteo.entries()).sort((a, b) => b[1] - a[1]);
+    const total = registros.length;
+    const filas = ordenado.map(([turno, cant]) => [
+      turno,
+      String(cant),
+      `${((cant / total) * 100).toFixed(1)}%`,
+    ]);
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Turno', 'Visitas', '% del total']],
+      body: filas,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [0, 200, 215], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 250, 252] },
+    });
+
+    return (doc as any).lastAutoTable.finalY + 8;
   }
 
   // ═══════════════════════════════════════════════

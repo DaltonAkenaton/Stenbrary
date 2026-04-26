@@ -630,36 +630,28 @@ export class EstadisticasAvanzadasService {
   ): Promise<Insight[]> {
     const insights: Insight[] = [];
 
+    // Solo insights EXTRAORDINARIOS (alertas que no duplican KPIs fijos).
+    // Los KPIs ya muestran tendencia, hora pico e inactivos; aquí solo
+    // levantamos la mano cuando el cambio es DRAMÁTICO (>50%).
     const tendencia = await this.compararTendencias(rango, horaFiltro);
-    if (tendencia.direccion === 'up' && tendencia.porcentajeCambio > 10) {
+    if (tendencia.direccion === 'up' && tendencia.porcentajeCambio > 50) {
       insights.push({
         tipo: 'success',
-        icono: 'trending_up',
-        titulo: 'Tendencia al Alza',
-        descripcion: `Las visitas aumentaron ${tendencia.porcentajeCambio.toFixed(1)}% en este período comparado con el anterior`,
+        icono: 'rocket_launch',
+        titulo: 'Crecimiento extraordinario',
+        descripcion: `Las visitas crecieron ${tendencia.porcentajeCambio.toFixed(0)}% vs. el período anterior. Vale la pena investigar qué cambió.`,
       });
-    } else if (tendencia.direccion === 'down' && Math.abs(tendencia.porcentajeCambio) > 10) {
+    } else if (tendencia.direccion === 'down' && Math.abs(tendencia.porcentajeCambio) > 50) {
       insights.push({
         tipo: 'warning',
-        icono: 'trending_down',
-        titulo: 'Disminución de Visitas',
-        descripcion: `Las visitas disminuyeron ${Math.abs(tendencia.porcentajeCambio).toFixed(1)}% en este período`,
+        icono: 'priority_high',
+        titulo: 'Caída crítica de actividad',
+        descripcion: `Las visitas cayeron ${Math.abs(tendencia.porcentajeCambio).toFixed(0)}% vs. el período anterior. Revisa si hay un problema operativo o estacional.`,
       });
     }
 
-    // Hora pico calculada a partir del MISMO rango del usuario
-    // (no fijo en "últimos N días desde hoy" como antes).
+    // Pre-cargar para los insights siguientes
     const todosRegistros = await this.obtenerRegistrosConCache();
-    const registrosRango = this.filtrarPorRango(todosRegistros, rango, horaFiltro);
-    const horaPico = this.calcularHoraPicoDesdeRegistros(registrosRango);
-    if (horaPico) {
-      insights.push({
-        tipo: 'info',
-        icono: 'schedule',
-        titulo: 'Hora Pico Detectada',
-        descripcion: `${horaPico.dia} a las ${horaPico.hora}:00 hrs es el momento más concurrido (${horaPico.cantidad} visitas)`,
-      });
-    }
 
     // Alumnos inactivos: usa el umbral configurado por el coordinador.
     const umbral = Math.max(1, umbralInactividadDias);
@@ -688,16 +680,45 @@ export class EstadisticasAvanzadasService {
       }
     }
 
-    if (alumnosSinVisitasRecientes > 0) {
+    // El KPI fijo de "Alumnos Inactivos" arriba ya muestra el dato.
+    // Acá solo lanzamos alerta si la situación es seria (>30% del padrón
+    // activo está inactivo — eso significa un problema grande).
+    const totalActivos = alumnosActivos.length;
+    const proporcion = totalActivos > 0 ? alumnosSinVisitasRecientes / totalActivos : 0;
+    if (proporcion > 0.30) {
       insights.push({
-        tipo: 'info',
-        icono: 'people_outline',
-        titulo: 'Alumnos Inactivos',
-        descripcion: `${alumnosSinVisitasRecientes} alumnos no han visitado en los últimos ${umbral} días`,
+        tipo: 'warning',
+        icono: 'warning_amber',
+        titulo: 'Padrón con baja actividad',
+        descripcion: `${(proporcion * 100).toFixed(0)}% de los alumnos activos (${alumnosSinVisitasRecientes} de ${totalActivos}) no ha visitado en ${umbral}+ días. Considera campañas de reactivación.`,
       });
     }
 
     return insights;
+  }
+
+  /** Devuelve la cuenta de alumnos inactivos según el umbral. Helper público. */
+  async contarAlumnosInactivos(umbralInactividadDias: number = 30): Promise<number> {
+    const umbral = Math.max(1, umbralInactividadDias);
+    const todosRegistros = await this.obtenerRegistrosConCache();
+    const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
+    const alumnosActivos = todosAlumnos.filter(a => a.activo);
+    const limite = new Date();
+    limite.setDate(limite.getDate() - umbral);
+    limite.setHours(0, 0, 0, 0);
+
+    const matRecientes = new Set<string>();
+    const matHistorial = new Set<string>();
+    todosRegistros.forEach(r => {
+      matHistorial.add(r.matricula);
+      if (new Date(r.fechaHora) >= limite) matRecientes.add(r.matricula);
+    });
+
+    let cuenta = 0;
+    for (const a of alumnosActivos) {
+      if (matHistorial.has(a.matricula) && !matRecientes.has(a.matricula)) cuenta++;
+    }
+    return cuenta;
   }
 
   async analizarPorCarrera(
