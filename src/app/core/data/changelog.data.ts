@@ -49,6 +49,90 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.14.0',
+    fecha: '2026-04-26',
+    titulo: 'Dashboard Ejecutivo más claro, comparador A vs B y filtro por hora',
+    destacado: true,
+    resumen:
+      'El Dashboard Ejecutivo ahora muestra siempre con claridad qué fechas estás viendo, ' +
+      'qué se compara contra qué, y todas las métricas tienen un (?) que explica cómo se calculan. ' +
+      'Puedes comparar dos períodos cualesquiera lado a lado (esta semana vs semana pasada, ' +
+      'febrero vs abril, etc.), filtrar por hora del día y exportar el PDF de exactamente lo que ves.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nuevo banner siempre visible con las fechas exactas del período actual ' +
+          '(p. ej. "Del 26 de marzo al 24 de abril de 2026 · 30 días") y contra qué período se ' +
+          'está comparando la tendencia. Cero ambigüedad sobre qué se está viendo.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: comparador "Dos períodos lado a lado". Selecciona "Esta semana" vs ' +
+          '"Semana pasada", o "Febrero" vs "Abril", o cualquier dos rangos arbitrarios para ' +
+          'ver totales, alumnos únicos, hora pico, motivos y diferencia porcentual a la vez.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Filtro por hora del día: en Estadísticas y en Registros. Marca un rango horario ' +
+          '(ej. 7:00–14:00) para analizar solo el turno matutino. Útil para ver flujo del ' +
+          'vespertino, horas pico específicas, etc.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: botón "Exportar PDF de lo que veo" — genera un reporte exactamente ' +
+          'del rango y filtros activos arriba, no de un mes predefinido distinto.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nuevos atajos de período "Hoy", "Esta semana", "Este mes" y "Todo el ' +
+          'historial". Antes había que ir a "Personalizado" para ver el histórico completo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: cada métrica (Total registros, Hora pico, Tendencia, Inactivos, ' +
+          'Heatmap, Top alumnos, etc.) tiene un icono (?) con tooltip explicando cómo se ' +
+          'calcula y qué significa. Sin más adivinanzas.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: KPIs fijos siempre visibles (Total, Tendencia, Hora Pico, Inactivos, ' +
+          'Alumnos únicos). Antes a veces aparecían 1, 2 o 3 tarjetas según los datos.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Tendencia: ahora muestra explícitamente las fechas del "Período anterior" contra ' +
+          'el que se está comparando, además del actual.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Mapa de calor: aviso visible de que usa su propio rango independiente del filtro ' +
+          'principal, y la predicción del día más concurrido aclara que se basa en ese mapa.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: el contador de "Alumnos inactivos" ahora respeta el umbral configurado ' +
+          'en /configuración. Antes estaba fijo en 30 días aunque tuvieras otro valor guardado.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Reportes predefinidos (diario/semanal/mensual/anual) se movieron al final del ' +
+          'Dashboard Ejecutivo, separados del filtro principal. Son para informes históricos ' +
+          'puntuales — el botón "Exportar PDF de lo que veo" cubre el caso del día a día.',
+      },
+    ],
+  },
+  {
     version: '3.13.0',
     fecha: '2026-04-25',
     titulo: 'Más rapidez en listados, identidad propia y nuevas acciones',

@@ -257,6 +257,76 @@ h1 {
   align-items: center;
   gap: $spacing-sm;
   flex-wrap: wrap;
+
+  &.hora-row {
+    margin-top: $spacing-sm;
+    padding-top: $spacing-sm;
+    border-top: 1px dashed $border-subtle;
+  }
+}
+
+.hora-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: $text-primary;
+  font-size: 0.9rem;
+
+  input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: $cyan-500;
+  }
+
+  > mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: $cyan-500;
+  }
+
+  .info-icon {
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    color: $text-muted;
+    cursor: help;
+    opacity: 0.65;
+    margin-left: 4px;
+
+    &:hover {
+      opacity: 1;
+      color: $cyan-500;
+    }
+  }
+}
+
+.hora-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+
+  .hora-label {
+    color: $text-muted;
+    font-size: 0.82rem;
+  }
+
+  .hora-select {
+    padding: 6px 10px;
+    background: $navy-800;
+    border: 1px solid $border-subtle;
+    border-radius: 8px;
+    color: $text-primary;
+    font-family: $font-mono;
+    font-size: 0.88rem;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: $cyan-500;
+    }
+  }
 }
 
 .filtro-field {

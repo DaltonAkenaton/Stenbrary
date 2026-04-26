@@ -123,6 +123,42 @@
         </button>
       }
     </div>
+
+    <!-- Filtro por hora del día -->
+    <div class="filtros-row hora-row">
+      <label class="hora-toggle">
+        <input type="checkbox"
+               [checked]="filtros().horaActiva"
+               (change)="toggleFiltroHora()">
+        <mat-icon>schedule</mat-icon>
+        Filtrar por hora del día
+        <mat-icon class="info-icon"
+                  matTooltip="Limita los registros mostrados a un rango horario específico (ej. solo turno matutino 7:00–14:00).">
+          help_outline
+        </mat-icon>
+      </label>
+
+      @if (filtros().horaActiva) {
+        <div class="hora-controls">
+          <span class="hora-label">Desde</span>
+          <select [ngModel]="filtros().horaDesde"
+                  (ngModelChange)="setHoraDesde(+$event)"
+                  class="hora-select">
+            @for (h of horasDisponibles; track h) {
+              <option [value]="h">{{ formatHora(h) }}</option>
+            }
+          </select>
+          <span class="hora-label">Hasta</span>
+          <select [ngModel]="filtros().horaHasta"
+                  (ngModelChange)="setHoraHasta(+$event)"
+                  class="hora-select">
+            @for (h of horasDisponibles; track h) {
+              <option [value]="h">{{ formatHora(h) }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
   </div>
 
   <!-- ── LOADING ── -->

@@ -32,6 +32,28 @@ export interface TendenciaComparativa {
   cambio: number;
   porcentajeCambio: number;
   direccion: 'up' | 'down' | 'igual';
+  /** Rango contra el que se está comparando (período anterior de la misma duración). */
+  rangoAnterior: RangoFechas;
+}
+
+/** Resultado de la comparación lado-a-lado entre dos rangos arbitrarios. */
+export interface ComparativaDosRangos {
+  a: ComparativaSlice;
+  b: ComparativaSlice;
+  diferencia: {
+    cambio: number;
+    porcentaje: number;
+    direccion: 'up' | 'down' | 'igual';
+  };
+}
+
+export interface ComparativaSlice {
+  rango: RangoFechas;
+  totalRegistros: number;
+  alumnosUnicos: number;
+  promedioPorDia: number;
+  horaPico: HeatmapData | null;
+  motivos: DistribucionMotivos;
 }
 
 export interface HeatmapData {
@@ -144,6 +166,35 @@ export class EstadisticasAvanzadasService {
     return { inicio, fin };
   }
 
+  /** Crea un rango que cubre TODO el historial (desde el primer registro hasta hoy). */
+  async crearRangoHistorico(): Promise<RangoFechas> {
+    const todos = await this.obtenerRegistrosConCache();
+    const fin = new Date();
+    fin.setHours(23, 59, 59, 999);
+    if (todos.length === 0) {
+      const inicio = new Date(fin);
+      inicio.setDate(fin.getDate() - 30);
+      inicio.setHours(0, 0, 0, 0);
+      return { inicio, fin };
+    }
+    const minTs = todos.reduce(
+      (min, r) => Math.min(min, new Date(r.fechaHora).getTime()),
+      Date.now(),
+    );
+    const inicio = new Date(minTs);
+    inicio.setHours(0, 0, 0, 0);
+    return { inicio, fin };
+  }
+
+  /** Rango del mes actual (1° del mes a hoy). */
+  crearRangoMesActual(): RangoFechas {
+    const hoy = new Date();
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1, 0, 0, 0, 0);
+    const fin = new Date(hoy);
+    fin.setHours(23, 59, 59, 999);
+    return { inicio, fin };
+  }
+
   /** Normaliza un rango asegurando boundaries de día completos. */
   normalizarRango(inicio: Date, fin: Date): RangoFechas {
     const i = new Date(inicio);
@@ -175,13 +226,50 @@ export class EstadisticasAvanzadasService {
     return 'mes';
   }
 
-  private filtrarPorRango(registros: Registro[], rango: RangoFechas): Registro[] {
+  private filtrarPorRango(
+    registros: Registro[],
+    rango: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Registro[] {
     const ini = rango.inicio.getTime();
     const fin = rango.fin.getTime();
+    if (!horaFiltro) {
+      return registros.filter(r => {
+        const t = new Date(r.fechaHora).getTime();
+        return t >= ini && t <= fin;
+      });
+    }
+    const { desde, hasta } = horaFiltro;
     return registros.filter(r => {
-      const t = new Date(r.fechaHora).getTime();
-      return t >= ini && t <= fin;
+      const d = new Date(r.fechaHora);
+      const t = d.getTime();
+      if (t < ini || t > fin) return false;
+      const h = d.getHours();
+      return h >= desde && h <= hasta;
     });
+  }
+
+  /** Hora pico calculada desde un slice ya filtrado de registros (público). */
+  calcularHoraPicoEnRango(registros: Registro[]): HeatmapData | null {
+    return this.calcularHoraPicoDesdeRegistros(registros);
+  }
+
+  /** Cuenta registros en un rango (con filtro horario opcional). */
+  async contarRegistrosEnRango(
+    rango: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Promise<number> {
+    const todos = await this.obtenerRegistrosConCache();
+    return this.filtrarPorRango(todos, rango, horaFiltro).length;
+  }
+
+  /** Devuelve los registros crudos de un rango (con filtro horario opcional). */
+  async obtenerRegistrosCrudos(
+    rango: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Promise<Registro[]> {
+    const todos = await this.obtenerRegistrosConCache();
+    return this.filtrarPorRango(todos, rango, horaFiltro);
   }
 
   // ═══════════════════════════════════════════════
@@ -193,9 +281,12 @@ export class EstadisticasAvanzadasService {
    * ≤31 días → por día, ≤180 → por semana, > → por mes.
    * Para gráfica de barras.
    */
-  async obtenerRegistrosPorRango(rango: RangoFechas): Promise<DatosDiarios> {
+  async obtenerRegistrosPorRango(
+    rango: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Promise<DatosDiarios> {
     const todosRegistros = await this.obtenerRegistrosConCache();
-    const registros = this.filtrarPorRango(todosRegistros, rango);
+    const registros = this.filtrarPorRango(todosRegistros, rango, horaFiltro);
     const granularidad = this.granularidadParaRango(rango);
 
     if (granularidad === 'dia') {
@@ -294,11 +385,14 @@ export class EstadisticasAvanzadasService {
    * Distribución por motivos dentro de un rango.
    * Para gráfica de dona.
    */
-  async obtenerDistribucionMotivos(rango: RangoFechas): Promise<DistribucionMotivos> {
+  async obtenerDistribucionMotivos(
+    rango: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Promise<DistribucionMotivos> {
     const todosRegistros = await this.obtenerRegistrosConCache();
     const motivos = await this.databaseService.obtenerTodosLosMotivos();
 
-    const registrosPeriodo = this.filtrarPorRango(todosRegistros, rango);
+    const registrosPeriodo = this.filtrarPorRango(todosRegistros, rango, horaFiltro);
 
     // Contar por motivo
     const conteo = new Map<string, number>();
@@ -342,12 +436,15 @@ export class EstadisticasAvanzadasService {
    * Compara el rango actual contra el rango inmediatamente previo de la
    * misma longitud (auto-calculado).
    */
-  async compararTendencias(rangoActual: RangoFechas): Promise<TendenciaComparativa> {
+  async compararTendencias(
+    rangoActual: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Promise<TendenciaComparativa> {
     const rangoAnterior = this.rangoAnteriorMismaLongitud(rangoActual);
     const todosRegistros = await this.obtenerRegistrosConCache();
 
-    const actual = this.filtrarPorRango(todosRegistros, rangoActual).length;
-    const anterior = this.filtrarPorRango(todosRegistros, rangoAnterior).length;
+    const actual = this.filtrarPorRango(todosRegistros, rangoActual, horaFiltro).length;
+    const anterior = this.filtrarPorRango(todosRegistros, rangoAnterior, horaFiltro).length;
 
     const cambio = actual - anterior;
     const porcentajeCambio = anterior > 0 ? (cambio / anterior) * 100 : 0;
@@ -356,7 +453,76 @@ export class EstadisticasAvanzadasService {
     if (cambio > 0) direccion = 'up';
     if (cambio < 0) direccion = 'down';
 
-    return { actual, anterior, cambio, porcentajeCambio, direccion };
+    return { actual, anterior, cambio, porcentajeCambio, direccion, rangoAnterior };
+  }
+
+  /**
+   * Compara dos rangos arbitrarios (p. ej. "esta semana" vs "semana pasada",
+   * o "febrero" vs "abril"). Devuelve los totales, distribución de motivos
+   * y top alumnos de cada uno, para que la UI los presente lado a lado.
+   */
+  async compararDosRangos(
+    rangoA: RangoFechas,
+    rangoB: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Promise<ComparativaDosRangos> {
+    const todos = await this.obtenerRegistrosConCache();
+    const motivosBD = await this.databaseService.obtenerTodosLosMotivos();
+
+    const regsA = this.filtrarPorRango(todos, rangoA, horaFiltro);
+    const regsB = this.filtrarPorRango(todos, rangoB, horaFiltro);
+
+    const distribucion = (regs: Registro[]): DistribucionMotivos => {
+      const conteo = new Map<string, number>();
+      regs.forEach(r => conteo.set(r.motivoNombre || 'Sin motivo',
+        (conteo.get(r.motivoNombre || 'Sin motivo') || 0) + 1));
+      const orden = Array.from(conteo.entries()).sort((a, b) => b[1] - a[1]);
+      const paleta = ['#00C8D7', '#0BC4B7', '#0EB07B', '#34D399', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F05252', '#F97316', '#F5A623', '#5DE4EC'];
+      return {
+        etiquetas: orden.map(o => o[0]),
+        cantidades: orden.map(o => o[1]),
+        colores: orden.map(([n], i) => motivosBD.find(m => m.nombre === n)?.color || paleta[i % paleta.length]),
+      };
+    };
+
+    const alumnosUnicos = (regs: Registro[]): number => {
+      const set = new Set<string>();
+      regs.forEach(r => { if (r.matricula !== 'INVITADO') set.add(r.matricula); });
+      return set.size;
+    };
+
+    const promedioPorDia = (regs: Registro[], rango: RangoFechas): number => {
+      const dias = this.diasEnRango(rango);
+      return dias > 0 ? parseFloat((regs.length / dias).toFixed(1)) : 0;
+    };
+
+    const totalA = regsA.length;
+    const totalB = regsB.length;
+    const cambio = totalA - totalB;
+    const porcentaje = totalB > 0 ? (cambio / totalB) * 100 : 0;
+    let direccion: 'up' | 'down' | 'igual' = 'igual';
+    if (cambio > 0) direccion = 'up';
+    if (cambio < 0) direccion = 'down';
+
+    return {
+      a: {
+        rango: rangoA,
+        totalRegistros: totalA,
+        alumnosUnicos: alumnosUnicos(regsA),
+        promedioPorDia: promedioPorDia(regsA, rangoA),
+        horaPico: this.calcularHoraPicoDesdeRegistros(regsA),
+        motivos: distribucion(regsA),
+      },
+      b: {
+        rango: rangoB,
+        totalRegistros: totalB,
+        alumnosUnicos: alumnosUnicos(regsB),
+        promedioPorDia: promedioPorDia(regsB, rangoB),
+        horaPico: this.calcularHoraPicoDesdeRegistros(regsB),
+        motivos: distribucion(regsB),
+      },
+      diferencia: { cambio, porcentaje, direccion },
+    };
   }
 
   async generarHeatmap(diasPeriodo: number = 30): Promise<HeatmapResultado> {
@@ -457,10 +623,14 @@ export class EstadisticasAvanzadasService {
     return topAlumnos.sort((a, b) => b.totalVisitas - a.totalVisitas).slice(0, limite);
   }
 
-  async generarInsights(rango: RangoFechas): Promise<Insight[]> {
+  async generarInsights(
+    rango: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+    umbralInactividadDias: number = 30,
+  ): Promise<Insight[]> {
     const insights: Insight[] = [];
 
-    const tendencia = await this.compararTendencias(rango);
+    const tendencia = await this.compararTendencias(rango, horaFiltro);
     if (tendencia.direccion === 'up' && tendencia.porcentajeCambio > 10) {
       insights.push({
         tipo: 'success',
@@ -480,7 +650,7 @@ export class EstadisticasAvanzadasService {
     // Hora pico calculada a partir del MISMO rango del usuario
     // (no fijo en "últimos N días desde hoy" como antes).
     const todosRegistros = await this.obtenerRegistrosConCache();
-    const registrosRango = this.filtrarPorRango(todosRegistros, rango);
+    const registrosRango = this.filtrarPorRango(todosRegistros, rango, horaFiltro);
     const horaPico = this.calcularHoraPicoDesdeRegistros(registrosRango);
     if (horaPico) {
       insights.push({
@@ -491,18 +661,19 @@ export class EstadisticasAvanzadasService {
       });
     }
 
-    // Alumnos inactivos: O(N) sobre el caché en vez de N+1 queries a IndexedDB.
+    // Alumnos inactivos: usa el umbral configurado por el coordinador.
+    const umbral = Math.max(1, umbralInactividadDias);
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
     const alumnosActivos = todosAlumnos.filter(a => a.activo);
-    const hace30Dias = new Date();
-    hace30Dias.setDate(hace30Dias.getDate() - 30);
-    hace30Dias.setHours(0, 0, 0, 0);
+    const limite = new Date();
+    limite.setDate(limite.getDate() - umbral);
+    limite.setHours(0, 0, 0, 0);
 
     const matriculasConActividadReciente = new Set<string>();
     const matriculasConHistorial = new Set<string>();
     todosRegistros.forEach(r => {
       matriculasConHistorial.add(r.matricula);
-      if (new Date(r.fechaHora) >= hace30Dias) {
+      if (new Date(r.fechaHora) >= limite) {
         matriculasConActividadReciente.add(r.matricula);
       }
     });
@@ -522,16 +693,19 @@ export class EstadisticasAvanzadasService {
         tipo: 'info',
         icono: 'people_outline',
         titulo: 'Alumnos Inactivos',
-        descripcion: `${alumnosSinVisitasRecientes} alumnos no han visitado en los últimos 30 días`,
+        descripcion: `${alumnosSinVisitasRecientes} alumnos no han visitado en los últimos ${umbral} días`,
       });
     }
 
     return insights;
   }
 
-  async analizarPorCarrera(rango: RangoFechas): Promise<DatosCarrera[]> {
+  async analizarPorCarrera(
+    rango: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
+  ): Promise<DatosCarrera[]> {
     const todos = await this.obtenerRegistrosConCache();
-    const registrosFiltrados = this.filtrarPorRango(todos, rango);
+    const registrosFiltrados = this.filtrarPorRango(todos, rango, horaFiltro);
 
     const carrerasMap = new Map<string, { visitas: number; alumnos: Set<string> }>();
 

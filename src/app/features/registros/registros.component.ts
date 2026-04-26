@@ -106,7 +106,12 @@ export class RegistrosComponent implements OnInit {
     rangoFecha: 'hoy' as RangoFecha,
     motivo: '',
     carrera: '',
+    horaActiva: false,
+    horaDesde: 7,
+    horaHasta: 21,
   });
+
+  horasDisponibles: number[] = Array.from({ length: 24 }, (_, i) => i);
 
   // Rango personalizado (signals para que disparen el computed)
   fechaPersonalizadaInicioSig = signal('');
@@ -115,6 +120,8 @@ export class RegistrosComponent implements OnInit {
   set fechaPersonalizadaInicio(v: string) { this.fechaPersonalizadaInicioSig.set(v); this.paginaActual.set(0); }
   get fechaPersonalizadaFin(): string { return this.fechaPersonalizadaFinSig(); }
   set fechaPersonalizadaFin(v: string) { this.fechaPersonalizadaFinSig.set(v); this.paginaActual.set(0); }
+
+  formatHora(h: number): string { return `${String(h).padStart(2, '0')}:00`; }
 
   carrerasUnicas = signal<string[]>([]);
 
@@ -201,6 +208,9 @@ columnas: string[] = [
     const termino = f.busqueda.trim().toLowerCase();
     const motivoFiltro = f.motivo;
     const carreraFiltro = f.carrera;
+    const horaActiva = f.horaActiva;
+    const horaDesde = f.horaDesde;
+    const horaHasta = f.horaHasta;
 
     // Una sola pasada, sin construir Date objects (usa _fechaTs precomputado)
     const resultado: RegistroRender[] = [];
@@ -208,6 +218,10 @@ columnas: string[] = [
       if (r._fechaTs < tsMin || r._fechaTs > tsMax) continue;
       if (motivoFiltro && r.motivoNombre !== motivoFiltro) continue;
       if (carreraFiltro && r.carrera !== carreraFiltro) continue;
+      if (horaActiva) {
+        const h = new Date(r._fechaTs).getHours();
+        if (h < horaDesde || h > horaHasta) continue;
+      }
       if (termino) {
         const m = r.matricula.toLowerCase();
         const n = r.nombreCompleto.toLowerCase();
@@ -241,7 +255,7 @@ columnas: string[] = [
 
   get hayFiltrosActivos(): boolean {
     const f = this.filtros();
-    return !!(f.busqueda || f.motivo || f.carrera);
+    return !!(f.busqueda || f.motivo || f.carrera || f.horaActiva);
   }
 
   // ─── ACCIONES ──────────────────────────────────────────
@@ -251,7 +265,25 @@ columnas: string[] = [
   }
 
   limpiarFiltros(): void {
-    this.filtros.set({ busqueda: '', rangoFecha: 'hoy', motivo: '', carrera: '' });
+    this.filtros.set({
+      busqueda: '', rangoFecha: 'hoy', motivo: '', carrera: '',
+      horaActiva: false, horaDesde: 7, horaHasta: 21,
+    });
+    this.paginaActual.set(0);
+  }
+
+  toggleFiltroHora(): void {
+    this.filtros.update(f => ({ ...f, horaActiva: !f.horaActiva }));
+    this.paginaActual.set(0);
+  }
+
+  setHoraDesde(h: number): void {
+    this.filtros.update(f => ({ ...f, horaDesde: h }));
+    this.paginaActual.set(0);
+  }
+
+  setHoraHasta(h: number): void {
+    this.filtros.update(f => ({ ...f, horaHasta: h }));
     this.paginaActual.set(0);
   }
 

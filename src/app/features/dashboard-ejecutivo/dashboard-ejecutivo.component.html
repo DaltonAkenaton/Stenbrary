@@ -1,125 +1,377 @@
 <!--
   dashboard-ejecutivo.component.html
-  Stenbrary v4.1 — Rangos dinámicos + export
+  Stenbrary v3.14 — Claridad ejecutiva
 -->
 
 <div class="dashboard-ejecutivo-container">
 
-  <!-- Header -->
-  <div class="header">
-    <button mat-icon-button class="back-button" (click)="volverDashboard()">
+  <!-- ═══ HEADER ════════════════════════════════════════ -->
+  <header class="header">
+    <button mat-icon-button class="back-button" (click)="volverDashboard()" aria-label="Volver">
       <mat-icon>arrow_back</mat-icon>
     </button>
+
     <div class="header-info">
       <h1>Dashboard Ejecutivo</h1>
-      <p class="subtitle">Análisis avanzado y tendencias</p>
+      <p class="subtitle">Análisis avanzado y tendencias del flujo de la biblioteca</p>
+
+      <!-- Línea fija con rango activo -->
+      @if (rangoActivo) {
+        <div class="rango-activo-banner">
+          <mat-icon>event</mat-icon>
+          <div class="rango-activo-text">
+            <strong>Mostrando:</strong> {{ labelRangoActivo }}
+            @if (labelMesPrincipal) {
+              <span class="mes-principal">· {{ labelMesPrincipal }}</span>
+            }
+            @if (filtroHoraActivo) {
+              <span class="hora-chip">
+                <mat-icon>schedule</mat-icon>
+                {{ labelFiltroHora }}
+              </span>
+            }
+          </div>
+          @if (labelRangoComparativo) {
+            <span class="rango-comparativo">{{ labelRangoComparativo }}</span>
+          }
+        </div>
+      }
     </div>
-    <div class="periodo-controls">
+  </header>
+
+  <!-- ═══ FILTROS ═══════════════════════════════════════ -->
+  <section class="filtros-card">
+    <div class="filtros-row">
+      <span class="filtro-label">Período:</span>
       <div class="periodo-selector">
-        @for (op of opcionesPeriodo; track op.dias) {
+        @for (op of opcionesPreset; track op.key) {
           <button class="periodo-btn"
-                  [class.active]="!rangoPersonalizado && periodoSeleccionado === op.dias"
-                  (click)="setPeriodo(op.dias)">
+                  [class.active]="presetSeleccionado === op.key"
+                  (click)="setPreset(op.key)">
+            @if (op.key === 'personalizado') {
+              <mat-icon>date_range</mat-icon>
+            }
             {{ op.label }}
           </button>
         }
-        <button class="periodo-btn"
-                [class.active]="rangoPersonalizado"
-                (click)="toggleRangoPersonalizado()">
-          <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:2px">date_range</mat-icon>
-          Personalizado
+      </div>
+    </div>
+
+    @if (presetSeleccionado === 'personalizado') {
+      <div class="filtro-row-personalizado">
+        <input type="date" [(ngModel)]="fechaInicio" [max]="fechaFin || fechaMaxima" class="date-input">
+        <span class="date-separator">—</span>
+        <input type="date" [(ngModel)]="fechaFin" [min]="fechaInicio" [max]="fechaMaxima" class="date-input">
+        <button class="btn-aplicar" (click)="aplicarRangoPersonalizado()"
+                [disabled]="!fechaInicio || !fechaFin">
+          Aplicar
         </button>
       </div>
+    }
 
-      @if (rangoPersonalizado) {
-        <div class="rango-personalizado">
-          <input type="date" [(ngModel)]="fechaInicio" [max]="fechaFin || fechaMaxima"
-                 class="date-input">
-          <span class="date-separator">—</span>
-          <input type="date" [(ngModel)]="fechaFin" [min]="fechaInicio" [max]="fechaMaxima"
-                 class="date-input">
-          <button class="btn-aplicar" (click)="aplicarRangoPersonalizado()"
-                  [disabled]="!fechaInicio || !fechaFin">
-            Aplicar
-          </button>
+    <div class="filtros-row hora-row">
+      <label class="hora-toggle">
+        <input type="checkbox" [(ngModel)]="filtroHoraActivo" (change)="setFiltroHora()">
+        <mat-icon>schedule</mat-icon>
+        Filtrar por hora del día
+        <mat-icon class="info-icon"
+                  matTooltip="Limita los registros mostrados a un rango horario específico (ej. solo turno matutino 7:00–14:00). Útil para analizar el flujo en horas concretas.">
+          help_outline
+        </mat-icon>
+      </label>
+
+      @if (filtroHoraActivo) {
+        <div class="hora-controls">
+          <span class="hora-label">Desde</span>
+          <select [(ngModel)]="filtroHoraDesde" (change)="setFiltroHora()" class="hora-select">
+            @for (h of horasDisponibles; track h) {
+              <option [value]="h">{{ formatHora(h) }}</option>
+            }
+          </select>
+          <span class="hora-label">Hasta</span>
+          <select [(ngModel)]="filtroHoraHasta" (change)="setFiltroHora()" class="hora-select">
+            @for (h of horasDisponibles; track h) {
+              <option [value]="h">{{ formatHora(h) }}</option>
+            }
+          </select>
         </div>
       }
-
-      <div class="reporte-mensual-wrap">
-        <select class="date-input mes-select" [(ngModel)]="tipoReporte">
-          <option value="diario">Diario</option>
-          <option value="semanal">Semanal</option>
-          <option value="mensual">Mensual</option>
-          <option value="anual">Anual</option>
-        </select>
-
-        @if (tipoReporte === 'diario') {
-          <input type="date" class="date-input" [(ngModel)]="fechaReporteDiario">
-        } @else if (tipoReporte === 'semanal') {
-          <input type="date" class="date-input" [(ngModel)]="fechaReporteSemana"
-                 matTooltip="Cualquier día dentro de la semana a reportar">
-        } @else if (tipoReporte === 'mensual') {
-          <select class="date-input mes-select" [(ngModel)]="mesReporteSeleccionado">
-            @for (m of mesesDisponibles; track m.valor) {
-              <option [value]="m.valor">{{ m.label }}</option>
-            }
-          </select>
-        } @else if (tipoReporte === 'anual') {
-          <select class="date-input mes-select" [(ngModel)]="anioReporteSeleccionado">
-            @for (a of aniosDisponibles; track a.valor) {
-              <option [value]="a.valor">{{ a.label }}</option>
-            }
-          </select>
-        }
-
-        <button class="btn-aplicar" (click)="generarReportePeriodo()"
-                [disabled]="generandoReporte || !puedeGenerarReporte"
-                matTooltip="Genera un PDF con estadísticas del periodo seleccionado">
-          <mat-icon style="font-size:14px;width:14px;height:14px;margin-right:4px">picture_as_pdf</mat-icon>
-          {{ labelBotonReporte }}
-        </button>
-      </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Loading -->
-  <div class="loading-state" *ngIf="cargando">
-    <mat-icon>hourglass_empty</mat-icon>
-    <p>Analizando datos...</p>
-  </div>
+  <!-- ═══ LOADING ═══════════════════════════════════════ -->
+  @if (cargando) {
+    <div class="loading-state">
+      <mat-icon>hourglass_empty</mat-icon>
+      <p>Analizando datos...</p>
+    </div>
+  }
 
-  <!-- Contenido -->
-  <div *ngIf="!cargando" class="content">
+  <!-- ═══ CONTENIDO ═════════════════════════════════════ -->
+  @if (!cargando) {
 
-    <!-- Insights Automáticos -->
-    <div class="insights-grid" *ngIf="insights.length > 0">
-      <mat-card
-        *ngFor="let insight of insights"
-        class="insight-card"
-        [class.insight-success]="insight.tipo === 'success'"
-        [class.insight-warning]="insight.tipo === 'warning'"
-        [class.insight-info]="insight.tipo === 'info'">
-        <div class="insight-icon">
-          <mat-icon>{{ insight.icono }}</mat-icon>
+    <!-- ─── KPIs FIJOS (siempre 4 tarjetas) ──────────── -->
+    <section class="kpis-grid">
+      <div class="kpi-card kpi-primary">
+        <div class="kpi-icon"><mat-icon>fact_check</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-label">
+            Total de registros
+            <mat-icon class="info-icon"
+                      matTooltip="Suma de todas las visitas registradas durante el período seleccionado (incluye invitados).">
+              help_outline
+            </mat-icon>
+          </div>
+          <div class="kpi-value">{{ kpiTotalRegistros }}</div>
+          <div class="kpi-sub">{{ kpiPromedioPorDia }} promedio por día</div>
         </div>
-        <div class="insight-content">
-          <h3>{{ insight.titulo }}</h3>
-          <p>{{ insight.descripcion }}</p>
+      </div>
+
+      <div class="kpi-card" [class]="'kpi-' + obtenerColorTendencia()">
+        <div class="kpi-icon"><mat-icon>{{ obtenerIconoTendencia() }}</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-label">
+            {{ labelTendencia }}
+            <mat-icon class="info-icon"
+                      matTooltip="Compara el total del período actual contra el período inmediatamente anterior de la misma duración. Ej: si filtras 30 días, lo compara contra los 30 días previos.">
+              help_outline
+            </mat-icon>
+          </div>
+          <div class="kpi-value">{{ obtenerTextoTendencia() }}</div>
+          <div class="kpi-sub" *ngIf="tendencia">
+            {{ tendencia.actual }} ahora · {{ tendencia.anterior }} antes
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-info">
+        <div class="kpi-icon"><mat-icon>schedule</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-label">
+            Hora pico del período
+            <mat-icon class="info-icon"
+                      matTooltip="Combinación día-hora con más visitas dentro del período filtrado. Se calcula sumando los registros que cayeron en cada hora de cada día de la semana.">
+              help_outline
+            </mat-icon>
+          </div>
+          @if (kpiHoraPico) {
+            <div class="kpi-value">{{ kpiHoraPico.dia }} {{ formatHora(kpiHoraPico.hora) }}</div>
+            <div class="kpi-sub">{{ kpiHoraPico.cantidad }} visitas en ese momento</div>
+          } @else {
+            <div class="kpi-value muted">Sin datos</div>
+            <div class="kpi-sub">No hay registros en el período</div>
+          }
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-warning">
+        <div class="kpi-icon"><mat-icon>people_outline</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-label">
+            Alumnos inactivos
+            <mat-icon class="info-icon"
+                      [matTooltip]="'Alumnos activos que tienen historial pero NO han venido en los últimos ' + kpiUmbralInactividad + ' días. Este umbral se configura en /configuración (independiente del filtro de período).'">
+              help_outline
+            </mat-icon>
+          </div>
+          <div class="kpi-value">{{ kpiAlumnosInactivos }}</div>
+          <div class="kpi-sub">≥ {{ kpiUmbralInactividad }} días sin venir</div>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-secondary">
+        <div class="kpi-icon"><mat-icon>group</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-label">
+            Alumnos únicos
+            <mat-icon class="info-icon"
+                      matTooltip="Cantidad de alumnos distintos que visitaron al menos una vez durante el período (no cuenta visitas repetidas, ni invitados).">
+              help_outline
+            </mat-icon>
+          </div>
+          <div class="kpi-value">{{ kpiAlumnosUnicos }}</div>
+          <div class="kpi-sub">en el período seleccionado</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── ACCIONES SOBRE LO VISIBLE ────────────────── -->
+    <div class="acciones-rango">
+      <button class="btn-export" (click)="exportarLoQueVeo()" [disabled]="generandoReporte || kpiTotalRegistros === 0">
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exportar PDF de lo que veo
+      </button>
+      <button class="btn-comparar" (click)="toggleComparador()">
+        <mat-icon>{{ compararAbierto ? 'compare_arrows' : 'compare' }}</mat-icon>
+        {{ compararAbierto ? 'Cerrar comparador' : 'Comparar dos períodos' }}
+      </button>
+    </div>
+
+    <!-- ─── COMPARADOR A vs B ────────────────────────── -->
+    @if (compararAbierto) {
+      <mat-card class="comparador-card">
+        <div class="comparador-header">
+          <h2>
+            <mat-icon>compare_arrows</mat-icon>
+            Comparar dos períodos
+          </h2>
+          <p class="comparador-hint">
+            Útil para ver "esta semana vs semana pasada" o "febrero vs abril" — cualquier dos rangos arbitrarios.
+          </p>
+        </div>
+
+        <div class="comparador-grid">
+          <!-- SLOT A -->
+          <div class="comparador-slot slot-a">
+            <div class="slot-header">
+              <span class="slot-badge">A</span>
+              <select [(ngModel)]="presetA" (change)="setPresetComparador('a', presetA)" class="slot-select">
+                @for (op of opcionesComparador; track op.key) {
+                  <option [value]="op.key">{{ op.label }}</option>
+                }
+              </select>
+            </div>
+            @if (presetA === 'personalizado') {
+              <div class="slot-fechas">
+                <input type="date" [(ngModel)]="fechaInicioA" [max]="fechaMaxima" class="date-input small">
+                <span>—</span>
+                <input type="date" [(ngModel)]="fechaFinA" [max]="fechaMaxima" class="date-input small">
+                <button class="btn-aplicar small" (click)="compararAhora()">Aplicar</button>
+              </div>
+            }
+
+            @if (comparativa) {
+              <div class="slot-rango-real">{{ labelRangoComparado('a') }}</div>
+              <div class="slot-stats">
+                <div class="slot-kpi big">
+                  <span class="slot-kpi-value">{{ comparativa.a.totalRegistros }}</span>
+                  <span class="slot-kpi-label">registros</span>
+                </div>
+                <div class="slot-kpi-row">
+                  <div class="slot-kpi">
+                    <span class="slot-kpi-value">{{ comparativa.a.alumnosUnicos }}</span>
+                    <span class="slot-kpi-label">alumnos únicos</span>
+                  </div>
+                  <div class="slot-kpi">
+                    <span class="slot-kpi-value">{{ comparativa.a.promedioPorDia }}</span>
+                    <span class="slot-kpi-label">prom/día</span>
+                  </div>
+                </div>
+                @if (comparativa.a.horaPico) {
+                  <div class="slot-pico">
+                    <mat-icon>schedule</mat-icon>
+                    Pico: {{ comparativa.a.horaPico.dia }} {{ formatHora(comparativa.a.horaPico.hora) }}
+                  </div>
+                }
+              </div>
+              <div class="slot-donut">
+                <canvas #chartCompararA></canvas>
+              </div>
+            }
+          </div>
+
+          <!-- DIFERENCIA -->
+          @if (comparativa) {
+            <div class="comparador-diferencia" [class]="'dif-' + colorComparativa(comparativa.diferencia.direccion)">
+              <mat-icon>{{ iconoComparativa(comparativa.diferencia.direccion) }}</mat-icon>
+              <div class="dif-numero">
+                {{ comparativa.diferencia.cambio > 0 ? '+' : '' }}{{ comparativa.diferencia.cambio }}
+              </div>
+              <div class="dif-porcentaje">
+                @if (comparativa.diferencia.direccion !== 'igual') {
+                  {{ comparativa.diferencia.porcentaje > 0 ? '+' : '' }}{{ comparativa.diferencia.porcentaje | number:'1.0-1' }}%
+                } @else {
+                  Sin cambio
+                }
+              </div>
+              <div class="dif-label">A vs B</div>
+            </div>
+          }
+
+          <!-- SLOT B -->
+          <div class="comparador-slot slot-b">
+            <div class="slot-header">
+              <span class="slot-badge slot-badge-b">B</span>
+              <select [(ngModel)]="presetB" (change)="setPresetComparador('b', presetB)" class="slot-select">
+                @for (op of opcionesComparador; track op.key) {
+                  <option [value]="op.key">{{ op.label }}</option>
+                }
+              </select>
+            </div>
+            @if (presetB === 'personalizado') {
+              <div class="slot-fechas">
+                <input type="date" [(ngModel)]="fechaInicioB" [max]="fechaMaxima" class="date-input small">
+                <span>—</span>
+                <input type="date" [(ngModel)]="fechaFinB" [max]="fechaMaxima" class="date-input small">
+                <button class="btn-aplicar small" (click)="compararAhora()">Aplicar</button>
+              </div>
+            }
+
+            @if (comparativa) {
+              <div class="slot-rango-real">{{ labelRangoComparado('b') }}</div>
+              <div class="slot-stats">
+                <div class="slot-kpi big">
+                  <span class="slot-kpi-value">{{ comparativa.b.totalRegistros }}</span>
+                  <span class="slot-kpi-label">registros</span>
+                </div>
+                <div class="slot-kpi-row">
+                  <div class="slot-kpi">
+                    <span class="slot-kpi-value">{{ comparativa.b.alumnosUnicos }}</span>
+                    <span class="slot-kpi-label">alumnos únicos</span>
+                  </div>
+                  <div class="slot-kpi">
+                    <span class="slot-kpi-value">{{ comparativa.b.promedioPorDia }}</span>
+                    <span class="slot-kpi-label">prom/día</span>
+                  </div>
+                </div>
+                @if (comparativa.b.horaPico) {
+                  <div class="slot-pico">
+                    <mat-icon>schedule</mat-icon>
+                    Pico: {{ comparativa.b.horaPico.dia }} {{ formatHora(comparativa.b.horaPico.hora) }}
+                  </div>
+                }
+              </div>
+              <div class="slot-donut">
+                <canvas #chartCompararB></canvas>
+              </div>
+            }
+          </div>
         </div>
       </mat-card>
-    </div>
+    }
 
-    <!-- ═══ GRÁFICAS ═══════════════════════════════════ -->
+    <!-- ─── INSIGHTS ─────────────────────────────────── -->
+    @if (insights.length > 0) {
+      <div class="insights-grid">
+        @for (insight of insights; track insight.titulo) {
+          <mat-card
+            class="insight-card"
+            [class.insight-success]="insight.tipo === 'success'"
+            [class.insight-warning]="insight.tipo === 'warning'"
+            [class.insight-info]="insight.tipo === 'info'">
+            <div class="insight-icon">
+              <mat-icon>{{ insight.icono }}</mat-icon>
+            </div>
+            <div class="insight-content">
+              <h3>{{ insight.titulo }}</h3>
+              <p>{{ insight.descripcion }}</p>
+            </div>
+          </mat-card>
+        }
+      </div>
+    }
 
-    <!-- Fila 1: Barras diarias + Dona motivos -->
+    <!-- ─── GRÁFICAS PRINCIPALES ─────────────────────── -->
     <div class="charts-row">
-
-      <!-- Registros por día (TÍTULO DINÁMICO) -->
       <mat-card class="chart-card chart-wide">
         <div class="chart-header">
           <h2>
             <mat-icon>bar_chart</mat-icon>
             {{ labelRegistrosDiarios }}
+            <mat-icon class="info-icon"
+                      matTooltip="Cantidad de registros agrupados por día, semana o mes según el largo del período. Hasta 31 días: por día. Hasta 180: por semana. Más: por mes.">
+              help_outline
+            </mat-icon>
           </h2>
         </div>
         <div class="chart-wrapper">
@@ -127,27 +379,32 @@
         </div>
       </mat-card>
 
-      <!-- Distribución por motivos (TÍTULO DINÁMICO) -->
       <mat-card class="chart-card chart-narrow">
         <div class="chart-header">
           <h2>
             <mat-icon>pie_chart</mat-icon>
-            {{ labelMotivos }}
+            Motivos de visita
+            <mat-icon class="info-icon"
+                      matTooltip="Distribución de los motivos seleccionados al registrar. Si un alumno marcó varios motivos, cuenta solo el principal (el primero seleccionado).">
+              help_outline
+            </mat-icon>
           </h2>
         </div>
         <div class="chart-wrapper chart-doughnut">
           <canvas #chartMotivos></canvas>
         </div>
       </mat-card>
-
     </div>
 
-    <!-- Fila 2: Carreras (TÍTULO DINÁMICO) -->
     <mat-card class="chart-card" *ngIf="datosCarreras.length > 0">
       <div class="chart-header">
         <h2>
           <mat-icon>school</mat-icon>
-          {{ labelCarreras }}
+          Visitas por carrera
+          <mat-icon class="info-icon"
+                    matTooltip="Total de visitas agrupadas por carrera. El tooltip de cada barra muestra cuántos alumnos distintos vinieron y el promedio de visitas por alumno.">
+            help_outline
+          </mat-icon>
         </h2>
       </div>
       <div class="chart-wrapper chart-carreras"
@@ -156,18 +413,27 @@
       </div>
     </mat-card>
 
-    <!-- ═══ TENDENCIA (TÍTULO DINÁMICO) ════════════════ -->
-    <mat-card class="tendencia-card" *ngIf="tendenciaSemanal">
+    <!-- ─── TENDENCIA DETALLADA ──────────────────────── -->
+    <mat-card class="tendencia-card" *ngIf="tendencia">
       <h2>
         <mat-icon>timeline</mat-icon>
         {{ labelTendencia }}
+        <mat-icon class="info-icon"
+                  matTooltip="Compara el total de registros del período actual contra el período inmediatamente anterior de la misma duración.">
+          help_outline
+        </mat-icon>
       </h2>
 
       <div class="tendencia-grid">
         <div class="tendencia-stat">
           <span class="tendencia-label">Este Período</span>
-          <span class="tendencia-valor grande">{{ tendenciaSemanal.actual }}</span>
+          <span class="tendencia-valor grande">{{ tendencia.actual }}</span>
           <span class="tendencia-sublabel">registros</span>
+          @if (rangoActivo) {
+            <span class="tendencia-fechas">
+              {{ formatearFecha(rangoActivo.inicio) }} — {{ formatearFecha(rangoActivo.fin) }}
+            </span>
+          }
         </div>
 
         <div class="tendencia-icono" [class]="obtenerColorTendencia()">
@@ -176,8 +442,11 @@
 
         <div class="tendencia-stat">
           <span class="tendencia-label">Período Anterior</span>
-          <span class="tendencia-valor">{{ tendenciaSemanal.anterior }}</span>
+          <span class="tendencia-valor">{{ tendencia.anterior }}</span>
           <span class="tendencia-sublabel">registros</span>
+          <span class="tendencia-fechas">
+            {{ formatearFecha(tendencia.rangoAnterior.inicio) }} — {{ formatearFecha(tendencia.rangoAnterior.fin) }}
+          </span>
         </div>
       </div>
 
@@ -186,22 +455,29 @@
       </div>
     </mat-card>
 
-    <!-- ═══ HEATMAP CON SELECTOR DE RANGO ══════════════ -->
+    <!-- ─── HEATMAP ──────────────────────────────────── -->
     <mat-card class="heatmap-card">
       <div class="heatmap-header">
         <div class="heatmap-title-block">
           <h2>
             <mat-icon>grid_on</mat-icon>
             {{ labelHeatmap }}
+            <mat-icon class="info-icon"
+                      matTooltip="Cada celda muestra cuántas visitas hubo en esa combinación día-hora durante el período del heatmap (independiente del filtro de período principal). Más oscuro = más concurrido.">
+              help_outline
+            </mat-icon>
           </h2>
           <p class="heatmap-sublabel" *ngIf="sublabelHeatmap">
             <mat-icon>event</mat-icon>
             {{ sublabelHeatmap }}
           </p>
+          <p class="heatmap-aviso">
+            <mat-icon>info</mat-icon>
+            Este mapa usa su propio rango — independiente del filtro principal de arriba.
+          </p>
         </div>
 
         <div class="heatmap-controls">
-          <!-- Selector de período del heatmap -->
           <div class="mini-periodo-selector">
             @for (op of opcionesHeatmap; track op.dias) {
               <button class="mini-periodo-btn"
@@ -215,21 +491,11 @@
       </div>
 
       <div class="heatmap-leyenda">
-        <span class="leyenda-item">
-          <span class="leyenda-cuadro intensidad-0"></span> Nulo
-        </span>
-        <span class="leyenda-item">
-          <span class="leyenda-cuadro intensidad-1"></span> Bajo
-        </span>
-        <span class="leyenda-item">
-          <span class="leyenda-cuadro intensidad-2"></span> Medio
-        </span>
-        <span class="leyenda-item">
-          <span class="leyenda-cuadro intensidad-3"></span> Alto
-        </span>
-        <span class="leyenda-item">
-          <span class="leyenda-cuadro intensidad-4"></span> Muy Alto
-        </span>
+        <span class="leyenda-item"><span class="leyenda-cuadro intensidad-0"></span> Nulo</span>
+        <span class="leyenda-item"><span class="leyenda-cuadro intensidad-1"></span> Bajo</span>
+        <span class="leyenda-item"><span class="leyenda-cuadro intensidad-2"></span> Medio</span>
+        <span class="leyenda-item"><span class="leyenda-cuadro intensidad-3"></span> Alto</span>
+        <span class="leyenda-item"><span class="leyenda-cuadro intensidad-4"></span> Muy Alto</span>
       </div>
 
       <div class="heatmap-container">
@@ -257,20 +523,23 @@
 
       <div class="heatmap-prediccion" *ngIf="diaPredicho">
         <mat-icon>psychology</mat-icon>
-        <span><strong>Predicción:</strong> {{ diaPredicho }} es típicamente el día más concurrido</span>
+        <span><strong>Predicción:</strong> {{ diaPredicho }} es típicamente el día más concurrido (basado en este mapa)</span>
       </div>
     </mat-card>
 
-    <!-- ═══ TOP ALUMNOS CON RANGO + EXPORT ═════════════ -->
+    <!-- ─── TOP ALUMNOS ──────────────────────────────── -->
     <mat-card class="top-alumnos-card">
       <div class="section-header-row">
         <h2>
           <mat-icon>emoji_events</mat-icon>
           {{ labelTopAlumnos }}
+          <mat-icon class="info-icon"
+                    matTooltip="Los 5 alumnos con más visitas en el período seleccionado abajo (independiente del filtro de período principal). Excluye invitados.">
+            help_outline
+          </mat-icon>
         </h2>
 
         <div class="section-actions">
-          <!-- Selector de período -->
           <div class="mini-periodo-selector">
             @for (op of opcionesTopPeriodo; track op.dias) {
               <button class="mini-periodo-btn"
@@ -281,7 +550,6 @@
             }
           </div>
 
-          <!-- Export buttons -->
           <div class="export-btns" *ngIf="topAlumnos.length > 0">
             <button class="export-btn" matTooltip="Exportar a Excel" (click)="exportarTopExcel()">
               <mat-icon>table_chart</mat-icon>
@@ -296,26 +564,21 @@
       </div>
 
       <div class="top-alumnos-lista" *ngIf="topAlumnos.length > 0">
-        <div
-          *ngFor="let item of topAlumnos; let i = index"
-          class="top-alumno-item"
-          (click)="verDetalleAlumno(item)">
-
+        <div *ngFor="let item of topAlumnos; let i = index"
+             class="top-alumno-item"
+             (click)="verDetalleAlumno(item)">
           <div class="alumno-ranking">
             <span class="ranking-numero" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
               {{ i + 1 }}
             </span>
           </div>
-
           <div class="alumno-avatar">
             <mat-icon>account_circle</mat-icon>
           </div>
-
           <div class="alumno-info">
             <h3>{{ obtenerNombreCompleto(item) }}</h3>
             <p class="alumno-carrera">{{ item.alumno.carrera }}</p>
           </div>
-
           <div class="alumno-stats">
             <div class="stat-item">
               <mat-icon>login</mat-icon>
@@ -329,7 +592,6 @@
               <mat-chip class="motivo-chip">{{ item.motivoFrecuente }}</mat-chip>
             </div>
           </div>
-
           <mat-icon class="ver-mas">chevron_right</mat-icon>
         </div>
       </div>
@@ -340,6 +602,57 @@
       </div>
     </mat-card>
 
-  </div>
+    <!-- ─── REPORTES PREDEFINIDOS (al final) ─────────── -->
+    <mat-card class="reportes-predefinidos-card">
+      <div class="reportes-header">
+        <h2>
+          <mat-icon>description</mat-icon>
+          Reportes predefinidos
+          <mat-icon class="info-icon"
+                    matTooltip="Genera reportes PDF de períodos concretos (un día, semana, mes o año específico) sin afectar lo que ves arriba.">
+            help_outline
+          </mat-icon>
+        </h2>
+        <p class="reportes-hint">
+          Para reportes históricos puntuales. Si quieres un PDF de lo que ves arriba, usa "Exportar PDF de lo que veo".
+        </p>
+      </div>
+
+      <div class="reporte-row">
+        <select class="date-input" [(ngModel)]="tipoReporte">
+          <option value="diario">Diario</option>
+          <option value="semanal">Semanal</option>
+          <option value="mensual">Mensual</option>
+          <option value="anual">Anual</option>
+        </select>
+
+        @if (tipoReporte === 'diario') {
+          <input type="date" class="date-input" [(ngModel)]="fechaReporteDiario">
+        } @else if (tipoReporte === 'semanal') {
+          <input type="date" class="date-input" [(ngModel)]="fechaReporteSemana"
+                 matTooltip="Cualquier día dentro de la semana a reportar">
+        } @else if (tipoReporte === 'mensual') {
+          <select class="date-input" [(ngModel)]="mesReporteSeleccionado">
+            @for (m of mesesDisponibles; track m.valor) {
+              <option [value]="m.valor">{{ m.label }}</option>
+            }
+          </select>
+        } @else if (tipoReporte === 'anual') {
+          <select class="date-input" [(ngModel)]="anioReporteSeleccionado">
+            @for (a of aniosDisponibles; track a.valor) {
+              <option [value]="a.valor">{{ a.label }}</option>
+            }
+          </select>
+        }
+
+        <button class="btn-aplicar" (click)="generarReportePeriodo()"
+                [disabled]="generandoReporte || !puedeGenerarReporte">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ labelBotonReporte }}
+        </button>
+      </div>
+    </mat-card>
+
+  }
 
 </div>
