@@ -400,6 +400,46 @@
   padding: 24px;
   overflow: hidden;
   margin-bottom: $spacing-xl;
+  // Aislar paint del scroll: cuando el usuario scrollea, el navegador no
+  // tiene que repintar el contenido del canvas/SVG dentro de la tarjeta.
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 320px;
+}
+
+// Empty-state para gráficas sin datos (B3 v3.17.2).
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 32px 20px;
+  height: 100%;
+  min-height: 200px;
+  text-align: center;
+  color: $text-muted;
+
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    opacity: 0.5;
+    color: $cyan-500;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: $text-secondary;
+    font-size: 0.92rem;
+    font-weight: 500;
+    strong { color: $text-primary; }
+  }
+
+  small {
+    color: $text-muted;
+    font-size: 0.78rem;
+  }
 }
 
 .chart-header {
@@ -444,6 +484,9 @@
 .tendencia-card {
   margin-bottom: $spacing-xl;
   padding: $spacing-xl;
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 280px;
 
   h2 {
     margin: 0 0 $spacing-xl 0;
@@ -537,6 +580,9 @@
 
 .heatmap-card {
   margin-bottom: $spacing-xl;
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 540px;
   padding: $spacing-xl;
 
   .heatmap-header {
@@ -760,6 +806,9 @@
 
 .top-alumnos-card {
   padding: $spacing-xl;
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 480px;
 
   .top-alumnos-lista {
     display: flex;
@@ -1177,6 +1226,7 @@
   align-items: flex-start;
   gap: 14px;
   padding: 18px;
+  contain: layout style;
   background: $navy-700;
   border: 1px solid $border-subtle;
   border-radius: 14px;
@@ -1441,16 +1491,9 @@
     height: 8px;
     border-radius: 50%;
     background: $success-color;
-    box-shadow: 0 0 0 0 rgba($success-color, 0.7);
-    animation: dotPulse 2s ease-out infinite;
+    box-shadow: 0 0 6px 1px rgba($success-color, 0.55);
     flex-shrink: 0;
   }
-}
-
-@keyframes dotPulse {
-  0%   { box-shadow: 0 0 0 0 rgba($success-color, 0.7); }
-  70%  { box-shadow: 0 0 0 8px rgba($success-color, 0); }
-  100% { box-shadow: 0 0 0 0 rgba($success-color, 0); }
 }
 
 .hero-variacion {
@@ -1706,15 +1749,9 @@
   }
 }
 
-// ─── Pulse animation en estrella PICO (Tier C20) ──────────
+// Estrella PICO: estática (sin animación infinita — fix lag scroll v3.17.2).
 .heatmap-cell.es-pico .cell-star {
-  animation: starPulse 2.4s ease-in-out infinite;
   display: inline-block;
-}
-
-@keyframes starPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.25); opacity: 0.85; }
 }
 
 // ─── Reduced motion: desactiva animaciones costosas ───────
@@ -2419,9 +2456,8 @@ button:focus-visible {
   justify-content: center;
   gap: 10px;
   padding: 6px 16px;
-  background: rgba($navy-800, 0.92);
+  background: $navy-800;
   border-bottom: 1px solid rgba($cyan-500, 0.25);
-  backdrop-filter: blur(6px);
   font-size: 0.78rem;
   color: $cyan-400;
   pointer-events: none;

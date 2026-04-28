@@ -127,6 +127,20 @@
         </mat-select>
       </mat-form-field>
 
+      <mat-form-field appearance="outline" class="filtro-field"
+                      matTooltip="Filtra alumnos por la cantidad de visitas que han hecho a la biblioteca en TODA su historia (no por período).">
+        <mat-label>Visitas (histórico)</mat-label>
+        <mat-select
+          [ngModel]="filtros().visitas"
+          (ngModelChange)="onFiltroVisitasChange($event)">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="cero">Nunca han venido (0)</mat-option>
+          <mat-option value="una">Vinieron solo 1 vez</mat-option>
+          <mat-option value="pocas">Pocas (2 a 4)</mat-option>
+          <mat-option value="muchas">Frecuentes (5+)</mat-option>
+        </mat-select>
+      </mat-form-field>
+
       @if (hayFiltrosActivos) {
         <button class="btn-clear-filters" (click)="limpiarFiltros()">
           <mat-icon>filter_alt_off</mat-icon>
@@ -165,6 +179,17 @@
         @if (filtros().estado) {
           <button class="filtro-chip" (click)="limpiarFiltro('estado')">
             Estado: {{ filtros().estado === 'activos' ? 'Activos' : 'Inactivos' }}
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        @if (filtros().visitas) {
+          <button class="filtro-chip" (click)="limpiarFiltro('visitas')">
+            @switch (filtros().visitas) {
+              @case ('cero')   { Nunca han venido }
+              @case ('una')    { Solo 1 vez }
+              @case ('pocas')  { 2-4 visitas }
+              @case ('muchas') { 5+ visitas }
+            }
             <mat-icon>close</mat-icon>
           </button>
         }

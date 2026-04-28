@@ -49,6 +49,33 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.17.2',
+    fecha: '2026-04-27',
+    titulo: '0 lag, gráficas con datos vacíos y filtro por visitas en alumnos',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: scroll mucho más fluido. Quitamos animaciones infinitas (puntito latente y estrella) y aislamos cada tarjeta del repintado del scroll usando contain/content-visibility.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Alumnos: nuevo filtro "Visitas (histórico)" con cuatro opciones: nunca han venido (0), vinieron solo 1 vez, pocas (2-4), frecuentes (5+). Resuelve el caso "quiero ver a los 8 alumnos que solo vinieron una vez".',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: cuando un período no tiene datos (ej. 7 días sin actividad), las gráficas ahora muestran un mensaje claro en lugar de quedarse en blanco o desaparecer.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: la sección "Visitas por carrera" ahora siempre se ve (antes desaparecía si no había datos). Si no hay carreras con visitas, muestra mensaje amigable.',
+      },
+    ],
+  },
+  {
     version: '3.17.1',
     fecha: '2026-04-27',
     titulo: 'Estadísticas más fluidas: sin parpadeo + textos amigables',

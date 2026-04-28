@@ -143,6 +143,26 @@ Prioridad: **🔴 alta** · **🟡 media** · **🟢 baja**.
 - [ ] **Virtual scroll en `/registros`** (cdk-virtual-scroll): hoy con volumen alto (Histórico 30m ≈ 80k+ registros) el scroll lagea. Misma técnica aplicable a la pestaña de historial en `/detalle-alumno`.
 - [ ] **Papelera / Undo diferido** para eliminaciones de alumno/registro/motivo: mover a un store `papelera` con retención de 30 días en vez de borrar duro. Hoy solo el toast de "Deshacer" inmediato post-registro cubre ese caso. Se resuelve mejor cuando esté el Activity Log (§2.1).
 
+### 2.3.3 Mejoras Dashboard Ejecutivo (post-entrega) 🟢
+
+Anotadas en sesión v3.17.x para después de la entrega; el coordinador pidió enfocar perf/bugs/UX antes de nuevas features.
+
+- [ ] **Comparativa "año móvil" (12 meses rolling)** vs los 12 previos — suaviza estacionalidad escolar.
+- [ ] **Detección automática de anomalías**: marcar días con visitas a +3 desviaciones estándar.
+- [ ] **Promedio "por día abierto"** vs "por día calendario" — relevante con horarios cerrados.
+- [ ] **Tasa de retorno semanal** (cuántos vuelven la semana siguiente).
+- [ ] **Ranking de carreras "en caída"** (opuesto al "carrera en crecimiento" que ya existe).
+- [ ] **Recordar último filtro al volver** (localStorage) — hoy siempre arranca en "30 días". (Ya hay permalinks en URL desde v3.17.0; falta el default.)
+- [ ] **Tarjetas favoritas/anclables**: el coordinador marca cuáles le importan y suben.
+- [ ] **Modo presentación** (fullscreen) para mostrar a directivos.
+- [ ] **Comparar tres rangos** (no solo A vs B).
+- [ ] **Lazy-load de gráficas fuera del viewport** con IntersectionObserver — solo dibujar la del crecimiento 12m si el usuario hace scroll hasta allá.
+- [ ] **Web Worker para cálculo de métricas** con +500k registros (para cuando llegue ese volumen).
+- [ ] **Colores semánticos en KPIs según el valor** (rojo si retención <30%, ámbar 30-60%, verde >60%).
+- [ ] **Mini-leyenda inline en cada gráfica** con su valor numérico al lado.
+- [ ] **Modo "alto contraste"** con tema separado.
+- [ ] **Atajos de teclado**: H = hero, R = refrescar, P = personalizar PDF.
+
 ### 2.3.1 Catálogos editables desde UI 🔴 (bloquea venta a otras universidades)
 
 - [ ] **`CARRERAS` editables desde `/configuracion`**: hoy son constantes en `catalogos.constants.ts`. Problema real: las carreras se renombran con el tiempo (ej. "Licenciatura en Enfermería" no existe en la facultad del coordinador; su propia carrera ya se renombró y volverá a renombrarse). **Requisitos:**

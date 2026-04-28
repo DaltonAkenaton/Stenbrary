@@ -65,7 +65,12 @@ export class AlumnosComponent implements OnInit {
     grupo: '',
     turno: '',
     estado: '' as '' | 'activos' | 'inactivos',
+    visitas: '' as '' | 'cero' | 'una' | 'pocas' | 'muchas',
   });
+
+  /** Mapa matrícula → cantidad de visitas históricas (lazy: se rellena solo si se filtra por visitas). */
+  private visitasPorMatricula = signal<Map<string, number>>(new Map());
+  visitasCargadas = signal(false);
 
   // Opciones únicas extraídas de los datos reales
   carrerasUnicas = signal<string[]>([]);
@@ -100,6 +105,28 @@ export class AlumnosComponent implements OnInit {
   }
 
   // ─── CARGA DE DATOS ────────────────────────────────────
+  /** Lazy-carga el mapa de visitas históricas (solo cuando el usuario activa filtro de visitas). */
+  async asegurarVisitasCargadas(): Promise<void> {
+    if (this.visitasCargadas()) return;
+    try {
+      const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
+      const m = new Map<string, number>();
+      for (const r of todosRegistros) {
+        if (r.matricula === 'INVITADO') continue;
+        m.set(r.matricula, (m.get(r.matricula) || 0) + 1);
+      }
+      this.visitasPorMatricula.set(m);
+      this.visitasCargadas.set(true);
+    } catch (e) {
+      console.error('No se pudieron cargar los conteos de visitas:', e);
+    }
+  }
+
+  /** Total de visitas de un alumno (0 si nunca vino). Útil para mostrar en la fila. */
+  visitasDe(matricula: string): number {
+    return this.visitasPorMatricula().get(matricula) || 0;
+  }
+
   async cargarAlumnos(): Promise<void> {
     try {
       this.cargando = true;
@@ -138,6 +165,8 @@ export class AlumnosComponent implements OnInit {
     const grupo = f.grupo;
     const turno = f.turno;
     const estado = f.estado;
+    const filtroVisitas = f.visitas;
+    const mapaVisitas = this.visitasPorMatricula();
 
     // Una sola pasada en lugar de 5–6 .filter() encadenados
     const resultado: Alumno[] = [];
@@ -148,6 +177,13 @@ export class AlumnosComponent implements OnInit {
       if (turno && a.turno !== turno) continue;
       if (estado === 'activos' && a.activo === false) continue;
       if (estado === 'inactivos' && a.activo !== false) continue;
+      if (filtroVisitas) {
+        const v = mapaVisitas.get(a.matricula) || 0;
+        if (filtroVisitas === 'cero' && v !== 0) continue;
+        if (filtroVisitas === 'una' && v !== 1) continue;
+        if (filtroVisitas === 'pocas' && (v < 2 || v > 4)) continue;
+        if (filtroVisitas === 'muchas' && v < 5) continue;
+      }
       if (termino) {
         const m = a.matricula.toLowerCase();
         const n = a.nombre.toLowerCase();
@@ -185,7 +221,7 @@ export class AlumnosComponent implements OnInit {
 
   get hayFiltrosActivos(): boolean {
     const f = this.filtros();
-    return !!(f.busqueda || f.carrera || f.grado || f.grupo || f.turno || f.estado);
+    return !!(f.busqueda || f.carrera || f.grado || f.grupo || f.turno || f.estado || f.visitas);
   }
 
   // ─── ACCIONES DE FILTRO ────────────────────────────────
@@ -195,14 +231,22 @@ export class AlumnosComponent implements OnInit {
   }
 
   /** Limpia un filtro individual sin tocar los demás. */
-  limpiarFiltro(campo: 'busqueda' | 'carrera' | 'grado' | 'grupo' | 'turno' | 'estado'): void {
+  limpiarFiltro(campo: 'busqueda' | 'carrera' | 'grado' | 'grupo' | 'turno' | 'estado' | 'visitas'): void {
     this.filtros.update(f => ({ ...f, [campo]: '' }));
     this.paginaActual.set(0);
   }
 
   limpiarFiltros(): void {
-    this.filtros.set({ busqueda: '', carrera: '', grado: '', grupo: '', turno: '', estado: '' });
+    this.filtros.set({
+      busqueda: '', carrera: '', grado: '', grupo: '', turno: '', estado: '', visitas: '',
+    });
     this.paginaActual.set(0);
+  }
+
+  /** Llamado desde el template cuando se selecciona filtro de visitas. */
+  async onFiltroVisitasChange(valor: string): Promise<void> {
+    if (valor) await this.asegurarVisitasCargadas();
+    this.actualizarFiltro('visitas', valor);
   }
 
   // ─── PAGINACIÓN ────────────────────────────────────────

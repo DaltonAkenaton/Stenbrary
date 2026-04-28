@@ -400,7 +400,14 @@
           </h2>
         </div>
         <div class="chart-wrapper">
-          <canvas #chartDiario></canvas>
+          @if (kpiTotalRegistros === 0) {
+            <div class="chart-empty">
+              <mat-icon>calendar_today</mat-icon>
+              <p><strong>Sin actividad en este período</strong></p>
+              <small>Prueba con un rango más amplio o cambia el filtro de hora.</small>
+            </div>
+          }
+          <canvas #chartDiario [hidden]="kpiTotalRegistros === 0"></canvas>
         </div>
       </mat-card>
 
@@ -416,12 +423,17 @@
           </h2>
         </div>
         <div class="chart-wrapper chart-doughnut">
-          <canvas #chartMotivos></canvas>
+          @if (kpiTotalRegistros === 0) {
+            <div class="chart-empty">
+              <mat-icon>pie_chart_outline</mat-icon>
+              <p>Sin motivos para mostrar</p>
+            </div>
+          }
+          <canvas #chartMotivos [hidden]="kpiTotalRegistros === 0"></canvas>
         </div>
       </mat-card>
     </div>
 
-    @if (datosCarreras.length > 0) {
     <mat-card class="chart-card">
       <div class="chart-header">
         <h2>
@@ -433,12 +445,18 @@
           </mat-icon>
         </h2>
       </div>
-      <div class="chart-wrapper chart-carreras"
-           [style.height.px]="alturaGraficaCarreras">
-        <canvas #chartCarreras></canvas>
-      </div>
+      @if (datosCarreras.length === 0) {
+        <div class="chart-empty">
+          <mat-icon>school_outlined</mat-icon>
+          <p>Sin visitas por carrera en este período</p>
+        </div>
+      } @else {
+        <div class="chart-wrapper chart-carreras"
+             [style.height.px]="alturaGraficaCarreras">
+          <canvas #chartCarreras></canvas>
+        </div>
+      }
     </mat-card>
-    }
 
     <!-- ─── TENDENCIA DETALLADA ──────────────────────── -->
     @if (tendencia) {
