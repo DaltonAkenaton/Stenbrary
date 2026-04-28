@@ -71,6 +71,9 @@ const SECCIONES_DEFAULT: Required<SeccionesReporte> = {
 })
 export class ReportService {
 
+  /** Cache para fallback de turno (registros viejos sin r.turno). */
+  private turnoPorMatricula = new Map<string, string>();
+
   constructor(private databaseService: DatabaseService) {}
 
   async generarReporteAccesos(
@@ -81,6 +84,17 @@ export class ReportService {
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
     const secciones = { ...SECCIONES_DEFAULT, ...(opciones.secciones || {}) };
+
+    // v3.17.0 — pre-cargar map matrícula→turno para fallback de registros
+    // viejos sin r.turno (creados antes de v3.16.0).
+    if (secciones.turnos) {
+      try {
+        const alumnos = await this.databaseService.obtenerTodosLosAlumnos();
+        for (const a of alumnos) {
+          if (a.turno) this.turnoPorMatricula.set(a.matricula, a.turno);
+        }
+      } catch { /* si falla, "Sin turno" para los registros viejos */ }
+    }
 
     let y = this.dibujarHeader(doc, opciones, pageWidth, margin);
 
@@ -137,7 +151,9 @@ export class ReportService {
 
     const conteo = new Map<string, number>();
     for (const r of registros) {
-      const t = (r as any).turno || 'Sin turno';
+      const t = (r as any).turno
+        || this.turnoPorMatricula.get(r.matricula)
+        || 'Sin turno';
       conteo.set(t, (conteo.get(t) || 0) + 1);
     }
     if (conteo.size === 0) return y;

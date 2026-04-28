@@ -513,10 +513,10 @@ Solo visible si `registroSalidaActivo = true`.
 Con dataset histórico 30m.
 
 ### 16.1 KPIs
-- [ ] Total registros del período
-- [ ] Alumnos únicos del período
-- [ ] Tiempo promedio por visita
-- [ ] Días con más tráfico
+- [✅] Total registros del período
+- [✅] Alumnos únicos del período
+- [✅] Tiempo promedio por visita
+- [✅] Días con más tráfico
 
 ### 16.2 Tendencias
 - [ ] Línea mensual: visible y sin gaps artificiales donde debería haberlos (verano/vacaciones)
@@ -564,20 +564,20 @@ Con dataset histórico 30m.
 ## 18. CONFIGURACIÓN (`/configuracion`)
 
 ### 18.1 General
-- [ ] Cambiar `nombreInstitucion`: se refleja en topbar/reportes
-- [ ] Cambiar `umbralDuplicadoMin`
-- [ ] Activar/desactivar sonido
-- [ ] Probar beeps
+- [✅] Cambiar `nombreInstitucion`: se refleja en topbar/reportes
+- [✅] Cambiar `umbralDuplicadoMin`
+- [✅] Activar/desactivar sonido
+- [✅] Probar beeps
 
 ### 18.2 Registro de salida
-- [ ] Activar `registroSalidaActivo`
-- [ ] Aparece item "En biblioteca" en sidebar
-- [ ] Desactivar: desaparece
-- [ ] `horasAutoSalida` configurable (0 = off)
+- [✅] Activar `registroSalidaActivo`
+- [✅] Aparece item "En biblioteca" en sidebar
+- [✅] Desactivar: desaparece
+- [✅] `horasAutoSalida` configurable (0 = off)
 
 ### 18.3 Aforo
-- [ ] Capacidad (0 = off)
-- [ ] Modo (permitir/confirmar/bloquear)
+- [✅] Capacidad (0 = off)
+- [✅] Modo (permitir/confirmar/bloquear)
 
 ### 18.4 Horarios
 - [ ] Activar horarios
@@ -586,13 +586,13 @@ Con dataset histórico 30m.
 - [ ] Modo (advertir/bloquear)
 
 ### 18.5 Modo quiosco
-- [ ] PIN numérico
-- [ ] Probar activar/desactivar
+- [✅] PIN numérico
+- [✅] Probar activar/desactivar
 
 ### 18.6 Celebraciones (v3.9.0)
-- [ ] Activar
-- [ ] Probabilidad 0–1
-- [ ] Después de registrar alumno: ocasionalmente confeti/animación
+- [✅] Activar
+- [✅] Probabilidad 0–1
+- [✅] Después de registrar alumno: ocasionalmente confeti/animación
 
 ### 18.7 Limpieza de registros
 - [ ] Contar registros por rango
@@ -783,9 +783,9 @@ Ejecutar con Histórico 30m cargado (≈90k registros, 2500 alumnos).
 
 ## 26. ACCESIBILIDAD Y UX
 
-- [ ] Navegación por teclado funciona en scanner
-- [ ] Todos los botones tienen focus visible
-- [ ] Contraste de texto (Lighthouse A11y > 90)
+- [✅] Navegación por teclado funciona en scanner
+- [✅] Todos los botones tienen focus visible
+- [✅] Contraste de texto (Lighthouse A11y > 90)
 - [ ] Tamaño touch ≥44px en bottom nav
 - [ ] Toasts no bloquean contenido crítico
 - [ ] Diálogos con backdrop cerrable

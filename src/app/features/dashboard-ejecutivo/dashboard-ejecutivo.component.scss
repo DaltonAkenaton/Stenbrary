@@ -1337,6 +1337,397 @@
   padding: 0 !important;
 }
 
+// ═══════════════════════════════════════════════════════════
+// v3.17.0 — Élite UI/UX
+// ═══════════════════════════════════════════════════════════
+
+// ─── Content fade-in al cambiar filtro ────────────────────
+.content-fade {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+
+  &.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── Skeleton screens ─────────────────────────────────────
+.skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0;
+}
+
+.sk {
+  background: rgba($navy-700, 0.7);
+  border: 1px solid $border-subtle;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba($cyan-500, 0.08) 50%,
+    transparent 100%
+  );
+  animation: shimmerSlide 1.5s linear infinite;
+}
+
+@keyframes shimmerSlide {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+.sk-hero { height: 180px; }
+
+.sk-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.sk-kpi { height: 96px; }
+
+.sk-insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.sk-iq { height: 86px; }
+
+.sk-charts {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+
+  @media (max-width: $breakpoint-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sk-chart-wide { height: 320px; }
+.sk-chart-narrow { height: 320px; }
+
+// ─── Hero "pulse" indicator (último registro) ─────────────
+.kpi-hero-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba($success-color, 0.10);
+  border: 1px solid rgba($success-color, 0.25);
+  color: $success-color;
+  font-size: 0.78rem;
+  font-weight: 600;
+  width: fit-content;
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: $success-color;
+    box-shadow: 0 0 0 0 rgba($success-color, 0.7);
+    animation: dotPulse 2s ease-out infinite;
+    flex-shrink: 0;
+  }
+}
+
+@keyframes dotPulse {
+  0%   { box-shadow: 0 0 0 0 rgba($success-color, 0.7); }
+  70%  { box-shadow: 0 0 0 8px rgba($success-color, 0); }
+  100% { box-shadow: 0 0 0 0 rgba($success-color, 0); }
+}
+
+.hero-variacion {
+  cursor: help;
+  border-bottom: 1px dashed $text-muted;
+}
+
+// ─── KPI tag (chip pequeño "global") ──────────────────────
+.kpi-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  background: rgba($amber-color, 0.12);
+  color: $amber-color;
+  border: 1px solid rgba($amber-color, 0.30);
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// ─── Stagger de entrada en KPIs (Tier C16) ────────────────
+.kpis-grid .kpi-card {
+  animation: kpiSlide 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &:nth-child(1) { animation-delay: 50ms; }
+  &:nth-child(2) { animation-delay: 100ms; }
+  &:nth-child(3) { animation-delay: 150ms; }
+  &:nth-child(4) { animation-delay: 200ms; }
+  &:nth-child(5) { animation-delay: 250ms; }
+  &:nth-child(6) { animation-delay: 300ms; }
+  &:nth-child(7) { animation-delay: 350ms; }
+}
+
+@keyframes kpiSlide {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Insights Quick (Tier B) ──────────────────────────────
+.insights-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.iq-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: $navy-700;
+  border: 1px solid $border-subtle;
+  border-radius: 14px;
+  transition: border-color 0.2s, transform 0.15s;
+  cursor: help;
+  animation: kpiSlide 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba($cyan-500, 0.30);
+  }
+
+  > mat-icon {
+    flex-shrink: 0;
+    color: $cyan-500;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+  }
+
+  .iq-body { flex: 1; min-width: 0; }
+
+  .iq-label {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: $text-muted;
+    margin-bottom: 4px;
+  }
+
+  .iq-value {
+    font-family: $font-display;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: $text-primary;
+    line-height: 1.2;
+  }
+
+  .iq-sub {
+    font-size: 0.78rem;
+    color: $text-muted;
+    margin-top: 2px;
+
+    strong { color: $text-primary; text-transform: capitalize; }
+  }
+
+  &.iq-prediccion > mat-icon { color: $teal-400; }
+  &.iq-dia-top > mat-icon { color: $cyan-500; }
+  &.iq-carrera > mat-icon { color: $success-color; }
+  &.iq-invitados > mat-icon { color: $amber-color; }
+
+  &:nth-child(1) { animation-delay: 100ms; }
+  &:nth-child(2) { animation-delay: 150ms; }
+  &:nth-child(3) { animation-delay: 200ms; }
+  &:nth-child(4) { animation-delay: 250ms; }
+}
+
+// ─── Distribución por grado (barras horizontales) ─────────
+.grado-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.grado-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 90px;
+  gap: 10px;
+  align-items: center;
+
+  .grado-label {
+    color: $text-primary;
+    font-weight: 700;
+    font-family: $font-display;
+    font-size: 0.95rem;
+    text-align: center;
+  }
+
+  .grado-bar-wrap {
+    height: 14px;
+    background: $navy-800;
+    border-radius: 7px;
+    overflow: hidden;
+  }
+
+  .grado-bar {
+    height: 100%;
+    background: linear-gradient(90deg, $cyan-500, $teal-400);
+    border-radius: 7px;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 8px rgba($cyan-500, 0.3);
+  }
+
+  .grado-numero {
+    text-align: right;
+    font-family: $font-mono;
+    font-size: 0.85rem;
+
+    strong { color: $text-primary; font-weight: 700; margin-right: 6px; }
+    span { color: $text-muted; }
+  }
+}
+
+// ─── Combinaciones de motivos (funnel) ────────────────────
+.combo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.combo-row {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 8px;
+  align-items: center;
+
+  .combo-label {
+    grid-column: 1 / -1;
+    color: $text-secondary;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  .combo-bar-wrap {
+    grid-column: 1 / 2;
+    height: 8px;
+    background: $navy-800;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .combo-bar {
+    height: 100%;
+    background: linear-gradient(90deg, $teal-400, $cyan-500);
+    border-radius: 4px;
+    max-width: 100%;
+    transition: width 0.5s ease;
+  }
+
+  .combo-numero {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    text-align: right;
+    font-family: $font-mono;
+    font-size: 0.78rem;
+
+    strong { color: $text-primary; margin-right: 4px; }
+    span { color: $text-muted; }
+  }
+}
+
+.empty-state-small {
+  text-align: center;
+  padding: 24px;
+  color: $text-muted;
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.4;
+    margin-bottom: 6px;
+  }
+
+  p { margin: 0; font-size: 0.85rem; line-height: 1.5; }
+  small { color: $text-muted; opacity: 0.7; }
+}
+
+// ─── Botón refrescar ──────────────────────────────────────
+.acciones-rango .btn-refrescar {
+  background: rgba($success-color, 0.06);
+  border-color: rgba($success-color, 0.25);
+  color: $success-color;
+
+  mat-icon.spin-now {
+    animation: spinIcon 1s linear infinite;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba($success-color, 0.14);
+  }
+}
+
+@keyframes spinIcon {
+  to { transform: rotate(360deg); }
+}
+
+// ─── Drill-down: celdas clickables del heatmap ────────────
+.heatmap-cell.clickable {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $cyan-500;
+    outline-offset: 2px;
+    z-index: 11;
+  }
+}
+
+// ─── Pulse animation en estrella PICO (Tier C20) ──────────
+.heatmap-cell.es-pico .cell-star {
+  animation: starPulse 2.4s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes starPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.25); opacity: 0.85; }
+}
+
+// ─── Reduced motion: desactiva animaciones costosas ───────
+@media (prefers-reduced-motion: reduce) {
+  .sk-shimmer,
+  .pulse-dot,
+  .heatmap-cell.es-pico .cell-star,
+  .acciones-rango .btn-refrescar mat-icon.spin-now,
+  .kpis-grid .kpi-card,
+  .iq-card,
+  .content-fade {
+    animation: none !important;
+    transition: none !important;
+  }
+  .content-fade { opacity: 1; transform: none; }
+}
+
 // ─── Comparador A vs B ───────────────────────────────────
 .comparador-card {
   margin-bottom: 18px;

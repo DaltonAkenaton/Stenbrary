@@ -23,6 +23,7 @@ import {
   ElementRef,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  NgZone,
   computed,
   signal,
 } from '@angular/core';
@@ -38,7 +39,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import {
   ExportarPdfDialogComponent,
   ExportarPdfDialogData,
@@ -146,11 +147,23 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   // ─── Métricas nuevas (Tier B) ────────────────────
   kpiTiempoEstanciaPromedio = 0; // minutos
-  kpiTasaRetencion = 0; // % alumnos con ≥3 visitas
+  kpiTasaRetencion = 0; // % alumnos con ≥N visitas (N = umbralRetencion)
+  kpiUmbralRetencion = 3;
   kpiCrecimiento12m: { mes: string; cantidad: number }[] = [];
   kpiDistribucionTurnos: { turno: string; cantidad: number; porcentaje: number; color: string }[] = [];
   kpiTopMotivo: { nombre: string; cantidad: number; porcentaje: number } | null = null;
   kpiAlumnosUnaSolaVisita = 0;
+
+  // ─── v3.17.0: nuevas métricas Tier B ─────────────
+  kpiUltimoRegistroHace = ''; // "hace 23 minutos"
+  kpiPctInvitados = 0;
+  kpiCarreraTopCrecimiento: { carrera: string; cambio: number; porcentaje: number } | null = null;
+  kpiPrediccionHoy = 0; // proyección al cierre
+  kpiPrediccionHoyConfianza: 'alta' | 'media' | 'baja' = 'baja';
+  kpiDiaSemanaTop = '';
+  kpiDistribucionGrado: { grado: number; cantidad: number; porcentaje: number }[] = [];
+  kpiCombinacionesMotivos: { combo: string; cantidad: number; porcentaje: number }[] = [];
+  kpiVariacionDiaria = 0; // coeficiente de variación %
 
   // ─── KPIs fijos derivados ─────────────────────────
   kpiTotalRegistros = 0;
@@ -261,16 +274,21 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     private toastService: ToastService,
     private configService: ConfigService,
     private router: Router,
+    private activatedRoute: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private dialog: MatDialog,
+    private ngZone: NgZone,
   ) {}
 
   async ngOnInit(): Promise<void> {
     this.kpiUmbralInactividad = this.configService.umbralInactividadDias || 30;
-    // Pre-cargar mapa matrícula→turno para fallback de registros viejos
+    // Tier D25: leer estado de la URL antes de cargar
+    this.leerUrlParams();
+    // Pre-cargar mapas matrícula→turno y matrícula→grado
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
     for (const a of todosAlumnos) {
       if (a.turno) this.turnoPorMatricula.set(a.matricula, a.turno);
+      if (typeof a.grado === 'number') this.gradoPorMatricula.set(a.matricula, a.grado);
     }
     await this.cargarDatos();
     await this.cargarCrecimiento12m();
@@ -516,8 +534,78 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // HANDLERS DE FILTROS
   // ═══════════════════════════════════════════════
 
+  /** Tier C22: refresca explícitamente desde la BD. */
+  async refrescarDatos(): Promise<void> {
+    this.estadisticasService.invalidarCache();
+    await this.cargarDatos();
+    this.toastService.success('Datos actualizados');
+  }
+
+  /** Tier C18: click en celda del heatmap → /registros con filtros pre-aplicados. */
+  drillHeatmap(dia: string, hora: number): void {
+    if (this.obtenerCantidadHeatmap(dia, hora) === 0) return;
+    // Convertir nombre día → número (0=Dom..6=Sab)
+    const idxDia = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+      .indexOf(dia);
+    if (idxDia < 0) return;
+    // Buscar la próxima fecha de ese día dentro del rango del heatmap
+    const fechas = this.heatmapFechasPorDia.get(dia) || [];
+    if (fechas.length === 0) return;
+    const fecha = fechas[fechas.length - 1]; // la más reciente
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    this.router.navigate(['/registros'], {
+      queryParams: {
+        fecha: `${yyyy}-${mm}-${dd}`,
+        hora: hora,
+      },
+    });
+  }
+
+  /** Tier C18: click en barra del bar chart diario → drill-down a /registros. */
+  drillDia(idx: number): void {
+    if (!this.rangoActivo || !this.datosDiarios) return;
+    if (this.datosDiarios.granularidad !== 'dia') return;
+    const fecha = new Date(this.rangoActivo.inicio);
+    fecha.setDate(fecha.getDate() + idx);
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    this.router.navigate(['/registros'], { queryParams: { fecha: `${yyyy}-${mm}-${dd}` } });
+  }
+
+  /** Tier D23: descripción textual de una gráfica para lectores de pantalla. */
+  ariaDescripcionDiaria(): string {
+    if (!this.datosDiarios || this.datosDiarios.cantidades.length === 0)
+      return 'Gráfica de barras sin datos';
+    const total = this.datosDiarios.cantidades.reduce((s, v) => s + v, 0);
+    const max = Math.max(...this.datosDiarios.cantidades);
+    const idxMax = this.datosDiarios.cantidades.indexOf(max);
+    return `Gráfica de barras de registros por ${this.datosDiarios.granularidad}. ` +
+           `Total: ${total}. ` +
+           `Pico en ${this.datosDiarios.etiquetas[idxMax]} con ${max} registros.`;
+  }
+
+  ariaDescripcionMotivos(): string {
+    if (!this.distribucionMotivos || this.distribucionMotivos.cantidades.length === 0)
+      return 'Gráfica circular sin datos';
+    const total = this.distribucionMotivos.cantidades.reduce((s, v) => s + v, 0);
+    return this.distribucionMotivos.etiquetas
+      .map((e, i) => `${e}: ${this.distribucionMotivos!.cantidades[i]} (${(this.distribucionMotivos!.cantidades[i] / total * 100).toFixed(0)}%)`)
+      .join('. ');
+  }
+
+  ariaDescripcionCarreras(): string {
+    if (this.datosCarreras.length === 0) return 'Sin datos por carrera';
+    return this.datosCarreras.slice(0, 5)
+      .map(c => `${c.carrera}: ${c.totalVisitas} visitas`)
+      .join('. ');
+  }
+
   setPreset(key: PresetRango): void {
     this.presetSeleccionado = key;
+    this.actualizarUrl();
     if (key === 'personalizado') {
       if (!this.fechaInicio || !this.fechaFin) {
         const hoy = new Date();
@@ -543,6 +631,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   toggleFiltroHora(): void {
     this.filtroHoraActivo = !this.filtroHoraActivo;
+    this.actualizarUrl();
     this.cargarDatos();
   }
 
@@ -551,7 +640,42 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.toastService.warning('La hora "desde" debe ser anterior a "hasta"');
       return;
     }
+    this.actualizarUrl();
     this.cargarDatos();
+  }
+
+  /** Tier D25: persiste el estado en query params (permalinks). */
+  private actualizarUrl(): void {
+    const params: any = { p: this.presetSeleccionado };
+    if (this.presetSeleccionado === 'personalizado') {
+      if (this.fechaInicio) params.ini = this.fechaInicio;
+      if (this.fechaFin) params.fin = this.fechaFin;
+    }
+    if (this.filtroHoraActivo) {
+      params.hd = this.filtroHoraDesde;
+      params.hh = this.filtroHoraHasta;
+    }
+    this.router.navigate([], {
+      relativeTo: this.activatedRoute,
+      queryParams: params,
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  /** Tier D25: lee el estado inicial desde query params. */
+  private leerUrlParams(): void {
+    const qp = this.activatedRoute.snapshot.queryParamMap;
+    const p = qp.get('p') as PresetRango | null;
+    if (p) this.presetSeleccionado = p;
+    const ini = qp.get('ini'); if (ini) this.fechaInicio = ini;
+    const fin = qp.get('fin'); if (fin) this.fechaFin = fin;
+    const hd = qp.get('hd'); const hh = qp.get('hh');
+    if (hd !== null && hh !== null) {
+      this.filtroHoraActivo = true;
+      this.filtroHoraDesde = +hd;
+      this.filtroHoraHasta = +hh;
+    }
   }
 
   get fechaMaxima(): string {
@@ -578,7 +702,6 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.heatmapFechasPorDia = resultado.fechasPorDia;
 
     // Pre-computar matriz [día][hora] → cantidad para acceso O(1)
-    // Antes: .find() sobre 105 elementos por cada celda en cada render.
     const matriz: Record<string, Record<number, number>> = {};
     let maximo = 0;
     let picoCantidad = -1;
@@ -611,12 +734,34 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       }
     }
 
-    // Pre-computar clases de intensidad por celda
+    // Tier A7: usar PERCENTILES (p25, p50, p75, p90) en vez de % de máximo.
+    // Ventaja: si una celda tiene 1000 visitas y el resto 5, ya no todo se ve
+    // intensidad-1 — la escala se ajusta a la distribución real.
+    const valoresNoCero: number[] = [];
+    for (const dia of this.diasSemana) {
+      for (const hora of this.heatmapHoras) {
+        const v = matriz[dia][hora];
+        if (v > 0) valoresNoCero.push(v);
+      }
+    }
+    valoresNoCero.sort((a, b) => a - b);
+    const p = (q: number): number => {
+      if (valoresNoCero.length === 0) return 0;
+      const idx = Math.min(valoresNoCero.length - 1, Math.floor(valoresNoCero.length * q));
+      return valoresNoCero[idx];
+    };
+    const p25 = p(0.25);
+    const p50 = p(0.50);
+    const p75 = p(0.75);
+    const p90 = p(0.90);
+
     const clases: Record<string, Record<number, string>> = {};
     for (const dia of this.diasSemana) {
       clases[dia] = {};
       for (const hora of this.heatmapHoras) {
-        clases[dia][hora] = this.calcularClaseIntensidad(matriz[dia][hora], maximo);
+        clases[dia][hora] = this.calcularClaseIntensidadPercentil(
+          matriz[dia][hora], p25, p50, p75, p90,
+        );
       }
     }
 
@@ -629,12 +774,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.heatmapValleHora = isFinite(valleCantidad) ? valleHora : null;
   }
 
-  private calcularClaseIntensidad(cantidad: number, maximo: number): string {
-    if (cantidad === 0 || maximo === 0) return 'intensidad-0';
-    const porcentaje = cantidad / maximo;
-    if (porcentaje <= 0.2) return 'intensidad-1';
-    if (porcentaje <= 0.4) return 'intensidad-2';
-    if (porcentaje <= 0.7) return 'intensidad-3';
+  private calcularClaseIntensidadPercentil(
+    cantidad: number, p25: number, p50: number, p75: number, p90: number,
+  ): string {
+    if (cantidad === 0) return 'intensidad-0';
+    if (cantidad <= p25) return 'intensidad-1';
+    if (cantidad <= p50) return 'intensidad-2';
+    if (cantidad <= p75) return 'intensidad-3';
     return 'intensidad-4';
   }
 
@@ -658,24 +804,28 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   async cargarDatos(): Promise<void> {
     try {
       this.cargando = true;
-      this.estadisticasService.invalidarCache();
 
       const rango = await Promise.resolve(this.resolverRango(this.presetSeleccionado));
       this.rangoActivo = rango;
       const horaFiltro = this.horaFiltro;
 
-      const [tendencia, heatmap, top, insights, prediccion, diarios, motivos, carreras, registrosCrudos] =
-        await Promise.all([
-          this.estadisticasService.compararTendencias(rango, horaFiltro),
-          this.estadisticasService.generarHeatmap(this.heatmapPeriodo),
-          this.estadisticasService.obtenerTopAlumnos(5, this.topPeriodo || undefined),
-          this.estadisticasService.generarInsights(rango, horaFiltro, this.kpiUmbralInactividad),
-          this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo),
-          this.estadisticasService.obtenerRegistrosPorRango(rango, horaFiltro),
-          this.estadisticasService.obtenerDistribucionMotivos(rango, horaFiltro),
-          this.estadisticasService.analizarPorCarrera(rango, horaFiltro),
-          this.estadisticasService.obtenerRegistrosCrudos(rango, horaFiltro),
-        ]);
+      // Tier S3 v3.17.0: una sola lectura del cache + las queries que dependen
+      // de OTROS rangos (heatmap, top, predicción) van en paralelo.
+      const [registrosCrudos, heatmap, top, prediccion] = await Promise.all([
+        this.estadisticasService.obtenerRegistrosCrudos(rango, horaFiltro),
+        this.estadisticasService.generarHeatmap(this.heatmapPeriodo),
+        this.estadisticasService.obtenerTopAlumnos(5, this.topPeriodo || undefined),
+        this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo),
+      ]);
+
+      // Las métricas del rango se derivan del array ya filtrado (rápido, en JS).
+      const [tendencia, insights, diarios, motivos, carreras] = await Promise.all([
+        this.estadisticasService.compararTendencias(rango, horaFiltro),
+        this.estadisticasService.generarInsights(rango, horaFiltro, this.kpiUmbralInactividad),
+        this.estadisticasService.obtenerRegistrosPorRango(rango, horaFiltro),
+        this.estadisticasService.obtenerDistribucionMotivos(rango, horaFiltro),
+        this.estadisticasService.analizarPorCarrera(rango, horaFiltro),
+      ]);
 
       this.tendencia = tendencia;
       this.aplicarHeatmap(heatmap);
@@ -704,11 +854,21 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         this.kpiAlumnosInactivos = 0;
       }
 
-      // ─── TIER B: métricas avanzadas ──────────────────
+      // ─── TIER B: métricas avanzadas (rango actual) ──
       this.calcularMetricasAvanzadas(registrosCrudos, rango);
       this.calcularSparklines(registrosCrudos, rango);
+      this.calcularDistribucionGrado(registrosCrudos);
+      this.calcularCombinacionesMotivos(registrosCrudos);
+      this.calcularVariacionDiaria(diarios);
+      this.calcularDiaSemanaTop(registrosCrudos);
+      this.calcularPctInvitados(registrosCrudos);
+      this.calcularPrediccionHoy(registrosCrudos);
       // diariosDomingoIdx (Tier A: tinte de domingos en barras diarias)
       this.diariosDomingoIdx = this.calcularDomingosDelGrafico(rango, diarios);
+
+      // Métricas que requieren histórico completo se calculan async aparte
+      // (no bloquean la primera renderización).
+      this.calcularMetricasGlobales(rango, horaFiltro);
 
       this.cargando = false;
       this.datosListos = true;
@@ -734,7 +894,12 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       ? Math.round(conDuracion.reduce((s, r) => s + r.duracionMinutos, 0) / conDuracion.length)
       : 0;
 
-    // Retención: alumnos del período con ≥3 visitas
+    // Retención adaptativa al rango (Tier A5):
+    //   ≤7 días → ≥2 visitas, ≤30 → ≥3, ≤90 → ≥5, >90 → ≥8
+    const dias = this.estadisticasService.diasEnRango(rango);
+    const umbralRetencion = dias <= 7 ? 2 : dias <= 30 ? 3 : dias <= 90 ? 5 : 8;
+    this.kpiUmbralRetencion = umbralRetencion;
+
     const visitasPorMatricula = new Map<string, number>();
     for (const r of registros) {
       if (r.matricula === 'INVITADO') continue;
@@ -742,13 +907,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     }
     const totalUnicos = visitasPorMatricula.size;
     let recurrentes = 0;
-    let unaSolaVisita = 0;
     visitasPorMatricula.forEach(v => {
-      if (v >= 3) recurrentes++;
-      if (v === 1) unaSolaVisita++;
+      if (v >= umbralRetencion) recurrentes++;
     });
     this.kpiTasaRetencion = totalUnicos > 0 ? Math.round((recurrentes / totalUnicos) * 100) : 0;
-    this.kpiAlumnosUnaSolaVisita = unaSolaVisita;
+
+    // "Una sola visita" REAL (Tier A6): alumnos con exactamente 1 visita HISTÓRICA total.
+    // (El cálculo se hace en cargarMetricasGlobales(), aquí no toca tocar.)
 
     // Distribución por turno: usa r.turno si existe, fallback al join con alumnos
     // (registros viejos pre-v3.16.0 no tienen turno propagado).
@@ -834,6 +999,217 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     const max = Math.max(...this.kpiCrecimiento12m.map(m => m.cantidad), 1);
     return Math.max(2, (cantidad / max) * 100);
   }
+
+  // ─── v3.17.0 — Métricas Tier B ────────────────────────────────
+
+  /** Tier B11: distribución por grado (1°, 2°, 3°, etc.). */
+  private calcularDistribucionGrado(registros: any[]): void {
+    const conteo = new Map<number, number>();
+    for (const r of registros) {
+      // El registro NO tiene grado. Hacer fallback al alumno (alumnoTurno cache parcial).
+      // Para grado necesitamos otro mapa. Lo generamos al vuelo si no existe.
+      const grado = this.gradoPorMatricula.get(r.matricula);
+      if (grado != null) {
+        conteo.set(grado, (conteo.get(grado) || 0) + 1);
+      }
+    }
+    const total = Array.from(conteo.values()).reduce((s, v) => s + v, 0);
+    this.kpiDistribucionGrado = Array.from(conteo.entries())
+      .map(([grado, cantidad]) => ({
+        grado, cantidad,
+        porcentaje: total > 0 ? parseFloat((cantidad / total * 100).toFixed(1)) : 0,
+      }))
+      .sort((a, b) => a.grado - b.grado);
+  }
+
+  /** Tier B14: combinaciones de motivos más frecuentes (cuando hay multi-motivo). */
+  private calcularCombinacionesMotivos(registros: any[]): void {
+    const conteo = new Map<string, number>();
+    for (const r of registros) {
+      const motivos = r.motivoNombres && r.motivoNombres.length > 1
+        ? [...r.motivoNombres].sort().join(' + ')
+        : null;
+      if (motivos) {
+        conteo.set(motivos, (conteo.get(motivos) || 0) + 1);
+      }
+    }
+    const totalCombos = Array.from(conteo.values()).reduce((s, v) => s + v, 0);
+    this.kpiCombinacionesMotivos = Array.from(conteo.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([combo, cantidad]) => ({
+        combo, cantidad,
+        porcentaje: totalCombos > 0 ? parseFloat((cantidad / totalCombos * 100).toFixed(1)) : 0,
+      }));
+  }
+
+  /** Variación diaria (coeficiente de variación %): qué tan estable es el flujo. */
+  private calcularVariacionDiaria(diarios: DatosDiarios): void {
+    if (diarios.granularidad !== 'dia' || diarios.cantidades.length < 2) {
+      this.kpiVariacionDiaria = 0;
+      return;
+    }
+    const valores = diarios.cantidades.filter(v => v > 0);
+    if (valores.length < 2) { this.kpiVariacionDiaria = 0; return; }
+    const media = valores.reduce((s, v) => s + v, 0) / valores.length;
+    const varianza = valores.reduce((s, v) => s + (v - media) ** 2, 0) / valores.length;
+    const std = Math.sqrt(varianza);
+    this.kpiVariacionDiaria = media > 0 ? Math.round((std / media) * 100) : 0;
+  }
+
+  /** Día de la semana con más visitas en el período. */
+  private calcularDiaSemanaTop(registros: any[]): void {
+    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const conteo = new Array(7).fill(0);
+    for (const r of registros) {
+      const d = new Date(r.fechaHora).getDay();
+      conteo[d]++;
+    }
+    let maxIdx = 0;
+    for (let i = 1; i < 7; i++) if (conteo[i] > conteo[maxIdx]) maxIdx = i;
+    this.kpiDiaSemanaTop = conteo[maxIdx] > 0 ? dias[maxIdx] : '';
+  }
+
+  /** Tier B12: % invitados vs alumnos del período. */
+  private calcularPctInvitados(registros: any[]): void {
+    if (registros.length === 0) { this.kpiPctInvitados = 0; return; }
+    const invitados = registros.filter(r => r.matricula === 'INVITADO').length;
+    this.kpiPctInvitados = parseFloat((invitados / registros.length * 100).toFixed(1));
+  }
+
+  /**
+   * Tier B13: predicción del total de hoy al cierre.
+   * Si el rango no incluye hoy → 0. Si lo incluye, extrapolar usando el
+   * ritmo de la hora actual respecto al ritmo histórico esperado.
+   */
+  private calcularPrediccionHoy(registros: any[]): void {
+    if (!this.rangoActivo) { this.kpiPrediccionHoy = 0; return; }
+    const ahora = new Date();
+    const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0, 0);
+    const finHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59, 999);
+
+    // ¿El rango activo incluye hoy?
+    if (this.rangoActivo.fin < inicioHoy || this.rangoActivo.inicio > finHoy) {
+      this.kpiPrediccionHoy = 0;
+      this.kpiPrediccionHoyConfianza = 'baja';
+      return;
+    }
+
+    // Visitas de HOY
+    const hoyMs = inicioHoy.getTime();
+    const ahoraMs = ahora.getTime();
+    const visitasHoy = registros.filter(r => {
+      const t = new Date(r.fechaHora).getTime();
+      return t >= hoyMs && t <= ahoraMs;
+    }).length;
+
+    // Estimación simple: si llevamos N% del horario, proyectar a 100%.
+    // Asumir horario abierto 7:00-22:00 (15 horas) — fallback genérico.
+    // TODO: leer del configService.horarios cuando esté implementado.
+    const horaActual = ahora.getHours() + ahora.getMinutes() / 60;
+    const horaApertura = 7;
+    const horaCierre = 22;
+    if (horaActual <= horaApertura) {
+      this.kpiPrediccionHoy = 0;
+      this.kpiPrediccionHoyConfianza = 'baja';
+      return;
+    }
+    if (horaActual >= horaCierre) {
+      this.kpiPrediccionHoy = visitasHoy;
+      this.kpiPrediccionHoyConfianza = 'alta';
+      return;
+    }
+    const fraccionTranscurrida = (horaActual - horaApertura) / (horaCierre - horaApertura);
+    this.kpiPrediccionHoy = visitasHoy > 0
+      ? Math.round(visitasHoy / Math.max(0.05, fraccionTranscurrida))
+      : 0;
+    this.kpiPrediccionHoyConfianza = fraccionTranscurrida >= 0.5 ? 'alta'
+      : fraccionTranscurrida >= 0.25 ? 'media' : 'baja';
+  }
+
+  /** Tier B9 + B10: métricas globales (último registro absoluto + carrera con mayor crecimiento). */
+  private async calcularMetricasGlobales(rango: RangoFechas, horaFiltro: { desde: number; hasta: number } | null): Promise<void> {
+    try {
+      const todos = await this.databaseService.obtenerTodosLosRegistros();
+
+      // Tier B9: hace cuánto tiempo el último registro
+      if (todos.length > 0) {
+        const masReciente = todos.reduce((max, r) => {
+          const t = new Date(r.fechaHora).getTime();
+          return t > max ? t : max;
+        }, 0);
+        this.kpiUltimoRegistroHace = this.formatHaceTiempo(Date.now() - masReciente);
+      } else {
+        this.kpiUltimoRegistroHace = 'sin registros aún';
+      }
+
+      // Tier A6: "Una sola visita" REAL — alumnos con 1 visita histórica total.
+      const visitasHistoricasPorMat = new Map<string, number>();
+      for (const r of todos) {
+        if (r.matricula === 'INVITADO') continue;
+        visitasHistoricasPorMat.set(r.matricula, (visitasHistoricasPorMat.get(r.matricula) || 0) + 1);
+      }
+      let unaSolaReal = 0;
+      visitasHistoricasPorMat.forEach(v => { if (v === 1) unaSolaReal++; });
+      this.kpiAlumnosUnaSolaVisita = unaSolaReal;
+
+      // Tier B10: carrera con mayor crecimiento vs período anterior.
+      const rangoAnterior = this.estadisticasService.rangoAnteriorMismaLongitud(rango);
+      const inA = rango.inicio.getTime(), fnA = rango.fin.getTime();
+      const inB = rangoAnterior.inicio.getTime(), fnB = rangoAnterior.fin.getTime();
+
+      const aplicaHora = (d: Date): boolean => {
+        if (!horaFiltro) return true;
+        const h = d.getHours();
+        return h >= horaFiltro.desde && h <= horaFiltro.hasta;
+      };
+
+      const carrerasA = new Map<string, number>();
+      const carrerasB = new Map<string, number>();
+      for (const r of todos) {
+        const d = new Date(r.fechaHora);
+        const t = d.getTime();
+        if (!aplicaHora(d)) continue;
+        const c = r.carrera || 'Sin carrera';
+        if (t >= inA && t <= fnA) carrerasA.set(c, (carrerasA.get(c) || 0) + 1);
+        else if (t >= inB && t <= fnB) carrerasB.set(c, (carrerasB.get(c) || 0) + 1);
+      }
+
+      let mejor: { carrera: string; cambio: number; porcentaje: number } | null = null;
+      carrerasA.forEach((cantA, carrera) => {
+        const cantB = carrerasB.get(carrera) || 0;
+        const cambio = cantA - cantB;
+        const porc = cantB > 0 ? (cambio / cantB) * 100 : (cantA > 0 ? 100 : 0);
+        if (cambio > 0 && cantA >= 5 && (!mejor || porc > mejor.porcentaje)) {
+          mejor = { carrera, cambio, porcentaje: parseFloat(porc.toFixed(1)) };
+        }
+      });
+      this.kpiCarreraTopCrecimiento = mejor;
+
+      this.cdr.markForCheck();
+    } catch (e) {
+      console.warn('No se pudo calcular métricas globales:', e);
+    }
+  }
+
+  /** "hace 23 minutos", "hace 2 horas", "ayer", etc. */
+  private formatHaceTiempo(ms: number): string {
+    const seg = Math.floor(ms / 1000);
+    const min = Math.floor(seg / 60);
+    const hr = Math.floor(min / 60);
+    const dias = Math.floor(hr / 24);
+    if (seg < 60) return 'hace unos segundos';
+    if (min < 60) return `hace ${min} minuto${min === 1 ? '' : 's'}`;
+    if (hr < 24) return `hace ${hr} hora${hr === 1 ? '' : 's'}`;
+    if (dias === 1) return 'ayer';
+    if (dias < 7) return `hace ${dias} días`;
+    if (dias < 30) return `hace ${Math.floor(dias / 7)} semana${Math.floor(dias / 7) === 1 ? '' : 's'}`;
+    if (dias < 365) return `hace ${Math.floor(dias / 30)} mes${Math.floor(dias / 30) === 1 ? '' : 'es'}`;
+    return `hace ${Math.floor(dias / 365)} año${Math.floor(dias / 365) === 1 ? '' : 's'}`;
+  }
+
+  /** Cache global matrícula → grado (igual que turnoPorMatricula). */
+  private gradoPorMatricula: Map<string, number> = new Map();
 
   /** Tier A: índices del array `etiquetas` que corresponden a domingo. */
   private calcularDomingosDelGrafico(rango: RangoFechas, diarios: DatosDiarios): number[] {
@@ -1225,18 +1601,28 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaDiaria(): void {
     if (!this.chartDiarioRef || !this.datosDiarios) return;
-    this.chartDiario?.destroy();
-    this.chartDiario = null;
-    const ctx = this.chartDiarioRef.nativeElement.getContext('2d');
-    if (!ctx) return;
 
-    // Tier A: tinte distintivo en domingos (rojizo suave) vs días lectivos (cyan)
     const domingoSet = new Set(this.diariosDomingoIdx);
     const cantidades = this.datosDiarios.cantidades;
     const bg = cantidades.map((_, i) =>
       domingoSet.has(i) ? 'rgba(240, 82, 82, 0.35)' : 'rgba(0, 200, 215, 0.6)');
     const border = cantidades.map((_, i) =>
       domingoSet.has(i) ? '#F05252' : '#00C8D7');
+
+    // Tier S2 v3.17.0: update in-place si la chart ya existe
+    if (this.chartDiario && this.primerRenderHecho) {
+      this.chartDiario.data.labels = this.datosDiarios.etiquetas;
+      this.chartDiario.data.datasets[0].data = cantidades;
+      this.chartDiario.data.datasets[0].backgroundColor = bg;
+      this.chartDiario.data.datasets[0].borderColor = border;
+      this.chartDiario.update('none');
+      return;
+    }
+
+    this.chartDiario?.destroy();
+    this.chartDiario = null;
+    const ctx = this.chartDiarioRef.nativeElement.getContext('2d');
+    if (!ctx) return;
 
     this.chartDiario = new Chart(ctx, {
       type: 'bar',
@@ -1281,15 +1667,42 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
             },
           },
         },
+        // Tier C18: click en barra → drill-down a /registros del día
+        onClick: (_, elements) => {
+          if (elements.length > 0 && this.datosDiarios?.granularidad === 'dia') {
+            this.ngZone.run(() => this.drillDia(elements[0].index));
+          }
+        },
+        onHover: (event, elements) => {
+          const target = event.native?.target as HTMLElement | undefined;
+          if (target) target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+        },
       },
     });
   }
 
   private renderizarGraficaMotivos(): void {
     if (!this.chartMotivosRef || !this.distribucionMotivos) return;
+
+    if (this.distribucionMotivos.cantidades.length === 0) {
+      this.chartMotivos?.destroy();
+      this.chartMotivos = null;
+      return;
+    }
+
+    // Tier S2: update in-place
+    if (this.chartMotivos && this.primerRenderHecho) {
+      this.chartMotivos.data.labels = this.distribucionMotivos.etiquetas;
+      this.chartMotivos.data.datasets[0].data = this.distribucionMotivos.cantidades;
+      this.chartMotivos.data.datasets[0].backgroundColor =
+        this.distribucionMotivos.colores.map(c => c + 'CC');
+      this.chartMotivos.data.datasets[0].borderColor = this.distribucionMotivos.colores;
+      this.chartMotivos.update('none');
+      return;
+    }
+
     this.chartMotivos?.destroy();
     this.chartMotivos = null;
-    if (this.distribucionMotivos.cantidades.length === 0) return;
     const ctx = this.chartMotivosRef.nativeElement.getContext('2d');
     if (!ctx) return;
     this.chartMotivos = new Chart(ctx, {
@@ -1333,14 +1746,33 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaCarreras(): void {
     if (!this.chartCarrerasRef) return;
-    this.chartCarreras?.destroy();
-    this.chartCarreras = null;
-    if (this.datosCarreras.length === 0) return;
-    const ctx = this.chartCarrerasRef.nativeElement.getContext('2d');
-    if (!ctx) return;
+
+    if (this.datosCarreras.length === 0) {
+      this.chartCarreras?.destroy();
+      this.chartCarreras = null;
+      return;
+    }
+
     const etiquetas = this.datosCarreras.map(d => this.abreviarCarrera(d.carrera));
     const cantidades = this.datosCarreras.map(d => d.totalVisitas);
     const colores = ['#00C8D7', '#0BC4B7', '#0EB07B', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F5A623'];
+
+    // Tier S2: update in-place
+    if (this.chartCarreras && this.primerRenderHecho) {
+      this.chartCarreras.data.labels = etiquetas;
+      this.chartCarreras.data.datasets[0].data = cantidades;
+      this.chartCarreras.data.datasets[0].backgroundColor =
+        cantidades.map((_, i) => (colores[i % colores.length]) + '99');
+      this.chartCarreras.data.datasets[0].borderColor =
+        cantidades.map((_, i) => colores[i % colores.length]);
+      this.chartCarreras.update('none');
+      return;
+    }
+
+    this.chartCarreras?.destroy();
+    this.chartCarreras = null;
+    const ctx = this.chartCarrerasRef.nativeElement.getContext('2d');
+    if (!ctx) return;
     this.chartCarreras = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -1452,6 +1884,25 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   /** Lectura O(1) desde la matriz pre-computada (antes era .find() O(n) por celda). */
   obtenerCantidadHeatmap(dia: string, hora: number): number {
     return this.heatmapMatriz[dia]?.[hora] ?? 0;
+  }
+
+  esClickeableHeatmap(dia: string, hora: number): boolean {
+    return this.obtenerCantidadHeatmap(dia, hora) > 0;
+  }
+
+  /** Ancho amplificado de barras de combinaciones (para que se vean al ser %s pequeños). */
+  anchoCombo(porcentaje: number): number {
+    return Math.min(100, porcentaje * 4);
+  }
+
+  /** Tooltip de celda heatmap (precomputado para evitar `>` en template). */
+  tooltipHeatmap(dia: string, hora: number): string {
+    const cantidad = this.obtenerCantidadHeatmap(dia, hora);
+    const pico = this.esPicoHeatmap(dia, hora);
+    let txt = `${dia} ${this.formatHora(hora)} — ${cantidad} visitas`;
+    if (pico) txt += ' · PICO DEL PERÍODO';
+    if (cantidad > 0) txt += ' (clic para ver registros)';
+    return txt;
   }
 
   obtenerClaseIntensidad(dia: string, hora: number): string {

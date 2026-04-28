@@ -49,6 +49,40 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.17.0',
+    fecha: '2026-04-27',
+    titulo: 'Estadísticas nivel élite: métricas avanzadas + perf + drill-down',
+    destacado: true,
+    resumen:
+      'Rediseño profundo del Dashboard Ejecutivo. Nuevas métricas: tiempo desde el último ' +
+      'registro, carrera con mayor crecimiento, predicción de hoy al cierre, distribución por grado, ' +
+      'combinaciones de motivos, día de la semana top, % de invitados, variación diaria. ' +
+      'Click en celda del heatmap o barra del bar chart te lleva a /registros filtrados. ' +
+      'El heatmap ahora usa percentiles (escala más justa). El PDF de turnos ya no muestra ' +
+      'todo como "Sin turno". Botón Refrescar explícito. Permalinks por query params. Skeletons ' +
+      'durante carga. Y mucho menos lag en cambio de filtro (Chart.js update in-place + ' +
+      'precomputo de matrices).',
+    cambios: [
+      { tipo: 'fix',    texto: 'PDF "Distribución por turno" ya no muestra todo como "Sin turno". Hace fallback al alumno cuando el registro no tiene turno persistido.' },
+      { tipo: 'feat',   texto: 'Estadísticas: 4 nuevas tarjetas de insights rápidos — Predicción de visitas hoy al cierre, Día más concurrido del período, Carrera en crecimiento, % de invitados.' },
+      { tipo: 'feat',   texto: 'Estadísticas: tiempo desde el último registro mostrado en la tarjeta hero ("Último registro hace 23 minutos") con punto verde latente.' },
+      { tipo: 'feat',   texto: 'Estadísticas: distribución por grado y combinaciones de motivos como dos nuevas mini-gráficas.' },
+      { tipo: 'feat',   texto: 'Click en una celda del mapa de calor o en una barra del bar chart diario te lleva a /registros con el filtro de fecha y hora pre-aplicado.' },
+      { tipo: 'feat',   texto: 'Botón "Refrescar" explícito al lado del exportar — útil cuando registras alumnos en otra pestaña.' },
+      { tipo: 'feat',   texto: 'Pantallas de carga con esqueletos animados (skeleton screens) en lugar del spinner solo.' },
+      { tipo: 'mejora', texto: 'Mapa de calor: la escala de intensidad ahora usa percentiles (cuartiles) en vez de % del máximo. Si una celda tiene un pico aislado, las demás ya no se ven todas en el nivel más bajo.' },
+      { tipo: 'mejora', texto: 'Tasa de retención: el umbral se ajusta al rango (≤7 días=2 visitas, ≤30=3, ≤90=5, mayor=8). Antes era fijo en 3 — para "Hoy" siempre daba 0%.' },
+      { tipo: 'mejora', texto: '"Una sola visita" (churn temprano) ahora cuenta alumnos con 1 visita en TODO su historial, no solo en el período. Lo anterior era engañoso para rangos cortos.' },
+      { tipo: 'mejora', texto: 'KPI "Alumnos inactivos" ahora avisa visualmente que es global (etiqueta "global"), no del período filtrado.' },
+      { tipo: 'mejora', texto: 'Variación diaria (coeficiente de variación %) en la tarjeta hero — indica si el flujo es estable o errático.' },
+      { tipo: 'mejora', texto: 'Permalinks: el filtro activo se guarda en la URL. Si compartes el link, abre con los mismos filtros.' },
+      { tipo: 'mejora', texto: 'Lectores de pantalla reciben descripciones textuales de las gráficas (aria-label dinámico).' },
+      { tipo: 'mejora', texto: 'Performance: las gráficas de Chart.js ahora se actualizan in-place al cambiar filtros (antes se destruían y recreaban). Cambio de período es visiblemente más fluido.' },
+      { tipo: 'mejora', texto: 'Performance: heatmap pre-computa matrices, percentiles y clases al cargar. Hover y scroll mucho más fluidos.' },
+      { tipo: 'cambio', texto: 'Estadísticas: el campo "turno" ahora se persiste también en el registro al momento de crear (antes solo estaba en el alumno). Para registros viejos hay fallback automático.' },
+    ],
+  },
+  {
     version: '3.16.0',
     fecha: '2026-04-26',
     titulo: 'PDF a la medida, comparador con animación, fix turnos y más opciones',
