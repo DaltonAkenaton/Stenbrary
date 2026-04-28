@@ -49,6 +49,37 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.17.1',
+    fecha: '2026-04-27',
+    titulo: 'Estadísticas más fluidas: sin parpadeo + textos amigables',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: las gráficas ya no desaparecen al cambiar de período. Ahora ves un aviso ' +
+          '"Actualizando..." arriba sin que se borre lo que estabas viendo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: todos los signos de interrogación (?) ahora explican las métricas en ' +
+          'lenguaje claro y con ejemplos, sin tecnicismos. Cualquier persona los entiende.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: la tarjeta antes llamada "Churn temprano" ahora se llama "Vinieron solo 1 vez", ' +
+          'que es lo que realmente significa.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: el lag al pasar el cursor sobre el mapa de calor desapareció. Las celdas ahora ' +
+          'cambian de brillo en lugar de escalarse, evitando saltos de la pantalla.',
+      },
+    ],
+  },
+  {
     version: '3.17.0',
     fecha: '2026-04-27',
     titulo: 'Estadísticas nivel élite: métricas avanzadas + perf + drill-down',

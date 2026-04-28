@@ -96,7 +96,10 @@ interface OpcionPreset {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDestroy {
+  /** True solo en la PRIMERA carga (muestra skeletons). */
   cargando = true;
+  /** True durante recargas posteriores (no oculta el contenido, solo overlay sutil). */
+  recargando = false;
 
   // Canvas refs
   @ViewChild('chartDiario') chartDiarioRef!: ElementRef<HTMLCanvasElement>;
@@ -803,7 +806,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   async cargarDatos(): Promise<void> {
     try {
-      this.cargando = true;
+      // Solo mostrar skeletons en la PRIMERA carga; en recargas usar overlay.
+      if (!this.datosListos) {
+        this.cargando = true;
+      } else {
+        this.recargando = true;
+      }
+      this.cdr.markForCheck();
 
       const rango = await Promise.resolve(this.resolverRango(this.presetSeleccionado));
       this.rangoActivo = rango;
@@ -871,6 +880,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.calcularMetricasGlobales(rango, horaFiltro);
 
       this.cargando = false;
+      this.recargando = false;
       this.datosListos = true;
       this.cdr.markForCheck();
 
@@ -879,6 +889,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     } catch (error) {
       console.error('❌ Error al cargar estadísticas avanzadas:', error);
       this.cargando = false;
+      this.recargando = false;
       this.cdr.markForCheck();
     }
   }

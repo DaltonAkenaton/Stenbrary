@@ -107,6 +107,13 @@
     </div>
   }
 
+  @if (recargando) {
+    <div class="recargando-overlay" aria-live="polite">
+      <div class="recargando-bar"></div>
+      <span>Actualizando...</span>
+    </div>
+  }
+
   <!-- ═══ CONTENIDO ═════════════════════════════════════ -->
   @if (!cargando) {
 
@@ -118,7 +125,7 @@
           <div class="kpi-label">
             Total de registros
             <mat-icon class="info-icon"
-                      matTooltip="Suma de todas las visitas registradas durante el período seleccionado (incluye invitados).">
+                      matTooltip="Cuántas veces se escaneó una credencial (o se registró un visitante) durante el período que estás viendo arriba. Es el número total de entradas a la biblioteca.">
               help_outline
             </mat-icon>
           </div>
@@ -127,7 +134,7 @@
             <strong>{{ kpiPromedioPorDia }}</strong> promedio por día ·
             <strong>{{ kpiAlumnosUnicos | number }}</strong> alumnos únicos
             @if (kpiVariacionDiaria > 0) {
-              · <span class="hero-variacion" [matTooltip]="'Coeficiente de variación: qué tan estable es el flujo día a día. Menor a 30% estable, 30-60% variable, mayor a 60% errático.'">{{ kpiVariacionDiaria }}% variación</span>
+              · <span class="hero-variacion" matTooltip="Qué tan parecida es la cantidad de visitas día con día. Si dice 10% significa que todos los días son muy similares (flujo estable). Si dice 80%, algunos días son muchísimo más concurridos que otros (flujo errático).">{{ kpiVariacionDiaria }}% variación</span>
             }
           </div>
           @if (kpiUltimoRegistroHace) {
@@ -172,7 +179,7 @@
             <div class="kpi-label">
               {{ labelTendencia }}
               <mat-icon class="info-icon"
-                        matTooltip="Compara el total del período actual contra el período inmediatamente anterior de la misma duración.">
+                        matTooltip="Compara las visitas del período que estás viendo arriba contra el período anterior de la misma duración. Por ejemplo: si filtraste 30 días, lo compara contra los 30 días previos. Te dice si la biblioteca tiene más o menos actividad que antes.">
                 help_outline
               </mat-icon>
             </div>
@@ -191,7 +198,7 @@
             <div class="kpi-label">
               Hora pico
               <mat-icon class="info-icon"
-                        matTooltip="Combinación día-hora con más visitas dentro del período filtrado.">
+                        matTooltip="El día de la semana y la hora exacta donde la biblioteca tuvo más actividad dentro del período filtrado. Útil para planear personal extra en esas horas.">
                 help_outline
               </mat-icon>
             </div>
@@ -211,7 +218,7 @@
             <div class="kpi-label">
               Tiempo promedio de estancia
               <mat-icon class="info-icon"
-                        matTooltip="Duración promedio de las visitas con hora de salida registrada (módulo de salida activo).">
+                        matTooltip="En promedio cuánto tiempo se queda un alumno en la biblioteca. Solo cuenta visitas donde se registró la salida (necesitas tener activado el módulo de salida en Configuración). Si no aparece, es porque no hay datos de salida todavía.">
                 help_outline
               </mat-icon>
             </div>
@@ -231,7 +238,7 @@
             <div class="kpi-label">
               Tasa de retención
               <mat-icon class="info-icon"
-                        matTooltip="Porcentaje de alumnos del período que volvieron 3 o más veces. Indicador de fidelización.">
+                        [matTooltip]="'De los alumnos que vinieron en este período, qué porcentaje regresó al menos ' + kpiUmbralRetencion + ' veces. Mide qué tan fieles son. El número de visitas requeridas se ajusta solo según el rango: si filtras 1 semana basta con 2 visitas; si filtras 1 año, se piden 8.'">
                 help_outline
               </mat-icon>
             </div>
@@ -246,12 +253,12 @@
             <div class="kpi-label">
               Alumnos inactivos
               <mat-icon class="info-icon"
-                        [matTooltip]="'INDEPENDIENTE DEL FILTRO: alumnos activos sin visita en los últimos ' + kpiUmbralInactividad + ' días desde HOY (no desde el rango filtrado). El umbral se configura en /configuración.'">
+                        [matTooltip]="'Cuántos alumnos del padrón llevan más de ' + kpiUmbralInactividad + ' días sin venir a la biblioteca contando desde HOY (no desde la fecha del filtro). Lo decide la configuración en Configuración → Umbral de inactividad.'">
                 help_outline
               </mat-icon>
             </div>
             <div class="kpi-value">{{ kpiAlumnosInactivos | number }}</div>
-            <div class="kpi-sub">≥ {{ kpiUmbralInactividad }} días sin venir <span class="kpi-tag">global</span></div>
+            <div class="kpi-sub">+{{ kpiUmbralInactividad }} días sin venir <span class="kpi-tag">general</span></div>
           </div>
         </div>
 
@@ -259,14 +266,14 @@
           <div class="kpi-icon"><mat-icon>person_add_disabled</mat-icon></div>
           <div class="kpi-body">
             <div class="kpi-label">
-              Churn temprano
+              Vinieron solo 1 vez
               <mat-icon class="info-icon"
-                        matTooltip="Alumnos del padrón que han visitado la biblioteca exactamente UNA vez en TODO su historial y nunca regresaron. Indicador de baja conversión inicial. (Cálculo histórico, no del período).">
+                        matTooltip="Cuántos alumnos han visitado la biblioteca una única vez en todo su historial y nunca volvieron. Si este número es alto, vale la pena hacer una campaña para que regresen.">
                 help_outline
               </mat-icon>
             </div>
             <div class="kpi-value">{{ kpiAlumnosUnaSolaVisita | number }}</div>
-            <div class="kpi-sub">vinieron solo 1 vez histórico</div>
+            <div class="kpi-sub">alumnos · solo 1 visita histórica</div>
           </div>
         </div>
 
@@ -277,7 +284,7 @@
               <div class="kpi-label">
                 Motivo más frecuente
                 <mat-icon class="info-icon"
-                          matTooltip="Actividad principal seleccionada con más frecuencia en el período.">
+                          matTooltip="La actividad que más alumnos eligieron al registrarse en este período. Por ejemplo, si la mayoría seleccionó 'Estudiar', aparecerá aquí.">
                   help_outline
                 </mat-icon>
               </div>

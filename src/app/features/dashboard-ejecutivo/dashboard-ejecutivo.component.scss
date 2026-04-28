@@ -668,14 +668,18 @@
     @include flex-center;
     height: 36px;
     border-radius: 4px;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: default;
+    transition: filter 0.12s ease;
     position: relative;
-    will-change: transform;
+    contain: layout style paint;
 
-    &:hover {
-      transform: scale(1.15);
-      z-index: 10;
+    &.clickable {
+      cursor: pointer;
+
+      &:hover {
+        filter: brightness(1.25);
+        z-index: 5;
+      }
     }
 
     &.es-pico {
@@ -2401,4 +2405,61 @@ button:focus-visible {
   .kpi-hero-value { animation: none; }
   .heatmap-cell:hover { transform: none; }
   .crecimiento-col:hover .crecimiento-bar { filter: none; }
+}
+
+// ─── Recargando overlay (soft-loading sin ocultar contenido) ───
+.recargando-overlay {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: rgba($navy-800, 0.92);
+  border-bottom: 1px solid rgba($cyan-500, 0.25);
+  backdrop-filter: blur(6px);
+  font-size: 0.78rem;
+  color: $cyan-400;
+  pointer-events: none;
+  animation: recargandoIn 220ms ease;
+
+  span { font-weight: 600; }
+
+  .recargando-bar {
+    width: 64px;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba($cyan-500, 0.18);
+    overflow: hidden;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, $cyan-500, transparent);
+      animation: recargandoSweep 1.1s linear infinite;
+    }
+  }
+}
+
+@keyframes recargandoIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes recargandoSweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recargando-overlay { animation: none; }
+  .recargando-bar::after { animation: none; }
 }
