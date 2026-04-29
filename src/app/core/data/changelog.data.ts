@@ -49,6 +49,28 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.18.3',
+    fecha: '2026-04-29',
+    titulo: 'Estadísticas: arregla el lag intermitente al cambiar período/pestaña',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: el lag al cambiar de período (que después se quitaba solo) era por re-leer la base de datos completa cada vez. Ahora se reusa el caché en memoria — el cambio es casi instantáneo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: las métricas que requieren recorrer todo el histórico (carrera en crecimiento, último registro) ahora se calculan después de pintar la pantalla — la primera vista es más rápida.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: ahora la consola del navegador muestra cuánto tarda cada paso de la carga (queries, cálculos, render). Útil para diagnosticar lentitud.',
+      },
+    ],
+  },
+  {
     version: '3.18.2',
     fecha: '2026-04-29',
     titulo: 'Estadísticas: gráficas siempre se ven al cambiar de pestaña',

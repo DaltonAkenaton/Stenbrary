@@ -759,7 +759,9 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private async cargarHeatmap(): Promise<void> {
-    this.estadisticasService.invalidarCache();
+    // v3.18.3: NO invalidar cache aquí — solo cambia el período del heatmap,
+    // los registros base son los mismos. Antes esto forzaba re-leer TODA la
+    // BD por cada cambio de período del heatmap (lag visible).
     const resultado = await this.estadisticasService.generarHeatmap(this.heatmapPeriodo);
     this.aplicarHeatmap(resultado);
     this.diaPredicho = await this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo);
@@ -861,7 +863,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   }
 
   private async cargarTopAlumnos(): Promise<void> {
-    this.estadisticasService.invalidarCache();
+    // v3.18.3: NO invalidar cache — los registros no cambiaron, solo el período.
     this.topAlumnos = await this.estadisticasService.obtenerTopAlumnos(
       5, this.topPeriodo || undefined
     );
@@ -872,6 +874,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // ═══════════════════════════════════════════════
 
   async cargarDatos(): Promise<void> {
+    const T0 = performance.now();
     try {
       // Solo mostrar skeletons en la PRIMERA carga; en recargas usar overlay.
       if (!this.datosListos) {
@@ -885,6 +888,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.rangoActivo = rango;
       const horaFiltro = this.horaFiltro;
 
+      const TQ = performance.now();
       // Tier S3 v3.17.0: una sola lectura del cache + las queries que dependen
       // de OTROS rangos (heatmap, top, predicción) van en paralelo.
       const [registrosCrudos, heatmap, top, prediccion] = await Promise.all([
@@ -893,7 +897,10 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         this.estadisticasService.obtenerTopAlumnos(5, this.topPeriodo || undefined),
         this.estadisticasService.predecirDiaOcupado(this.heatmapPeriodo),
       ]);
+      const TQ1 = performance.now();
+      console.log(`⏱ [stats] queries fase 1: ${(TQ1 - TQ).toFixed(0)}ms (${registrosCrudos.length} registros)`);
 
+      const TQ2a = performance.now();
       // Las métricas del rango se derivan del array ya filtrado (rápido, en JS).
       const [tendencia, insights, diarios, motivos, carreras] = await Promise.all([
         this.estadisticasService.compararTendencias(rango, horaFiltro),
@@ -902,6 +909,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         this.estadisticasService.obtenerDistribucionMotivos(rango, horaFiltro),
         this.estadisticasService.analizarPorCarrera(rango, horaFiltro),
       ]);
+      console.log(`⏱ [stats] queries fase 2: ${(performance.now() - TQ2a).toFixed(0)}ms`);
 
       this.tendencia = tendencia;
       this.aplicarHeatmap(heatmap);
@@ -930,6 +938,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         this.kpiAlumnosInactivos = 0;
       }
 
+      const TM = performance.now();
       // ─── TIER B: métricas avanzadas (rango actual) ──
       this.calcularMetricasAvanzadas(registrosCrudos, rango);
       this.calcularSparklines(registrosCrudos, rango);
@@ -941,20 +950,28 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.calcularPrediccionHoy(registrosCrudos);
       // diariosDomingoIdx (Tier A: tinte de domingos en barras diarias)
       this.diariosDomingoIdx = this.calcularDomingosDelGrafico(rango, diarios);
-
-      // Métricas que requieren histórico completo se calculan async aparte
-      // (no bloquean la primera renderización).
-      this.calcularMetricasGlobales(rango, horaFiltro);
+      console.log(`⏱ [stats] cálculos JS: ${(performance.now() - TM).toFixed(0)}ms`);
 
       this.cargando = false;
       this.recargando = false;
       this.datosListos = true;
       this.cdr.markForCheck();
 
+      // Métricas que requieren histórico completo se calculan async DESPUÉS
+      // de mostrar los datos del rango (no bloquean la 1ª pintura).
+      // Diferimos al siguiente tick para liberar el hilo principal.
+      requestAnimationFrame(() => {
+        this.calcularMetricasGlobales(rango, horaFiltro);
+      });
+
       await this.construirMesesDisponibles();
       // Doble RAF garantiza que Angular ya pintó el DOM (los @if y los canvas)
       // antes de que Chart.js intente pintar.
-      requestAnimationFrame(() => requestAnimationFrame(() => this.renderizarGraficas()));
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const TR = performance.now();
+        this.renderizarGraficas();
+        console.log(`⏱ [stats] render charts: ${(performance.now() - TR).toFixed(0)}ms · TOTAL: ${(performance.now() - T0).toFixed(0)}ms`);
+      }));
     } catch (error) {
       console.error('❌ Error al cargar estadísticas avanzadas:', error);
       this.cargando = false;
