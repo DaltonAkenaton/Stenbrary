@@ -116,7 +116,8 @@ export class EstadisticasAvanzadasService {
   private registrosCache: Registro[] | null = null;
   private cacheTimestamp = 0;
   private cacheInFlight: Promise<Registro[]> | null = null;
-  private readonly CACHE_TTL = 15_000; // 15 segundos
+  private readonly CACHE_TTL = 300_000; // 5 minutos — los registros no cambian
+                                        // mientras navegas en /estadisticas.
 
   constructor(private databaseService: DatabaseService) {}
 

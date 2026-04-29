@@ -49,6 +49,23 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.18.4',
+    fecha: '2026-04-29',
+    titulo: 'Estadísticas: gráficas no se traban con muchos datos + caché 5 min',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: la gráfica "Registros por día" se trababa unos segundos cuando un día tenía cientos o miles de visitas. Antes Chart.js intentaba dibujar 3000 marcas en el eje vertical; ahora elige un paso óptimo automáticamente.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: el caché de datos pasa de 15 segundos a 5 minutos. Mientras estás explorando el dashboard, ya no se relee la base entera por cada cambio de período.',
+      },
+    ],
+  },
+  {
     version: '3.18.3',
     fecha: '2026-04-29',
     titulo: 'Estadísticas: arregla el lag intermitente al cambiar período/pestaña',

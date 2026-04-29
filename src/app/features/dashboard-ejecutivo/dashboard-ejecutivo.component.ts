@@ -1774,7 +1774,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
             beginAtZero: true, grid: { color: 'rgba(200, 230, 240, 0.06)' },
             ticks: {
               color: 'rgba(200, 230, 240, 0.4)',
-              font: { family: "'DM Sans', sans-serif", size: 11 }, stepSize: 1,
+              font: { family: "'DM Sans', sans-serif", size: 11 }, precision: 0,
             },
           },
         },
@@ -1935,7 +1935,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
             beginAtZero: true, grid: { color: 'rgba(200, 230, 240, 0.06)' },
             ticks: {
               color: 'rgba(200, 230, 240, 0.4)',
-              font: { family: "'DM Sans', sans-serif", size: 11 }, stepSize: 1,
+              font: { family: "'DM Sans', sans-serif", size: 11 }, precision: 0,
             },
           },
           y: {
