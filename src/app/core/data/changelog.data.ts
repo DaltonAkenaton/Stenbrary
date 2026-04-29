@@ -49,6 +49,18 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.18.1',
+    fecha: '2026-04-29',
+    titulo: 'Estadísticas: gráficas pintan correctamente en primera carga',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: las gráficas "Registros por día" y "Motivos de visita" ya se pintan correctamente al abrir la pestaña Resumen por primera vez. Antes podían quedar en blanco si el navegador no había terminado de pintar el DOM.',
+      },
+    ],
+  },
+  {
     version: '3.18.0',
     fecha: '2026-04-29',
     titulo: 'Estadísticas con pestañas: 0 lag y vista organizada',

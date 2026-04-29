@@ -315,7 +315,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   ngAfterViewInit(): void {
     if (this.datosListos) {
-      setTimeout(() => this.renderizarGraficas(), 0);
+      requestAnimationFrame(() => requestAnimationFrame(() => this.renderizarGraficas()));
     }
   }
 
@@ -952,7 +952,9 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.cdr.markForCheck();
 
       await this.construirMesesDisponibles();
-      setTimeout(() => this.renderizarGraficas(), 50);
+      // Doble RAF garantiza que Angular ya pintó el DOM (los @if y los canvas)
+      // antes de que Chart.js intente pintar.
+      requestAnimationFrame(() => requestAnimationFrame(() => this.renderizarGraficas()));
     } catch (error) {
       console.error('❌ Error al cargar estadísticas avanzadas:', error);
       this.cargando = false;
@@ -1665,10 +1667,15 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // GRÁFICAS CHART.JS
   // ═══════════════════════════════════════════════
 
+  /**
+   * Renderiza SOLO las gráficas de la tab activa.
+   * Antes intentaba pintar las 3, pero `chartCarreras` solo está en
+   * la tab "Personas" y `chartDiario`/`chartMotivos` solo en "Resumen",
+   * así que llamarlas todas siempre era inútil (y causaba que se
+   * intentaran pintar canvas que no estaban en el DOM).
+   */
   private renderizarGraficas(): void {
-    this.renderizarGraficaDiaria();
-    this.renderizarGraficaMotivos();
-    this.renderizarGraficaCarreras();
+    this.renderizarGraficasDeTab(this.tabActiva);
     this.primerRenderHecho = true;
   }
 
