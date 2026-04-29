@@ -708,21 +708,21 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
     // Destruir charts de la tab que estamos abandonando — sus <canvas>
     // dejan de existir en el DOM al cambiar el @if y la instancia queda
-    // apuntando a un canvas huérfano. Esto evita memory leaks Y permite
-    // que al volver a la tab se recreen limpios.
+    // apuntando a un canvas huérfano (esto causaba que las gráficas no
+    // se pintaran al volver). Esto también libera memoria.
     this.destruirChartsDeTab(this.tabActiva);
 
     this.tabActiva = tab;
     this.actualizarUrl();
     this.cdr.markForCheck();
 
-    // requestAnimationFrame asegura que el DOM ya tiene los nuevos canvas
-    // antes de intentar pintar (más seguro que setTimeout 0).
-    requestAnimationFrame(() => {
+    // Doble RAF garantiza que Angular pintó el DOM y el navegador hizo
+    // layout antes de que Chart.js intente medir el canvas.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       this.ngZone.runOutsideAngular(() => {
         this.renderizarGraficasDeTab(tab);
       });
-    });
+    }));
   }
 
   private destruirChartsDeTab(tab: TabKey): void {
@@ -1687,9 +1687,9 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaDiaria(): void {
     if (!this.chartDiarioRef || !this.datosDiarios) return;
-    // Verificar que el canvas siga conectado al DOM (puede haberse destruido
-    // por cambio de tab). Si no está, salir.
-    if (!this.chartDiarioRef.nativeElement.isConnected) return;
+    const canvas = this.chartDiarioRef.nativeElement;
+    // Si el canvas no está en el DOM (tab cambiada), no hacemos nada.
+    if (!canvas.isConnected) return;
 
     const domingoSet = new Set(this.diariosDomingoIdx);
     const cantidades = this.datosDiarios.cantidades;
@@ -1698,8 +1698,15 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     const border = cantidades.map((_, i) =>
       domingoSet.has(i) ? '#F05252' : '#00C8D7');
 
-    // Update in-place si la chart ya existe Y su canvas sigue siendo el mismo
-    if (this.chartDiario && this.chartDiario.canvas === this.chartDiarioRef.nativeElement) {
+    // Si la chart actual apunta a un canvas distinto al actual (cambió por tab),
+    // hay que destruir y recrear. NO update in-place.
+    if (this.chartDiario && this.chartDiario.canvas !== canvas) {
+      this.chartDiario.destroy();
+      this.chartDiario = null;
+    }
+
+    // Update in-place si la chart sigue ligada al canvas vivo
+    if (this.chartDiario) {
       this.chartDiario.data.labels = this.datosDiarios.etiquetas;
       this.chartDiario.data.datasets[0].data = cantidades;
       this.chartDiario.data.datasets[0].backgroundColor = bg;
@@ -1708,9 +1715,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       return;
     }
 
-    this.chartDiario?.destroy();
-    this.chartDiario = null;
-    const ctx = this.chartDiarioRef.nativeElement.getContext('2d');
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     this.chartDiario = new Chart(ctx, {
@@ -1772,7 +1777,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaMotivos(): void {
     if (!this.chartMotivosRef || !this.distribucionMotivos) return;
-    if (!this.chartMotivosRef.nativeElement.isConnected) return;
+    const canvas = this.chartMotivosRef.nativeElement;
+    if (!canvas.isConnected) return;
 
     if (this.distribucionMotivos.cantidades.length === 0) {
       this.chartMotivos?.destroy();
@@ -1780,8 +1786,13 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       return;
     }
 
-    // Update in-place si la chart sigue ligada al mismo canvas
-    if (this.chartMotivos && this.chartMotivos.canvas === this.chartMotivosRef.nativeElement) {
+    // Si la chart apunta a otro canvas (tab cambiada), destruir y recrear.
+    if (this.chartMotivos && this.chartMotivos.canvas !== canvas) {
+      this.chartMotivos.destroy();
+      this.chartMotivos = null;
+    }
+
+    if (this.chartMotivos) {
       this.chartMotivos.data.labels = this.distribucionMotivos.etiquetas;
       this.chartMotivos.data.datasets[0].data = this.distribucionMotivos.cantidades;
       this.chartMotivos.data.datasets[0].backgroundColor =
@@ -1791,9 +1802,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       return;
     }
 
-    this.chartMotivos?.destroy();
-    this.chartMotivos = null;
-    const ctx = this.chartMotivosRef.nativeElement.getContext('2d');
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
     this.chartMotivos = new Chart(ctx, {
       type: 'doughnut',
@@ -1836,7 +1845,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaCarreras(): void {
     if (!this.chartCarrerasRef) return;
-    if (!this.chartCarrerasRef.nativeElement.isConnected) return;
+    const canvas = this.chartCarrerasRef.nativeElement;
+    if (!canvas.isConnected) return;
 
     if (this.datosCarreras.length === 0) {
       this.chartCarreras?.destroy();
@@ -1848,7 +1858,12 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     const cantidades = this.datosCarreras.map(d => d.totalVisitas);
     const colores = ['#00C8D7', '#0BC4B7', '#0EB07B', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F5A623'];
 
-    if (this.chartCarreras && this.chartCarreras.canvas === this.chartCarrerasRef.nativeElement) {
+    if (this.chartCarreras && this.chartCarreras.canvas !== canvas) {
+      this.chartCarreras.destroy();
+      this.chartCarreras = null;
+    }
+
+    if (this.chartCarreras) {
       this.chartCarreras.data.labels = etiquetas;
       this.chartCarreras.data.datasets[0].data = cantidades;
       this.chartCarreras.data.datasets[0].backgroundColor =
@@ -1859,9 +1874,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       return;
     }
 
-    this.chartCarreras?.destroy();
-    this.chartCarreras = null;
-    const ctx = this.chartCarrerasRef.nativeElement.getContext('2d');
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
     this.chartCarreras = new Chart(ctx, {
       type: 'bar',

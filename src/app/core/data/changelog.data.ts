@@ -49,6 +49,18 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.18.2',
+    fecha: '2026-04-29',
+    titulo: 'Estadísticas: gráficas siempre se ven al cambiar de pestaña',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: las gráficas ya no quedan en blanco al volver a una pestaña. La instancia de la gráfica se recrea correctamente cuando el navegador reemplaza el lienzo (canvas) entre pestañas.',
+      },
+    ],
+  },
+  {
     version: '3.18.1',
     fecha: '2026-04-29',
     titulo: 'Estadísticas: gráficas pintan correctamente en primera carga',
