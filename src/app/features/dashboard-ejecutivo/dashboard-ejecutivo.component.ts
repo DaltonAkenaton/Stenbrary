@@ -69,6 +69,9 @@ Chart.register(...registerables);
 
 type PresetRango = 'hoy' | 'ayer' | 'semana' | 'semana-pasada' | 'mes-actual' | 'mes-pasado' | 'ultimos7' | 'ultimos14' | 'ultimos30' | 'ultimos90' | 'anio' | 'anio-pasado' | 'semestre-actual' | 'semestre-pasado' | 'todo' | 'personalizado';
 
+/** Pestañas del Dashboard Ejecutivo (v3.18.0). */
+export type TabKey = 'resumen' | 'calor' | 'personas' | 'comparar' | 'reportes';
+
 interface OpcionPreset {
   key: PresetRango;
   label: string;
@@ -96,6 +99,18 @@ interface OpcionPreset {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDestroy {
+  // ─── Sistema de tabs (v3.18.0) ───────────────────
+  // Solo se renderiza la pestaña activa → ~75% menos elementos pintados a la vez,
+  // 1 chart canvas a la vez en lugar de 5+. Cambio entre tabs es instantáneo.
+  tabActiva: TabKey = 'resumen';
+  readonly tabs: { key: TabKey; label: string; icon: string }[] = [
+    { key: 'resumen',   label: 'Resumen',     icon: 'dashboard' },
+    { key: 'calor',     label: 'Calor & ritmo', icon: 'local_fire_department' },
+    { key: 'personas',  label: 'Personas',    icon: 'groups' },
+    { key: 'comparar',  label: 'Comparar',    icon: 'compare_arrows' },
+    { key: 'reportes',  label: 'Reportes',    icon: 'picture_as_pdf' },
+  ];
+
   /** True solo en la PRIMERA carga (muestra skeletons). */
   cargando = true;
   /** True durante recargas posteriores (no oculta el contenido, solo overlay sutil). */
@@ -649,7 +664,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   /** Tier D25: persiste el estado en query params (permalinks). */
   private actualizarUrl(): void {
-    const params: any = { p: this.presetSeleccionado };
+    const params: any = { p: this.presetSeleccionado, tab: this.tabActiva };
     if (this.presetSeleccionado === 'personalizado') {
       if (this.fechaInicio) params.ini = this.fechaInicio;
       if (this.fechaFin) params.fin = this.fechaFin;
@@ -678,6 +693,58 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       this.filtroHoraActivo = true;
       this.filtroHoraDesde = +hd;
       this.filtroHoraHasta = +hh;
+    }
+    const tab = qp.get('tab') as TabKey | null;
+    if (tab && this.tabs.some(t => t.key === tab)) this.tabActiva = tab;
+  }
+
+  /**
+   * Cambia de pestaña. NO recarga datos — solo cambia visibilidad.
+   * Re-renderiza las gráficas de la pestaña destino tras el render
+   * (los charts necesitan que su canvas esté en el DOM).
+   */
+  setTab(tab: TabKey): void {
+    if (tab === this.tabActiva) return;
+
+    // Destruir charts de la tab que estamos abandonando — sus <canvas>
+    // dejan de existir en el DOM al cambiar el @if y la instancia queda
+    // apuntando a un canvas huérfano. Esto evita memory leaks Y permite
+    // que al volver a la tab se recreen limpios.
+    this.destruirChartsDeTab(this.tabActiva);
+
+    this.tabActiva = tab;
+    this.actualizarUrl();
+    this.cdr.markForCheck();
+
+    // requestAnimationFrame asegura que el DOM ya tiene los nuevos canvas
+    // antes de intentar pintar (más seguro que setTimeout 0).
+    requestAnimationFrame(() => {
+      this.ngZone.runOutsideAngular(() => {
+        this.renderizarGraficasDeTab(tab);
+      });
+    });
+  }
+
+  private destruirChartsDeTab(tab: TabKey): void {
+    if (tab === 'resumen') {
+      this.chartDiario?.destroy(); this.chartDiario = null;
+      this.chartMotivos?.destroy(); this.chartMotivos = null;
+    } else if (tab === 'personas') {
+      this.chartCarreras?.destroy(); this.chartCarreras = null;
+    } else if (tab === 'comparar') {
+      this.chartCompararA?.destroy(); this.chartCompararA = null;
+      this.chartCompararB?.destroy(); this.chartCompararB = null;
+    }
+  }
+
+  private renderizarGraficasDeTab(tab: TabKey): void {
+    if (tab === 'resumen') {
+      this.renderizarGraficaDiaria();
+      this.renderizarGraficaMotivos();
+    } else if (tab === 'personas') {
+      this.renderizarGraficaCarreras();
+    } else if (tab === 'comparar') {
+      this.renderizarGraficasComparador();
     }
   }
 
@@ -1605,13 +1672,17 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     this.primerRenderHecho = true;
   }
 
-  /** Duración de animación: full en primer mount (600ms), 0 en re-renders. */
+  /** Duración de animación: corta en primer mount (200ms), 0 en re-renders.
+   * Antes 600ms — bajado a 200 para que no se sienta lag en primera carga. */
   private get animDuracion(): number {
-    return this.primerRenderHecho ? 0 : 600;
+    return this.primerRenderHecho ? 0 : 200;
   }
 
   private renderizarGraficaDiaria(): void {
     if (!this.chartDiarioRef || !this.datosDiarios) return;
+    // Verificar que el canvas siga conectado al DOM (puede haberse destruido
+    // por cambio de tab). Si no está, salir.
+    if (!this.chartDiarioRef.nativeElement.isConnected) return;
 
     const domingoSet = new Set(this.diariosDomingoIdx);
     const cantidades = this.datosDiarios.cantidades;
@@ -1620,8 +1691,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     const border = cantidades.map((_, i) =>
       domingoSet.has(i) ? '#F05252' : '#00C8D7');
 
-    // Tier S2 v3.17.0: update in-place si la chart ya existe
-    if (this.chartDiario && this.primerRenderHecho) {
+    // Update in-place si la chart ya existe Y su canvas sigue siendo el mismo
+    if (this.chartDiario && this.chartDiario.canvas === this.chartDiarioRef.nativeElement) {
       this.chartDiario.data.labels = this.datosDiarios.etiquetas;
       this.chartDiario.data.datasets[0].data = cantidades;
       this.chartDiario.data.datasets[0].backgroundColor = bg;
@@ -1694,6 +1765,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaMotivos(): void {
     if (!this.chartMotivosRef || !this.distribucionMotivos) return;
+    if (!this.chartMotivosRef.nativeElement.isConnected) return;
 
     if (this.distribucionMotivos.cantidades.length === 0) {
       this.chartMotivos?.destroy();
@@ -1701,8 +1773,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       return;
     }
 
-    // Tier S2: update in-place
-    if (this.chartMotivos && this.primerRenderHecho) {
+    // Update in-place si la chart sigue ligada al mismo canvas
+    if (this.chartMotivos && this.chartMotivos.canvas === this.chartMotivosRef.nativeElement) {
       this.chartMotivos.data.labels = this.distribucionMotivos.etiquetas;
       this.chartMotivos.data.datasets[0].data = this.distribucionMotivos.cantidades;
       this.chartMotivos.data.datasets[0].backgroundColor =
@@ -1757,6 +1829,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   private renderizarGraficaCarreras(): void {
     if (!this.chartCarrerasRef) return;
+    if (!this.chartCarrerasRef.nativeElement.isConnected) return;
 
     if (this.datosCarreras.length === 0) {
       this.chartCarreras?.destroy();
@@ -1768,8 +1841,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
     const cantidades = this.datosCarreras.map(d => d.totalVisitas);
     const colores = ['#00C8D7', '#0BC4B7', '#0EB07B', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F5A623'];
 
-    // Tier S2: update in-place
-    if (this.chartCarreras && this.primerRenderHecho) {
+    if (this.chartCarreras && this.chartCarreras.canvas === this.chartCarrerasRef.nativeElement) {
       this.chartCarreras.data.labels = etiquetas;
       this.chartCarreras.data.datasets[0].data = cantidades;
       this.chartCarreras.data.datasets[0].backgroundColor =

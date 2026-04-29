@@ -49,6 +49,41 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.18.0',
+    fecha: '2026-04-29',
+    titulo: 'Estadísticas con pestañas: 0 lag y vista organizada',
+    destacado: true,
+    resumen:
+      'El Dashboard Ejecutivo ahora se divide en 5 pestañas (Resumen, Calor & ritmo, Personas, Comparar, Reportes). Solo se carga lo que ves — el resto no consume recursos. Adiós al lag, todo se siente fluido incluso en la app instalada.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Estadísticas: nueva navegación por pestañas en la parte superior. Cada pestaña agrupa lo que tiene sentido junto: Resumen (KPIs y tendencia), Calor & ritmo (heatmap y crecimiento 12m), Personas (carreras, turnos, top alumnos), Comparar (A vs B), Reportes (PDF). Cambio entre pestañas es instantáneo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: rendimiento masivamente mejorado. Antes se cargaban 5 gráficas + 105 celdas + ~30 tooltips a la vez. Ahora solo se renderiza la pestaña activa, lo que reduce el trabajo del navegador a la quinta parte. Sin lag al hacer scroll.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Comparador A vs B: el slot A se había perdido en una versión anterior. Ahora ambos slots (A y B) están completos con sus selects, fechas personalizadas, gráficas de motivos y tarjeta de diferencia.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: las gráficas se destruyen y recrean correctamente al cambiar entre pestañas. Antes podían quedar en blanco al volver a una pestaña ya visitada.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Estadísticas: el botón "Refrescar" y los exportadores de PDF ahora viven en su propia pestaña "Reportes" — más fácil de encontrar y no compite por espacio con los KPIs.',
+      },
+    ],
+  },
+  {
     version: '3.17.2',
     fecha: '2026-04-27',
     titulo: '0 lag, gráficas con datos vacíos y filtro por visitas en alumnos',
