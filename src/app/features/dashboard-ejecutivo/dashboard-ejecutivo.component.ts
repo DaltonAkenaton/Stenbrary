@@ -300,15 +300,14 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
   async ngOnInit(): Promise<void> {
     this.kpiUmbralInactividad = this.configService.umbralInactividadDias || 30;
-    // Tier D25: leer estado de la URL antes de cargar
     this.leerUrlParams();
-    // Pre-cargar mapas matrícula→turno y matrícula→grado
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
     for (const a of todosAlumnos) {
       if (a.turno) this.turnoPorMatricula.set(a.matricula, a.turno);
       if (typeof a.grado === 'number') this.gradoPorMatricula.set(a.matricula, a.grado);
     }
-    await this.cargarDatos();
+    // Carga inicial directa (sin debounce, no hay clicks que coalescer).
+    await this.cargarDatosInterno();
     await this.cargarCrecimiento12m();
     this.cdr.markForCheck();
   }
@@ -873,8 +872,30 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   // CARGA PRINCIPAL
   // ═══════════════════════════════════════════════
 
-  async cargarDatos(): Promise<void> {
+  /**
+   * Wrapper público con debounce: agrupa clicks rápidos en una sola carga.
+   * v3.18.5 fix: antes 5 clicks en 200ms disparaban 5 cargarDatos paralelos
+   * que se serializaban en IndexedDB acumulando latencia (>2s). Ahora solo
+   * la última gana y se ejecuta tras 80ms de inactividad.
+   */
+  private _debounceTimer: any = null;
+  private _cargaSeq = 0;
+
+  cargarDatos(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this._debounceTimer) clearTimeout(this._debounceTimer);
+      this._debounceTimer = setTimeout(() => {
+        this._debounceTimer = null;
+        this.cargarDatosInterno().then(resolve);
+      }, 80);
+    });
+  }
+
+  private async cargarDatosInterno(): Promise<void> {
+    const mySeq = ++this._cargaSeq;
     const T0 = performance.now();
+    // Helper: si llegó otra carga después de esta, abortar silenciosamente
+    const cancelado = () => mySeq !== this._cargaSeq;
     try {
       // Solo mostrar skeletons en la PRIMERA carga; en recargas usar overlay.
       if (!this.datosListos) {
@@ -899,6 +920,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
       ]);
       const TQ1 = performance.now();
       console.log(`⏱ [stats] queries fase 1: ${(TQ1 - TQ).toFixed(0)}ms (${registrosCrudos.length} registros)`);
+      if (cancelado()) { console.log('🛑 carga obsoleta (clicks rápidos), abortando'); return; }
 
       const TQ2a = performance.now();
       // Las métricas del rango se derivan del array ya filtrado (rápido, en JS).
@@ -910,6 +932,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
         this.estadisticasService.analizarPorCarrera(rango, horaFiltro),
       ]);
       console.log(`⏱ [stats] queries fase 2: ${(performance.now() - TQ2a).toFixed(0)}ms`);
+      if (cancelado()) return;
 
       this.tendencia = tendencia;
       this.aplicarHeatmap(heatmap);

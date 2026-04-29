@@ -49,6 +49,18 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.18.5',
+    fecha: '2026-04-29',
+    titulo: 'Estadísticas: clicks rápidos ya no acumulan lag',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas: cuando hacías varios clicks rápidos en pestañas o períodos, las cargas se acumulaban y la pantalla se congelaba 2-3 segundos. Ahora solo se ejecuta la última solicitud y las anteriores se cancelan automáticamente.',
+      },
+    ],
+  },
+  {
     version: '3.18.4',
     fecha: '2026-04-29',
     titulo: 'Estadísticas: gráficas no se traban con muchos datos + caché 5 min',
