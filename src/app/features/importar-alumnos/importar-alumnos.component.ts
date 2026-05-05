@@ -80,7 +80,8 @@ interface ResultadoImportacion {
       </div>
 
       <!-- ═══ PASO 1: SELECCIONAR ARCHIVO ═══ -->
-      <mat-card class="section-card" *ngIf="paso === 'seleccionar'">
+      @if (paso === 'seleccionar') {
+      <mat-card class="section-card">
         <div class="section-header">
           <mat-icon>description</mat-icon>
           <h2>Seleccionar Archivo</h2>
@@ -156,9 +157,11 @@ interface ResultadoImportacion {
           </span>
         </div>
       </mat-card>
+      }
 
       <!-- ═══ PASO 2: PREVIEW ═══ -->
-      <mat-card class="section-card" *ngIf="paso === 'preview'">
+      @if (paso === 'preview') {
+      <mat-card class="section-card">
         <div class="section-header">
           <mat-icon>table_chart</mat-icon>
           <h2>Vista Previa</h2>
@@ -171,10 +174,12 @@ interface ResultadoImportacion {
             <mat-icon>check_circle</mat-icon>
             <strong>{{ filasValidas }}</strong> válidos
           </div>
-          <div class="resumen-item invalidos" *ngIf="filasInvalidas > 0">
-            <mat-icon>error</mat-icon>
-            <strong>{{ filasInvalidas }}</strong> con errores
-          </div>
+          @if (filasInvalidas > 0) {
+            <div class="resumen-item invalidos">
+              <mat-icon>error</mat-icon>
+              <strong>{{ filasInvalidas }}</strong> con errores
+            </div>
+          }
           <div class="resumen-item total">
             <mat-icon>list</mat-icon>
             <strong>{{ filas.length }}</strong> filas totales
@@ -188,9 +193,12 @@ interface ResultadoImportacion {
             <ng-container matColumnDef="estado">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let fila">
-                <mat-icon *ngIf="fila.valido" class="icon-ok">check_circle</mat-icon>
-                <mat-icon *ngIf="!fila.valido" class="icon-error"
-                          [matTooltip]="fila.errores.join(', ')">error</mat-icon>
+                @if (fila.valido) {
+                  <mat-icon class="icon-ok">check_circle</mat-icon>
+                } @else {
+                  <mat-icon class="icon-error"
+                            [matTooltip]="fila.errores.join(', ')">error</mat-icon>
+                }
               </td>
             </ng-container>
 
@@ -265,9 +273,11 @@ interface ResultadoImportacion {
           </button>
         </div>
       </mat-card>
+      }
 
       <!-- ═══ PASO 3: RESULTADO ═══ -->
-      <mat-card class="section-card" *ngIf="paso === 'resultado' && resultado">
+      @if (paso === 'resultado' && resultado) {
+      <mat-card class="section-card">
         <div class="section-header">
           <mat-icon [class.icon-ok]="resultado.importados > 0"
                     [class.icon-error]="resultado.importados === 0">
@@ -277,18 +287,24 @@ interface ResultadoImportacion {
         </div>
 
         <div class="resultado-grid">
-          <div class="resultado-stat exito" *ngIf="resultado.importados > 0">
-            <div class="resultado-valor">{{ resultado.importados }}</div>
-            <div class="resultado-label">Importados</div>
-          </div>
-          <div class="resultado-stat duplicado" *ngIf="resultado.duplicados > 0">
-            <div class="resultado-valor">{{ resultado.duplicados }}</div>
-            <div class="resultado-label">Duplicados (omitidos)</div>
-          </div>
-          <div class="resultado-stat error" *ngIf="resultado.invalidos > 0">
-            <div class="resultado-valor">{{ resultado.invalidos }}</div>
-            <div class="resultado-label">Inválidos (omitidos)</div>
-          </div>
+          @if (resultado.importados > 0) {
+            <div class="resultado-stat exito">
+              <div class="resultado-valor">{{ resultado.importados }}</div>
+              <div class="resultado-label">Importados</div>
+            </div>
+          }
+          @if (resultado.duplicados > 0) {
+            <div class="resultado-stat duplicado">
+              <div class="resultado-valor">{{ resultado.duplicados }}</div>
+              <div class="resultado-label">Duplicados (omitidos)</div>
+            </div>
+          }
+          @if (resultado.invalidos > 0) {
+            <div class="resultado-stat error">
+              <div class="resultado-valor">{{ resultado.invalidos }}</div>
+              <div class="resultado-label">Inválidos (omitidos)</div>
+            </div>
+          }
         </div>
 
         <div class="resultado-actions">
@@ -302,6 +318,7 @@ interface ResultadoImportacion {
           </button>
         </div>
       </mat-card>
+      }
 
     </div>
   `,

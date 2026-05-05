@@ -151,6 +151,8 @@ export class EstadisticasAvanzadasService {
     this.registrosCache = null;
     this.cacheTimestamp = 0;
     this.cacheInFlight = null;
+    this.alumnosCache = null;
+    this.alumnosCacheTs = 0;
   }
 
   // ═══════════════════════════════════════════════
@@ -526,8 +528,13 @@ export class EstadisticasAvanzadasService {
     };
   }
 
-  async generarHeatmap(diasPeriodo: number = 30): Promise<HeatmapResultado> {
-    const rango = this.crearRangoUltimosDias(diasPeriodo);
+  async generarHeatmap(
+    diasPeriodo: number = 30,
+    rangoCustom?: RangoFechas,
+  ): Promise<HeatmapResultado> {
+    // Si se pasa un rango explícito (modo personalizado), úsalo;
+    // si no, deriva el rango de los últimos N días.
+    const rango = rangoCustom ?? this.crearRangoUltimosDias(diasPeriodo);
     const todosRegistros = await this.obtenerRegistrosConCache();
     const registrosPeriodo = this.filtrarPorRango(todosRegistros, rango);
 
@@ -577,11 +584,32 @@ export class EstadisticasAvanzadasService {
     return { data: heatmapData, horas, rango, fechasPorDia };
   }
 
-  async obtenerTopAlumnos(limite: number = 10, dias?: number): Promise<TopAlumno[]> {
-    let registrosFiltrados = await this.obtenerRegistrosConCache();
-    const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
+  /** Cache local de alumnos (válido durante CACHE_TTL igual que registros). */
+  private alumnosCache: Alumno[] | null = null;
+  private alumnosCacheTs = 0;
+  private async obtenerAlumnosConCache(): Promise<Alumno[]> {
+    const ahora = Date.now();
+    if (this.alumnosCache && (ahora - this.alumnosCacheTs) < this.CACHE_TTL) {
+      return this.alumnosCache;
+    }
+    this.alumnosCache = await this.databaseService.obtenerTodosLosAlumnos();
+    this.alumnosCacheTs = ahora;
+    return this.alumnosCache;
+  }
 
-    if (dias && dias > 0) {
+  async obtenerTopAlumnos(
+    limite: number = 10,
+    dias?: number,
+    rangoCustom?: RangoFechas,
+  ): Promise<TopAlumno[]> {
+    let registrosFiltrados = await this.obtenerRegistrosConCache();
+    const todosAlumnos = await this.obtenerAlumnosConCache();
+
+    // Si se pasa un rango explícito (modo personalizado), úsalo;
+    // sino y hay días (preset), filtrar por últimos N. Si nada, sin filtro.
+    if (rangoCustom) {
+      registrosFiltrados = this.filtrarPorRango(registrosFiltrados, rangoCustom);
+    } else if (dias && dias > 0) {
       const rango = this.crearRangoUltimosDias(dias);
       registrosFiltrados = this.filtrarPorRango(registrosFiltrados, rango);
     }
@@ -594,10 +622,15 @@ export class EstadisticasAvanzadasService {
       registrosPorMatricula.set(registro.matricula, registros);
     });
 
+    // v3.18.6: indexar alumnos por matrícula UNA vez (era O(n²) con .find()
+    // dentro del forEach; ahora O(n) con el Map).
+    const alumnosPorMatricula = new Map<string, Alumno>();
+    todosAlumnos.forEach(a => alumnosPorMatricula.set(a.matricula, a));
+
     const topAlumnos: TopAlumno[] = [];
 
     registrosPorMatricula.forEach((registros, matricula) => {
-      const alumno = todosAlumnos.find(a => a.matricula === matricula);
+      const alumno = alumnosPorMatricula.get(matricula);
       if (!alumno) return;
 
       const motivosCount = new Map<string, number>();
@@ -772,14 +805,17 @@ export class EstadisticasAvanzadasService {
     return pico;
   }
 
-  async predecirDiaOcupado(dias: number = 30): Promise<string> {
-    const heatmap = await this.generarHeatmap(dias);
+  /**
+   * v3.18.6: ya NO re-construye el heatmap (era trabajo duplicado).
+   * Recibe directamente el HeatmapResultado ya calculado.
+   */
+  predecirDiaOcupadoDesde(heatmap: HeatmapResultado): string {
     const visitasPorDia = new Map<string, number>();
     heatmap.data.forEach(item => {
       visitasPorDia.set(item.dia, (visitasPorDia.get(item.dia) || 0) + item.cantidad);
     });
 
-    let diaOcupado = 'Lunes';
+    let diaOcupado = '';
     let maxVisitas = 0;
     visitasPorDia.forEach((visitas, dia) => {
       if (visitas > maxVisitas) {
@@ -787,8 +823,13 @@ export class EstadisticasAvanzadasService {
         diaOcupado = dia;
       }
     });
+    return maxVisitas > 0 ? diaOcupado : '';
+  }
 
-    return diaOcupado;
+  /** Versión legacy que acepta días. Internamente reusa la nueva. */
+  async predecirDiaOcupado(dias: number = 30): Promise<string> {
+    const heatmap = await this.generarHeatmap(dias);
+    return this.predecirDiaOcupadoDesde(heatmap);
   }
 
   private obtenerNombreDia(dia: number): string {

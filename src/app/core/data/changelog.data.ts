@@ -49,6 +49,56 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.19.0',
+    fecha: '2026-05-05',
+    titulo: 'Endurecimiento: rendimiento, robustez y privacidad',
+    destacado: true,
+    resumen:
+      'Pulido a fondo basado en code review profesional: la app responde más rápido en listas grandes, las salidas y los registros ya no pueden colisionar entre sí, y un banner avisa cuando la base local no está disponible (modo incógnito, almacenamiento bloqueado).',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Listados más rápidos: Alumnos, Registros, Inactivos, Resumen, Detalle de Alumno y En Biblioteca usan ahora detección de cambios optimizada y precomputan los textos que mostrarás. Notarás que el scroll no tiembla aunque haya miles de filas.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Sin pantallas en blanco si la base local falla: cuando IndexedDB no se puede abrir (modo incógnito, almacenamiento lleno, navegador restringido) aparece un banner rojo arriba con la causa y un botón para recargar.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Las salidas de biblioteca ya no se pueden duplicar al cerrar dos veces seguidas o al usar "Cerrar todas" mientras alguien escanea: cada cambio se hace en una transacción atómica.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Si abrías la app en dos pestañas a la vez por primera vez, los motivos por defecto podían duplicarse. Resuelto.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Persistencia del almacenamiento: la app pide al navegador que NO desaloje tu base de datos cuando hay presión de espacio. Importante para una PWA offline-first.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Excel y PDF ahora se descargan más rápido la primera vez que entras al sistema: las librerías pesadas (xlsx ~600 KB, jsPDF ~180 KB) se cargan solo cuando realmente exportás un reporte.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Validación más estricta de matrícula y datos de alumno al registrar: longitudes máximas, formato consistente con el scanner, mensajes de error específicos.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Logs internos ahora solo aparecen en modo desarrollo. En producción la consola del navegador queda limpia y no expone matrículas.',
+      },
+    ],
+  },
+  {
     version: '3.18.5',
     fecha: '2026-04-29',
     titulo: 'Estadísticas: clicks rápidos ya no acumulan lag',

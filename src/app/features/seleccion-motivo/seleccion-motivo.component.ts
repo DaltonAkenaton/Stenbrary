@@ -25,6 +25,7 @@ import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { CelebrationComponent } from '../../shared/components/celebration/celebration.component';
+import { logError } from '../../core/utils/logger';
 
 @Component({
   selector: 'app-seleccion-motivo',
@@ -60,6 +61,12 @@ export class SeleccionMotivoComponent implements OnInit {
   registroExitoso = false;
   error: string | null = null;
 
+  // Strings precomputadas — el template las consume directo y no invoca
+  // funciones en cada CD tick. Se actualizan en `precomputarNombres()`
+  // cuando se carga `alumno` o cambia `esInvitado`.
+  nombreCortoStr = '';
+  nombreCompletoStr = '';
+
   /** Controla la visibilidad de la animación de celebración aleatoria. */
   mostrarCelebracion = false;
 
@@ -89,6 +96,7 @@ export class SeleccionMotivoComponent implements OnInit {
     const parsed = JSON.parse(alumnoData);
     this.alumno = parsed;
     this.esInvitado = parsed.esInvitado === true;
+    this.precomputarNombres();
 
     await this.cargarMotivos();
   }
@@ -111,7 +119,7 @@ export class SeleccionMotivoComponent implements OnInit {
         await this.preseleccionarMotivosRecientes();
       }
     } catch (error) {
-      console.error('❌ Error al cargar motivos:', error);
+      logError('❌ Error al cargar motivos:', error);
       this.error = 'Error al cargar las actividades';
       this.cargandoMotivos = false;
       this.toastService.error('Error al cargar las actividades');
@@ -302,19 +310,25 @@ export class SeleccionMotivoComponent implements OnInit {
   // HELPERS
   // ═══════════════════════════════════════════════
 
-  obtenerNombreCorto(): string {
-    if (!this.alumno) return '';
-    if (this.esInvitado) {
-      return this.alumno.nombre === 'Visitante' ? 'Visitante' : this.alumno.nombre;
+  /**
+   * Calcula `nombreCortoStr` y `nombreCompletoStr` una sola vez. Llamar
+   * después de asignar `this.alumno` y `this.esInvitado` en ngOnInit.
+   * El template lee las propiedades directo (no invoca funciones).
+   */
+  private precomputarNombres(): void {
+    const a = this.alumno;
+    if (!a) {
+      this.nombreCortoStr = '';
+      this.nombreCompletoStr = '';
+      return;
     }
-    return `${this.alumno.nombre} ${this.alumno.apellidoPaterno}`;
-  }
-
-  obtenerNombreCompleto(): string {
-    if (!this.alumno) return '';
     if (this.esInvitado) {
-      return `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`.trim() || 'Visitante';
+      this.nombreCortoStr = a.nombre === 'Visitante' ? 'Visitante' : a.nombre;
+      this.nombreCompletoStr =
+        `${a.nombre} ${a.apellidoPaterno} ${a.apellidoMaterno}`.trim() || 'Visitante';
+    } else {
+      this.nombreCortoStr = `${a.nombre} ${a.apellidoPaterno}`;
+      this.nombreCompletoStr = `${a.nombre} ${a.apellidoPaterno} ${a.apellidoMaterno}`;
     }
-    return `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
   }
 }

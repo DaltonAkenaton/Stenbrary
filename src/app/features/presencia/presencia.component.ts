@@ -8,7 +8,7 @@
 // ║  - Auto-refresco cada 30 s + cierre automático       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,12 +25,47 @@ import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { Registro } from '../../core/models';
+import { formatearDuracion } from '../../core/utils/tiempo.utils';
+import { logError } from '../../core/utils/logger';
 
 const REFRESH_MS = 30_000;
+
+/**
+ * Registro extendido con strings precomputadas. Antes el template invocaba
+ * `formatearHora(r.fechaHora)`, `calcularTiempo(r.fechaHora)` y `getMotivos(r)`
+ * por cada tarjeta en cada change-detection tick → con 50 personas dentro y
+ * el tickTimer corriendo cada 60 s, eran cientos de llamadas redundantes.
+ */
+type RegistroPresencia = Registro & {
+  _horaStr: string;
+  _elapsedStr: string;
+  _motivosArr: string[];
+  _nombreLower: string;
+  _matriculaLower: string;
+};
+
+const FMT_HORA_PRES = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+function elapsedStr(ahora: number, fechaEntrada: Date | string): string {
+  const min = Math.round((ahora - new Date(fechaEntrada).getTime()) / 60_000);
+  if (min < 1) return 'Recién llegó';
+  return formatearDuracion(min, true);
+}
+
+function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
+  return Object.assign(r, {
+    _horaStr: FMT_HORA_PRES.format(new Date(r.fechaHora)),
+    _elapsedStr: elapsedStr(ahora, r.fechaHora),
+    _motivosArr: r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre],
+    _nombreLower: (r.nombreCompleto || '').toLowerCase(),
+    _matriculaLower: (r.matricula || '').toLowerCase(),
+  }) as RegistroPresencia;
+}
 
 @Component({
   selector: 'app-presencia',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -54,12 +89,12 @@ const REFRESH_MS = 30_000;
             <h1>En Biblioteca Ahora</h1>
             @if (!cargando) {
               <p class="header-subtitle">
-                @if (registrosFiltrados.length > 0) {
-                  <span class="count-badge">{{ registrosFiltrados.length }}</span>
-                  {{ registrosFiltrados.length === 1 ? 'persona presente' : 'personas presentes' }}
-                  @if (busqueda) { · filtrado de {{ registros.length }} }
-                } @else if (registros.length > 0) {
-                  Sin resultados para "{{ busqueda }}"
+                @if (registrosFiltrados().length > 0) {
+                  <span class="count-badge">{{ registrosFiltrados().length }}</span>
+                  {{ registrosFiltrados().length === 1 ? 'persona presente' : 'personas presentes' }}
+                  @if (busqueda()) { · filtrado de {{ registros().length }} }
+                } @else if (registros().length > 0) {
+                  Sin resultados para "{{ busqueda() }}"
                 } @else {
                   Nadie en este momento
                 }
@@ -71,25 +106,25 @@ const REFRESH_MS = 30_000;
         <div class="header-actions">
           <!-- Toggle vista -->
           <div class="view-toggle">
-            <button [class.active]="vistaCards" (click)="vistaCards = true"
-                    matTooltip="Vista tarjetas">
+            <button [class.active]="vistaCards()" (click)="vistaCards.set(true)"
+                    title="Vista tarjetas">
               <mat-icon>grid_view</mat-icon>
             </button>
-            <button [class.active]="!vistaCards" (click)="vistaCards = false"
-                    matTooltip="Vista lista">
+            <button [class.active]="!vistaCards()" (click)="vistaCards.set(false)"
+                    title="Vista lista">
               <mat-icon>view_list</mat-icon>
             </button>
           </div>
-          <button class="btn-outline" (click)="cargar()" [disabled]="cargando"
-                  matTooltip="Actualizar">
+          <button class="btn-outline" (click)="cargar()" [disabled]="cargando()"
+                  title="Actualizar">
             <mat-icon>refresh</mat-icon>
             <span class="btn-text">Actualizar</span>
           </button>
-          @if (registros.length > 0) {
+          @if (registros().length > 0) {
             <button class="btn-outline btn-close-all"
                     (click)="cerrarTodas()"
-                    [disabled]="cargando"
-                    matTooltip="Cerrar todas las entradas abiertas">
+                    [disabled]="cargando()"
+                    title="Cerrar todas las entradas abiertas">
               <mat-icon>done_all</mat-icon>
               <span class="btn-text">Cerrar todas</span>
             </button>
@@ -142,16 +177,17 @@ const REFRESH_MS = 30_000;
         <input
           type="text"
           placeholder="Buscar por nombre o matrícula..."
-          [(ngModel)]="busqueda">
-        @if (busqueda) {
-          <button class="clear-btn" (click)="busqueda = ''">
+          [ngModel]="busqueda()"
+          (ngModelChange)="busqueda.set($event)">
+        @if (busqueda()) {
+          <button class="clear-btn" (click)="busqueda.set('')">
             <mat-icon>close</mat-icon>
           </button>
         }
       </div>
 
       <!-- LOADING -->
-      @if (cargando) {
+      @if (cargando()) {
         <div class="loading-state">
           <mat-spinner diameter="36"></mat-spinner>
           <p>Cargando...</p>
@@ -159,11 +195,11 @@ const REFRESH_MS = 30_000;
       }
 
       <!-- VISTA CARDS -->
-      @if (!cargando && vistaCards && registrosFiltrados.length > 0) {
+      @if (!cargando() && vistaCards() && registrosFiltrados().length > 0) {
         <div class="cards-grid">
-          @for (r of registrosFiltrados; track r.id) {
+          @for (r of registrosFiltrados(); track r.id) {
             <div class="alumno-card" (click)="pedirSalida(r)" matRipple
-                 matTooltip="Toca para registrar salida"
+                 title="Toca para registrar salida"
                  [class.cierre-auto]="r.cierreAutomatico">
 
               <div class="card-avatar" [class.guest]="r.matricula === 'INVITADO'">
@@ -181,7 +217,7 @@ const REFRESH_MS = 30_000;
               <div class="card-carrera">{{ r.carrera }}</div>
 
               <div class="card-motivos">
-                @for (m of getMotivos(r); track m) {
+                @for (m of r._motivosArr; track m) {
                   <span class="motivo-chip">{{ m }}</span>
                 }
               </div>
@@ -189,8 +225,8 @@ const REFRESH_MS = 30_000;
               <div class="card-tiempo">
                 <mat-icon>login</mat-icon>
                 <div>
-                  <span class="hora">{{ formatearHora(r.fechaHora) }}</span>
-                  <span class="elapsed">{{ calcularTiempo(r.fechaHora) }}</span>
+                  <span class="hora">{{ r._horaStr }}</span>
+                  <span class="elapsed">{{ r._elapsedStr }}</span>
                 </div>
               </div>
 
@@ -211,9 +247,9 @@ const REFRESH_MS = 30_000;
       }
 
       <!-- VISTA LISTA -->
-      @if (!cargando && !vistaCards && registrosFiltrados.length > 0) {
+      @if (!cargando() && !vistaCards() && registrosFiltrados().length > 0) {
         <div class="lista-container">
-          @for (r of registrosFiltrados; track r.id) {
+          @for (r of registrosFiltrados(); track r.id) {
             <div class="lista-row" (click)="pedirSalida(r)" matRipple
                  [class.cierre-auto]="r.cierreAutomatico">
 
@@ -233,24 +269,24 @@ const REFRESH_MS = 30_000;
               <div class="row-carrera">{{ r.carrera }}</div>
 
               <div class="row-motivos">
-                @for (m of getMotivos(r); track m) {
+                @for (m of r._motivosArr; track m) {
                   <span class="motivo-chip-sm">{{ m }}</span>
                 }
               </div>
 
               <div class="row-tiempo">
-                <span class="hora mono">{{ formatearHora(r.fechaHora) }}</span>
-                <span class="elapsed">{{ calcularTiempo(r.fechaHora) }}</span>
+                <span class="hora mono">{{ r._horaStr }}</span>
+                <span class="elapsed">{{ r._elapsedStr }}</span>
               </div>
 
-              <mat-icon class="row-exit-icon" matTooltip="Registrar salida">logout</mat-icon>
+              <mat-icon class="row-exit-icon" title="Registrar salida">logout</mat-icon>
             </div>
           }
         </div>
       }
 
       <!-- EMPTY -->
-      @if (!cargando && registros.length === 0) {
+      @if (!cargando() && registros().length === 0) {
         <div class="empty-state">
           <mat-icon>meeting_room</mat-icon>
           <h3>La biblioteca está vacía</h3>
@@ -258,11 +294,11 @@ const REFRESH_MS = 30_000;
         </div>
       }
 
-      @if (!cargando && registros.length > 0 && registrosFiltrados.length === 0) {
+      @if (!cargando() && registros().length > 0 && registrosFiltrados().length === 0) {
         <div class="empty-state">
           <mat-icon>search_off</mat-icon>
           <h3>Sin resultados</h3>
-          <p>No hay coincidencias para "{{ busqueda }}"</p>
+          <p>No hay coincidencias para "{{ busqueda() }}"</p>
         </div>
       }
 
@@ -599,16 +635,26 @@ const REFRESH_MS = 30_000;
   `],
 })
 export class PresenciaComponent implements OnInit, OnDestroy {
-  registros: Registro[] = [];
-  cargando = true;
-  vistaCards = true;
-  busqueda = '';
+  // Signals: el template los lee como funciones (registros(), cargando(), …).
+  // Combinado con OnPush evita CD redundante en cada tick del intervalo.
+  registros = signal<RegistroPresencia[]>([]);
+  cargando = signal(true);
+  vistaCards = signal(true);
+  busqueda = signal('');
+  ahora = signal(Date.now());
+
+  /** Filtrado memoizado — usa _nombreLower/_matriculaLower precomputados. */
+  registrosFiltrados = computed<RegistroPresencia[]>(() => {
+    const t = this.busqueda().trim().toLowerCase();
+    const todos = this.registros();
+    if (!t) return todos;
+    return todos.filter(r => r._nombreLower.includes(t) || r._matriculaLower.includes(t));
+  });
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private visibilityListener: (() => void) | null = null;
-  private cargando_ = false; // debounce guard
-  ahora = new Date();
+  private cargandoEnVuelo = false; // re-entry guard
 
   constructor(
     private databaseService: DatabaseService,
@@ -623,7 +669,17 @@ export class PresenciaComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     await this.cargar();
     this.refreshTimer = setInterval(() => this.cargar(), REFRESH_MS);
-    this.tickTimer = setInterval(() => { this.ahora = new Date(); }, 60_000);
+    this.tickTimer = setInterval(() => {
+      // Refresca el "elapsed" pre-computado en cada fila. Reasignamos el array
+      // para que el computed `registrosFiltrados` re-emita y la UI repinte.
+      const ahora = Date.now();
+      this.ahora.set(ahora);
+      const actuales = this.registros();
+      if (actuales.length === 0) return;
+      this.registros.set(
+        actuales.map(r => Object.assign(r, { _elapsedStr: elapsedStr(ahora, r.fechaHora) })),
+      );
+    }, 60_000);
 
     // Recargar al volver a la pestaña (visibilitychange) — evita que el aforo
     // se quede desactualizado si el usuario hizo cambios en otra ventana.
@@ -643,10 +699,10 @@ export class PresenciaComponent implements OnInit, OnDestroy {
   }
 
   async cargar(): Promise<void> {
-    if (this.cargando_) return; // evitar cargas simultáneas
-    this.cargando_ = true;
+    if (this.cargandoEnVuelo) return; // evitar cargas simultáneas
+    this.cargandoEnVuelo = true;
     try {
-      this.cargando = true;
+      this.cargando.set(true);
       // Primero ejecutar cierre automático si está configurado
       const horas = this.configService.horasAutoSalida;
       if (horas > 0) {
@@ -655,36 +711,31 @@ export class PresenciaComponent implements OnInit, OnDestroy {
           this.toastService.info(`${cerrados} entrada(s) cerradas automáticamente tras ${horas}h`);
         }
       }
-      this.registros = await this.databaseService.obtenerRegistrosAbiertoHoy();
-      this.ahora = new Date();
+      const raw = await this.databaseService.obtenerRegistrosAbiertoHoy();
+      const ahora = Date.now();
+      this.ahora.set(ahora);
+      this.registros.set(raw.map(r => buildRegistroPresencia(r, ahora)));
+
       // Actualizar badge en sidebar
       this.configService.setHayAutoClose(
-        this.registros.some(r => r.cierreAutomatico === true)
+        raw.some(r => r.cierreAutomatico === true)
       );
       // Sincronizar aforo con el conteo recién obtenido.
       // Solo personas realmente dentro — descuenta las que ya cerró el sistema
       // automáticamente (esperan confirmación manual pero ya se fueron).
       this.aforoService.setOcupacion(
-        this.registros.filter(r => !r.horaSalida).length,
+        raw.filter(r => !r.horaSalida).length,
       );
-    } catch {
+    } catch (err) {
+      logError('Error al cargar la presencia:', err);
       this.toastService.error('Error al cargar la presencia');
     } finally {
-      this.cargando = false;
-      this.cargando_ = false;
+      this.cargando.set(false);
+      this.cargandoEnVuelo = false;
     }
   }
 
-  get registrosFiltrados(): Registro[] {
-    if (!this.busqueda.trim()) return this.registros;
-    const t = this.busqueda.toLowerCase().trim();
-    return this.registros.filter(r =>
-      r.nombreCompleto.toLowerCase().includes(t) ||
-      r.matricula.toLowerCase().includes(t)
-    );
-  }
-
-  async pedirSalida(registro: Registro): Promise<void> {
+  async pedirSalida(registro: RegistroPresencia): Promise<void> {
     const esCierreAuto = registro.cierreAutomatico === true;
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
@@ -692,8 +743,8 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       data: {
         titulo: esCierreAuto ? 'Confirmar salida estimada' : 'Registrar salida',
         mensaje: esCierreAuto
-          ? `El sistema estimó la salida de ${registro.nombreCompleto} a las ${this.formatearHora(registro.horaSalida!)} por superar ${this.configService.horasAutoSalida}h sin registrar salida. ¿Confirmar y cerrar este registro?`
-          : `${registro.nombreCompleto} — ${this.calcularTiempo(registro.fechaHora)} en biblioteca.`,
+          ? `El sistema estimó la salida de ${registro.nombreCompleto} a las ${FMT_HORA_PRES.format(new Date(registro.horaSalida!))} por superar ${this.configService.horasAutoSalida}h sin registrar salida. ¿Confirmar y cerrar este registro?`
+          : `${registro.nombreCompleto} — ${registro._elapsedStr} en biblioteca.`,
         variante: esCierreAuto ? 'warning' : 'info',
         textoConfirmar: esCierreAuto ? 'Confirmar y cerrar' : 'Confirmar salida',
         icono: esCierreAuto ? 'warning' : 'logout',
@@ -716,23 +767,25 @@ export class PresenciaComponent implements OnInit, OnDestroy {
         if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
         this.soundService.beepSalida();
         const dur = actualizado.duracionMinutos ?? 0;
-        const texto = dur < 60 ? `${dur} min` : `${Math.floor(dur / 60)}h ${dur % 60}m`;
-        this.toastService.success(`Salida registrada — ${texto} de estancia`);
+        this.toastService.success(`Salida registrada — ${formatearDuracion(dur, true)} de estancia`);
       }
 
-      this.registros = this.registros.filter(r => r.id !== registro.id);
-      this.configService.setHayAutoClose(this.registros.some(r => r.cierreAutomatico === true));
+      const restantes = this.registros().filter(r => r.id !== registro.id);
+      this.registros.set(restantes);
+      this.configService.setHayAutoClose(restantes.some(r => r.cierreAutomatico === true));
       this.aforoService.setOcupacion(
-        this.registros.filter(r => !r.horaSalida).length,
+        restantes.filter(r => !r.horaSalida).length,
       );
-    } catch {
+    } catch (err) {
+      logError('Error al registrar la salida:', err);
       this.loadingService.hide();
       this.toastService.error('Error al registrar la salida');
     }
   }
 
   async cerrarTodas(): Promise<void> {
-    const total = this.registros.length;
+    const lista = this.registros();
+    const total = lista.length;
     if (total === 0) return;
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
@@ -752,7 +805,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
     this.loadingService.show(`Cerrando ${total} entradas...`);
     let exitosos = 0;
     let fallidos = 0;
-    const aCerrar = [...this.registros];
+    const aCerrar = [...lista];
 
     for (const r of aCerrar) {
       try {
@@ -778,22 +831,5 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       this.toastService.error(`${exitosos} cerradas, ${fallidos} con error`);
     }
     await this.cargar();
-  }
-
-  getMotivos(r: Registro): string[] {
-    return r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre];
-  }
-
-  formatearHora(fecha: Date): string {
-    return new Date(fecha).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  calcularTiempo(fechaEntrada: Date): string {
-    const min = Math.round((this.ahora.getTime() - new Date(fechaEntrada).getTime()) / 60_000);
-    if (min < 1) return 'Recién llegó';
-    if (min < 60) return `${min} min`;
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
   }
 }

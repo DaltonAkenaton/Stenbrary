@@ -41,9 +41,9 @@
             @if (matriculaBloqueada) {
               <mat-icon matSuffix matTooltip="Matrícula escaneada — no se puede editar">lock</mat-icon>
             }
-            <mat-error *ngIf="campoInvalido('matricula')">
-              {{ obtenerErrorCampo('matricula') }}
-            </mat-error>
+            @if (campoInvalido('matricula')) {
+              <mat-error>{{ obtenerErrorCampo('matricula') }}</mat-error>
+            }
           </mat-form-field>
           
           <!-- Nombre -->
@@ -55,9 +55,9 @@
               placeholder="Ej: Juan Carlos"
               [class.input-error]="campoInvalido('nombre')">
             <mat-icon matPrefix>badge</mat-icon>
-            <mat-error *ngIf="campoInvalido('nombre')">
-              {{ obtenerErrorCampo('nombre') }}
-            </mat-error>
+            @if (campoInvalido('nombre')) {
+              <mat-error>{{ obtenerErrorCampo('nombre') }}</mat-error>
+            }
           </mat-form-field>
 
           <!-- Apellido Paterno -->
@@ -69,9 +69,9 @@
               placeholder="Ej: García"
               [class.input-error]="campoInvalido('apellidoPaterno')">
             <mat-icon matPrefix>badge</mat-icon>
-            <mat-error *ngIf="campoInvalido('apellidoPaterno')">
-              {{ obtenerErrorCampo('apellidoPaterno') }}
-            </mat-error>
+            @if (campoInvalido('apellidoPaterno')) {
+              <mat-error>{{ obtenerErrorCampo('apellidoPaterno') }}</mat-error>
+            }
           </mat-form-field>
 
           <!-- Apellido Materno -->
@@ -83,23 +83,23 @@
               placeholder="Ej: López"
               [class.input-error]="campoInvalido('apellidoMaterno')">
             <mat-icon matPrefix>badge</mat-icon>
-            <mat-error *ngIf="campoInvalido('apellidoMaterno')">
-              {{ obtenerErrorCampo('apellidoMaterno') }}
-            </mat-error>
+            @if (campoInvalido('apellidoMaterno')) {
+              <mat-error>{{ obtenerErrorCampo('apellidoMaterno') }}</mat-error>
+            }
           </mat-form-field>
 
           <!-- Carrera -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Carrera</mat-label>
             <mat-select formControlName="carrera">
-              <mat-option *ngFor="let carrera of carreras" [value]="carrera">
-                {{ carrera }}
-              </mat-option>
+              @for (carrera of carreras; track carrera) {
+                <mat-option [value]="carrera">{{ carrera }}</mat-option>
+              }
             </mat-select>
             <mat-icon matPrefix>school</mat-icon>
-            <mat-error *ngIf="campoInvalido('carrera')">
-              {{ obtenerErrorCampo('carrera') }}
-            </mat-error>
+            @if (campoInvalido('carrera')) {
+              <mat-error>{{ obtenerErrorCampo('carrera') }}</mat-error>
+            }
           </mat-form-field>
 
           <!-- Grado, Grupo, Turno en una fila -->
@@ -107,45 +107,47 @@
             <mat-form-field appearance="outline" class="form-col">
               <mat-label>Grado</mat-label>
               <mat-select formControlName="grado">
-                <mat-option *ngFor="let grado of grados" [value]="grado">
-                  {{ grado }}
-                </mat-option>
+                @for (grado of grados; track grado) {
+                  <mat-option [value]="grado">{{ grado }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="campoInvalido('grado')">
-                Requerido
-              </mat-error>
+              @if (campoInvalido('grado')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-col">
               <mat-label>Grupo</mat-label>
               <mat-select formControlName="grupo">
-                <mat-option *ngFor="let grupo of grupos" [value]="grupo">
-                  {{ grupo }}
-                </mat-option>
+                @for (grupo of grupos; track grupo) {
+                  <mat-option [value]="grupo">{{ grupo }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="campoInvalido('grupo')">
-                Requerido
-              </mat-error>
+              @if (campoInvalido('grupo')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-col">
               <mat-label>Turno</mat-label>
               <mat-select formControlName="turno">
-                <mat-option *ngFor="let turno of turnos" [value]="turno">
-                  {{ turno }}
-                </mat-option>
+                @for (turno of turnos; track turno) {
+                  <mat-option [value]="turno">{{ turno }}</mat-option>
+                }
               </mat-select>
-              <mat-error *ngIf="campoInvalido('turno')">
-                Requerido
-              </mat-error>
+              @if (campoInvalido('turno')) {
+                <mat-error>Requerido</mat-error>
+              }
             </mat-form-field>
           </div>
 
           <!-- Error general -->
-          <div class="error-message" *ngIf="error && !cargando">
-            <mat-icon>error</mat-icon>
-            <span>{{ error }}</span>
-          </div>
+          @if (error && !cargando) {
+            <div class="error-message">
+              <mat-icon>error</mat-icon>
+              <span>{{ error }}</span>
+            </div>
+          }
 
           <!-- Botones -->
           <div class="form-actions">
@@ -164,8 +166,11 @@
               type="button"
               (click)="registrarAlumno()"
               [disabled]="cargando">
-              <mat-spinner *ngIf="cargando" diameter="20" class="button-spinner"></mat-spinner>
-              <mat-icon *ngIf="!cargando">check</mat-icon>
+              @if (cargando) {
+                <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
+              } @else {
+                <mat-icon>check</mat-icon>
+              }
               {{ cargando ? 'Guardando...' : (vieneDelScanner ? 'Registrar y Continuar' : 'Registrar Alumno') }}
             </button>
           </div>

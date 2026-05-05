@@ -1,19 +1,29 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  database.service.ts                                 ║
-// ║  Stenbrary v3.6.2 — IndexedDB optimizado             ║
-// ║                                                      ║
-// ║  FIX v3.6.2:                                         ║
-// ║  - obtenerRegistrosDeHoy() usa índice by-fecha       ║
-// ║  - obtenerRegistrosPorFecha() usa índice by-fecha    ║
-// ║  - obtenerRegistrosPorAlumno() usa índice by-matricula║
-// ║  - Antes: getAll() + filter en memoria (O(n))        ║
-// ║  - Ahora: getAllFromIndex() con IDBKeyRange (O(k))   ║
+// ║  database.service.ts                                  ║
+// ║  Stenbrary v3.19.0 — Tx atómicas + persist + bdError  ║
+// ║                                                       ║
+// ║  CAMBIOS v3.19.0:                                     ║
+// ║  - Signal `bdError` para mostrar banner si falla init ║
+// ║  - navigator.storage.persist() solicitado al abrir    ║
+// ║  - Transacciones atómicas en read+write compuestos:   ║
+// ║    crearMotivosDefault, registrarSalida,              ║
+// ║    confirmarCierreAutomatico, desactivar/reactivar,   ║
+// ║    actualizarRegistroManual                           ║
+// ║  - actualizar* clonan el parámetro (no mutan caller)  ║
+// ║  - logs PII migrados a logger dev-guarded             ║
+// ║  - obtenerRegistrosAbiertoHoy: fallback solo si el    ║
+// ║    índice falla, no si está vacío                     ║
+// ║                                                       ║
+// ║  Base v3.6.2:                                         ║
+// ║  - Índices by-fecha, by-matricula, by-alumno          ║
+// ║  - Fallback getAll+filter para fechas string viejas   ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { v4 as uuidv4 } from 'uuid';
 import { Alumno, Registro, Motivo } from '../models';
+import { log, logError } from '../utils/logger';
 
 // Definir esquema de la base de datos
 interface StenbraryDB extends DBSchema {
@@ -51,6 +61,11 @@ export class DatabaseService {
   private readonly DB_NAME = 'stenbrary-db';
   private readonly DB_VERSION = 1;
   private initializationPromise: Promise<void> | null = null;
+
+  // Signal de error de BD: si openDB falla irrecoverablemente, este signal
+  // tiene el mensaje. AppComponent muestra un banner cuando no es null.
+  private _bdError = signal<string | null>(null);
+  readonly bdError = this._bdError.asReadonly();
 
   constructor() {
     this.inicializar();
@@ -109,71 +124,63 @@ export class DatabaseService {
         },
       });
 
-      console.log('✅ Base de datos inicializada correctamente');
+      this._bdError.set(null);
+      log('✅ Base de datos inicializada correctamente');
+
+      // Solicitar storage persistente — evita que el browser desaloje la BD
+      // bajo presión de almacenamiento. Crítico en una PWA offline-first
+      // donde la única fuente de verdad es IndexedDB.
+      this.solicitarStoragePersistente();
 
       // Crear motivos por defecto si no existen
       await this.crearMotivosDefault();
-    } catch (error) {
-      console.error('❌ Error al inicializar base de datos:', error);
+    } catch (error: unknown) {
+      const err = error as { name?: string; message?: string };
+      const msg = err?.name === 'SecurityError' || err?.name === 'InvalidStateError'
+        ? 'No se pudo abrir la base de datos local. Esto suele pasar en modo incógnito o cuando el navegador bloquea el almacenamiento. Salí del modo privado o liberá espacio.'
+        : 'No se pudo abrir la base de datos local. Recargá la página. Si el problema persiste, verificá el espacio disponible.';
+      this._bdError.set(msg);
+      logError('❌ Error al inicializar base de datos:', error);
       throw error;
     }
+  }
+
+  /** Solicita persistencia al navegador (best-effort, sin esperar). */
+  private solicitarStoragePersistente(): void {
+    if (typeof navigator === 'undefined') return;
+    const storage = navigator.storage;
+    if (!storage?.persist) return;
+    storage.persist().then(persistido => {
+      log('💾 Storage persistente:', persistido ? 'concedido' : 'denegado');
+    }).catch(() => { /* silenciar */ });
   }
 
   private async crearMotivosDefault(): Promise<void> {
     if (!this.db) return;
 
-    const motivos = await this.db.getAll('motivos');
+    // Transacción atómica: count + adds. Si dos pestañas inicializan en
+    // paralelo, la segunda ve el count actualizado dentro de su propia tx
+    // y no duplica los motivos.
+    const tx = this.db.transaction('motivos', 'readwrite');
+    const store = tx.store;
+    const count = await store.count();
 
-    if (motivos.length === 0) {
-      const motivosDefault: Motivo[] = [
-        {
-          id: uuidv4(),
-          nombre: 'Estudiar',
-          icono: 'menu_book',
-          orden: 1,
-          activo: true,
-          fechaCreacion: new Date()
-        },
-        {
-          id: uuidv4(),
-          nombre: 'Pedir libro',
-          icono: 'book',
-          orden: 2,
-          activo: true,
-          fechaCreacion: new Date()
-        },
-        {
-          id: uuidv4(),
-          nombre: 'Trabajo escolar',
-          icono: 'assignment',
-          orden: 3,
-          activo: true,
-          fechaCreacion: new Date()
-        },
-        {
-          id: uuidv4(),
-          nombre: 'Investigación',
-          icono: 'search',
-          orden: 4,
-          activo: true,
-          fechaCreacion: new Date()
-        },
-        {
-          id: uuidv4(),
-          nombre: 'Otro',
-          icono: 'more_horiz',
-          orden: 5,
-          activo: true,
-          fechaCreacion: new Date()
-        }
-      ];
-
-      for (const motivo of motivosDefault) {
-        await this.db.add('motivos', motivo);
-      }
-
-      console.log('✅ Motivos por defecto creados');
+    if (count > 0) {
+      await tx.done;
+      return;
     }
+
+    const motivosDefault: Motivo[] = [
+      { id: uuidv4(), nombre: 'Estudiar',        icono: 'menu_book',  orden: 1, activo: true, fechaCreacion: new Date() },
+      { id: uuidv4(), nombre: 'Pedir libro',     icono: 'book',       orden: 2, activo: true, fechaCreacion: new Date() },
+      { id: uuidv4(), nombre: 'Trabajo escolar', icono: 'assignment', orden: 3, activo: true, fechaCreacion: new Date() },
+      { id: uuidv4(), nombre: 'Investigación',   icono: 'search',     orden: 4, activo: true, fechaCreacion: new Date() },
+      { id: uuidv4(), nombre: 'Otro',            icono: 'more_horiz', orden: 5, activo: true, fechaCreacion: new Date() },
+    ];
+
+    await Promise.all(motivosDefault.map(m => store.add(m)));
+    await tx.done;
+    log('✅ Motivos por defecto creados');
   }
 
   // ==================== ALUMNOS ====================
@@ -190,7 +197,7 @@ export class DatabaseService {
     };
 
     await this.db.add('alumnos', nuevoAlumno);
-    console.log('✅ Alumno creado:', nuevoAlumno.matricula);
+    log('✅ Alumno creado:', nuevoAlumno.matricula);
     return nuevoAlumno;
   }
 
@@ -213,7 +220,7 @@ export class DatabaseService {
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     await this.db.delete('alumnos', id);
-    console.log('✅ Alumno eliminado:', id);
+    log('✅ Alumno eliminado:', id);
   }
 
   // ==================== REGISTROS ====================
@@ -230,22 +237,21 @@ export class DatabaseService {
     };
 
     await this.db.add('registros', nuevoRegistro);
-    console.log('✅ Registro creado para:', nuevoRegistro.matricula);
+    log('✅ Registro creado para:', nuevoRegistro.matricula);
     return nuevoRegistro;
   }
 
   /**
    * Obtener registros de hoy.
    *
-   * NOTA SOBRE ÍNDICES: Usamos getAll + filter porque IndexedDB almacena
-   * las fechas como objetos Date serializados. Para que IDBKeyRange funcione
-   * correctamente con fechas, se necesitaría que TODOS los registros existentes
-   * tengan fechaHora como Date nativo (no como string ISO).
+   * NOTA SOBRE ÍNDICES: Usamos getAll + filter como fallback porque IndexedDB
+   * almacena las fechas como objetos Date serializados. Para que IDBKeyRange
+   * funcione correctamente con fechas, se necesita que TODOS los registros
+   * existentes tengan fechaHora como Date nativo (no como string ISO).
    *
    * Si tu base de datos tiene registros antiguos con fechas como string,
-   * el IDBKeyRange no los encontrará. Por seguridad, mantenemos getAll + filter
-   * que funciona con ambos formatos, y agregamos la versión optimizada como
-   * método alternativo para bases de datos limpias.
+   * el IDBKeyRange no los encontrará. Por seguridad, mantenemos getAll +
+   * filter que funciona con ambos formatos.
    */
   async obtenerRegistrosDeHoy(): Promise<Registro[]> {
     await this.inicializar();
@@ -378,7 +384,7 @@ export class DatabaseService {
     // Recrear motivos por defecto
     await this.crearMotivosDefault();
 
-    console.log('✅ Todos los datos han sido limpiados');
+    log('✅ Todos los datos han sido limpiados');
   }
 
   async obtenerConteoTotal(): Promise<{
@@ -425,10 +431,10 @@ export class DatabaseService {
         new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime()
       );
 
-      console.log(`📋 Registros del alumno ${matricula}:`, registrosDelAlumno.length);
+      log(`📋 Registros del alumno ${matricula}:`, registrosDelAlumno.length);
       return registrosDelAlumno;
     } catch (error) {
-      console.error('❌ Error al obtener registros del alumno:', error);
+      logError('❌ Error al obtener registros del alumno:', error);
       throw error;
     }
   }
@@ -445,81 +451,89 @@ export class DatabaseService {
       const alumno = await this.db.getFromIndex('alumnos', 'by-matricula', matricula);
 
       if (alumno) {
-        console.log('✅ Alumno encontrado:', alumno.matricula);
+        log('✅ Alumno encontrado:', alumno.matricula);
         return alumno;
       }
 
-      console.log('⚠️ Alumno no encontrado con matrícula:', matricula);
+      log('⚠️ Alumno no encontrado con matrícula:', matricula);
       return null;
     } catch (error) {
-      console.error('❌ Error al obtener alumno por matrícula:', error);
+      logError('❌ Error al obtener alumno por matrícula:', error);
       throw error;
     }
   }
 
   /**
-   * Actualizar información de un alumno
+   * Actualizar información de un alumno.
+   * Clona el objeto recibido para no mutar el del caller.
    */
   async actualizarAlumno(id: string, alumnoActualizado: Alumno): Promise<void> {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
 
-      alumnoActualizado.id = id;
+      const aGuardar: Alumno = { ...alumnoActualizado, id };
+      await this.db.put('alumnos', aGuardar);
 
-      await this.db.put('alumnos', alumnoActualizado);
-
-      console.log('✅ Alumno actualizado exitosamente:', alumnoActualizado.matricula);
+      log('✅ Alumno actualizado exitosamente:', aGuardar.matricula);
     } catch (error) {
-      console.error('❌ Error al actualizar alumno:', error);
+      logError('❌ Error al actualizar alumno:', error);
       throw new Error('No se pudo actualizar el alumno');
     }
   }
 
   /**
-   * Desactivar un alumno (soft delete)
+   * Desactivar un alumno (soft delete) — atómico vía transacción.
    */
   async desactivarAlumno(id: string): Promise<void> {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
 
-      const alumno = await this.db.get('alumnos', id);
+      const tx = this.db.transaction('alumnos', 'readwrite');
+      const store = tx.store;
+      const alumno = await store.get(id);
 
       if (!alumno) {
+        await tx.done;
         throw new Error('Alumno no encontrado');
       }
 
       alumno.activo = false;
-      await this.db.put('alumnos', alumno);
+      await store.put(alumno);
+      await tx.done;
 
-      console.log('✅ Alumno desactivado:', alumno.matricula);
+      log('✅ Alumno desactivado:', alumno.matricula);
     } catch (error) {
-      console.error('❌ Error al desactivar alumno:', error);
+      logError('❌ Error al desactivar alumno:', error);
       throw error;
     }
   }
 
   /**
-   * Reactivar un alumno
+   * Reactivar un alumno — atómico vía transacción.
    */
   async reactivarAlumno(id: string): Promise<void> {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
 
-      const alumno = await this.db.get('alumnos', id);
+      const tx = this.db.transaction('alumnos', 'readwrite');
+      const store = tx.store;
+      const alumno = await store.get(id);
 
       if (!alumno) {
+        await tx.done;
         throw new Error('Alumno no encontrado');
       }
 
       alumno.activo = true;
-      await this.db.put('alumnos', alumno);
+      await store.put(alumno);
+      await tx.done;
 
-      console.log('✅ Alumno reactivado:', alumno.matricula);
+      log('✅ Alumno reactivado:', alumno.matricula);
     } catch (error) {
-      console.error('❌ Error al reactivar alumno:', error);
+      logError('❌ Error al reactivar alumno:', error);
       throw error;
     }
   }
@@ -576,7 +590,7 @@ export class DatabaseService {
         visitasPorMotivo
       };
     } catch (error) {
-      console.error('❌ Error al obtener estadísticas del alumno:', error);
+      logError('❌ Error al obtener estadísticas del alumno:', error);
       throw error;
     }
   }
@@ -606,21 +620,21 @@ export class DatabaseService {
     };
 
     await this.db.add('motivos', nuevoMotivo);
-    console.log('✅ Motivo creado:', nuevoMotivo.nombre);
+    log('✅ Motivo creado:', nuevoMotivo.nombre);
     return nuevoMotivo;
   }
 
   /**
-   * Actualizar un motivo existente
+   * Actualizar un motivo existente.
+   * Clona el objeto recibido para no mutar el del caller.
    */
   async actualizarMotivo(id: string, motivo: Motivo): Promise<void> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
-    motivo.id = id;
-
-    await this.db.put('motivos', motivo);
-    console.log('✅ Motivo actualizado:', motivo.nombre);
+    const aGuardar: Motivo = { ...motivo, id };
+    await this.db.put('motivos', aGuardar);
+    log('✅ Motivo actualizado:', aGuardar.nombre);
   }
 
   /**
@@ -631,18 +645,8 @@ export class DatabaseService {
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     await this.db.delete('motivos', id);
-    console.log('✅ Motivo eliminado:', id);
+    log('✅ Motivo eliminado:', id);
   }
-
-
-  // ╔══════════════════════════════════════════════════════════════════════╗
-// ║  MÉTODOS NUEVOS PARA database.service.ts                           ║
-// ║  Stenbrary v3.6.2 — Duplicados + Registro de salida               ║
-// ║                                                                    ║
-// ║  DÓNDE AGREGAR: En database.service.ts, dentro de la clase         ║
-// ║  DatabaseService, después de obtenerAlumnoPorMatricula()           ║
-// ║  (antes de actualizarAlumno)                                       ║
-// ╚══════════════════════════════════════════════════════════════════════╝
 
 
   // ==================== DETECCIÓN DE DUPLICADOS ====================
@@ -696,7 +700,7 @@ export class DatabaseService {
         const minutosTranscurridos = Math.round(
           (ahora.getTime() - fechaMasReciente) / (1000 * 60)
         );
-        console.log(
+        log(
           `⚠️ Registro reciente para ${matricula}: ` +
           `hace ${minutosTranscurridos} min — ${registroMasReciente.motivoNombre}` +
           (registroMasReciente.horaSalida ? ' (salida ya registrada)' : ' (sin salida)')
@@ -705,7 +709,7 @@ export class DatabaseService {
 
       return registroMasReciente;
     } catch (error) {
-      console.error('❌ Error al verificar registro reciente:', error);
+      logError('❌ Error al verificar registro reciente:', error);
       // No bloquear el flujo — permitir el registro
       return null;
     }
@@ -720,7 +724,7 @@ export class DatabaseService {
       if (!this.db) throw new Error('Base de datos no inicializada');
       await this.db.delete('registros', registroId);
     } catch (error) {
-      console.error('❌ Error al eliminar registro:', error);
+      logError('❌ Error al eliminar registro:', error);
       throw error;
     }
   }
@@ -731,6 +735,8 @@ export class DatabaseService {
    * Edita manualmente un registro existente (hora entrada, salida, motivos).
    * Recalcula duracionMinutos si ambas fechas están presentes. Limpia
    * cierreAutomatico al confirmarse manualmente.
+   *
+   * Atómico: lectura y escritura ocurren en una transacción readwrite.
    */
   async actualizarRegistroManual(
     registroId: string,
@@ -747,8 +753,13 @@ export class DatabaseService {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
 
-      const registro = await this.db.get('registros', registroId);
-      if (!registro) throw new Error('Registro no encontrado');
+      const tx = this.db.transaction('registros', 'readwrite');
+      const store = tx.store;
+      const registro = await store.get(registroId);
+      if (!registro) {
+        await tx.done;
+        throw new Error('Registro no encontrado');
+      }
 
       if (cambios.fechaHora) registro.fechaHora = new Date(cambios.fechaHora);
 
@@ -770,10 +781,11 @@ export class DatabaseService {
       if (cambios.motivoId) registro.motivoId = cambios.motivoId;
       if (cambios.motivoNombre) registro.motivoNombre = cambios.motivoNombre;
 
-      await this.db.put('registros', registro);
+      await store.put(registro);
+      await tx.done;
       return registro;
     } catch (error) {
-      console.error('❌ Error al actualizar registro:', error);
+      logError('❌ Error al actualizar registro:', error);
       throw error;
     }
   }
@@ -784,6 +796,10 @@ export class DatabaseService {
    * Registra la hora de salida en un registro existente.
    * Calcula automáticamente la duración en minutos.
    *
+   * Atómico: lectura y escritura ocurren en una transacción readwrite.
+   * Esto previene que dos llamadas concurrentes (p.ej. "Cerrar todas" +
+   * scan rápido) sobreescriban la salida.
+   *
    * @param registroId - ID del registro a actualizar
    * @returns El registro actualizado con horaSalida y duracionMinutos
    */
@@ -792,13 +808,17 @@ export class DatabaseService {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
 
-      const registro = await this.db.get('registros', registroId);
+      const tx = this.db.transaction('registros', 'readwrite');
+      const store = tx.store;
+      const registro = await store.get(registroId);
 
       if (!registro) {
+        await tx.done;
         throw new Error('Registro no encontrado');
       }
 
       if (registro.horaSalida) {
+        await tx.done;
         throw new Error('Este registro ya tiene hora de salida');
       }
 
@@ -812,20 +832,20 @@ export class DatabaseService {
       registro.horaSalida = ahora;
       registro.duracionMinutos = duracionMinutos;
 
-      await this.db.put('registros', registro);
+      await store.put(registro);
+      await tx.done;
 
-      console.log(
+      log(
         `✅ Salida registrada para ${registro.matricula}: ` +
         `${duracionMinutos} min de estancia`
       );
 
       return registro;
     } catch (error) {
-      console.error('❌ Error al registrar salida:', error);
+      logError('❌ Error al registrar salida:', error);
       throw error;
     }
   }
-
 
 
   // ==================== PRESENCIA EN BIBLIOTECA ====================
@@ -851,7 +871,7 @@ export class DatabaseService {
 
       return abiertos[0] ?? null;
     } catch (error) {
-      console.error('❌ Error al buscar entrada abierta:', error);
+      logError('❌ Error al buscar entrada abierta:', error);
       return null;
     }
   }
@@ -859,6 +879,11 @@ export class DatabaseService {
   /**
    * Devuelve todos los registros del día sin hora de salida
    * (excluyendo invitados). Usado por el módulo de Presencia.
+   *
+   * Estrategia: si el índice by-fecha lanza (datos viejos en string), se
+   * cae al fallback de getAll. Si el índice retorna [] sin lanzar, confiamos
+   * en el resultado (es genuinamente un día sin actividad) — antes esto
+   * disparaba un escaneo completo de la BD.
    */
   async obtenerRegistrosAbiertoHoy(): Promise<Registro[]> {
     try {
@@ -874,20 +899,20 @@ export class DatabaseService {
       try {
         const rango = IDBKeyRange.bound(hoy, manana, false, true);
         registrosHoy = await this.db.getAllFromIndex('registros', 'by-fecha', rango);
-        if (!registrosHoy.length) throw new Error('fallback');
       } catch {
+        // El índice falló (probable: fechas string en datos viejos) → fallback
         const todos = await this.db.getAll('registros');
         registrosHoy = todos.filter(r => new Date(r.fechaHora) >= hoy);
       }
 
       // Incluye entradas sin salida Y entradas cerradas automáticamente
-      // (cierreAutomatico = true) que aún requieren confirmación del personal
-      // Incluye visitantes (INVITADO) para que aparezcan en presencia
+      // (cierreAutomatico = true) que aún requieren confirmación del personal.
+      // Incluye visitantes (INVITADO) para que aparezcan en presencia.
       return registrosHoy
         .filter(r => !r.horaSalida || r.cierreAutomatico === true)
         .sort((a, b) => new Date(a.fechaHora).getTime() - new Date(b.fechaHora).getTime());
     } catch (error) {
-      console.error('❌ Error al obtener registros abiertos:', error);
+      logError('❌ Error al obtener registros abiertos:', error);
       return [];
     }
   }
@@ -897,6 +922,8 @@ export class DatabaseService {
    * Marca cierreAutomatico = true y estima horaSalida como fechaHora + umbral.
    * Retorna la cantidad de entradas cerradas.
    * Si horasUmbral <= 0, no hace nada (feature desactivado).
+   *
+   * Atómico: el batch ocurre dentro de una sola transacción readwrite.
    */
   async cerrarEntradasAntiguas(horasUmbral: number): Promise<number> {
     if (horasUmbral <= 0) return 0;
@@ -907,28 +934,40 @@ export class DatabaseService {
       const abiertas = await this.obtenerRegistrosAbiertoHoy();
       const limiteMs = horasUmbral * 60 * 60 * 1000;
       const ahora = Date.now();
+
+      // Pre-filtrar candidatos para no abrir tx si no hay nada que hacer
+      const candidatos = abiertas.filter(r => {
+        if (r.horaSalida) return false;
+        const edad = ahora - new Date(r.fechaHora).getTime();
+        return edad >= limiteMs;
+      });
+
+      if (candidatos.length === 0) return 0;
+
+      const tx = this.db.transaction('registros', 'readwrite');
+      const store = tx.store;
       let cerrados = 0;
 
-      for (const r of abiertas) {
-        // Omitir entradas ya cerradas (con horaSalida) — incluye las que
-        // cierreAutomatico ya marcó y esperan confirmación manual.
-        if (r.horaSalida) continue;
-        const edad = ahora - new Date(r.fechaHora).getTime();
-        if (edad >= limiteMs) {
-          r.horaSalida = new Date(new Date(r.fechaHora).getTime() + limiteMs);
-          r.duracionMinutos = horasUmbral * 60;
-          r.cierreAutomatico = true;
-          await this.db.put('registros', r);
-          cerrados++;
-        }
+      for (const r of candidatos) {
+        // Re-leer dentro de la tx para evitar pisar una salida manual
+        // que ocurrió entre obtenerRegistrosAbiertoHoy() y aquí.
+        const actual = await store.get(r.id);
+        if (!actual || actual.horaSalida) continue;
+        actual.horaSalida = new Date(new Date(actual.fechaHora).getTime() + limiteMs);
+        actual.duracionMinutos = horasUmbral * 60;
+        actual.cierreAutomatico = true;
+        await store.put(actual);
+        cerrados++;
       }
 
+      await tx.done;
+
       if (cerrados > 0) {
-        console.log(`🔒 Cierre automático: ${cerrados} entrada(s) cerrada(s) tras ${horasUmbral}h`);
+        log(`🔒 Cierre automático: ${cerrados} entrada(s) cerrada(s) tras ${horasUmbral}h`);
       }
       return cerrados;
     } catch (error) {
-      console.error('❌ Error en cierre automático:', error);
+      logError('❌ Error en cierre automático:', error);
       return 0;
     }
   }
@@ -936,18 +975,24 @@ export class DatabaseService {
   /**
    * Confirma un cierre automático: el personal revisó y acepta la salida estimada.
    * Quita el flag cierreAutomatico para que desaparezca de la vista de Presencia.
+   *
+   * Atómico vía transacción.
    */
   async confirmarCierreAutomatico(registroId: string): Promise<void> {
     try {
       await this.inicializar();
       if (!this.db) return;
-      const r = await this.db.get('registros', registroId);
+
+      const tx = this.db.transaction('registros', 'readwrite');
+      const store = tx.store;
+      const r = await store.get(registroId);
       if (r) {
         r.cierreAutomatico = false;
-        await this.db.put('registros', r);
+        await store.put(r);
       }
+      await tx.done;
     } catch (error) {
-      console.error('❌ Error al confirmar cierre automático:', error);
+      logError('❌ Error al confirmar cierre automático:', error);
       throw error;
     }
   }
@@ -990,11 +1035,11 @@ export class DatabaseService {
       }
       await tx.done;
 
-      console.log(`🗑️ ${registrosAEliminar.length} registros eliminados (${inicio.toLocaleDateString()} — ${fin.toLocaleDateString()})`);
+      log(`🗑️ ${registrosAEliminar.length} registros eliminados (${inicio.toLocaleDateString()} — ${fin.toLocaleDateString()})`);
 
       return registrosAEliminar.length;
     } catch (error) {
-      console.error('❌ Error al eliminar registros por rango:', error);
+      logError('❌ Error al eliminar registros por rango:', error);
       throw error;
     }
   }
@@ -1021,7 +1066,7 @@ export class DatabaseService {
         return fecha >= inicio && fecha <= fin;
       }).length;
     } catch (error) {
-      console.error('❌ Error al contar registros:', error);
+      logError('❌ Error al contar registros:', error);
       return 0;
     }
   }
@@ -1068,7 +1113,7 @@ export class DatabaseService {
         duracionPromedio,
       };
     } catch (error) {
-      console.error('❌ Error al calcular horas acumuladas:', error);
+      logError('❌ Error al calcular horas acumuladas:', error);
       return { totalMinutos: 0, totalHoras: 0, visitasConDuracion: 0, duracionPromedio: 0 };
     }
   }
@@ -1115,10 +1160,10 @@ export class DatabaseService {
         .filter(r => r.diasSinVenir >= diasUmbral)
         .sort((a, b) => b.diasSinVenir - a.diasSinVenir);
 
-      console.log(`😴 Alumnos inactivos (≥${diasUmbral}d):`, resultado.length);
+      log(`😴 Alumnos inactivos (≥${diasUmbral}d):`, resultado.length);
       return resultado;
     } catch (error) {
-      console.error('❌ Error al obtener alumnos inactivos:', error);
+      logError('❌ Error al obtener alumnos inactivos:', error);
       return [];
     }
   }

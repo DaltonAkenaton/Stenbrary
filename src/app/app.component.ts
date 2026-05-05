@@ -22,6 +22,7 @@ import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { ConfigService } from './core/services/config.service';
 import { ChangelogService } from './core/services/changelog.service';
+import { DatabaseService } from './core/services/database.service';
 import { GlobalSearchDialogComponent } from './shared/components/global-search/global-search-dialog.component';
 import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-shortcuts/keyboard-shortcuts-dialog.component';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
@@ -84,6 +85,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     public configService: ConfigService,
     public changelogService: ChangelogService,
+    public databaseService: DatabaseService,
   ) {
     // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
     effect(() => {
@@ -115,7 +117,6 @@ export class AppComponent implements OnInit, OnDestroy {
       this.swUpdate.versionUpdates
         .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
         .subscribe(() => {
-          console.log('🔄 Nueva versión disponible');
           this.hayActualizacion = true;
         });
     }
@@ -149,7 +150,6 @@ export class AppComponent implements OnInit, OnDestroy {
   actualizarApp(): void {
     if (this.swUpdate.isEnabled) {
       this.swUpdate.activateUpdate().then(() => {
-        console.log('✅ Actualización aplicada, recargando...');
         document.location.reload();
       });
     }
@@ -157,6 +157,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   descartarActualizacion(): void {
     this.hayActualizacion = false;
+  }
+
+  /** Llamado por el banner de error de BD para reintentar la apertura. */
+  recargarApp(): void {
+    document.location.reload();
   }
 
   // ─── BÚSQUEDA GLOBAL (Ctrl+K / icono topbar) ────────────

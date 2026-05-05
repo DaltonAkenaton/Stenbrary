@@ -19,16 +19,16 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn-outline" (click)="generarPDF()" matTooltip="Generar reporte PDF"
+      <button class="btn-outline" (click)="generarPDF()" title="Generar reporte PDF"
               [disabled]="registrosFiltrados.length === 0">
         <mat-icon>picture_as_pdf</mat-icon>
         <span class="btn-text">PDF</span>
       </button>
-      <button class="btn-outline" (click)="exportarCSV()" matTooltip="Exportar a Excel">
+      <button class="btn-outline" (click)="exportarCSV()" title="Exportar a Excel">
         <mat-icon>download</mat-icon>
         <span class="btn-text">Excel</span>
       </button>
-      <button class="btn-outline" (click)="cargarDatos()" matTooltip="Actualizar">
+      <button class="btn-outline" (click)="cargarDatos()" title="Actualizar">
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
@@ -144,16 +144,16 @@
           <select [ngModel]="filtros().horaDesde"
                   (ngModelChange)="setHoraDesde(+$event)"
                   class="hora-select">
-            @for (h of horasDisponibles; track h) {
-              <option [value]="h">{{ formatHora(h) }}</option>
+            @for (h of opcionesHoras; track h.v) {
+              <option [value]="h.v">{{ h.label }}</option>
             }
           </select>
           <span class="hora-label">Hasta</span>
           <select [ngModel]="filtros().horaHasta"
                   (ngModelChange)="setHoraHasta(+$event)"
                   class="hora-select">
-            @for (h of horasDisponibles; track h) {
-              <option [value]="h">{{ formatHora(h) }}</option>
+            @for (h of opcionesHoras; track h.v) {
+              <option [value]="h.v">{{ h.label }}</option>
             }
           </select>
         </div>
@@ -245,7 +245,7 @@
             <button mat-icon-button
                     class="btn-editar"
                     (click)="editarRegistro(r, $event)"
-                    matTooltip="Editar registro">
+                    title="Editar registro">
               <mat-icon>edit</mat-icon>
             </button>
           </td>
@@ -255,7 +255,7 @@
         <tr mat-row *matRowDef="let row; columns: columnas;"
             class="clickable-row"
             (click)="verDetalle(row)"
-            matTooltip="Ver detalles del registro"></tr>
+            title="Ver detalles del registro"></tr>
       </table>
 
       <!-- Paginación -->

@@ -162,7 +162,9 @@ export class ConfigService {
   }
 
   setNombreInstitucion(nombre: string): void {
-    this.config.nombreInstitucion = nombre.trim();
+    // Limita a 120 caracteres para evitar que un pegado accidental contamine
+    // localStorage o haga overflow en headers de PDF/Excel.
+    this.config.nombreInstitucion = (nombre || '').trim().slice(0, 120);
     this.guardar();
   }
 

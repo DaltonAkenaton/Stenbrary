@@ -1,4 +1,4 @@
-// ╔══════════════════════════════════════════════════════╗
+﻿// ╔══════════════════════════════════════════════════════╗
 // ║  RUTA: src/app/core/services/report.service.ts       ║
 // ║  Stenbrary v3.8.2 — Reportes PDF con sección Top      ║
 // ║                                                      ║
@@ -10,8 +10,11 @@
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { Alumno, Registro } from '../models';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// Solo tipos: el bundler no incluirá jspdf/jspdf-autotable en el chunk inicial.
+// Los módulos se cargan dinámicamente en cargarPdfLib() — primer uso descarga
+// jspdf (~150 KB) + autotable (~30 KB) on-demand.
+import type jsPDF from 'jspdf';
+import type autoTableT from 'jspdf-autotable';
 
 export type TipoReporte = 'diario' | 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
@@ -74,13 +77,67 @@ export class ReportService {
   /** Cache para fallback de turno (registros viejos sin r.turno). */
   private turnoPorMatricula = new Map<string, string>();
 
+  /** Cache de los módulos jspdf cargados dinámicamente. */
+  private pdfLibPromise: Promise<{
+    JsPDFCtor: typeof jsPDF;
+    autoTableFn: typeof autoTableT;
+  }> | null = null;
+
+  /** Carga jspdf + jspdf-autotable on-demand y cachea el resultado. */
+  private async cargarPdfLib(): Promise<{
+    JsPDFCtor: typeof jsPDF;
+    autoTableFn: typeof autoTableT;
+  }> {
+    if (!this.pdfLibPromise) {
+      this.pdfLibPromise = (async () => {
+        const [jsPdfMod, autoTableMod] = await Promise.all([
+          import('jspdf'),
+          import('jspdf-autotable'),
+        ]);
+        const result = {
+          JsPDFCtor: jsPdfMod.default,
+          autoTableFn: autoTableMod.default,
+        };
+        // Cachear sincrónicamente para que _autoTable() pueda usarlo sin await
+        this._autoTableFnCached = result.autoTableFn;
+        return result;
+      })();
+    }
+    return this.pdfLibPromise;
+  }
+
+  /**
+   * Wrapper síncrono sobre autoTable. Usable solo después de haber esperado
+   * `cargarPdfLib()` al menos una vez en el método público (la promesa quedó
+   * cacheada). Si por error se llama antes, lanza para no producir un PDF
+   * malformado silenciosamente.
+   */
+  private _autoTable(doc: jsPDF, opts: Parameters<typeof autoTableT>[1]): void {
+    if (!this.pdfLibPromise) {
+      throw new Error('cargarPdfLib() debe llamarse antes de _autoTable()');
+    }
+    // pdfLibPromise ya está resuelto (lo esperó el método público), pero
+    // accedemos a la cache vía .then sincrónico no es posible; usamos un
+    // truco: dado que es la misma microtask y la promesa ya está fulfilled,
+    // resolvemos sincrónicamente con un workaround basado en cache propia.
+    const fn = this._autoTableFnCached;
+    if (!fn) {
+      throw new Error('autoTable no está listo. ¿Olvidaste await cargarPdfLib()?');
+    }
+    fn(doc, opts);
+  }
+
+  /** Cache sincrónica del autoTableFn — se setea cuando cargarPdfLib resuelve. */
+  private _autoTableFnCached: typeof autoTableT | null = null;
+
   constructor(private databaseService: DatabaseService) {}
 
   async generarReporteAccesos(
     registros: Registro[],
     opciones: OpcionesReporte
   ): Promise<void> {
-    const doc = new jsPDF('portrait', 'mm', 'letter');
+    const { JsPDFCtor } = await this.cargarPdfLib();
+    const doc = new JsPDFCtor('portrait', 'mm', 'letter');
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
     const secciones = { ...SECCIONES_DEFAULT, ...(opciones.secciones || {}) };
@@ -172,7 +229,7 @@ export class ReportService {
       `${((cant / total) * 100).toFixed(1)}%`,
     ]);
 
-    autoTable(doc, {
+    this._autoTable(doc, {
       startY: y,
       head: [['Turno', 'Visitas', '% del total']],
       body: filas,
@@ -382,7 +439,7 @@ export class ReportService {
       new Date(t.ultimaVisita).toLocaleDateString('es-MX'),
     ]);
 
-    autoTable(doc, {
+    this._autoTable(doc, {
       startY: startY + 7,
       head: [['Pos.', 'Matrícula', 'Alumno', 'Carrera', 'Visitas', 'Actividad Frecuente', 'Última Visita']],
       body: datos,
@@ -455,7 +512,7 @@ export class ReportService {
       ];
     });
 
-    autoTable(doc, {
+    this._autoTable(doc, {
       startY: startY + 3,
       head: [['#', 'Fecha', 'Hora', 'Matrícula', 'Alumno', 'Carrera', 'Actividad']],
       body: datos,
@@ -525,7 +582,7 @@ export class ReportService {
     doc.setTextColor(30, 30, 30);
     doc.text('Resumen por Carrera', margin, startY);
 
-    autoTable(doc, {
+    this._autoTable(doc, {
       startY: startY + 3,
       head: [['Carrera', 'Alumnos', 'Visitas', 'Promedio/Alumno']],
       body: datos,
@@ -575,7 +632,7 @@ export class ReportService {
     doc.setTextColor(30, 30, 30);
     doc.text('Resumen por Actividad', margin, startY);
 
-    autoTable(doc, {
+    this._autoTable(doc, {
       startY: startY + 3,
       head: [['Actividad', 'Registros', '% del Total']],
       body: datos,
@@ -688,7 +745,8 @@ export class ReportService {
       folio?: string;
     }
   ): Promise<void> {
-    const doc = new jsPDF('portrait', 'mm', 'letter');
+    const { JsPDFCtor } = await this.cargarPdfLib();
+    const doc = new JsPDFCtor('portrait', 'mm', 'letter');
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
 
@@ -838,7 +896,7 @@ export class ReportService {
           ];
         });
 
-      autoTable(doc, {
+      this._autoTable(doc, {
         startY: y,
         head: [['Fecha', 'Entrada', 'Salida', 'Duración', 'Actividad']],
         body: filas,

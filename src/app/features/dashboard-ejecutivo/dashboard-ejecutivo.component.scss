@@ -9,6 +9,9 @@
 .dashboard-ejecutivo-container {
   background: transparent;
   padding: $spacing-lg;
+
+ touch-action: pan-y;
+
 }
 
 // ═══════════════════════════════════════════════════
@@ -36,11 +39,36 @@
   }
 
   .header-info {
+    .header-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     h1 {
       margin: 0;
       font-size: 1.75rem;
       font-weight: 800;
       color: $text-primary;
+    }
+
+    .header-help-btn {
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      color: $text-secondary;
+      transition: all $transition-fast;
+
+      mat-icon {
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+      }
+
+      &:hover {
+        color: #00C8D7;
+        background: rgba(0, 200, 215, 0.1);
+      }
     }
 
     .subtitle {
@@ -400,11 +428,7 @@
   padding: 24px;
   overflow: hidden;
   margin-bottom: $spacing-xl;
-  // Aislar paint del scroll: cuando el usuario scrollea, el navegador no
-  // tiene que repintar el contenido del canvas/SVG dentro de la tarjeta.
-  contain: layout paint style;
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 320px;
+  
 }
 
 // Empty-state para gráficas sin datos (B3 v3.17.2).
@@ -484,9 +508,7 @@
 .tendencia-card {
   margin-bottom: $spacing-xl;
   padding: $spacing-xl;
-  contain: layout paint style;
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 280px;
+  
 
   h2 {
     margin: 0 0 $spacing-xl 0;
@@ -580,9 +602,7 @@
 
 .heatmap-card {
   margin-bottom: $spacing-xl;
-  contain: layout paint style;
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 540px;
+  
   padding: $spacing-xl;
 
   .heatmap-header {
@@ -647,6 +667,23 @@
       color: $text-secondary;
     }
 
+    .leyenda-sep {
+      color: $text-muted;
+      opacity: 0.5;
+    }
+
+    .leyenda-star .leyenda-star-mark {
+      color: #FFD66B;
+      font-size: 0.95rem;
+      text-shadow: 0 0 6px rgba(255, 214, 107, 0.6);
+    }
+
+    .leyenda-formato {
+      color: $text-muted;
+      font-style: italic;
+      font-size: 0.75rem;
+    }
+
     .leyenda-cuadro {
       width: 18px;
       height: 18px;
@@ -690,6 +727,56 @@
   }
 
   .heatmap-corner { background: transparent; }
+
+  .heatmap-total-header {
+    @include flex-center;
+    height: 28px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: $cyan-400;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .heatmap-total-label {
+    color: $cyan-400 !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .heatmap-total-cell {
+    @include flex-center;
+    height: 36px;
+    border-radius: 4px;
+    background: rgba($cyan-500, 0.08);
+    border: 1px solid rgba($cyan-500, 0.18);
+    color: $cyan-400;
+    font-family: $font-mono;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: default;
+    transition: background 0.15s, filter 0.12s;
+
+    &.clickable {
+      cursor: pointer;
+      &:hover {
+        background: rgba($cyan-500, 0.18);
+        filter: brightness(1.1);
+      }
+    }
+
+    &.heatmap-total-hora {
+      background: rgba($cyan-500, 0.05);
+    }
+
+    &.heatmap-total-grand {
+      background: rgba($cyan-500, 0.18);
+      border-color: rgba($cyan-500, 0.35);
+      color: $text-primary;
+      font-size: 0.9rem;
+    }
+  }
 
   .heatmap-hora,
   .heatmap-dia {
@@ -806,9 +893,7 @@
 
 .top-alumnos-card {
   padding: $spacing-xl;
-  contain: layout paint style;
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 480px;
+  
 
   .top-alumnos-lista {
     display: flex;
@@ -2347,12 +2432,113 @@
 }
 
 // ─── Crecimiento 12m ─────────────────────────────────────
+.crecimiento-card {
+  .chart-header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+
+    h2 { flex: 1; min-width: 0; }
+  }
+}
+
+.crecimiento-trend-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.crecimiento-trend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba($navy-700, 0.5);
+  border: 1px solid $border-subtle;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &.trend-success { color: $success-color; border-color: rgba($success-color, 0.4); }
+  &.trend-warning { color: $warn-color; border-color: rgba($warn-color, 0.4); }
+  &.trend-neutral { color: $text-secondary; }
+}
+
+.crecimiento-trend-range {
+  font-size: 0.72rem;
+  color: $text-muted;
+  font-family: $font-mono;
+  text-transform: lowercase;
+}
+
+.crecimiento-mini-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: $spacing-sm;
+  margin: $spacing-md 0 $spacing-lg;
+}
+
+.mini-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: rgba($navy-700, 0.5);
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+
+  .mini-kpi-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+  .mini-kpi-value {
+    font-family: $font-display;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $text-primary;
+    line-height: 1.1;
+  }
+  .mini-kpi-sub {
+    font-size: 0.72rem;
+    color: $text-muted;
+  }
+
+  &.mini-kpi-best {
+    border-color: rgba(#F5A623, 0.5);
+    .mini-kpi-label { color: #F5A623; }
+    .mini-kpi-value { color: #F5C56A; }
+  }
+  &.mini-kpi-worst {
+    border-color: rgba($warn-color, 0.4);
+    .mini-kpi-label { color: $warn-color; }
+  }
+}
+
 .crecimiento-bars {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 4px;
   align-items: flex-end;
-  height: 220px;
+  min-height: 240px;
   padding: 8px 0;
 }
 
@@ -2364,6 +2550,16 @@
   cursor: pointer;
   position: relative;
 
+  .crecimiento-valor {
+    font-family: $font-mono;
+    font-size: 0.72rem;
+    color: $text-secondary;
+    margin-bottom: 4px;
+    font-weight: 600;
+
+    &.muted { color: $text-muted; opacity: 0.5; }
+  }
+
   .crecimiento-bar {
     width: 100%;
     max-width: 36px;
@@ -2371,7 +2567,18 @@
     border-radius: 6px 6px 0 0;
     transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s;
     margin-top: auto;
-    will-change: height;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .crecimiento-medal {
+    position: absolute;
+    top: -2px;
+    color: #F5C56A;
+    font-size: 0.85rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   .crecimiento-label {
@@ -2384,8 +2591,141 @@
     white-space: nowrap;
   }
 
+  .crecimiento-mom {
+    font-size: 0.65rem;
+    margin-top: 2px;
+    font-family: $font-mono;
+    color: $text-muted;
+
+    &.mom-up { color: $success-color; }
+    &.mom-down { color: $warn-color; }
+    &.muted { opacity: 0.5; }
+  }
+
+  // Highlights por flag
+  &.es-mejor .crecimiento-bar {
+    background: linear-gradient(180deg, #F5C56A 0%, #F5A623 100%);
+    box-shadow: 0 0 12px rgba(#F5A623, 0.35);
+  }
+  &.es-mejor .crecimiento-valor { color: #F5C56A; }
+
+  &.es-peor .crecimiento-bar {
+    background: linear-gradient(180deg, rgba($warn-color, 0.7) 0%, rgba($warn-color, 0.4) 100%);
+  }
+
+  &.es-actual {
+    .crecimiento-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 6px 6px 0 0;
+      border: 2px dashed rgba($cyan-400, 0.7);
+      pointer-events: none;
+    }
+    .crecimiento-label {
+      color: $cyan-400;
+      font-weight: 700;
+    }
+  }
+
   &:hover .crecimiento-bar {
     filter: brightness(1.25);
+    will-change: filter;
+  }
+}
+
+// ─── Sub-controles de Top alumnos / Heatmap personalizado ─────
+.rango-personalizado-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: $spacing-sm;
+}
+
+.top-subcontrols {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin: $spacing-sm 0 $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($navy-700, 0.3);
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+}
+
+.top-limite-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .top-limite-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: $text-secondary;
+    font-weight: 600;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .top-limite-presets {
+    display: flex;
+    gap: 4px;
+    background: $navy-800;
+    border: 1px solid $border-subtle;
+    border-radius: $border-radius-md;
+    padding: 3px;
+  }
+
+  .top-limite-input {
+    width: 72px;
+    padding: 6px 8px;
+    background: $navy-800;
+    border: 1px solid $border-subtle;
+    border-radius: 6px;
+    color: $text-primary;
+    font-family: $font-mono;
+    font-size: 0.85rem;
+    text-align: center;
+
+    &:focus {
+      outline: none;
+      border-color: $cyan-500;
+      box-shadow: 0 0 0 2px rgba($cyan-500, 0.2);
+    }
+  }
+
+  .top-limite-sub {
+    font-size: 0.78rem;
+    color: $text-muted;
+  }
+}
+
+.crecimiento-analisis {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($cyan-500, 0.06);
+  border: 1px solid rgba($cyan-500, 0.18);
+  border-left: 3px solid $cyan-500;
+  border-radius: $border-radius-md;
+  color: $text-secondary;
+  font-size: 0.85rem;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: $cyan-400;
   }
 }
 
@@ -2599,4 +2939,7 @@ button:focus-visible {
       font-size: 0.85rem;
     }
   }
+}
+canvas {
+  touch-action: pan-y;
 }

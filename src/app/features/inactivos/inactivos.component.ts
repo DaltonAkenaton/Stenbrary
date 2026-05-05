@@ -8,7 +8,7 @@
 // ║  ordenamiento y dos vistas (lista / tarjetas).       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -73,6 +73,7 @@ type OrdenMode = 'dias-desc' | 'dias-asc' | 'nombre' | 'carrera';
   ],
   templateUrl: './inactivos.component.html',
   styleUrl: './inactivos.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InactivosComponent implements OnInit {
 
@@ -266,7 +267,7 @@ export class InactivosComponent implements OnInit {
   }
 
   /** Exporta la lista de inactivos visible (tras filtros) a Excel. */
-  exportarExcel(): void {
+  async exportarExcel(): Promise<void> {
     const lista = this.inactivosFiltrados();
     if (lista.length === 0) {
       this.toast.warning('No hay alumnos inactivos para exportar');
@@ -274,11 +275,15 @@ export class InactivosComponent implements OnInit {
     }
     const alumnos = lista.map(i => i.alumno);
     const fecha = new Date().toISOString().slice(0, 10);
-    this.exportService.exportarAlumnosXLSX(
-      alumnos,
-      `inactivos_${this.umbralDias()}d_${fecha}`,
-    );
-    this.toast.success(`${alumnos.length} alumnos exportados a Excel`);
+    try {
+      await this.exportService.exportarAlumnosXLSX(
+        alumnos,
+        `inactivos_${this.umbralDias()}d_${fecha}`,
+      );
+      this.toast.success(`${alumnos.length} alumnos exportados a Excel`);
+    } catch {
+      this.toast.error('No se pudo generar el archivo Excel');
+    }
   }
 
   // ─── HELPERS ──────────────────────────────────────────

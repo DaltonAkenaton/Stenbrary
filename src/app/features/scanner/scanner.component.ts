@@ -371,6 +371,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
   /** Duración máxima total de un escaneo HID (protege contra buffers viejos). */
   private static readonly HID_MAX_TOTAL_MS = 1500;
 
+  // ── Timers tracked para limpieza en ngOnDestroy ────────────────────────
+  // Si el componente se destruye antes de que disparen, evitamos ejecutar
+  // callbacks sobre estado huérfano (mediaStream null, scanner inactivo, etc.).
+  private startTimer: number | null = null;       // timeout para attach del video
+  private confirmTimer: number | null = null;     // timeout post-cancelación de dialog
+  private pressTimer: number | null = null;       // long-press del modo quiosco
+
   constructor(
     private databaseService: DatabaseService,
     private router: Router,
@@ -410,6 +417,18 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (this.salidaFlashTimer !== null) {
       clearTimeout(this.salidaFlashTimer);
       this.salidaFlashTimer = null;
+    }
+    if (this.startTimer !== null) {
+      clearTimeout(this.startTimer);
+      this.startTimer = null;
+    }
+    if (this.confirmTimer !== null) {
+      clearTimeout(this.confirmTimer);
+      this.confirmTimer = null;
+    }
+    if (this.pressTimer !== null) {
+      clearTimeout(this.pressTimer);
+      this.pressTimer = null;
     }
   }
 
@@ -567,15 +586,20 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
       this.mediaStream = await this.obtenerCamara();
 
-      setTimeout(() => {
+      this.startTimer = window.setTimeout(() => {
+        this.startTimer = null;
+        // Guard: si el componente se destruyó o detuvo el scanner mientras
+        // esperaba este timeout, abortar — no toques mediaStream null.
+        if (!this.scannerActivo || !this.mediaStream) return;
         const video = this.videoElement?.nativeElement;
         if (!video) return;
-        video.srcObject = this.mediaStream!;
+        video.srcObject = this.mediaStream;
         video.play().catch(() => {});
 
         // addEventListener en lugar de onloadeddata para no sobreescribir handlers
         const onReady = () => {
           video.removeEventListener('loadeddata', onReady);
+          if (!this.scannerActivo) return;
           this.cargando = false;
           this.adaptarAResolucion(video);
           this.toastService.info('Scanner activo — apunta al código de barras');
@@ -1328,7 +1352,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.toastService.warning('Escaneo cancelado');
         // Auto-reiniciar tras 1.5s: da tiempo para que el usuario retire
         // la credencial del encuadre antes de que se vuelva a detectar.
-        setTimeout(() => {
+        // Guardado en confirmTimer → cancelable en ngOnDestroy si el
+        // usuario navega antes del disparo.
+        if (this.confirmTimer !== null) clearTimeout(this.confirmTimer);
+        this.confirmTimer = window.setTimeout(() => {
+          this.confirmTimer = null;
           this.ultimoQrEscaneado = '';
           this.enCooldown = false;
           if (reiniciarCamara) this.iniciarScanner();
@@ -1771,13 +1799,15 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // el header del scanner y `pressUpQuiosco()` en mouseup/touchend/leave.
   // Tras 3 segundos sostenidos, se abre el dialog de PIN.
 
-  private pressTimer: any = null;
+  // pressTimer ya está declarado arriba como `private pressTimer: number | null`.
   pressActivo = false;
 
   pressDownQuiosco(): void {
     if (!this.configService.modoQuiosco) return;
     this.pressActivo = true;
-    this.pressTimer = setTimeout(() => {
+    if (this.pressTimer !== null) clearTimeout(this.pressTimer);
+    this.pressTimer = window.setTimeout(() => {
+      this.pressTimer = null;
       this.pressActivo = false;
       this.abrirDialogSalidaQuiosco();
     }, 3000);
@@ -1785,7 +1815,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   pressUpQuiosco(): void {
     this.pressActivo = false;
-    if (this.pressTimer) {
+    if (this.pressTimer !== null) {
       clearTimeout(this.pressTimer);
       this.pressTimer = null;
     }

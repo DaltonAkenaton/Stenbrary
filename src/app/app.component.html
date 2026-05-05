@@ -173,6 +173,24 @@
     <!-- Separador del topbar -->
     <div class="topbar-separator"></div>
 
+    <!-- ═══ Banner de error de IndexedDB ═══
+         Se muestra cuando la BD local no pudo abrirse (modo incógnito,
+         almacenamiento bloqueado, cuota llena). Sin esto, la app queda
+         con pantalla en blanco silenciosa porque cada query falla. -->
+    @if (databaseService.bdError(); as bdErr) {
+      <div class="bd-error-banner" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <div class="bd-error-content">
+          <span class="bd-error-titulo">No se puede acceder al almacenamiento local</span>
+          <span class="bd-error-detalle">{{ bdErr }}</span>
+        </div>
+        <button class="bd-error-action" (click)="recargarApp()">
+          <mat-icon>refresh</mat-icon>
+          Recargar
+        </button>
+      </div>
+    }
+
     <!-- ═══ Banner de actualización PWA ═══ -->
     @if (hayActualizacion) {
       <div class="update-banner">

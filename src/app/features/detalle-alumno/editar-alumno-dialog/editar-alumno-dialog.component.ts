@@ -22,6 +22,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatabaseService } from '../../../core/services/database.service';
 import { Alumno } from '../../../core/models';
 import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalogos.constants';
+import { logError } from '../../../core/utils/logger';
 
 @Component({
   selector: 'app-editar-alumno-dialog',
@@ -56,49 +57,49 @@ import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalo
           <mat-label>Nombre(s)</mat-label>
           <input matInput formControlName="nombre" placeholder="Juan">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-error *ngIf="campoInvalido('nombre')">
-            {{ obtenerErrorCampo('nombre') }}
-          </mat-error>
+          @if (campoInvalido('nombre')) {
+            <mat-error>{{ obtenerErrorCampo('nombre') }}</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Apellido Paterno</mat-label>
           <input matInput formControlName="apellidoPaterno" placeholder="Pérez">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-error *ngIf="campoInvalido('apellidoPaterno')">
-            {{ obtenerErrorCampo('apellidoPaterno') }}
-          </mat-error>
+          @if (campoInvalido('apellidoPaterno')) {
+            <mat-error>{{ obtenerErrorCampo('apellidoPaterno') }}</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Apellido Materno</mat-label>
           <input matInput formControlName="apellidoMaterno" placeholder="García">
           <mat-icon matPrefix>person</mat-icon>
-          <mat-error *ngIf="campoInvalido('apellidoMaterno')">
-            {{ obtenerErrorCampo('apellidoMaterno') }}
-          </mat-error>
+          @if (campoInvalido('apellidoMaterno')) {
+            <mat-error>{{ obtenerErrorCampo('apellidoMaterno') }}</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Carrera/Licenciatura</mat-label>
           <mat-select formControlName="carrera">
-            <mat-option *ngFor="let carrera of carreras" [value]="carrera">
-              {{ carrera }}
-            </mat-option>
+            @for (carrera of carreras; track carrera) {
+              <mat-option [value]="carrera">{{ carrera }}</mat-option>
+            }
           </mat-select>
           <mat-icon matPrefix>school</mat-icon>
-          <mat-error *ngIf="campoInvalido('carrera')">
-            {{ obtenerErrorCampo('carrera') }}
-          </mat-error>
+          @if (campoInvalido('carrera')) {
+            <mat-error>{{ obtenerErrorCampo('carrera') }}</mat-error>
+          }
         </mat-form-field>
 
         <div class="form-row">
           <mat-form-field appearance="outline">
             <mat-label>Semestre</mat-label>
             <mat-select formControlName="grado">
-              <mat-option *ngFor="let grado of grados" [value]="grado">
-                {{ grado }}°
-              </mat-option>
+              @for (grado of grados; track grado) {
+                <mat-option [value]="grado">{{ grado }}°</mat-option>
+              }
             </mat-select>
             <mat-icon matPrefix>stairs</mat-icon>
           </mat-form-field>
@@ -106,9 +107,9 @@ import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalo
           <mat-form-field appearance="outline">
             <mat-label>Grupo</mat-label>
             <mat-select formControlName="grupo">
-              <mat-option *ngFor="let grupo of grupos" [value]="grupo">
-                {{ grupo }}
-              </mat-option>
+              @for (grupo of grupos; track grupo) {
+                <mat-option [value]="grupo">{{ grupo }}</mat-option>
+              }
             </mat-select>
             <mat-icon matPrefix>groups</mat-icon>
           </mat-form-field>
@@ -116,18 +117,20 @@ import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalo
           <mat-form-field appearance="outline">
             <mat-label>Turno</mat-label>
             <mat-select formControlName="turno">
-              <mat-option *ngFor="let turno of turnos" [value]="turno">
-                {{ turno }}
-              </mat-option>
+              @for (turno of turnos; track turno) {
+                <mat-option [value]="turno">{{ turno }}</mat-option>
+              }
             </mat-select>
             <mat-icon matPrefix>schedule</mat-icon>
           </mat-form-field>
         </div>
 
-        <div class="error-message" *ngIf="error">
-          <mat-icon>error</mat-icon>
-          <span>{{ error }}</span>
-        </div>
+        @if (error) {
+          <div class="error-message">
+            <mat-icon>error</mat-icon>
+            <span>{{ error }}</span>
+          </div>
+        }
 
       </form>
     </mat-dialog-content>
@@ -136,11 +139,14 @@ import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalo
       <button mat-button (click)="cancelar()" [disabled]="guardando">
         Cancelar
       </button>
-      <button mat-raised-button color="primary" 
-              (click)="guardar()" 
+      <button mat-raised-button color="primary"
+              (click)="guardar()"
               [disabled]="editarForm.invalid || guardando">
-        <mat-icon *ngIf="!guardando">save</mat-icon>
-        <mat-icon *ngIf="guardando" class="spinning">hourglass_empty</mat-icon>
+        @if (guardando) {
+          <mat-icon class="spinning">hourglass_empty</mat-icon>
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
         {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
       </button>
     </mat-dialog-actions>
@@ -269,10 +275,9 @@ export class EditarAlumnoDialogComponent implements OnInit {
 
       await this.databaseService.actualizarAlumno(this.data.alumno.id!, alumnoActualizado);
 
-      console.log('✅ Alumno actualizado exitosamente');
       this.dialogRef.close(true);
     } catch (error: any) {
-      console.error('❌ Error al actualizar alumno:', error);
+      logError('❌ Error al actualizar alumno:', error);
       this.error = 'Error al guardar los cambios. Intenta de nuevo.';
       this.guardando = false;
     }

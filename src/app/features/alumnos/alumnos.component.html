@@ -25,19 +25,19 @@
       <!-- Toggle de vista -->
       <div class="vista-toggle">
         <button class="vista-btn" [class.active]="vistaActual() === 'lista'"
-                (click)="vistaActual.set('lista')" matTooltip="Vista de lista">
+                (click)="vistaActual.set('lista')" title="Vista de lista">
           <mat-icon>view_list</mat-icon>
         </button>
         <button class="vista-btn" [class.active]="vistaActual() === 'cards'"
-                (click)="vistaActual.set('cards')" matTooltip="Vista de tarjetas">
+                (click)="vistaActual.set('cards')" title="Vista de tarjetas">
           <mat-icon>grid_view</mat-icon>
         </button>
       </div>
-      <button class="btn-outline" (click)="exportarCSV()" matTooltip="Exportar a CSV">
+      <button class="btn-outline" (click)="exportarCSV()" title="Exportar a CSV">
         <mat-icon>download</mat-icon>
         <span class="btn-text">Exportar</span>
       </button>
-      <button class="btn-outline" (click)="irAImportar()" matTooltip="Importar desde Excel">
+      <button class="btn-outline" (click)="irAImportar()" title="Importar desde Excel">
         <mat-icon>upload_file</mat-icon>
         <span class="btn-text">Importar</span>
       </button>
@@ -198,7 +198,7 @@
   </div>
 
   <!-- ── LOADING ── -->
-  @if (cargando) {
+  @if (cargando()) {
     <div class="loading-state">
       <mat-spinner diameter="36"></mat-spinner>
       <p>Cargando alumnos...</p>
@@ -206,18 +206,18 @@
   }
 
   <!-- ── CARDS VIEW ── -->
-  @if (!cargando && alumnosFiltrados.length > 0 && vistaActual() === 'cards') {
+  @if (!cargando() && alumnosFiltrados.length > 0 && vistaActual() === 'cards') {
     <div class="cards-container">
       <div class="alumnos-grid">
         @for (a of alumnosPaginados; track a.matricula) {
           <button class="alumno-card" (click)="verDetalle(a)">
             <div class="alumno-card-top">
               <span class="status-dot" [class.activo]="a.activo" [class.inactivo]="!a.activo"
-                    [matTooltip]="a.activo ? 'Activo' : 'Inactivo'"></span>
+                    [title]="a.activo ? 'Activo' : 'Inactivo'"></span>
               <span class="matricula-badge mono">{{ a.matricula }}</span>
               <span class="turno-chip" [attr.data-turno]="a.turno.toLowerCase()">{{ a.turno }}</span>
             </div>
-            <div class="alumno-card-nombre">{{ nombreCompleto(a) }}</div>
+            <div class="alumno-card-nombre">{{ a._nombreCompleto }}</div>
             <div class="alumno-card-meta">
               <span>{{ a.carrera }}</span>
               <span class="mono">{{ a.grado }}° {{ a.grupo }}</span>
@@ -248,7 +248,7 @@
   }
 
   <!-- ── TABLA ── -->
-  @if (!cargando && alumnosFiltrados.length > 0 && vistaActual() === 'lista') {
+  @if (!cargando() && alumnosFiltrados.length > 0 && vistaActual() === 'lista') {
     <div class="tabla-container">
       <table mat-table [dataSource]="alumnosPaginados" class="alumnos-table">
 
@@ -266,8 +266,8 @@
           <td mat-cell *matCellDef="let a">
             <div class="nombre-wrap">
               <span class="status-dot" [class.activo]="a.activo" [class.inactivo]="!a.activo"
-                    [matTooltip]="a.activo ? 'Activo' : 'Inactivo'"></span>
-              <span class="nombre-cell">{{ nombreCompleto(a) }}</span>
+                    [title]="a.activo ? 'Activo' : 'Inactivo'"></span>
+              <span class="nombre-cell">{{ a._nombreCompleto }}</span>
             </div>
           </td>
         </ng-container>
@@ -308,7 +308,7 @@
         <ng-container matColumnDef="acciones">
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let a">
-            <button mat-icon-button matTooltip="Ver detalle" (click)="verDetalle(a)">
+            <button mat-icon-button title="Ver detalle" (click)="verDetalle(a)">
               <mat-icon>visibility</mat-icon>
             </button>
           </td>
@@ -349,7 +349,7 @@
   }
 
   <!-- ── EMPTY STATE ── -->
-  @if (!cargando && alumnosFiltrados.length === 0) {
+  @if (!cargando() && alumnosFiltrados.length === 0) {
     <div class="empty-state">
       @if (hayFiltrosActivos) {
         <mat-icon>search_off</mat-icon>

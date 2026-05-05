@@ -73,34 +73,38 @@ import { DatosPruebaComponent } from './datos-prueba.component';
           <h2>Información del Sistema</h2>
         </div>
 
-        <div class="info-grid" *ngIf="!cargandoInfo">
-          <div class="info-stat">
-            <div class="stat-value cyan">{{ conteoAlumnos }}</div>
-            <div class="stat-label">Alumnos registrados</div>
+        @if (!cargandoInfo) {
+          <div class="info-grid">
+            <div class="info-stat">
+              <div class="stat-value cyan">{{ conteoAlumnos }}</div>
+              <div class="stat-label">Alumnos registrados</div>
+            </div>
+            <div class="info-stat">
+              <div class="stat-value teal">{{ conteoRegistros }}</div>
+              <div class="stat-label">Registros de acceso</div>
+            </div>
+            <div class="info-stat">
+              <div class="stat-value amber">{{ conteoMotivos }}</div>
+              <div class="stat-label">Motivos / actividades</div>
+            </div>
+            <div class="info-stat">
+              <div class="stat-value purple">{{ almacenamientoEstimado }}</div>
+              <div class="stat-label">Almacenamiento usado</div>
+            </div>
           </div>
-          <div class="info-stat">
-            <div class="stat-value teal">{{ conteoRegistros }}</div>
-            <div class="stat-label">Registros de acceso</div>
-          </div>
-          <div class="info-stat">
-            <div class="stat-value amber">{{ conteoMotivos }}</div>
-            <div class="stat-label">Motivos / actividades</div>
-          </div>
-          <div class="info-stat">
-            <div class="stat-value purple">{{ almacenamientoEstimado }}</div>
-            <div class="stat-label">Almacenamiento usado</div>
-          </div>
-        </div>
+        }
 
-        <div class="alert-duplicates" *ngIf="motivosDuplicados > 0">
-          <mat-icon>warning</mat-icon>
-          <span>
-            Se detectaron <strong>{{ motivosDuplicados }}</strong> motivos duplicados.
-          </span>
-          <button class="btn-inline" (click)="limpiarDuplicados()" [disabled]="procesando">
-            Limpiar ahora
-          </button>
-        </div>
+        @if (motivosDuplicados > 0) {
+          <div class="alert-duplicates">
+            <mat-icon>warning</mat-icon>
+            <span>
+              Se detectaron <strong>{{ motivosDuplicados }}</strong> motivos duplicados.
+            </span>
+            <button class="btn-inline" (click)="limpiarDuplicados()" [disabled]="procesando">
+              Limpiar ahora
+            </button>
+          </div>
+        }
 
         <div class="info-meta">
           <button class="meta-chip meta-chip-link"
@@ -160,14 +164,17 @@ import { DatosPruebaComponent } from './datos-prueba.component';
           </div>
         </div>
 
-        <p class="section-hint" *ngIf="!configService.nombreInstitucion">
-          <mat-icon>info</mat-icon>
-          Sin institución configurada — los documentos se generarán sin etiqueta institucional.
-        </p>
-        <p class="section-hint" *ngIf="configService.nombreInstitucion" style="color: rgba(0,200,215,0.5)">
-          <mat-icon>check_circle</mat-icon>
-          Actualmente: <strong>{{ configService.nombreInstitucion }}</strong>
-        </p>
+        @if (!configService.nombreInstitucion) {
+          <p class="section-hint">
+            <mat-icon>info</mat-icon>
+            Sin institución configurada — los documentos se generarán sin etiqueta institucional.
+          </p>
+        } @else {
+          <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+            <mat-icon>check_circle</mat-icon>
+            Actualmente: <strong>{{ configService.nombreInstitucion }}</strong>
+          </p>
+        }
       </mat-card>
 
       <!-- ═══ SONIDO DE CONFIRMACIÓN ═══ -->
@@ -219,38 +226,43 @@ import { DatosPruebaComponent } from './datos-prueba.component';
             {{ configService.registroSalidaActivo ? 'Desactivar' : 'Activar' }}
           </button>
         </div>
-        <p class="section-hint" *ngIf="!configService.registroSalidaActivo">
-          <mat-icon>info</mat-icon>
-          Si los alumnos no registran salida con regularidad, desactiva esta opción para evitar datos incompletos.
-        </p>
-        <p class="section-hint" *ngIf="configService.registroSalidaActivo" style="color: rgba(0,200,215,0.5)">
-          <mat-icon>check_circle</mat-icon>
-          Módulo activo — aparece como "En Biblioteca" en el menú de navegación.
-        </p>
-
-        <!-- Cierre automático (solo visible si el módulo está activo) -->
-        <div *ngIf="configService.registroSalidaActivo" style="margin-top: 20px;">
-          <div class="section-header" style="margin-bottom: 10px;">
-            <mat-icon>timer_off</mat-icon>
-            <h2 style="font-size: 0.95rem;">Cierre automático de entradas</h2>
-          </div>
-          <p class="section-desc" style="margin-bottom: 12px;">
-            Si un alumno no registra salida, el sistema la marcará automáticamente después de este tiempo.
+        @if (!configService.registroSalidaActivo) {
+          <p class="section-hint">
+            <mat-icon>info</mat-icon>
+            Si los alumnos no registran salida con regularidad, desactiva esta opción para evitar datos incompletos.
           </p>
-          <div class="auto-close-options">
-            @for (op of opcionesAutoSalida; track op.valor) {
-              <button class="auto-close-btn"
-                [class.active]="configService.horasAutoSalida === op.valor"
-                (click)="setHorasAutoSalida(op.valor)">
-                {{ op.etiqueta }}
-              </button>
+        } @else {
+          <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+            <mat-icon>check_circle</mat-icon>
+            Módulo activo — aparece como "En Biblioteca" en el menú de navegación.
+          </p>
+
+          <!-- Cierre automático (solo visible si el módulo está activo) -->
+          <div style="margin-top: 20px;">
+            <div class="section-header" style="margin-bottom: 10px;">
+              <mat-icon>timer_off</mat-icon>
+              <h2 style="font-size: 0.95rem;">Cierre automático de entradas</h2>
+            </div>
+            <p class="section-desc" style="margin-bottom: 12px;">
+              Si un alumno no registra salida, el sistema la marcará automáticamente después de este tiempo.
+            </p>
+            <div class="auto-close-options">
+              @for (op of opcionesAutoSalida; track op.valor) {
+                <button class="auto-close-btn"
+                  [class.active]="configService.horasAutoSalida === op.valor"
+                  (click)="setHorasAutoSalida(op.valor)">
+                  {{ op.etiqueta }}
+                </button>
+              }
+            </div>
+            @if (configService.horasAutoSalida === 0) {
+              <p class="section-hint">
+                <mat-icon>warning</mat-icon>
+                Desactivado — las entradas sin salida permanecerán abiertas indefinidamente.
+              </p>
             }
           </div>
-          <p class="section-hint" *ngIf="configService.horasAutoSalida === 0">
-            <mat-icon>warning</mat-icon>
-            Desactivado — las entradas sin salida permanecerán abiertas indefinidamente.
-          </p>
-        </div>
+        }
       </mat-card>
 
       <!-- ═══ CONTROL DE AFORO ═══ -->
@@ -265,13 +277,16 @@ import { DatosPruebaComponent } from './datos-prueba.component';
           o aforo permitido.
         </p>
 
-        <p class="section-hint" *ngIf="!configService.registroSalidaActivo">
-          <mat-icon>warning</mat-icon>
-          Activa primero el <strong>Registro de Salida</strong> arriba — sin él, el sistema
-          no sabe quién sigue dentro y el aforo no puede calcularse correctamente.
-        </p>
+        @if (!configService.registroSalidaActivo) {
+          <p class="section-hint">
+            <mat-icon>warning</mat-icon>
+            Activa primero el <strong>Registro de Salida</strong> arriba — sin él, el sistema
+            no sabe quién sigue dentro y el aforo no puede calcularse correctamente.
+          </p>
+        }
 
-        <div *ngIf="configService.registroSalidaActivo">
+        @if (configService.registroSalidaActivo) {
+        <div>
           <!-- Capacidad máxima — stepper personalizado -->
           <div class="aforo-input-row">
             <label for="aforoMax">Capacidad máxima (personas)</label>
@@ -304,38 +319,42 @@ import { DatosPruebaComponent } from './datos-prueba.component';
             </div>
           </div>
 
-          <p class="section-hint" *ngIf="configService.aforoMaximo === 0">
-            <mat-icon>info</mat-icon>
-            Aforo desactivado — no se aplicará ningún límite.
-          </p>
-          <p class="section-hint" *ngIf="configService.aforoMaximo > 0" style="color: rgba(0,200,215,0.5)">
-            <mat-icon>check_circle</mat-icon>
-            Aforo configurado: <strong>{{ configService.aforoMaximo }}</strong> personas máximo.
-          </p>
-
-          <!-- Modo de comportamiento -->
-          <div *ngIf="configService.aforoMaximo > 0" style="margin-top: 18px;">
-            <div class="section-header" style="margin-bottom: 10px;">
-              <mat-icon>policy</mat-icon>
-              <h2 style="font-size: 0.95rem;">Al alcanzar el aforo máximo</h2>
-            </div>
-            <div class="auto-close-options">
-              @for (op of opcionesAforoModo; track op.valor) {
-                <button class="auto-close-btn"
-                  [class.active]="configService.aforoModo === op.valor"
-                  (click)="setAforoModo(op.valor)"
-                  [matTooltip]="op.descripcion"
-                  matTooltipPosition="above">
-                  {{ op.etiqueta }}
-                </button>
-              }
-            </div>
+          @if (configService.aforoMaximo === 0) {
             <p class="section-hint">
               <mat-icon>info</mat-icon>
-              {{ descripcionModoActual }}
+              Aforo desactivado — no se aplicará ningún límite.
             </p>
-          </div>
+          } @else {
+            <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+              <mat-icon>check_circle</mat-icon>
+              Aforo configurado: <strong>{{ configService.aforoMaximo }}</strong> personas máximo.
+            </p>
+
+            <!-- Modo de comportamiento -->
+            <div style="margin-top: 18px;">
+              <div class="section-header" style="margin-bottom: 10px;">
+                <mat-icon>policy</mat-icon>
+                <h2 style="font-size: 0.95rem;">Al alcanzar el aforo máximo</h2>
+              </div>
+              <div class="auto-close-options">
+                @for (op of opcionesAforoModo; track op.valor) {
+                  <button class="auto-close-btn"
+                    [class.active]="configService.aforoModo === op.valor"
+                    (click)="setAforoModo(op.valor)"
+                    [matTooltip]="op.descripcion"
+                    matTooltipPosition="above">
+                    {{ op.etiqueta }}
+                  </button>
+                }
+              </div>
+              <p class="section-hint">
+                <mat-icon>info</mat-icon>
+                {{ descripcionModoActual }}
+              </p>
+            </div>
+          }
         </div>
+        }
       </mat-card>
 
       <!-- ═══ MODO QUIOSCO ═══ -->
@@ -362,29 +381,34 @@ import { DatosPruebaComponent } from './datos-prueba.component';
           </button>
         </div>
 
-        <div *ngIf="configService.modoQuiosco" style="margin-top: 18px;">
-          <div class="aforo-input-row">
-            <label for="quioscoPin">PIN de salida (4–6 dígitos)</label>
-            <div class="aforo-stepper" style="max-width: 220px;">
-              <input id="quioscoPin"
-                     type="text"
-                     inputmode="numeric"
-                     maxlength="6"
-                     class="aforo-number-input"
-                     [ngModel]="configService.quioscoPin"
-                     (ngModelChange)="setQuioscoPin($event)"
-                     placeholder="0000">
+        @if (configService.modoQuiosco) {
+          <div style="margin-top: 18px;">
+            <div class="aforo-input-row">
+              <label for="quioscoPin">PIN de salida (4–6 dígitos)</label>
+              <div class="aforo-stepper" style="max-width: 220px;">
+                <input id="quioscoPin"
+                       type="text"
+                       inputmode="numeric"
+                       maxlength="6"
+                       class="aforo-number-input"
+                       [ngModel]="configService.quioscoPin"
+                       (ngModelChange)="setQuioscoPin($event)"
+                       placeholder="0000">
+              </div>
             </div>
+            @if (!configService.quioscoPin) {
+              <p class="section-hint" style="color:#F5A623;">
+                <mat-icon>warning</mat-icon>
+                Sin PIN configurado — cualquiera podrá salir del modo quiosco.
+              </p>
+            } @else {
+              <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+                <mat-icon>lock</mat-icon>
+                PIN activo — pulsación larga + PIN para salir.
+              </p>
+            }
           </div>
-          <p class="section-hint" *ngIf="!configService.quioscoPin" style="color:#F5A623;">
-            <mat-icon>warning</mat-icon>
-            Sin PIN configurado — cualquiera podrá salir del modo quiosco.
-          </p>
-          <p class="section-hint" *ngIf="configService.quioscoPin" style="color: rgba(0,200,215,0.5)">
-            <mat-icon>lock</mat-icon>
-            PIN activo — pulsación larga + PIN para salir.
-          </p>
-        </div>
+        }
       </mat-card>
 
       <!-- ═══ HORARIOS DE OPERACIÓN ═══ -->
@@ -410,7 +434,8 @@ import { DatosPruebaComponent } from './datos-prueba.component';
           </button>
         </div>
 
-        <div *ngIf="configService.horarioActivo" style="margin-top: 18px;">
+        @if (configService.horarioActivo) {
+        <div style="margin-top: 18px;">
           <!-- Modo de comportamiento -->
           <div class="section-header" style="margin-bottom: 10px;">
             <mat-icon>policy</mat-icon>
@@ -459,6 +484,7 @@ import { DatosPruebaComponent } from './datos-prueba.component';
             }
           </div>
         </div>
+        }
       </mat-card>
 
       <!-- ═══ ANIMACIÓN CELEBRATORIA ═══ -->
@@ -484,7 +510,8 @@ import { DatosPruebaComponent } from './datos-prueba.component';
           </button>
         </div>
 
-        <div *ngIf="configService.celebracionActiva" style="margin-top: 18px;">
+        @if (configService.celebracionActiva) {
+        <div style="margin-top: 18px;">
           <div class="section-header" style="margin-bottom: 10px;">
             <mat-icon>casino</mat-icon>
             <h2 style="font-size: 0.95rem;">Frecuencia</h2>
@@ -544,6 +571,7 @@ import { DatosPruebaComponent } from './datos-prueba.component';
             }
           </p>
         </div>
+        }
       </mat-card>
 
       <!-- ═══ ALERTAS DE INACTIVIDAD (v3.10.0) ═══ -->
@@ -756,7 +784,8 @@ import { DatosPruebaComponent } from './datos-prueba.component';
           </button>
         </div>
 
-        <div class="restore-preview" *ngIf="backupPreview">
+        @if (backupPreview) {
+        <div class="restore-preview">
           <div class="preview-header">
             <mat-icon>description</mat-icon>
             <span>{{ nombreArchivoSeleccionado }}</span>
@@ -799,25 +828,30 @@ import { DatosPruebaComponent } from './datos-prueba.component';
             </button>
           </div>
         </div>
+        }
 
-        <div class="import-result" *ngIf="resultadoImportacion"
-             [class.success]="resultadoImportacion.exitoso">
-          <mat-icon>{{ resultadoImportacion.exitoso ? 'check_circle' : 'error' }}</mat-icon>
-          <div class="result-text">
-            <strong>{{ resultadoImportacion.exitoso ? 'Importación exitosa' : 'Error en importación' }}</strong>
-            <span *ngIf="resultadoImportacion.exitoso">
-              {{ resultadoImportacion.alumnosImportados }} alumnos,
-              {{ resultadoImportacion.registrosImportados }} registros,
-              {{ resultadoImportacion.motivosImportados }} motivos importados
-              <span *ngIf="resultadoImportacion.alumnosOmitidos > 0">
-                · {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos
-              </span>
-              <span *ngIf="resultadoImportacion.motivosOmitidos > 0">
-                · {{ resultadoImportacion.motivosOmitidos }} motivos omitidos
-              </span>
-            </span>
+        @if (resultadoImportacion) {
+          <div class="import-result"
+               [class.success]="resultadoImportacion.exitoso">
+            <mat-icon>{{ resultadoImportacion.exitoso ? 'check_circle' : 'error' }}</mat-icon>
+            <div class="result-text">
+              <strong>{{ resultadoImportacion.exitoso ? 'Importación exitosa' : 'Error en importación' }}</strong>
+              @if (resultadoImportacion.exitoso) {
+                <span>
+                  {{ resultadoImportacion.alumnosImportados }} alumnos,
+                  {{ resultadoImportacion.registrosImportados }} registros,
+                  {{ resultadoImportacion.motivosImportados }} motivos importados
+                  @if (resultadoImportacion.alumnosOmitidos > 0) {
+                    <span>· {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos</span>
+                  }
+                  @if (resultadoImportacion.motivosOmitidos > 0) {
+                    <span>· {{ resultadoImportacion.motivosOmitidos }} motivos omitidos</span>
+                  }
+                </span>
+              }
+            </div>
           </div>
-        </div>
+        }
       </mat-card>
 
       <!-- ═══ ELIMINACIÓN MASIVA DE REGISTROS ═══ -->

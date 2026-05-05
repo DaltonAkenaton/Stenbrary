@@ -198,7 +198,7 @@
           <div class="registros-preview">
             @for (r of ultimosRegistros; track r.id) {
               <div class="registro-item">
-                <span class="registro-hora mono">{{ formatearHora(r.fechaHora) }}</span>
+                <span class="registro-hora mono">{{ r._horaStr }}</span>
                 <div class="registro-info">
                   <span class="registro-nombre">{{ r.nombreCompleto }}</span>
                   <span class="registro-motivo">{{ r.motivoNombre }}</span>

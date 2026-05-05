@@ -8,7 +8,7 @@
 // ║  - Código limpio sin residuos de merge                ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfigService } from '../../core/services/config.service';
@@ -29,6 +29,22 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
 import { RegistroDetalleDialogComponent } from './registro-detalle-dialog/registro-detalle-dialog.component';
 import { RegistroEditarDialogComponent, RegistroEditarResultado } from './registro-editar-dialog/registro-editar-dialog.component';
 import { calcularLogros, LogrosAlumno } from '../../core/utils/insignias.utils';
+import { formatearDuracion } from '../../core/utils/tiempo.utils';
+import { logError } from '../../core/utils/logger';
+
+/**
+ * Registro extendido con la fecha ya formateada — evita que
+ * `formatearFecha(registro.fechaHora)` corra por cada fila en cada CD tick.
+ */
+type RegistroDetalle = Registro & { _fechaStr: string };
+
+const FMT_DET = new Intl.DateTimeFormat('es-MX', {
+  day: '2-digit', month: '2-digit', year: 'numeric',
+  hour: '2-digit', minute: '2-digit',
+});
+const FMT_DET_CORTO = new Intl.DateTimeFormat('es-MX', {
+  day: '2-digit', month: 'short', year: 'numeric',
+});
 
 interface EstadisticasAlumno {
   totalVisitas: number;
@@ -56,15 +72,27 @@ interface EstadisticasAlumno {
   ],
   templateUrl: './detalle-alumno.component.html',
   styleUrl: './detalle-alumno.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   alumno: Alumno | null = null;
-  registros: Registro[] = [];
+  registros: RegistroDetalle[] = [];
   estadisticas: EstadisticasAlumno | null = null;
   logros: LogrosAlumno | null = null;
   cargando = true;
   error: string | null = null;
   enBibliotecaAhora = false;
+
+  // Strings precomputadas (se actualizan al cargar/recargar). Reemplazan a
+  // las funciones que el template llamaba en cada CD tick.
+  nombreCompletoStr = '';
+  fechaRegistroStr = '';
+  ultimaVisitaStr = '';
+  diasDesdeUltimaVisitaNum = 0;
+  diasDesdeUltimaVisitaStr = '';
+  totalHorasStr = '';
+  duracionPromedioStr = '';
+  tooltipPromedioSemanalStr = '';
 
   columnasRegistros: string[] = ['fechaHora', 'motivo', 'acciones'];
 
@@ -77,6 +105,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     private loadingService: LoadingService,
     public configService: ConfigService,
     private reportService: ReportService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   // ═══════════════════════════════════════════════
@@ -113,12 +142,17 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
         this.error = 'Alumno no encontrado';
         this.cargando = false;
         this.loadingService.hide();
+        this.cdr.markForCheck();
         return;
       }
 
-      this.registros = await this.databaseService.obtenerRegistrosPorAlumno(matricula);
+      const rawRegistros = await this.databaseService.obtenerRegistrosPorAlumno(matricula);
+      this.registros = rawRegistros.map(r =>
+        Object.assign(r, { _fechaStr: FMT_DET.format(new Date(r.fechaHora)) })
+      ) as RegistroDetalle[];
       this.calcularEstadisticas();
       this.logros = calcularLogros(this.registros);
+      this.precomputarDisplay();
 
       // Verificar si el alumno está actualmente en la biblioteca
       if (this.configService.registroSalidaActivo) {
@@ -128,12 +162,55 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
 
       this.cargando = false;
       this.loadingService.hide();
+      this.cdr.markForCheck();
     } catch (error) {
       this.loadingService.hide();
       this.toastService.error('Error al cargar datos del alumno');
-      console.error('❌ Error al cargar datos del alumno:', error);
+      logError('❌ Error al cargar datos del alumno:', error);
       this.error = 'Error al cargar la información del alumno';
       this.cargando = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  /** Pre-computa todas las strings de display para evitar funciones en CD. */
+  private precomputarDisplay(): void {
+    if (this.alumno) {
+      this.nombreCompletoStr = `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
+      this.fechaRegistroStr = this.alumno.fechaRegistro
+        ? FMT_DET_CORTO.format(new Date(this.alumno.fechaRegistro))
+        : '';
+    } else {
+      this.nombreCompletoStr = '';
+      this.fechaRegistroStr = '';
+    }
+
+    if (this.estadisticas?.ultimaVisita) {
+      this.ultimaVisitaStr = FMT_DET_CORTO.format(new Date(this.estadisticas.ultimaVisita));
+      const ms = Date.now() - new Date(this.estadisticas.ultimaVisita).getTime();
+      const dias = Math.max(0, Math.floor(ms / 86400000));
+      this.diasDesdeUltimaVisitaNum = dias;
+      this.diasDesdeUltimaVisitaStr = `${dias} ${dias === 1 ? 'día' : 'días'}`;
+    } else {
+      this.ultimaVisitaStr = '';
+      this.diasDesdeUltimaVisitaNum = 0;
+      this.diasDesdeUltimaVisitaStr = '';
+    }
+
+    if (this.estadisticas) {
+      this.totalHorasStr = formatearDuracion(this.estadisticas.totalMinutos);
+      this.duracionPromedioStr = formatearDuracion(Math.round(this.estadisticas.duracionPromedio));
+      const v = this.estadisticas.totalVisitas;
+      const p = this.estadisticas.promedioSemanal;
+      this.tooltipPromedioSemanalStr = this.registros.length
+        ? `En promedio, el alumno visita la biblioteca ${p} ${p === 1 ? 'vez' : 'veces'} por semana. ` +
+          `Cálculo: ${v} visitas totales entre las semanas transcurridas ` +
+          `desde su primera visita hasta la última.`
+        : '';
+    } else {
+      this.totalHorasStr = '';
+      this.duracionPromedioStr = '';
+      this.tooltipPromedioSemanalStr = '';
     }
   }
 
@@ -211,31 +288,9 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     };
   }
 
-  formatearHoras(minutos: number): string {
-    if (!minutos || minutos < 1) return '0m';
-    const h = Math.floor(minutos / 60);
-    const m = Math.round(minutos % 60);
-    if (h === 0) return `${m}m`;
-    if (m === 0) return `${h}h`;
-    return `${h}h ${m}m`;
-  }
-
-  diasDesdeUltimaVisita(): number {
-    if (!this.estadisticas?.ultimaVisita) return 0;
-    const ms = Date.now() - new Date(this.estadisticas.ultimaVisita).getTime();
-    return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
-  }
-
-  tooltipPromedioSemanal(): string {
-    if (!this.estadisticas || !this.registros.length) return '';
-    const v = this.estadisticas.totalVisitas;
-    const p = this.estadisticas.promedioSemanal;
-    return (
-      `En promedio, el alumno visita la biblioteca ${p} ${p === 1 ? 'vez' : 'veces'} por semana. ` +
-      `Cálculo: ${v} visitas totales entre las semanas transcurridas ` +
-      `desde su primera visita hasta la última.`
-    );
-  }
+  // Formatos legacy: ahora se centralizan en core/utils/tiempo.utils.ts
+  // (formatearDuracion). Las strings de display se calculan en
+  // precomputarDisplay() y se exponen como propiedades simples.
 
   async descargarConstancia(): Promise<void> {
     if (!this.alumno) return;
@@ -279,7 +334,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '380px',
       data: {
-        titulo: `¿Desactivar a ${this.obtenerNombreCompleto()}?`,
+        titulo: `¿Desactivar a ${this.nombreCompletoStr}?`,
         mensaje: 'El alumno no podrá registrar nuevos accesos, pero su historial se mantendrá intacto.',
         variante: 'warning',
         textoConfirmar: 'Desactivar',
@@ -314,7 +369,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '380px',
       data: {
-        titulo: `¿Reactivar a ${this.obtenerNombreCompleto()}?`,
+        titulo: `¿Reactivar a ${this.nombreCompletoStr}?`,
         mensaje: 'El alumno podrá registrar accesos nuevamente.',
         variante: 'info',
         textoConfirmar: 'Reactivar',
@@ -349,7 +404,7 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '380px',
       data: {
-        titulo: `¿Eliminar a ${this.obtenerNombreCompleto()}?`,
+        titulo: `¿Eliminar a ${this.nombreCompletoStr}?`,
         mensaje: 'Esta acción es permanente e irreversible. Se eliminarán el perfil del alumno y todos sus registros de acceso.',
         variante: 'danger',
         textoConfirmar: 'Eliminar permanentemente',
@@ -412,27 +467,6 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════
-
-  obtenerNombreCompleto(): string {
-    if (!this.alumno) return '';
-    return `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
-  }
-
-  formatearFecha(fecha: Date): string {
-    return new Date(fecha).toLocaleString('es-MX', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  formatearFechaCorta(fecha: Date): string {
-    return new Date(fecha).toLocaleDateString('es-MX', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
+  // Las strings de display (nombreCompletoStr, fechaRegistroStr, …) se
+  // calculan una sola vez en precomputarDisplay() después de cargarDatosAlumno().
 }

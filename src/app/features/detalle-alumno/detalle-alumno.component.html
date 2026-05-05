@@ -1,364 +1,381 @@
 <div class="detalle-alumno-container">
-  
+
   <!-- Loading -->
-  <div class="loading-state" *ngIf="cargando">
-    <mat-icon>hourglass_empty</mat-icon>
-    <p>Cargando información del alumno...</p>
-  </div>
+  @if (cargando) {
+    <div class="loading-state">
+      <mat-icon>hourglass_empty</mat-icon>
+      <p>Cargando información del alumno...</p>
+    </div>
+  }
 
   <!-- Error -->
-  <div class="error-state" *ngIf="error && !cargando">
-    <mat-icon>error_outline</mat-icon>
-    <h2>{{ error }}</h2>
-    <button mat-raised-button color="primary" (click)="volver()">
-      <mat-icon>arrow_back</mat-icon>
-      Volver al Dashboard
-    </button>
-  </div>
+  @if (error && !cargando) {
+    <div class="error-state">
+      <mat-icon>error_outline</mat-icon>
+      <h2>{{ error }}</h2>
+      <button mat-raised-button color="primary" (click)="volver()">
+        <mat-icon>arrow_back</mat-icon>
+        Volver al Dashboard
+      </button>
+    </div>
+  }
 
   <!-- Contenido Principal -->
-  <div *ngIf="alumno && !cargando" class="content">
-    
-    <!-- Header -->
-    <div class="header">
-      <button mat-icon-button class="back-button" (click)="volver()">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <div class="header-info">
-        <h1>Perfil del Alumno</h1>
-        <p class="subtitle">Información detallada y historial de accesos</p>
-      </div>
-    </div>
+  @if (alumno && !cargando) {
+    <div class="content">
 
-    <!-- Información del Alumno -->
-    <mat-card class="info-card">
-      <div class="info-header">
-        <div class="alumno-avatar">
-          <mat-icon>account_circle</mat-icon>
+      <!-- Header -->
+      <div class="header">
+        <button mat-icon-button class="back-button" (click)="volver()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="header-info">
+          <h1>Perfil del Alumno</h1>
+          <p class="subtitle">Información detallada y historial de accesos</p>
         </div>
-        <div class="alumno-info">
-          <h2>{{ obtenerNombreCompleto() }}</h2>
-          <p class="matricula">Matrícula: <strong>{{ alumno.matricula }}</strong></p>
-          <mat-chip [class]="alumno.activo ? 'chip-activo' : 'chip-inactivo'">
-            {{ alumno.activo ? 'Activo' : 'Inactivo' }}
-          </mat-chip>
-          @if (enBibliotecaAhora) {
-            <mat-chip class="chip-en-biblioteca">
-              <mat-icon>sensor_door</mat-icon>
-              En biblioteca ahora
+      </div>
+
+      <!-- Información del Alumno -->
+      <mat-card class="info-card">
+        <div class="info-header">
+          <div class="alumno-avatar">
+            <mat-icon>account_circle</mat-icon>
+          </div>
+          <div class="alumno-info">
+            <h2>{{ nombreCompletoStr }}</h2>
+            <p class="matricula">Matrícula: <strong>{{ alumno.matricula }}</strong></p>
+            <mat-chip [class]="alumno.activo ? 'chip-activo' : 'chip-inactivo'">
+              {{ alumno.activo ? 'Activo' : 'Inactivo' }}
             </mat-chip>
-          }
-        </div>
-        <div class="actions">
-          <button mat-raised-button color="primary" (click)="abrirDialogEditar()"
-                  matTooltip="Editar información del alumno">
-            <mat-icon>edit</mat-icon>
-            Editar
-          </button>
-          <button mat-stroked-button (click)="descargarConstancia()"
-                  [disabled]="!registros.length"
-                  matTooltip="Descargar constancia PDF de visitas">
-            <mat-icon>picture_as_pdf</mat-icon>
-            Constancia
-          </button>
-          <button mat-raised-button
-                  [color]="alumno.activo ? 'warn' : 'accent'"
-                  (click)="alumno.activo ? desactivarAlumno() : reactivarAlumno()"
-                  [matTooltip]="alumno.activo ? 'Desactivar alumno' : 'Reactivar alumno'">
-            <mat-icon>{{ alumno.activo ? 'block' : 'check_circle' }}</mat-icon>
-            {{ alumno.activo ? 'Desactivar' : 'Reactivar' }}
-          </button>
-          <button mat-icon-button class="btn-eliminar"
-                  (click)="eliminarAlumno()"
-                  matTooltip="Eliminar alumno permanentemente">
-            <mat-icon>delete_forever</mat-icon>
-          </button>
-        </div>
-      </div>
-
-      <div class="info-grid">
-        <div class="info-item">
-          <mat-icon>school</mat-icon>
-          <div>
-            <span class="label">Carrera</span>
-            <span class="value">{{ alumno.carrera }}</span>
+            @if (enBibliotecaAhora) {
+              <mat-chip class="chip-en-biblioteca">
+                <mat-icon>sensor_door</mat-icon>
+                En biblioteca ahora
+              </mat-chip>
+            }
+          </div>
+          <div class="actions">
+            <button mat-raised-button color="primary" (click)="abrirDialogEditar()"
+                    title="Editar información del alumno">
+              <mat-icon>edit</mat-icon>
+              Editar
+            </button>
+            <button mat-stroked-button (click)="descargarConstancia()"
+                    [disabled]="!registros.length"
+                    title="Descargar constancia PDF de visitas">
+              <mat-icon>picture_as_pdf</mat-icon>
+              Constancia
+            </button>
+            <button mat-raised-button
+                    [color]="alumno.activo ? 'warn' : 'accent'"
+                    (click)="alumno.activo ? desactivarAlumno() : reactivarAlumno()"
+                    [title]="alumno.activo ? 'Desactivar alumno' : 'Reactivar alumno'">
+              <mat-icon>{{ alumno.activo ? 'block' : 'check_circle' }}</mat-icon>
+              {{ alumno.activo ? 'Desactivar' : 'Reactivar' }}
+            </button>
+            <button mat-icon-button class="btn-eliminar"
+                    (click)="eliminarAlumno()"
+                    title="Eliminar alumno permanentemente">
+              <mat-icon>delete_forever</mat-icon>
+            </button>
           </div>
         </div>
 
-        <div class="info-item">
-          <mat-icon>stairs</mat-icon>
-          <div>
-            <span class="label">Semestre</span>
-            <span class="value">{{ alumno.grado }}°</span>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <mat-icon>groups</mat-icon>
-          <div>
-            <span class="label">Grupo</span>
-            <span class="value">{{ alumno.grupo }}</span>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <mat-icon>schedule</mat-icon>
-          <div>
-            <span class="label">Turno</span>
-            <span class="value">{{ alumno.turno }}</span>
-          </div>
-        </div>
-
-        <div class="info-item" *ngIf="alumno.fechaRegistro">
-          <mat-icon>event</mat-icon>
-          <div>
-            <span class="label">Fecha de Registro</span>
-            <span class="value">{{ formatearFechaCorta(alumno.fechaRegistro) }}</span>
-          </div>
-        </div>
-      </div>
-    </mat-card>
-
-    <!-- Estadísticas -->
-    <div class="stats-grid" *ngIf="estadisticas">
-      <mat-card class="stat-card"
-                matTooltip="Número total de veces que el alumno ha registrado entrada a la biblioteca, desde su primera visita hasta hoy."
-                matTooltipPosition="above">
-        <div class="stat-icon visitas">
-          <mat-icon>login</mat-icon>
-        </div>
-        <div class="stat-content">
-          <h3>{{ estadisticas.totalVisitas }}</h3>
-          <p>Visitas totales</p>
-          <span class="stat-hint">histórico completo</span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card"
-                matTooltip="Fecha del acceso más reciente del alumno a la biblioteca."
-                matTooltipPosition="above">
-        <div class="stat-icon ultima">
-          <mat-icon>schedule</mat-icon>
-        </div>
-        <div class="stat-content">
-          <h3 *ngIf="estadisticas.ultimaVisita">
-            {{ formatearFechaCorta(estadisticas.ultimaVisita) }}
-          </h3>
-          <h3 *ngIf="!estadisticas.ultimaVisita">N/A</h3>
-          <p>Última visita</p>
-          <span class="stat-hint" *ngIf="estadisticas.ultimaVisita">
-            hace {{ diasDesdeUltimaVisita() }}
-            {{ diasDesdeUltimaVisita() === 1 ? 'día' : 'días' }}
-          </span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card"
-                matTooltip="Actividad o motivo que el alumno declaró más veces al registrar sus visitas."
-                matTooltipPosition="above">
-        <div class="stat-icon motivo">
-          <mat-icon>star</mat-icon>
-        </div>
-        <div class="stat-content">
-          <h3>{{ estadisticas.motivoFrecuente }}</h3>
-          <p>Motivo más frecuente</p>
-          <span class="stat-hint">sobre sus {{ estadisticas.totalVisitas }} visitas</span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card"
-                [matTooltip]="tooltipPromedioSemanal()"
-                matTooltipPosition="above"
-                matTooltipClass="multiline-tooltip">
-        <div class="stat-icon promedio">
-          <mat-icon>trending_up</mat-icon>
-        </div>
-        <div class="stat-content">
-          <h3>{{ estadisticas.promedioSemanal }}</h3>
-          <p>Visitas por semana</p>
-          <span class="stat-hint">
-            promedio desde su 1ª visita
-            <mat-icon class="hint-help"
-                      [matTooltip]="tooltipPromedioSemanal()"
-                      matTooltipClass="multiline-tooltip">help_outline</mat-icon>
-          </span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card" *ngIf="configService.registroSalidaActivo">
-        <div class="stat-icon horas">
-          <mat-icon>hourglass_bottom</mat-icon>
-        </div>
-        <div class="stat-content">
-          <h3>{{ formatearHoras(estadisticas.totalMinutos) }}</h3>
-          <p>Horas acumuladas</p>
-          <span class="stat-hint" *ngIf="estadisticas.visitasConDuracion > 0">
-            en {{ estadisticas.visitasConDuracion }}
-            {{ estadisticas.visitasConDuracion === 1 ? 'visita' : 'visitas' }}
-          </span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card" *ngIf="configService.registroSalidaActivo && estadisticas.visitasConDuracion > 0">
-        <div class="stat-icon duracion">
-          <mat-icon>timer</mat-icon>
-        </div>
-        <div class="stat-content">
-          <h3>{{ formatearHoras(estadisticas.duracionPromedio) }}</h3>
-          <p>Duración promedio</p>
-        </div>
-      </mat-card>
-    </div>
-
-    <!-- Distribución por Motivos -->
-    <mat-card class="motivos-card" *ngIf="estadisticas && estadisticas.visitasPorMotivo.length > 0">
-      <h3>
-        <mat-icon>pie_chart</mat-icon>
-        Distribución por Motivos
-      </h3>
-      <div class="motivos-lista">
-        <div class="motivo-item" *ngFor="let item of estadisticas.visitasPorMotivo">
-          <span class="motivo-nombre">{{ item.motivo }}</span>
-          <div class="motivo-bar">
-            <div class="motivo-fill" 
-                 [style.width.%]="(item.cantidad / estadisticas!.totalVisitas) * 100">
-            </div>
-          </div>
-          <span class="motivo-cantidad">{{ item.cantidad }}</span>
-        </div>
-      </div>
-    </mat-card>
-
-    <!-- Logros e Insignias -->
-    @if (logros && registros.length > 0) {
-      <mat-card class="logros-card">
-        <div class="logros-header">
-          <h3>
-            <mat-icon>military_tech</mat-icon>
-            Logros
-          </h3>
-          <span class="logros-count">
-            {{ logros.insigniasObtenidas.length }} / {{ logros.insignias.length }}
-          </span>
-        </div>
-
-        <div class="logros-stats">
-          <div class="logro-stat">
-            <mat-icon style="color:#F5A623">local_fire_department</mat-icon>
+        <div class="info-grid">
+          <div class="info-item">
+            <mat-icon>school</mat-icon>
             <div>
-              <span class="logro-stat-valor">{{ logros.rachaActual }}</span>
-              <span class="logro-stat-label">
-                {{ logros.rachaActual === 1 ? 'día seguido' : 'días seguidos' }}
-              </span>
+              <span class="label">Carrera</span>
+              <span class="value">{{ alumno.carrera }}</span>
             </div>
           </div>
-          <div class="logro-stat">
-            <mat-icon style="color:#00C8D7">schedule</mat-icon>
-            <div>
-              <span class="logro-stat-valor">{{ logros.horasAcumuladas }}h</span>
-              <span class="logro-stat-label">acumuladas</span>
-            </div>
-          </div>
-          <div class="logro-stat">
-            <mat-icon style="color:#0BC4B7">emoji_events</mat-icon>
-            <div>
-              <span class="logro-stat-valor">{{ logros.rachaMaxima }}</span>
-              <span class="logro-stat-label">
-                racha máx.
-              </span>
-            </div>
-          </div>
-        </div>
 
-        <div class="insignias-grid">
-          @for (insignia of logros.insignias; track insignia.id) {
-            <div class="insignia"
-                 [class.obtenida]="insignia.obtenida"
-                 [matTooltip]="insignia.obtenida ? ('Obtenida · ' + insignia.descripcion) : ('Aún no obtenida — ' + insignia.descripcion)">
-              <div class="insignia-icono" [style.background]="insignia.obtenida ? insignia.color + '22' : 'rgba(200,230,240,.04)'">
-                <mat-icon [style.color]="insignia.obtenida ? insignia.color : 'rgba(200,230,240,.25)'">
-                  {{ insignia.icono }}
-                </mat-icon>
+          <div class="info-item">
+            <mat-icon>stairs</mat-icon>
+            <div>
+              <span class="label">Semestre</span>
+              <span class="value">{{ alumno.grado }}°</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <mat-icon>groups</mat-icon>
+            <div>
+              <span class="label">Grupo</span>
+              <span class="value">{{ alumno.grupo }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <mat-icon>schedule</mat-icon>
+            <div>
+              <span class="label">Turno</span>
+              <span class="value">{{ alumno.turno }}</span>
+            </div>
+          </div>
+
+          @if (alumno.fechaRegistro) {
+            <div class="info-item">
+              <mat-icon>event</mat-icon>
+              <div>
+                <span class="label">Fecha de Registro</span>
+                <span class="value">{{ fechaRegistroStr }}</span>
               </div>
-              <span class="insignia-nombre" [class.muted]="!insignia.obtenida">
-                {{ insignia.nombre }}
-              </span>
-              <span class="insignia-desc">{{ insignia.descripcion }}</span>
             </div>
           }
         </div>
+      </mat-card>
 
-        @if (logros.proximaInsignia) {
-          <div class="proxima-insignia">
-            <mat-icon>flag</mat-icon>
-            <span>
-              Próximo logro: <strong>{{ logros.proximaInsignia.nombre }}</strong>
-              — {{ logros.proximaInsignia.descripcion }}
+      <!-- Estadísticas -->
+      @if (estadisticas) {
+        <div class="stats-grid">
+          <mat-card class="stat-card"
+                    title="Número total de veces que el alumno ha registrado entrada a la biblioteca, desde su primera visita hasta hoy.">
+            <div class="stat-icon visitas">
+              <mat-icon>login</mat-icon>
+            </div>
+            <div class="stat-content">
+              <h3>{{ estadisticas.totalVisitas }}</h3>
+              <p>Visitas totales</p>
+              <span class="stat-hint">histórico completo</span>
+            </div>
+          </mat-card>
+
+          <mat-card class="stat-card"
+                    title="Fecha del acceso más reciente del alumno a la biblioteca.">
+            <div class="stat-icon ultima">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="stat-content">
+              @if (estadisticas.ultimaVisita) {
+                <h3>{{ ultimaVisitaStr }}</h3>
+              } @else {
+                <h3>N/A</h3>
+              }
+              <p>Última visita</p>
+              @if (estadisticas.ultimaVisita) {
+                <span class="stat-hint">hace {{ diasDesdeUltimaVisitaStr }}</span>
+              }
+            </div>
+          </mat-card>
+
+          <mat-card class="stat-card"
+                    title="Actividad o motivo que el alumno declaró más veces al registrar sus visitas.">
+            <div class="stat-icon motivo">
+              <mat-icon>star</mat-icon>
+            </div>
+            <div class="stat-content">
+              <h3>{{ estadisticas.motivoFrecuente }}</h3>
+              <p>Motivo más frecuente</p>
+              <span class="stat-hint">sobre sus {{ estadisticas.totalVisitas }} visitas</span>
+            </div>
+          </mat-card>
+
+          <mat-card class="stat-card"
+                    [matTooltip]="tooltipPromedioSemanalStr"
+                    matTooltipPosition="above"
+                    matTooltipClass="multiline-tooltip">
+            <div class="stat-icon promedio">
+              <mat-icon>trending_up</mat-icon>
+            </div>
+            <div class="stat-content">
+              <h3>{{ estadisticas.promedioSemanal }}</h3>
+              <p>Visitas por semana</p>
+              <span class="stat-hint">
+                promedio desde su 1ª visita
+                <mat-icon class="hint-help"
+                          [matTooltip]="tooltipPromedioSemanalStr"
+                          matTooltipClass="multiline-tooltip">help_outline</mat-icon>
+              </span>
+            </div>
+          </mat-card>
+
+          @if (configService.registroSalidaActivo) {
+            <mat-card class="stat-card">
+              <div class="stat-icon horas">
+                <mat-icon>hourglass_bottom</mat-icon>
+              </div>
+              <div class="stat-content">
+                <h3>{{ totalHorasStr }}</h3>
+                <p>Horas acumuladas</p>
+                @if (estadisticas.visitasConDuracion > 0) {
+                  <span class="stat-hint">
+                    en {{ estadisticas.visitasConDuracion }}
+                    {{ estadisticas.visitasConDuracion === 1 ? 'visita' : 'visitas' }}
+                  </span>
+                }
+              </div>
+            </mat-card>
+          }
+
+          @if (configService.registroSalidaActivo && estadisticas.visitasConDuracion > 0) {
+            <mat-card class="stat-card">
+              <div class="stat-icon duracion">
+                <mat-icon>timer</mat-icon>
+              </div>
+              <div class="stat-content">
+                <h3>{{ duracionPromedioStr }}</h3>
+                <p>Duración promedio</p>
+              </div>
+            </mat-card>
+          }
+        </div>
+      }
+
+      <!-- Distribución por Motivos -->
+      @if (estadisticas && estadisticas.visitasPorMotivo.length > 0) {
+        <mat-card class="motivos-card">
+          <h3>
+            <mat-icon>pie_chart</mat-icon>
+            Distribución por Motivos
+          </h3>
+          <div class="motivos-lista">
+            @for (item of estadisticas.visitasPorMotivo; track item.motivo) {
+              <div class="motivo-item">
+                <span class="motivo-nombre">{{ item.motivo }}</span>
+                <div class="motivo-bar">
+                  <div class="motivo-fill"
+                       [style.width.%]="(item.cantidad / estadisticas!.totalVisitas) * 100">
+                  </div>
+                </div>
+                <span class="motivo-cantidad">{{ item.cantidad }}</span>
+              </div>
+            }
+          </div>
+        </mat-card>
+      }
+
+      <!-- Logros e Insignias -->
+      @if (logros && registros.length > 0) {
+        <mat-card class="logros-card">
+          <div class="logros-header">
+            <h3>
+              <mat-icon>military_tech</mat-icon>
+              Logros
+            </h3>
+            <span class="logros-count">
+              {{ logros.insigniasObtenidas.length }} / {{ logros.insignias.length }}
             </span>
+          </div>
+
+          <div class="logros-stats">
+            <div class="logro-stat">
+              <mat-icon style="color:#F5A623">local_fire_department</mat-icon>
+              <div>
+                <span class="logro-stat-valor">{{ logros.rachaActual }}</span>
+                <span class="logro-stat-label">
+                  {{ logros.rachaActual === 1 ? 'día seguido' : 'días seguidos' }}
+                </span>
+              </div>
+            </div>
+            <div class="logro-stat">
+              <mat-icon style="color:#00C8D7">schedule</mat-icon>
+              <div>
+                <span class="logro-stat-valor">{{ logros.horasAcumuladas }}h</span>
+                <span class="logro-stat-label">acumuladas</span>
+              </div>
+            </div>
+            <div class="logro-stat">
+              <mat-icon style="color:#0BC4B7">emoji_events</mat-icon>
+              <div>
+                <span class="logro-stat-valor">{{ logros.rachaMaxima }}</span>
+                <span class="logro-stat-label">racha máx.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="insignias-grid">
+            @for (insignia of logros.insignias; track insignia.id) {
+              <div class="insignia"
+                   [class.obtenida]="insignia.obtenida"
+                   [title]="insignia.obtenida ? ('Obtenida · ' + insignia.descripcion) : ('Aún no obtenida — ' + insignia.descripcion)">
+                <div class="insignia-icono" [style.background]="insignia.obtenida ? insignia.color + '22' : 'rgba(200,230,240,.04)'">
+                  <mat-icon [style.color]="insignia.obtenida ? insignia.color : 'rgba(200,230,240,.25)'">
+                    {{ insignia.icono }}
+                  </mat-icon>
+                </div>
+                <span class="insignia-nombre" [class.muted]="!insignia.obtenida">
+                  {{ insignia.nombre }}
+                </span>
+                <span class="insignia-desc">{{ insignia.descripcion }}</span>
+              </div>
+            }
+          </div>
+
+          @if (logros.proximaInsignia) {
+            <div class="proxima-insignia">
+              <mat-icon>flag</mat-icon>
+              <span>
+                Próximo logro: <strong>{{ logros.proximaInsignia.nombre }}</strong>
+                — {{ logros.proximaInsignia.descripcion }}
+              </span>
+            </div>
+          }
+        </mat-card>
+      }
+
+      <!-- Historial de Registros -->
+      <mat-card class="historial-card">
+        <div class="historial-header">
+          <h3>
+            <mat-icon>history</mat-icon>
+            Historial de Accesos
+          </h3>
+          <mat-chip class="chip-count">{{ registros.length }} registros</mat-chip>
+        </div>
+
+        @if (registros.length > 0) {
+          <div class="table-container">
+            <table mat-table [dataSource]="registros" class="historial-table">
+
+              <ng-container matColumnDef="fechaHora">
+                <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
+                <td mat-cell *matCellDef="let registro">
+                  <div class="fecha-cell">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ registro._fechaStr }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="motivo">
+                <th mat-header-cell *matHeaderCellDef>Motivo</th>
+                <td mat-cell *matCellDef="let registro">
+                  <mat-chip class="chip-motivo">
+                    {{ registro.motivoNombre }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let registro">
+                  <button mat-icon-button color="primary"
+                          (click)="verRegistroDetalle(registro)"
+                          title="Ver detalles">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button mat-icon-button
+                          (click)="editarRegistro(registro, $event)"
+                          title="Editar registro">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasRegistros"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnasRegistros;"></tr>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state">
+            <mat-icon>event_note</mat-icon>
+            <p>Este alumno no tiene registros de acceso aún</p>
           </div>
         }
       </mat-card>
-    }
 
-    <!-- Historial de Registros -->
-    <mat-card class="historial-card">
-      <div class="historial-header">
-        <h3>
-          <mat-icon>history</mat-icon>
-          Historial de Accesos
-        </h3>
-        <mat-chip class="chip-count">{{ registros.length }} registros</mat-chip>
-      </div>
-
-      <div class="table-container" *ngIf="registros.length > 0">
-        <table mat-table [dataSource]="registros" class="historial-table">
-          
-          <ng-container matColumnDef="fechaHora">
-            <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
-            <td mat-cell *matCellDef="let registro">
-              <div class="fecha-cell">
-                <mat-icon>event</mat-icon>
-                <span>{{ formatearFecha(registro.fechaHora) }}</span>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="motivo">
-            <th mat-header-cell *matHeaderCellDef>Motivo</th>
-            <td mat-cell *matCellDef="let registro">
-              <mat-chip class="chip-motivo">
-                {{ registro.motivoNombre }}
-              </mat-chip>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="acciones">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
-            <td mat-cell *matCellDef="let registro">
-              <button mat-icon-button color="primary"
-                      (click)="verRegistroDetalle(registro)"
-                      matTooltip="Ver detalles">
-                <mat-icon>visibility</mat-icon>
-              </button>
-              <button mat-icon-button
-                      (click)="editarRegistro(registro, $event)"
-                      matTooltip="Editar registro">
-                <mat-icon>edit</mat-icon>
-              </button>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="columnasRegistros"></tr>
-          <tr mat-row *matRowDef="let row; columns: columnasRegistros;"></tr>
-        </table>
-      </div>
-
-      <div class="empty-state" *ngIf="registros.length === 0">
-        <mat-icon>event_note</mat-icon>
-        <p>Este alumno no tiene registros de acceso aún</p>
-      </div>
-    </mat-card>
-
-  </div>
+    </div>
+  }
 
 </div>

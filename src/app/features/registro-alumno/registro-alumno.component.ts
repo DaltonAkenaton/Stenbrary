@@ -10,7 +10,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, Validators, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -27,6 +27,7 @@ import { LoadingService } from '../../core/services/loading.service';
 import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../core/constants/catalogos.constants';
 import { validarMatricula, MATRICULA_CONFIG, normalizarMatricula } from '../../core/utils/matricula.utils';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { log, logError } from '../../core/utils/logger';
 
 @Component({
   selector: 'app-registro-alumno',
@@ -77,28 +78,42 @@ export class RegistroAlumnoComponent implements OnInit {
       this.matricula = matriculaTemp;
       this.matriculaBloqueada = true;
       this.vieneDelScanner = true;
-      console.log('📝 Registrando alumno desde scanner, matrícula:', this.matricula);
+      log('📝 Registrando alumno desde scanner, matrícula:', this.matricula);
     } else {
       this.matricula = '';
       this.matriculaBloqueada = false;
       this.vieneDelScanner = false;
-      console.log('📝 Registro de alumno — acceso directo');
+      log('📝 Registro de alumno — acceso directo');
     }
 
     this.registroForm = this.fb.group({
-            matricula: [
+      matricula: [
         { value: this.matricula, disabled: this.matriculaBloqueada },
-        [Validators.required, Validators.minLength(MATRICULA_CONFIG.minDigitos)]
+        [Validators.required, Validators.minLength(MATRICULA_CONFIG.minDigitos), this.matriculaValidator],
       ],
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
-      apellidoPaterno: ['', [Validators.required, Validators.minLength(2)]],
-      apellidoMaterno: ['', [Validators.required, Validators.minLength(2)]],
+      // maxLength previene que un alumno pegue 10 KB de basura por accidente.
+      nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
+      apellidoPaterno: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(40)]],
+      apellidoMaterno: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(40)]],
       carrera: ['', Validators.required],
       grado: ['', Validators.required],
       grupo: ['', Validators.required],
       turno: ['', Validators.required],
     });
   }
+
+  /**
+   * Validador reactivo de matrícula: usa la lógica centralizada de
+   * matricula.utils para que el feedback sea consistente con el scanner.
+   * Si el valor no pasa la regex (caracteres prohibidos, demasiado largo,
+   * prefijo desconocido), devuelve un error con la causa exacta.
+   */
+  private matriculaValidator = (control: AbstractControl): ValidationErrors | null => {
+    const v = control.value;
+    if (!v) return null; // Validators.required ya cubre vacío
+    const r = validarMatricula(String(v));
+    return r.valida ? null : { matricula: r.error };
+  };
 
   async registrarAlumno(): Promise<void> {
     if (this.registroForm.invalid) {
@@ -133,7 +148,7 @@ export class RegistroAlumnoComponent implements OnInit {
 
       const alumnoCreado = await this.databaseService.crearAlumno(nuevoAlumno);
 
-      console.log('✅ Alumno registrado:', alumnoCreado);
+      log('✅ Alumno registrado:', alumnoCreado.matricula);
       this.loadingService.hide();
       this.toastService.success(`Alumno ${formValue.nombre} ${formValue.apellidoPaterno} registrado exitosamente`);
 
@@ -163,7 +178,7 @@ export class RegistroAlumnoComponent implements OnInit {
         });
       }
     } catch (error: any) {
-      console.error('❌ Error al registrar alumno:', error);
+      logError('❌ Error al registrar alumno:', error);
       this.loadingService.hide();
 
       const esDuplicado = error.name === 'ConstraintError'
@@ -243,10 +258,18 @@ export class RegistroAlumnoComponent implements OnInit {
   obtenerErrorCampo(campo: string): string {
     const control = this.registroForm.get(campo);
     if (control?.hasError('required')) return 'Este campo es obligatorio';
-          if (control?.hasError('minlength')) {
-        const minLen = campo === 'matricula' ? MATRICULA_CONFIG.minDigitos : 2;
-        return `Mínimo ${minLen} caracteres`;
-      }
+    if (control?.hasError('matricula')) {
+      // Mensaje específico devuelto por validarMatricula()
+      return control.getError('matricula') || 'Formato de matrícula no válido';
+    }
+    if (control?.hasError('minlength')) {
+      const minLen = campo === 'matricula' ? MATRICULA_CONFIG.minDigitos : 2;
+      return `Mínimo ${minLen} caracteres`;
+    }
+    if (control?.hasError('maxlength')) {
+      const max = control.getError('maxlength').requiredLength;
+      return `Máximo ${max} caracteres`;
+    }
     return '';
   }
 

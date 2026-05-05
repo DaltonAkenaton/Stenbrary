@@ -12,7 +12,15 @@
     </button>
 
     <div class="header-info">
-      <h1>Dashboard Ejecutivo</h1>
+      <div class="header-title-row">
+        <h1>Dashboard Ejecutivo</h1>
+        <button mat-icon-button class="header-help-btn"
+                (click)="abrirInfoFormulas()"
+                title="¿Cómo se calculan los números? Ver fórmulas"
+                aria-label="Ver fórmulas de cálculo">
+          <mat-icon>help_outline</mat-icon>
+        </button>
+      </div>
       <p class="subtitle">Análisis avanzado y tendencias del flujo de la biblioteca</p>
 
       @if (rangoActivo) {
@@ -74,7 +82,7 @@
         <mat-icon>schedule</mat-icon>
         Filtrar por hora del día
         <mat-icon class="info-icon"
-                  matTooltip="Limita los registros mostrados a un rango horario específico (ej. solo turno matutino 7:00–14:00).">
+                  title="Limita los registros mostrados a un rango horario específico (ej. solo turno matutino 7:00–14:00).">
           help_outline
         </mat-icon>
       </label>
@@ -83,14 +91,14 @@
         <div class="hora-controls">
           <span class="hora-label">Desde</span>
           <select [(ngModel)]="filtroHoraDesde" (change)="setFiltroHora()" class="hora-select">
-            @for (h of horasDisponibles; track h) {
-              <option [value]="h">{{ formatHora(h) }}</option>
+            @for (h of opcionesHoras; track h.v) {
+              <option [value]="h.v">{{ h.label }}</option>
             }
           </select>
           <span class="hora-label">Hasta</span>
           <select [(ngModel)]="filtroHoraHasta" (change)="setFiltroHora()" class="hora-select">
-            @for (h of horasDisponibles; track h) {
-              <option [value]="h">{{ formatHora(h) }}</option>
+            @for (h of opcionesHoras; track h.v) {
+              <option [value]="h.v">{{ h.label }}</option>
             }
           </select>
         </div>
@@ -143,7 +151,7 @@
             <div class="kpi-label">
               Total de registros
               <mat-icon class="info-icon"
-                        matTooltip="Cuántas veces se escaneó una credencial (o se registró un visitante) durante el período que estás viendo arriba.">
+                        title="Cuántas veces se escaneó una credencial (o se registró un visitante) durante el período que estás viendo arriba.">
                 help_outline
               </mat-icon>
             </div>
@@ -152,19 +160,19 @@
               <strong>{{ kpiPromedioPorDia }}</strong> promedio por día ·
               <strong>{{ kpiAlumnosUnicos | number }}</strong> alumnos únicos
               @if (kpiVariacionDiaria > 0) {
-                · <span class="hero-variacion" matTooltip="Qué tan parecida es la cantidad de visitas día con día. 10% = todos los días son muy similares (estable). 80% = algunos días son muchísimo más concurridos (errático).">{{ kpiVariacionDiaria }}% variación</span>
+                · <span class="hero-variacion" title="Qué tan parecida es la cantidad de visitas día con día. 10% = todos los días son muy similares (estable). 80% = algunos días son muchísimo más concurridos (errático).">{{ kpiVariacionDiaria }}% variación</span>
               }
             </div>
             @if (kpiUltimoRegistroHace) {
-              <div class="kpi-hero-pulse" matTooltip="Hora del último registro real en el sistema">
+              <div class="kpi-hero-pulse" title="Hora del último registro real en el sistema">
                 <span class="pulse-dot"></span>
                 <span>Último registro {{ kpiUltimoRegistroHace }}</span>
               </div>
             }
-            @if (tendencia) {
-              <div class="kpi-hero-trend" [class]="'trend-' + obtenerColorTendencia()">
-                <mat-icon>{{ obtenerIconoTendencia() }}</mat-icon>
-                {{ obtenerTextoTendencia() }}
+            @if (tendenciaUI.texto !== 'Sin cambios') {
+              <div class="kpi-hero-trend" [class]="'trend-' + tendenciaUI.color">
+                <mat-icon>{{ tendenciaUI.icono }}</mat-icon>
+                {{ tendenciaUI.texto }}
               </div>
             }
           </div>
@@ -172,10 +180,10 @@
             @if (sparkRegistros.length > 0) {
               <svg class="sparkline" viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
                 <polyline
-                  [attr.points]="sparkPath(sparkRegistros, 200, 60)"
+                  [attr.points]="sparkRegistrosPoints"
                   fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                 <polygon
-                  [attr.points]="sparkArea(sparkRegistros, 200, 60)"
+                  [attr.points]="sparkRegistrosArea"
                   fill="url(#sparkGradient)" opacity="0.35"/>
                 <defs>
                   <linearGradient id="sparkGradient" x1="0" x2="0" y1="0" y2="1">
@@ -191,17 +199,17 @@
 
         <!-- KPIs secundarios -->
         <div class="kpis-grid">
-          <div class="kpi-card" [class]="'kpi-' + obtenerColorTendencia()">
-            <div class="kpi-icon"><mat-icon>{{ obtenerIconoTendencia() }}</mat-icon></div>
+          <div class="kpi-card" [class]="'kpi-' + tendenciaUI.color">
+            <div class="kpi-icon"><mat-icon>{{ tendenciaUI.icono }}</mat-icon></div>
             <div class="kpi-body">
               <div class="kpi-label">
                 {{ labelTendencia }}
                 <mat-icon class="info-icon"
-                          matTooltip="Compara las visitas del período actual contra el período anterior de la misma duración. Si filtraste 30 días, lo compara contra los 30 días previos.">
+                          title="Compara las visitas del período actual contra el período anterior de la misma duración. Si filtraste 30 días, lo compara contra los 30 días previos.">
                   help_outline
                 </mat-icon>
               </div>
-              <div class="kpi-value">{{ obtenerTextoTendencia() }}</div>
+              <div class="kpi-value">{{ tendenciaUI.texto }}</div>
               @if (tendencia) {
                 <div class="kpi-sub">
                   {{ tendencia.actual | number }} ahora · {{ tendencia.anterior | number }} antes
@@ -216,12 +224,12 @@
               <div class="kpi-label">
                 Hora pico
                 <mat-icon class="info-icon"
-                          matTooltip="El día de la semana y hora donde la biblioteca tuvo más actividad dentro del período filtrado. Útil para planear personal extra.">
+                          title="El día de la semana y hora donde la biblioteca tuvo más actividad dentro del período filtrado. Útil para planear personal extra.">
                   help_outline
                 </mat-icon>
               </div>
               @if (kpiHoraPico) {
-                <div class="kpi-value">{{ kpiHoraPico.dia }} {{ formatHora(kpiHoraPico.hora) }}</div>
+                <div class="kpi-value">{{ kpiHoraPicoStr }}</div>
                 <div class="kpi-sub">{{ kpiHoraPico.cantidad }} visitas</div>
               } @else {
                 <div class="kpi-value muted">Sin datos</div>
@@ -236,12 +244,12 @@
               <div class="kpi-label">
                 Tiempo promedio de estancia
                 <mat-icon class="info-icon"
-                          matTooltip="En promedio cuánto tiempo se queda un alumno. Solo cuenta visitas con hora de salida (necesitas activar el módulo de salida en Configuración).">
+                          title="En promedio cuánto tiempo se queda un alumno. Solo cuenta visitas con hora de salida (necesitas activar el módulo de salida en Configuración).">
                   help_outline
                 </mat-icon>
               </div>
               @if (kpiTiempoEstanciaPromedio > 0) {
-                <div class="kpi-value">{{ formatearDuracionMin(kpiTiempoEstanciaPromedio) }}</div>
+                <div class="kpi-value">{{ kpiTiempoEstanciaStr }}</div>
                 <div class="kpi-sub">por visita</div>
               } @else {
                 <div class="kpi-value muted">N/D</div>
@@ -256,7 +264,7 @@
               <div class="kpi-label">
                 Tasa de retención
                 <mat-icon class="info-icon"
-                          [matTooltip]="'De los alumnos del período, qué % regresó al menos ' + kpiUmbralRetencion + ' veces. El umbral se ajusta solo según el rango.'">
+                          [attr.title]="'De los alumnos del período, qué % regresó al menos ' + kpiUmbralRetencion + ' veces. El umbral se ajusta solo según el rango.'">
                   help_outline
                 </mat-icon>
               </div>
@@ -271,7 +279,7 @@
               <div class="kpi-label">
                 Alumnos inactivos
                 <mat-icon class="info-icon"
-                          [matTooltip]="'Cuántos alumnos llevan más de ' + kpiUmbralInactividad + ' días sin venir contando desde HOY (no desde el filtro). Configurable en Configuración.'">
+                          [attr.title]="'Cuántos alumnos llevan más de ' + kpiUmbralInactividad + ' días sin venir contando desde HOY (no desde el filtro). Configurable en Configuración.'">
                   help_outline
                 </mat-icon>
               </div>
@@ -286,7 +294,7 @@
               <div class="kpi-label">
                 Vinieron solo 1 vez
                 <mat-icon class="info-icon"
-                          matTooltip="Alumnos que han visitado la biblioteca una única vez en todo su historial. Si es alto, vale la pena hacer una campaña para que regresen.">
+                          title="Alumnos que han visitado la biblioteca una única vez en todo su historial. Si es alto, vale la pena hacer una campaña para que regresen.">
                   help_outline
                 </mat-icon>
               </div>
@@ -302,7 +310,7 @@
                 <div class="kpi-label">
                   Motivo más frecuente
                   <mat-icon class="info-icon"
-                            matTooltip="La actividad que más alumnos eligieron al registrarse en este período.">
+                            title="La actividad que más alumnos eligieron al registrarse en este período.">
                     help_outline
                   </mat-icon>
                 </div>
@@ -317,7 +325,7 @@
       <!-- INSIGHTS RÁPIDOS -->
       <section class="insights-quick" aria-label="Insights rápidos">
         @if (kpiPrediccionHoy > 0) {
-          <div class="iq-card iq-prediccion" matTooltip="Estimación de visitas al cierre del día con el ritmo actual. Confianza 'baja' si es temprano, 'alta' tras la mitad del día.">
+          <div class="iq-card iq-prediccion" title="Estimación de visitas al cierre del día con el ritmo actual. Confianza 'baja' si es temprano, 'alta' tras la mitad del día.">
             <mat-icon>insights</mat-icon>
             <div class="iq-body">
               <div class="iq-label">Hoy al cierre (proyección)</div>
@@ -327,7 +335,7 @@
           </div>
         }
         @if (kpiDiaSemanaTop) {
-          <div class="iq-card iq-dia-top" matTooltip="Día de la semana con más visitas dentro del período filtrado.">
+          <div class="iq-card iq-dia-top" title="Día de la semana con más visitas dentro del período filtrado.">
             <mat-icon>event_available</mat-icon>
             <div class="iq-body">
               <div class="iq-label">Día más concurrido</div>
@@ -336,7 +344,7 @@
           </div>
         }
         @if (kpiCarreraTopCrecimiento) {
-          <div class="iq-card iq-carrera" matTooltip="Carrera con mayor crecimiento vs el período anterior. Requiere mínimo 5 visitas.">
+          <div class="iq-card iq-carrera" title="Carrera con mayor crecimiento vs el período anterior. Requiere mínimo 5 visitas.">
             <mat-icon>school</mat-icon>
             <div class="iq-body">
               <div class="iq-label">Carrera en crecimiento</div>
@@ -346,7 +354,7 @@
           </div>
         }
         @if (kpiPctInvitados > 0) {
-          <div class="iq-card iq-invitados" matTooltip="% de visitas hechas como visitante (sin matrícula) vs alumnos del padrón.">
+          <div class="iq-card iq-invitados" title="% de visitas hechas como visitante (sin matrícula) vs alumnos del padrón.">
             <mat-icon>person_pin</mat-icon>
             <div class="iq-body">
               <div class="iq-label">Visitas de invitados</div>
@@ -365,7 +373,7 @@
               <mat-icon>bar_chart</mat-icon>
               {{ labelRegistrosDiarios }}
               <mat-icon class="info-icon"
-                        matTooltip="Cantidad de registros agrupados por día, semana o mes según el largo del período.">
+                        title="Cantidad de registros agrupados por día, semana o mes según el largo del período.">
                 help_outline
               </mat-icon>
             </h2>
@@ -388,7 +396,7 @@
               <mat-icon>pie_chart</mat-icon>
               Motivos de visita
               <mat-icon class="info-icon"
-                        matTooltip="Distribución de los motivos seleccionados al registrar.">
+                        title="Distribución de los motivos seleccionados al registrar.">
                 help_outline
               </mat-icon>
             </h2>
@@ -423,8 +431,8 @@
                 </span>
               }
             </div>
-            <div class="tendencia-icono" [class]="obtenerColorTendencia()">
-              <mat-icon>{{ obtenerIconoTendencia() }}</mat-icon>
+            <div class="tendencia-icono" [class]="tendenciaUI.color">
+              <mat-icon>{{ tendenciaUI.icono }}</mat-icon>
             </div>
             <div class="tendencia-stat">
               <span class="tendencia-label">Período Anterior</span>
@@ -435,8 +443,8 @@
               </span>
             </div>
           </div>
-          <div class="tendencia-texto" [class]="obtenerColorTendencia()">
-            {{ obtenerTextoTendencia() }}
+          <div class="tendencia-texto" [class]="tendenciaUI.color">
+            {{ tendenciaUI.texto }}
           </div>
         </mat-card>
       }
@@ -476,7 +484,7 @@
               <mat-icon>grid_on</mat-icon>
               {{ labelHeatmap }}
               <mat-icon class="info-icon"
-                        matTooltip="Cada celda muestra cuántas visitas hubo en esa combinación día-hora durante el período del heatmap. Más oscuro = más concurrido.">
+                        title="Cada celda muestra cuántas visitas hubo en esa combinación día-hora durante el período del heatmap. Más oscuro = más concurrido.">
                 help_outline
               </mat-icon>
             </h2>
@@ -495,12 +503,30 @@
             <div class="mini-periodo-selector">
               @for (op of opcionesHeatmap; track op.dias) {
                 <button class="mini-periodo-btn"
-                        [class.active]="heatmapPeriodo === op.dias"
+                        [class.active]="heatmapModo === 'preset' && heatmapPeriodo === op.dias"
                         (click)="setHeatmapPeriodo(op.dias)">
                   {{ op.label }}
                 </button>
               }
+              <button class="mini-periodo-btn"
+                      [class.active]="heatmapModo === 'personalizado'"
+                      (click)="activarHeatmapPersonalizado()">
+                <mat-icon>date_range</mat-icon> Personalizado
+              </button>
             </div>
+            @if (heatmapModo === 'personalizado') {
+              <div class="rango-personalizado-inline">
+                <input type="date" [(ngModel)]="heatmapFechaInicio"
+                       [max]="heatmapFechaFin || fechaMaxima" class="date-input">
+                <span class="date-separator">—</span>
+                <input type="date" [(ngModel)]="heatmapFechaFin"
+                       [min]="heatmapFechaInicio" [max]="fechaMaxima" class="date-input">
+                <button class="btn-aplicar" (click)="aplicarHeatmapPersonalizado()"
+                        [disabled]="!heatmapFechaInicio || !heatmapFechaFin">
+                  Aplicar
+                </button>
+              </div>
+            }
           </div>
         </div>
 
@@ -510,36 +536,69 @@
           <span class="leyenda-item"><span class="leyenda-cuadro intensidad-2"></span> Medio</span>
           <span class="leyenda-item"><span class="leyenda-cuadro intensidad-3"></span> Alto</span>
           <span class="leyenda-item"><span class="leyenda-cuadro intensidad-4"></span> Muy Alto</span>
+          <span class="leyenda-sep">·</span>
+          <span class="leyenda-item leyenda-star"><span class="leyenda-star-mark">★</span> Pico del período</span>
+          <span class="leyenda-sep">·</span>
+          <span class="leyenda-item leyenda-formato">Horas en formato 24 hrs</span>
         </div>
 
         <div class="heatmap-container">
           <div class="heatmap-grid"
-               [style.grid-template-columns]="'auto repeat(' + heatmapHoras.length + ', minmax(50px, 1fr))'">
+               [style.grid-template-columns]="'auto repeat(' + heatmapHoras.length + ', minmax(50px, 1fr)) auto'">
             <div class="heatmap-corner"></div>
             @for (hora of heatmapHoras; track hora) {
               <div class="heatmap-hora">{{ hora }}:00</div>
             }
-            @for (dia of diasSemana; track dia) {
-              <div class="heatmap-dia">{{ etiquetaDia(dia) }}</div>
-              @for (hora of heatmapHoras; track hora) {
+            <div class="heatmap-corner heatmap-total-header" title="Total del día">Total</div>
+
+            @for (fila of heatmapFilas; track fila.dia) {
+              <div class="heatmap-dia">{{ fila.etiqueta }}</div>
+              @for (c of fila.celdas; track c.hora) {
                 <div class="heatmap-cell"
-                     [class]="obtenerClaseIntensidad(dia, hora)"
-                     [class.es-pico]="esPicoHeatmap(dia, hora)"
-                     [class.clickable]="esClickeableHeatmap(dia, hora)"
-                     [attr.role]="esClickeableHeatmap(dia, hora) ? 'button' : null"
-                     [attr.tabindex]="esClickeableHeatmap(dia, hora) ? '0' : null"
-                     (click)="drillHeatmap(dia, hora)"
-                     (keydown.enter)="drillHeatmap(dia, hora)"
-                     [matTooltip]="tooltipHeatmap(dia, hora)">
-                  @if (obtenerCantidadHeatmap(dia, hora) > 0) {
-                    <span class="cell-value">{{ obtenerCantidadHeatmap(dia, hora) }}</span>
-                    @if (esPicoHeatmap(dia, hora)) {
+                     [class]="c.clase"
+                     [class.es-pico]="c.esPico"
+                     [class.clickable]="c.clickeable"
+                     [attr.role]="c.clickeable ? 'button' : null"
+                     [attr.tabindex]="c.clickeable ? '0' : null"
+                     (click)="c.clickeable && drillHeatmap(fila.dia, c.hora)"
+                     (keydown.enter)="c.clickeable && drillHeatmap(fila.dia, c.hora)"
+                     [attr.title]="c.tooltip">
+                  @if (c.cantidad > 0) {
+                    <span class="cell-value">{{ c.cantidad }}</span>
+                    @if (c.esPico) {
                       <span class="cell-star" aria-label="Pico del período">★</span>
                     }
                   }
                 </div>
               }
+              <div class="heatmap-total-cell"
+                   [class.clickable]="fila.totalDia > 0"
+                   [attr.role]="fila.totalDia > 0 ? 'button' : null"
+                   [attr.tabindex]="fila.totalDia > 0 ? '0' : null"
+                   (click)="fila.totalDia > 0 && drillTotalDia(fila.dia)"
+                   (keydown.enter)="fila.totalDia > 0 && drillTotalDia(fila.dia)"
+                   [attr.title]="fila.totalDiaTooltip + (fila.totalDia > 0 ? ' (clic para ver registros)' : '')">
+                {{ fila.totalDia }}
+              </div>
             }
+
+            <!-- Fila inferior: totales por hora + total general -->
+            <div class="heatmap-dia heatmap-total-label">Total</div>
+            @for (hora of heatmapHoras; track hora) {
+              <div class="heatmap-total-cell heatmap-total-hora"
+                   [class.clickable]="(heatmapTotalesPorHora[hora] || 0) > 0"
+                   [attr.role]="(heatmapTotalesPorHora[hora] || 0) > 0 ? 'button' : null"
+                   [attr.tabindex]="(heatmapTotalesPorHora[hora] || 0) > 0 ? '0' : null"
+                   (click)="(heatmapTotalesPorHora[hora] || 0) > 0 && drillTotalHora(hora)"
+                   (keydown.enter)="(heatmapTotalesPorHora[hora] || 0) > 0 && drillTotalHora(hora)"
+                   [attr.title]="'Total a las ' + (hora < 10 ? '0' + hora : hora) + ':00 — ' + (heatmapTotalesPorHora[hora] || 0) + ' visitas en el período' + ((heatmapTotalesPorHora[hora] || 0) > 0 ? ' (clic para ver registros)' : '')">
+                {{ heatmapTotalesPorHora[hora] || 0 }}
+              </div>
+            }
+            <div class="heatmap-total-cell heatmap-total-grand"
+                 [attr.title]="'Total del período: ' + heatmapTotalGeneral + ' visitas'">
+              {{ heatmapTotalGeneral }}
+            </div>
           </div>
         </div>
 
@@ -553,33 +612,114 @@
         @if (heatmapValleDia && heatmapValleHora !== null) {
           <div class="heatmap-valle">
             <mat-icon>nights_stay</mat-icon>
-            <span><strong>Día/hora valle:</strong> {{ heatmapValleDia }} {{ formatHora(heatmapValleHora) }} — el momento con menos actividad. Ideal para mantenimiento o eventos.</span>
+            <span>
+              <strong>Día/hora valle:</strong>
+              {{ heatmapValleDia }} a las {{ formatHora(heatmapValleHora) }}
+              @if (heatmapValleCantidad !== null) {
+                ({{ heatmapValleCantidad }} {{ heatmapValleCantidad === 1 ? 'visita' : 'visitas' }})
+              }
+              — el momento con menos actividad <em>dentro del período del mapa de calor</em>.
+              Ideal para mantenimiento o eventos.
+            </span>
           </div>
         }
       </mat-card>
 
       <!-- CRECIMIENTO 12 MESES -->
       @if (kpiCrecimiento12m.length > 0) {
-        <mat-card class="chart-card">
+        <mat-card class="chart-card crecimiento-card">
           <div class="chart-header">
             <h2>
               <mat-icon>show_chart</mat-icon>
               Crecimiento — últimos 12 meses
               <mat-icon class="info-icon"
-                        matTooltip="Total de visitas mes a mes durante el último año (independiente del filtro). Salud del flujo a lo largo del tiempo.">
+                        title="Total de visitas mes a mes durante el último año (independiente del filtro). Salud del flujo a lo largo del tiempo.">
                 help_outline
               </mat-icon>
             </h2>
-          </div>
-          <div class="crecimiento-bars">
-            @for (m of kpiCrecimiento12m; track m.mes) {
-              <div class="crecimiento-col" [matTooltip]="m.mes + ': ' + m.cantidad + ' visitas'">
-                <div class="crecimiento-bar"
-                     [style.height.%]="alturaBarraCrecimiento(m.cantidad)"></div>
-                <div class="crecimiento-label">{{ m.mes }}</div>
+            @if (crecimiento12mTendencia) {
+              <div class="crecimiento-trend-block">
+                <span class="crecimiento-trend-chip"
+                      [class]="'trend-' + crecimiento12mTendencia.color">
+                  <mat-icon>{{ crecimiento12mTendencia.icono }}</mat-icon>
+                  {{ crecimiento12mTendencia.texto }}
+                </span>
+                <span class="crecimiento-trend-range">
+                  ({{ crecimiento12mTendencia.rangoActual }})
+                  vs ({{ crecimiento12mTendencia.rangoAnterior }})
+                </span>
               </div>
             }
           </div>
+
+          <!-- Mini-KPIs del bloque -->
+          <div class="crecimiento-mini-kpis">
+            <div class="mini-kpi">
+              <span class="mini-kpi-label">Total 12m</span>
+              <span class="mini-kpi-value">{{ crecimiento12mTotal | number }}</span>
+              <span class="mini-kpi-sub">visitas acumuladas</span>
+            </div>
+            <div class="mini-kpi">
+              <span class="mini-kpi-label">Promedio mensual</span>
+              <span class="mini-kpi-value">{{ crecimiento12mPromedio | number }}</span>
+              <span class="mini-kpi-sub">por mes con datos</span>
+            </div>
+            @if (crecimiento12mMejorMes) {
+              <div class="mini-kpi mini-kpi-best">
+                <span class="mini-kpi-label">
+                  <mat-icon>emoji_events</mat-icon> Mejor mes
+                </span>
+                <span class="mini-kpi-value">{{ crecimiento12mMejorMes.cantidad | number }}</span>
+                <span class="mini-kpi-sub">{{ crecimiento12mMejorMes.mes }}</span>
+              </div>
+            }
+            @if (crecimiento12mPeorMes) {
+              <div class="mini-kpi mini-kpi-worst">
+                <span class="mini-kpi-label">
+                  <mat-icon>south</mat-icon> Mes más bajo
+                </span>
+                <span class="mini-kpi-value">{{ crecimiento12mPeorMes.cantidad | number }}</span>
+                <span class="mini-kpi-sub">{{ crecimiento12mPeorMes.mes }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="crecimiento-bars">
+            @for (b of crecimiento12mBarras; track b.mes) {
+              <div class="crecimiento-col"
+                   [class.es-mejor]="b.esMejor"
+                   [class.es-peor]="b.esPeor"
+                   [class.es-actual]="b.esActual"
+                   [attr.title]="b.tooltip">
+                <span class="crecimiento-valor"
+                      [class.muted]="b.cantidad === 0">
+                  {{ b.cantidad }}
+                </span>
+                <div class="crecimiento-bar" [style.height.%]="b.altura">
+                  @if (b.esMejor) {
+                    <span class="crecimiento-medal" aria-label="Mejor mes">★</span>
+                  }
+                </div>
+                <div class="crecimiento-label">{{ b.mes }}</div>
+                @if (b.cambioMoMStr) {
+                  <div class="crecimiento-mom"
+                       [class.mom-up]="b.cambioMoM !== null && b.cambioMoM > 0"
+                       [class.mom-down]="b.cambioMoM !== null && b.cambioMoM < 0">
+                    {{ b.cambioMoMStr }}
+                  </div>
+                } @else {
+                  <div class="crecimiento-mom muted">—</div>
+                }
+              </div>
+            }
+          </div>
+
+          @if (crecimiento12mAnalisis) {
+            <div class="crecimiento-analisis">
+              <mat-icon>auto_awesome</mat-icon>
+              <span>{{ crecimiento12mAnalisis }}</span>
+            </div>
+          }
         </mat-card>
       }
     }
@@ -596,7 +736,7 @@
             <mat-icon>school</mat-icon>
             Visitas por carrera
             <mat-icon class="info-icon"
-                      matTooltip="Total de visitas agrupadas por carrera. El tooltip de cada barra muestra alumnos distintos y promedio por alumno.">
+                      title="Total de visitas agrupadas por carrera. El tooltip de cada barra muestra alumnos distintos y promedio por alumno.">
               help_outline
             </mat-icon>
           </h2>
@@ -623,7 +763,7 @@
                 <mat-icon>work_history</mat-icon>
                 Distribución por turno
                 <mat-icon class="info-icon"
-                          matTooltip="Porcentaje de visitas según el turno del alumno (Matutino/Vespertino/Mixto).">
+                          title="Porcentaje de visitas según el turno del alumno (Matutino/Vespertino/Mixto).">
                   help_outline
                 </mat-icon>
               </h2>
@@ -655,7 +795,7 @@
                 <mat-icon>stairs</mat-icon>
                 Distribución por grado
                 <mat-icon class="info-icon"
-                          matTooltip="Visitas agrupadas por el grado/semestre del alumno.">
+                          title="Visitas agrupadas por el grado/semestre del alumno.">
                   help_outline
                 </mat-icon>
               </h2>
@@ -686,7 +826,7 @@
               <mat-icon>tune</mat-icon>
               Combinaciones de motivos
               <mat-icon class="info-icon"
-                        matTooltip="Top 5 combinaciones cuando un alumno selecciona varios motivos al mismo tiempo.">
+                        title="Top 5 combinaciones cuando un alumno selecciona varios motivos al mismo tiempo.">
                 help_outline
               </mat-icon>
             </h2>
@@ -696,7 +836,7 @@
               <div class="combo-row">
                 <div class="combo-label">{{ c.combo }}</div>
                 <div class="combo-bar-wrap">
-                  <div class="combo-bar" [style.width.%]="anchoCombo(c.porcentaje)"></div>
+                  <div class="combo-bar" [style.width]="c.anchoStr"></div>
                 </div>
                 <div class="combo-numero">
                   <strong>{{ c.cantidad }}</strong>
@@ -715,7 +855,7 @@
             <mat-icon>emoji_events</mat-icon>
             {{ labelTopAlumnos }}
             <mat-icon class="info-icon"
-                      matTooltip="Los 5 alumnos con más visitas en el período seleccionado abajo (independiente del filtro principal). Excluye invitados.">
+                      title="Los alumnos con más visitas en el período seleccionado (independiente del filtro principal). Excluye invitados. Período y cantidad son configurables.">
               help_outline
             </mat-icon>
           </h2>
@@ -724,25 +864,69 @@
             <div class="mini-periodo-selector">
               @for (op of opcionesTopPeriodo; track op.dias) {
                 <button class="mini-periodo-btn"
-                        [class.active]="topPeriodo === op.dias"
+                        [class.active]="topPeriodoModo === 'preset' && topPeriodo === op.dias"
                         (click)="setTopPeriodo(op.dias)">
                   {{ op.label }}
                 </button>
               }
+              <button class="mini-periodo-btn"
+                      [class.active]="topPeriodoModo === 'personalizado'"
+                      (click)="activarTopPersonalizado()">
+                <mat-icon>date_range</mat-icon> Personalizado
+              </button>
             </div>
 
             @if (topAlumnos.length > 0) {
               <div class="export-btns">
-                <button class="export-btn" matTooltip="Exportar a Excel" (click)="exportarTopExcel()">
+                <button class="export-btn" title="Exportar a Excel" (click)="exportarTopExcel()">
                   <mat-icon>table_chart</mat-icon>
                   <span>Excel</span>
                 </button>
-                <button class="export-btn export-btn-pdf" matTooltip="Exportar a PDF" (click)="exportarTopPDF()">
+                <button class="export-btn export-btn-pdf" title="Exportar a PDF" (click)="exportarTopPDF()">
                   <mat-icon>picture_as_pdf</mat-icon>
                   <span>PDF</span>
                 </button>
               </div>
             }
+          </div>
+        </div>
+
+        <!-- Sub-controles: rango personalizado + límite -->
+        <div class="top-subcontrols">
+          @if (topPeriodoModo === 'personalizado') {
+            <div class="rango-personalizado-inline">
+              <input type="date" [(ngModel)]="topFechaInicio"
+                     [max]="topFechaFin || fechaMaxima" class="date-input">
+              <span class="date-separator">—</span>
+              <input type="date" [(ngModel)]="topFechaFin"
+                     [min]="topFechaInicio" [max]="fechaMaxima" class="date-input">
+              <button class="btn-aplicar" (click)="aplicarTopPersonalizado()"
+                      [disabled]="!topFechaInicio || !topFechaFin">
+                Aplicar
+              </button>
+            </div>
+          }
+
+          <div class="top-limite-control">
+            <label class="top-limite-label">
+              <mat-icon>format_list_numbered</mat-icon>
+              Mostrar
+            </label>
+            <div class="top-limite-presets">
+              @for (n of opcionesTopLimite; track n) {
+                <button class="mini-periodo-btn"
+                        [class.active]="topLimite === n"
+                        (click)="setTopLimite(n)">
+                  {{ n }}
+                </button>
+              }
+            </div>
+            <input type="number" min="1" max="1000" step="1"
+                   class="top-limite-input"
+                   [ngModel]="topLimite"
+                   (ngModelChange)="setTopLimite($event)"
+                   title="Cantidad libre (1–1000)">
+            <span class="top-limite-sub">alumnos</span>
           </div>
         </div>
 
@@ -759,7 +943,7 @@
                   <mat-icon>account_circle</mat-icon>
                 </div>
                 <div class="alumno-info">
-                  <h3>{{ obtenerNombreCompleto(item) }}</h3>
+                  <h3>{{ item.nombreCompletoStr }}</h3>
                   <p class="alumno-carrera">{{ item.alumno.carrera }}</p>
                 </div>
                 <div class="alumno-stats">
@@ -769,7 +953,7 @@
                   </div>
                   <div class="stat-item">
                     <mat-icon>event</mat-icon>
-                    <span>{{ formatearFecha(item.ultimaVisita) }}</span>
+                    <span>{{ item.ultimaVisitaStr }}</span>
                   </div>
                   <div class="stat-item">
                     <mat-chip class="motivo-chip">{{ item.motivoFrecuente }}</mat-chip>
@@ -824,7 +1008,7 @@
               </div>
             }
             @if (comparativa) {
-              <div class="slot-rango-real">{{ labelRangoComparado('a') }}</div>
+              <div class="slot-rango-real">{{comparativaUI.labelA }}</div>
               <div class="slot-stats">
                 <div class="slot-kpi big">
                   <span class="slot-kpi-value">{{ comparativa.a.totalRegistros }}</span>
@@ -843,7 +1027,7 @@
                 @if (comparativa.a.horaPico) {
                   <div class="slot-pico">
                     <mat-icon>schedule</mat-icon>
-                    Pico: {{ comparativa.a.horaPico.dia }} {{ formatHora(comparativa.a.horaPico.hora) }}
+                    Pico: {{ comparativaUI.horaPicoA }}
                   </div>
                 }
               </div>
@@ -855,8 +1039,8 @@
 
           <!-- DIFERENCIA -->
           @if (comparativa) {
-            <div class="comparador-diferencia" [class]="'dif-' + colorComparativa(comparativa.diferencia.direccion)">
-              <mat-icon>{{ iconoComparativa(comparativa.diferencia.direccion) }}</mat-icon>
+            <div class="comparador-diferencia" [class]="'dif-' + comparativaUI.colorDif">
+              <mat-icon>{{ comparativaUI.iconoDif }}</mat-icon>
               <div class="dif-numero">
                 {{ comparativa.diferencia.cambio > 0 ? '+' : '' }}{{ comparativa.diferencia.cambio }}
               </div>
@@ -890,7 +1074,7 @@
               </div>
             }
             @if (comparativa) {
-              <div class="slot-rango-real">{{ labelRangoComparado('b') }}</div>
+              <div class="slot-rango-real">{{ comparativaUI.labelB }}</div>
               <div class="slot-stats">
                 <div class="slot-kpi big">
                   <span class="slot-kpi-value">{{ comparativa.b.totalRegistros }}</span>
@@ -909,7 +1093,7 @@
                 @if (comparativa.b.horaPico) {
                   <div class="slot-pico">
                     <mat-icon>schedule</mat-icon>
-                    Pico: {{ comparativa.b.horaPico.dia }} {{ formatHora(comparativa.b.horaPico.hora) }}
+                    Pico: {{ comparativaUI.horaPicoB }}
                   </div>
                 }
               </div>
@@ -919,6 +1103,19 @@
             }
           </div>
         </div>
+
+        @if (!comparativa && !cargandoComparativa) {
+          <div class="empty-state">
+            <mat-icon>compare_arrows</mat-icon>
+            <p>Selecciona dos períodos arriba y haz clic en <strong>Aplicar</strong> para comparar.</p>
+          </div>
+        }
+        @if (cargandoComparativa) {
+          <div class="empty-state">
+            <mat-icon class="spin-now">autorenew</mat-icon>
+            <p>Calculando comparación…</p>
+          </div>
+        }
       </mat-card>
     }
 
@@ -940,17 +1137,17 @@
         </div>
         <div class="acciones-rango">
           <button class="btn-refrescar" (click)="refrescarDatos()" [disabled]="cargando"
-                  matTooltip="Vuelve a leer los datos desde la base — útil si registraste alumnos en otra pestaña.">
+                  title="Vuelve a leer los datos desde la base — útil si registraste alumnos en otra pestaña.">
             <mat-icon [class.spin-now]="cargando">refresh</mat-icon>
             Refrescar
           </button>
           <button class="btn-export" (click)="exportarLoQueVeo()" [disabled]="generandoReporte || kpiTotalRegistros === 0"
-                  matTooltip="Genera un PDF completo del rango activo (todas las secciones).">
+                  title="Genera un PDF completo del rango activo (todas las secciones).">
             <mat-icon>picture_as_pdf</mat-icon>
             Exportar PDF
           </button>
           <button class="btn-personalizar" (click)="personalizarPdf()" [disabled]="generandoReporte || kpiTotalRegistros === 0"
-                  matTooltip="Elige qué secciones incluir en el PDF (resumen, tabla, gráficas, etc.).">
+                  title="Elige qué secciones incluir en el PDF (resumen, tabla, gráficas, etc.).">
             <mat-icon>tune</mat-icon>
             Personalizar PDF...
           </button>
@@ -964,7 +1161,7 @@
             <mat-icon>description</mat-icon>
             Reportes predefinidos
             <mat-icon class="info-icon"
-                      matTooltip="Genera reportes PDF de períodos concretos (un día, semana, mes o año específico) sin afectar lo que ves arriba.">
+                      title="Genera reportes PDF de períodos concretos (un día, semana, mes o año específico) sin afectar lo que ves arriba.">
               help_outline
             </mat-icon>
           </h2>
@@ -985,7 +1182,7 @@
             <input type="date" class="date-input" [(ngModel)]="fechaReporteDiario">
           } @else if (tipoReporte === 'semanal') {
             <input type="date" class="date-input" [(ngModel)]="fechaReporteSemana"
-                   matTooltip="Cualquier día dentro de la semana a reportar">
+                   title="Cualquier día dentro de la semana a reportar">
           } @else if (tipoReporte === 'mensual') {
             <select class="date-input" [(ngModel)]="mesReporteSeleccionado">
               @for (m of mesesDisponibles; track m.valor) {

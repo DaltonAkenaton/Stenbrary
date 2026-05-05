@@ -9,7 +9,7 @@
 // ║  - Accesos rápidos a todas las secciones              ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +19,12 @@ import { DatabaseService } from '../../core/services/database.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { ConfigService } from '../../core/services/config.service';
 import { Alumno, Registro, Motivo } from '../../core/models';
+import { logError } from '../../core/utils/logger';
+
+const FMT_HORA_DASH = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+/** Registro extendido con la hora ya formateada para evitar funciones en CD. */
+type RegistroDashboard = Registro & { _horaStr: string };
 
 interface QuickStat {
   icono: string;
@@ -48,6 +54,7 @@ interface ActividadHoy {
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent implements OnInit, OnDestroy {
 
@@ -63,8 +70,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   actividadesHoy: ActividadHoy[] = [];
   totalActividadesDistintas = 0;
 
-  // ─── Últimos 5 registros ────────────────────────────────
-  ultimosRegistros: Registro[] = [];
+  // ─── Últimos 5 registros (con hora pre-formateada) ──────
+  ultimosRegistros: RegistroDashboard[] = [];
 
   // ─── Hora del último registro ───────────────────────────
   ultimoRegistroHora = '';
@@ -82,6 +89,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     public aforoService: AforoService,
     public configService: ConfigService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   // ═══════════════════════════════════════════════
@@ -259,27 +267,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.totalActividadesDistintas = todasActividades.length;
       this.actividadesHoy = todasActividades.slice(0, 6);
 
-      // Últimos 5 registros
-      this.ultimosRegistros = registrosHoy
+      // Últimos 5 registros con hora pre-formateada (evita formatearHora() en CD)
+      const ordenados = registrosHoy
         .sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime())
         .slice(0, 5);
+      this.ultimosRegistros = ordenados.map(r =>
+        Object.assign(r, { _horaStr: FMT_HORA_DASH.format(new Date(r.fechaHora)) })
+      ) as RegistroDashboard[];
 
       if (this.ultimosRegistros.length > 0) {
-        const ultimo = new Date(this.ultimosRegistros[0].fechaHora);
-        this.ultimoRegistroHora = ultimo.toLocaleTimeString('es-MX', {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
+        this.ultimoRegistroHora = this.ultimosRegistros[0]._horaStr;
       } else {
         this.ultimoRegistroHora = '';
       }
 
       this.cargando = false;
       this.actualizando = false;
+      this.cdr.markForCheck();
     } catch (error) {
-      console.error('Error al cargar dashboard:', error);
+      logError('Error al cargar dashboard:', error);
       this.cargando = false;
       this.actualizando = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -289,16 +298,5 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   navegar(ruta: string): void {
     this.router.navigate([ruta]);
-  }
-
-  // ═══════════════════════════════════════════════
-  // HELPERS
-  // ═══════════════════════════════════════════════
-
-  formatearHora(fecha: Date): string {
-    return new Date(fecha).toLocaleTimeString('es-MX', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   }
 }

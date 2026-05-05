@@ -1,13 +1,16 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  RUTA: src/app/core/services/export.service.ts       ║
-// ║  Stenbrary v3.5.1 — Exportación a Excel (XLSX)       ║
+// ║  Stenbrary v3.19.0 — Exportación a Excel (XLSX)       ║
 // ║                                                      ║
-// ║  Servicio reutilizable que genera archivos Excel      ║
-// ║  con formato profesional. Usa librería xlsx.          ║
+// ║  CAMBIOS v3.19.0:                                    ║
+// ║  - import() dinámico de xlsx (~600 KB) → solo se     ║
+// ║    descarga cuando el usuario realmente exporta;     ║
+// ║    el initial bundle adelgaza ese tamaño.            ║
+// ║                                                      ║
+// ║  Servicio reutilizable que genera archivos Excel.    ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable } from '@angular/core';
-import * as XLSX from 'xlsx';
 import { Registro, Alumno } from '../models';
 
 @Injectable({
@@ -15,11 +18,22 @@ import { Registro, Alumno } from '../models';
 })
 export class ExportService {
 
+  /** Cache del módulo xlsx para no reimportar entre exports consecutivos. */
+  private xlsxModulePromise: Promise<typeof import('xlsx')> | null = null;
+
+  private cargarXlsx(): Promise<typeof import('xlsx')> {
+    if (!this.xlsxModulePromise) {
+      this.xlsxModulePromise = import('xlsx');
+    }
+    return this.xlsxModulePromise;
+  }
+
   /**
    * Exporta registros a archivo Excel con formato.
    */
-  exportarRegistrosXLSX(registros: Registro[], nombreArchivo?: string): void {
+  async exportarRegistrosXLSX(registros: Registro[], nombreArchivo?: string): Promise<void> {
     if (registros.length === 0) return;
+    const XLSX = await this.cargarXlsx();
 
     const datos = registros.map(r => {
       const d = new Date(r.fechaHora);
@@ -55,8 +69,9 @@ export class ExportService {
   /**
    * Exporta alumnos a archivo Excel con formato.
    */
-  exportarAlumnosXLSX(alumnos: Alumno[], nombreArchivo?: string): void {
+  async exportarAlumnosXLSX(alumnos: Alumno[], nombreArchivo?: string): Promise<void> {
     if (alumnos.length === 0) return;
+    const XLSX = await this.cargarXlsx();
 
     const datos = alumnos.map(a => ({
       'Matrícula': a.matricula,

@@ -7,7 +7,7 @@
 // ║  - exportarCSV() escapa campos con comas/comillas    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -25,6 +25,32 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Alumno } from '../../core/models';
 import { ExportService } from '../../core/services/export.service';
+import { logError } from '../../core/utils/logger';
+
+/**
+ * Versión enriquecida con strings precomputadas para que el template no
+ * llame `nombreCompleto(a)` por cada fila en cada change-detection tick.
+ */
+type AlumnoRender = Alumno & {
+  _nombreCompleto: string;
+  _nombreLower: string;       // pre-bajo para búsqueda — evita toLowerCase() en filtro
+  _matriculaLower: string;
+  _apellidoPaternoLower: string;
+  _apellidoMaternoLower: string;
+  _nombreCompletoLower: string;
+};
+
+function buildAlumnoRender(a: Alumno): AlumnoRender {
+  const nombreCompleto = `${a.nombre} ${a.apellidoPaterno} ${a.apellidoMaterno}`;
+  return Object.assign(a, {
+    _nombreCompleto: nombreCompleto,
+    _nombreLower: a.nombre.toLowerCase(),
+    _matriculaLower: a.matricula.toLowerCase(),
+    _apellidoPaternoLower: a.apellidoPaterno.toLowerCase(),
+    _apellidoMaternoLower: a.apellidoMaterno.toLowerCase(),
+    _nombreCompletoLower: nombreCompleto.toLowerCase(),
+  }) as AlumnoRender;
+}
 
 @Component({
   selector: 'app-alumnos',
@@ -45,6 +71,7 @@ import { ExportService } from '../../core/services/export.service';
   ],
   templateUrl: './alumnos.component.html',
   styleUrl: './alumnos.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlumnosComponent implements OnInit {
 
@@ -52,10 +79,10 @@ export class AlumnosComponent implements OnInit {
   // Signal + computed: el filtrado se memoiza y solo se re-ejecuta si cambian
   // los filtros o la data base. Antes era un getter que recorría 2500 alumnos
   // decenas de veces por segundo en cada change detection.
-  todosAlumnosSig = signal<Alumno[]>([]);
-  get todosAlumnos(): Alumno[] { return this.todosAlumnosSig(); }
-  set todosAlumnos(v: Alumno[]) { this.todosAlumnosSig.set(v); }
-  cargando = true;
+  todosAlumnosSig = signal<AlumnoRender[]>([]);
+  get todosAlumnos(): AlumnoRender[] { return this.todosAlumnosSig(); }
+  set todosAlumnos(v: AlumnoRender[]) { this.todosAlumnosSig.set(v); }
+  cargando = signal(true);
 
   // ─── FILTROS ───────────────────────────────────────────
   filtros = signal({
@@ -118,7 +145,7 @@ export class AlumnosComponent implements OnInit {
       this.visitasPorMatricula.set(m);
       this.visitasCargadas.set(true);
     } catch (e) {
-      console.error('No se pudieron cargar los conteos de visitas:', e);
+      logError('No se pudieron cargar los conteos de visitas:', e);
     }
   }
 
@@ -129,8 +156,9 @@ export class AlumnosComponent implements OnInit {
 
   async cargarAlumnos(): Promise<void> {
     try {
-      this.cargando = true;
-      this.todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
+      this.cargando.set(true);
+      const raw = await this.databaseService.obtenerTodosLosAlumnos();
+      this.todosAlumnos = raw.map(buildAlumnoRender);
 
       // Extraer opciones únicas para los filtros
       const carreras = new Set<string>();
@@ -147,15 +175,16 @@ export class AlumnosComponent implements OnInit {
       this.gradosUnicos.set([...grados].sort((a, b) => a - b));
       this.gruposUnicos.set([...grupos].sort());
 
-      this.cargando = false;
+      this.cargando.set(false);
     } catch (error) {
-      console.error('Error al cargar alumnos:', error);
-      this.cargando = false;
+      logError('Error al cargar alumnos:', error);
+      this.toastService.error('No se pudieron cargar los alumnos');
+      this.cargando.set(false);
     }
   }
 
   // ─── FILTRADO (memoizado con computed) ─────────────────
-  alumnosFiltradosSig = computed<Alumno[]>(() => {
+  alumnosFiltradosSig = computed<AlumnoRender[]>(() => {
     const f = this.filtros();
     const todos = this.todosAlumnosSig();
 
@@ -169,7 +198,7 @@ export class AlumnosComponent implements OnInit {
     const mapaVisitas = this.visitasPorMatricula();
 
     // Una sola pasada en lugar de 5–6 .filter() encadenados
-    const resultado: Alumno[] = [];
+    const resultado: AlumnoRender[] = [];
     for (const a of todos) {
       if (carrera && a.carrera !== carrera) continue;
       if (gradoNum !== null && a.grado !== gradoNum) continue;
@@ -185,16 +214,13 @@ export class AlumnosComponent implements OnInit {
         if (filtroVisitas === 'muchas' && v < 5) continue;
       }
       if (termino) {
-        const m = a.matricula.toLowerCase();
-        const n = a.nombre.toLowerCase();
-        const ap = a.apellidoPaterno.toLowerCase();
-        const am = a.apellidoMaterno.toLowerCase();
+        // Usa los _Lower precomputados en buildAlumnoRender — sin toLowerCase() por fila
         if (
-          !m.includes(termino) &&
-          !n.includes(termino) &&
-          !ap.includes(termino) &&
-          !am.includes(termino) &&
-          !`${n} ${ap} ${am}`.includes(termino)
+          !a._matriculaLower.includes(termino) &&
+          !a._nombreLower.includes(termino) &&
+          !a._apellidoPaternoLower.includes(termino) &&
+          !a._apellidoMaternoLower.includes(termino) &&
+          !a._nombreCompletoLower.includes(termino)
         ) continue;
       }
       resultado.push(a);
@@ -202,16 +228,16 @@ export class AlumnosComponent implements OnInit {
     return resultado;
   });
 
-  get alumnosFiltrados(): Alumno[] {
+  get alumnosFiltrados(): AlumnoRender[] {
     return this.alumnosFiltradosSig();
   }
 
-  alumnosPaginadosSig = computed<Alumno[]>(() => {
+  alumnosPaginadosSig = computed<AlumnoRender[]>(() => {
     const inicio = this.paginaActual() * this.filasPorPagina;
     return this.alumnosFiltradosSig().slice(inicio, inicio + this.filasPorPagina);
   });
 
-  get alumnosPaginados(): Alumno[] {
+  get alumnosPaginados(): AlumnoRender[] {
     return this.alumnosPaginadosSig();
   }
 
@@ -273,18 +299,22 @@ export class AlumnosComponent implements OnInit {
   }
 
   // ─── UTILIDADES ────────────────────────────────────────
-  nombreCompleto(a: Alumno): string {
-    return `${a.nombre} ${a.apellidoPaterno} ${a.apellidoMaterno}`;
-  }
+  // nombreCompleto se precomputa en buildAlumnoRender como `_nombreCompleto`.
+  // El template lo lee directo: `{{ a._nombreCompleto }}` (sin invocar fn).
 
- exportarCSV(): void {
+ async exportarCSV(): Promise<void> {
     const datos = this.alumnosFiltrados;
     if (datos.length === 0) {
       this.toastService.warning('No hay datos para exportar');
       return;
     }
-    this.exportService.exportarAlumnosXLSX(datos);
-    this.toastService.success(`${datos.length} alumnos exportados a Excel`);
+    try {
+      await this.exportService.exportarAlumnosXLSX(datos);
+      this.toastService.success(`${datos.length} alumnos exportados a Excel`);
+    } catch (err) {
+      logError('Error al exportar alumnos:', err);
+      this.toastService.error('No se pudo generar el archivo Excel');
+    }
   }
 
 }

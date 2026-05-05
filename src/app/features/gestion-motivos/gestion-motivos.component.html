@@ -11,37 +11,43 @@
       <p class="subtitle">Actividades disponibles para registrar el acceso de alumnos</p>
 
       <!-- Stats chips -->
-      <div class="stats-row" *ngIf="!cargando && motivos.length > 0">
-        <span class="stat-chip total">
-          <mat-icon>category</mat-icon>
-          {{ motivos.length }} {{ motivos.length === 1 ? 'actividad' : 'actividades' }}
-        </span>
-        <span class="stat-chip activos">
-          <span class="stat-dot dot-activo"></span>
-          {{ motivosActivos }} activos
-        </span>
-        <span class="stat-chip inactivos" *ngIf="motivosInactivos > 0">
-          <span class="stat-dot dot-inactivo"></span>
-          {{ motivosInactivos }} inactivos
-        </span>
-      </div>
+      @if (!cargando && motivos.length > 0) {
+        <div class="stats-row">
+          <span class="stat-chip total">
+            <mat-icon>category</mat-icon>
+            {{ motivos.length }} {{ motivos.length === 1 ? 'actividad' : 'actividades' }}
+          </span>
+          <span class="stat-chip activos">
+            <span class="stat-dot dot-activo"></span>
+            {{ motivosActivos }} activos
+          </span>
+          @if (motivosInactivos > 0) {
+            <span class="stat-chip inactivos">
+              <span class="stat-dot dot-inactivo"></span>
+              {{ motivosInactivos }} inactivos
+            </span>
+          }
+        </div>
+      }
     </div>
 
     <div class="header-right">
       <!-- Search -->
-      <div class="search-box" *ngIf="!cargando && motivos.length > 3">
-        <mat-icon>search</mat-icon>
-        <input
-          type="text"
-          placeholder="Buscar..."
-          [(ngModel)]="filtroBusqueda"
-          autocomplete="off">
-        @if (filtroBusqueda) {
-          <button class="clear-btn" (click)="filtroBusqueda = ''">
-            <mat-icon>close</mat-icon>
-          </button>
-        }
-      </div>
+      @if (!cargando && motivos.length > 3) {
+        <div class="search-box">
+          <mat-icon>search</mat-icon>
+          <input
+            type="text"
+            placeholder="Buscar..."
+            [(ngModel)]="filtroBusqueda"
+            autocomplete="off">
+          @if (filtroBusqueda) {
+            <button class="clear-btn" (click)="filtroBusqueda = ''">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+      }
 
       <button class="btn-new" (click)="abrirDialogNuevo()">
         <mat-icon>add</mat-icon>
@@ -51,13 +57,16 @@
   </div>
 
   <!-- ═══ LOADING ══════════════════════════════════════════ -->
-  <div class="loading-state" *ngIf="cargando">
-    <div class="loading-spinner"></div>
-    <p>Cargando actividades...</p>
-  </div>
+  @if (cargando) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Cargando actividades...</p>
+    </div>
+  }
 
   <!-- ═══ LISTA DE MOTIVOS ══════════════════════════════════ -->
-  <div class="motivos-list" *ngIf="!cargando && motivosFiltrados.length > 0">
+  @if (!cargando && motivosFiltrados.length > 0) {
+    <div class="motivos-list">
 
     <!-- Cabecera de columnas -->
     <div class="list-header">
@@ -68,9 +77,9 @@
     </div>
 
     <!-- Filas -->
+    @for (motivo of motivosFiltrados; track motivo.id; let i = $index) {
     <div
       class="motivo-row"
-      *ngFor="let motivo of motivosFiltrados; let i = index"
       [class.row-inactivo]="!motivo.activo"
       [style.--row-color]="motivo.color"
       [style.--row-index]="i">
@@ -81,14 +90,14 @@
         <div class="order-arrows">
           <button
             mat-icon-button
-            matTooltip="Subir"
+            title="Subir"
             [disabled]="motivo.orden === 1"
             (click)="subirPrioridad(motivo)">
             <mat-icon>keyboard_arrow_up</mat-icon>
           </button>
           <button
             mat-icon-button
-            matTooltip="Bajar"
+            title="Bajar"
             [disabled]="motivo.orden === motivos.length"
             (click)="bajarPrioridad(motivo)">
             <mat-icon>keyboard_arrow_down</mat-icon>
@@ -124,7 +133,7 @@
         <button
           mat-icon-button
           class="action-btn btn-edit"
-          matTooltip="Editar"
+          title="Editar"
           (click)="abrirDialogEditar(motivo)">
           <mat-icon>edit</mat-icon>
         </button>
@@ -133,45 +142,51 @@
           class="action-btn"
           [class.btn-desactivar]="motivo.activo"
           [class.btn-activar]="!motivo.activo"
-          [matTooltip]="motivo.activo ? 'Desactivar' : 'Activar'"
+          [title]="motivo.activo ? 'Desactivar' : 'Activar'"
           (click)="cambiarEstado(motivo)">
           <mat-icon>{{ motivo.activo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
         </button>
         <button
           mat-icon-button
           class="action-btn btn-delete"
-          matTooltip="Eliminar"
+          title="Eliminar"
           (click)="eliminarMotivo(motivo)">
           <mat-icon>delete_outline</mat-icon>
         </button>
       </div>
 
     </div>
+    }
 
-  </div>
+    </div>
+  }
 
   <!-- ═══ SIN RESULTADOS DE BÚSQUEDA ═══════════════════════ -->
-  <div class="empty-state" *ngIf="!cargando && motivos.length > 0 && motivosFiltrados.length === 0">
-    <mat-icon>search_off</mat-icon>
-    <h2>Sin resultados</h2>
-    <p>Ninguna actividad coincide con "<strong>{{ filtroBusqueda }}</strong>"</p>
-    <button class="btn-link" (click)="filtroBusqueda = ''">
-      <mat-icon>clear</mat-icon>
-      Limpiar búsqueda
-    </button>
-  </div>
+  @if (!cargando && motivos.length > 0 && motivosFiltrados.length === 0) {
+    <div class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <h2>Sin resultados</h2>
+      <p>Ninguna actividad coincide con "<strong>{{ filtroBusqueda }}</strong>"</p>
+      <button class="btn-link" (click)="filtroBusqueda = ''">
+        <mat-icon>clear</mat-icon>
+        Limpiar búsqueda
+      </button>
+    </div>
+  }
 
   <!-- ═══ EMPTY STATE ═══════════════════════════════════════ -->
-  <div class="empty-state" *ngIf="!cargando && motivos.length === 0">
-    <div class="empty-icon-wrap">
-      <mat-icon>category</mat-icon>
+  @if (!cargando && motivos.length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon-wrap">
+        <mat-icon>category</mat-icon>
+      </div>
+      <h2>Sin actividades</h2>
+      <p>Crea la primera actividad disponible para los alumnos al registrar su acceso</p>
+      <button class="btn-new" (click)="abrirDialogNuevo()">
+        <mat-icon>add</mat-icon>
+        <span>Crear primera actividad</span>
+      </button>
     </div>
-    <h2>Sin actividades</h2>
-    <p>Crea la primera actividad disponible para los alumnos al registrar su acceso</p>
-    <button class="btn-new" (click)="abrirDialogNuevo()">
-      <mat-icon>add</mat-icon>
-      <span>Crear primera actividad</span>
-    </button>
-  </div>
+  }
 
 </div>
