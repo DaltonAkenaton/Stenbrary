@@ -34,6 +34,7 @@ import {
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LimpiezaRegistrosComponent } from './limpieza-registros.component';
 import { DatosPruebaComponent } from './datos-prueba.component';
+import { SuccessAnimationComponent } from '../../shared/components/success-animation/success-animation.component';
 
 @Component({
   selector: 'app-configuracion',
@@ -51,6 +52,7 @@ import { DatosPruebaComponent } from './datos-prueba.component';
     MatDialogModule,
     LimpiezaRegistrosComponent,
     DatosPruebaComponent,
+    SuccessAnimationComponent,
   ],
   template: `
     <div class="config-container">
@@ -573,6 +575,106 @@ import { DatosPruebaComponent } from './datos-prueba.component';
         </div>
         }
       </mat-card>
+
+      <!-- ═══ TIEMPO DE PANTALLA DE ÉXITO (v3.20) ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>timer</mat-icon>
+          <h2>Tiempo de pantalla de éxito</h2>
+        </div>
+        <p class="section-desc">
+          Cuántos segundos dura la animación de "¡Registro exitoso!" antes de
+          volver al scanner. El alumno puede tocar la pantalla en cualquier
+          momento para saltar y continuar. Los presets son atajos; el input
+          admite cualquier valor.
+        </p>
+
+        <div class="auto-close-options">
+          @for (op of opcionesTiempoExito; track op.valor) {
+            <button class="auto-close-btn"
+              [class.active]="configService.tiempoExitoMs === op.valor"
+              (click)="setTiempoExito(op.valor)">
+              {{ op.etiqueta }}
+            </button>
+          }
+        </div>
+
+        <div class="aforo-input-row" style="margin-top: 14px;">
+          <label for="tiempoExito">Segundos personalizados</label>
+          <div class="aforo-stepper" style="max-width: 260px;">
+            <button type="button"
+                    class="stepper-btn"
+                    (click)="setTiempoExitoSegundos(tiempoExitoSegundos - 1)"
+                    [disabled]="tiempoExitoSegundos <= 1"
+                    matTooltip="Disminuir 1 s"
+                    matTooltipPosition="above">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <input id="tiempoExito"
+                   type="number"
+                   min="1"
+                   max="60"
+                   step="1"
+                   class="aforo-number-input"
+                   [ngModel]="tiempoExitoSegundos"
+                   (ngModelChange)="setTiempoExitoSegundos($event)"
+                   placeholder="5">
+            <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">s</span>
+            <button type="button"
+                    class="stepper-btn"
+                    (click)="setTiempoExitoSegundos(tiempoExitoSegundos + 1)"
+                    matTooltip="Aumentar 1 s"
+                    matTooltipPosition="above">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <p class="section-hint">
+          <mat-icon>info</mat-icon>
+          La pantalla durará <strong>{{ tiempoExitoSegundos }} s</strong>.
+          @if (tiempoExitoSegundos < 2) {
+            (muy corta — el alumno puede no alcanzar a leer)
+          } @else if (tiempoExitoSegundos > 10) {
+            (larga — útil para modo quiosco con cola de alumnos)
+          }
+        </p>
+
+        <!-- Preview de animaciones — ver cada tema sin tener que registrar -->
+        <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(0, 200, 215, 0.10);">
+          <div class="section-header" style="margin-bottom: 10px;">
+            <mat-icon>play_circle</mat-icon>
+            <h3 style="margin: 0; font-size: 1rem; color: #E8F4F8;">Probar animaciones</h3>
+          </div>
+          <p class="section-desc" style="margin-bottom: 12px;">
+            Hay 8 temas. Toca cualquiera para verlo a pantalla completa
+            (igual que lo verá el alumno). Tap en la pantalla cierra el preview.
+          </p>
+          <div class="auto-close-options" style="flex-wrap: wrap;">
+            <button class="auto-close-btn" (click)="abrirPreviewAnimacion()">
+              <mat-icon>shuffle</mat-icon>
+              Aleatorio
+            </button>
+            @for (t of temasPreview; track t.id) {
+              <button class="auto-close-btn" (click)="abrirPreviewAnimacion(t.id)">
+                <span style="font-size: 1.1rem; margin-right: 4px;">{{ t.emoji }}</span>
+                {{ t.nombre }}
+              </button>
+            }
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Overlay de preview — fullscreen, mismo aspecto que el real -->
+      @if (mostrarPreviewAnimacion) {
+        <div class="preview-overlay" (click)="cerrarPreviewAnimacion()">
+          <app-success-animation [temaForzado]="temaPreview" />
+          <div class="preview-hint-tap">
+            <mat-icon>touch_app</mat-icon>
+            Toca para cerrar
+          </div>
+        </div>
+      }
 
       <!-- ═══ ALERTAS DE INACTIVIDAD (v3.10.0) ═══ -->
       <mat-card class="section-card">
@@ -1376,11 +1478,48 @@ import { DatosPruebaComponent } from './datos-prueba.component';
       &:focus { outline: none; border-color: rgba(0, 200, 215, 0.5); }
     }
     .horario-sep { color: rgba(200, 230, 240, 0.35); font-size: 0.85rem; }
-    @media (max-width: 480px) {
+    /* Subido de 480 a 768: entre esos rangos los dos time-inputs nativos
+       (~110px cada uno) más label-día (90px) más separador no caben en una
+       fila, y el resultado era un overflow horizontal apretado. */
+    @media (max-width: 768px) {
       .horario-row { flex-direction: column; align-items: flex-start; gap: 8px; }
       .horario-dia { flex: none; }
       .horario-controls { width: 100%; }
     }
+
+    /* ── Preview overlay de animaciones ── */
+    .preview-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1500;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      overflow: hidden;
+      /* Mismo mesh radial del overlay real para fidelidad visual */
+      background:
+        radial-gradient(ellipse 60% 50% at 10% 15%,  rgba(0, 200, 215, 0.10) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 60% at 90% 80%,  rgba(0, 169, 158, 0.08) 0%, transparent 65%),
+        radial-gradient(ellipse 30% 35% at 55% 50%,  rgba(0, 200, 215, 0.04) 0%, transparent 60%),
+        #04090F;
+      animation: previewFadeIn 200ms ease both;
+    }
+    .preview-hint-tap {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 18px;
+      background: rgba(4, 9, 15, 0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 200, 215, 0.20);
+      border-radius: 100px;
+      color: rgba(200, 230, 240, 0.7);
+      font-size: 0.85rem;
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    }
+    @keyframes previewFadeIn { from { opacity: 0; } to { opacity: 1; } }
   `],
 })
 export class ConfiguracionComponent implements OnInit {
@@ -1755,6 +1894,70 @@ export class ConfiguracionComponent implements OnInit {
     if (isNaN(num)) return;
     const acotado = Math.max(0, Math.min(100, Math.round(num)));
     this.configService.setCelebracionProbabilidad(acotado / 100);
+  }
+
+  // ═══════════════════════════════════════════════
+  // TIEMPO DE PANTALLA DE ÉXITO (v3.20)
+  // ═══════════════════════════════════════════════
+
+  readonly opcionesTiempoExito = [
+    { valor: 2000,  etiqueta: 'Rápida (2 s)' },
+    { valor: 5000,  etiqueta: 'Normal (5 s)' },
+    { valor: 8000,  etiqueta: 'Lenta (8 s)' },
+    { valor: 12000, etiqueta: 'Quiosco (12 s)' },
+  ];
+
+  /** Valor en segundos derivado de tiempoExitoMs para los inputs. */
+  get tiempoExitoSegundos(): number {
+    return Math.round(this.configService.tiempoExitoMs / 1000);
+  }
+
+  /** Acepta segundos (1-60 sugerido pero sin tope duro). */
+  setTiempoExitoSegundos(segundos: number | string): void {
+    const num = typeof segundos === 'string' ? parseFloat(segundos) : segundos;
+    if (isNaN(num)) return;
+    const seg = Math.max(1, Math.round(num));
+    this.configService.setTiempoExitoMs(seg * 1000);
+  }
+
+  /** Setter desde presets (ya en ms). */
+  setTiempoExito(ms: number): void {
+    this.configService.setTiempoExitoMs(ms);
+  }
+
+  // ═══════════════════════════════════════════════
+  // PREVIEW DE ANIMACIONES (v3.20)
+  // ═══════════════════════════════════════════════
+
+  /** Catálogo para los botones de preview — IDs deben coincidir con los del
+   *  componente SuccessAnimation. */
+  readonly temasPreview = [
+    { id: 'book',       emoji: '📚', nombre: 'Libro' },
+    { id: 'thumbsup',   emoji: '👍', nombre: 'Pulgar' },
+    { id: 'trophy',     emoji: '🏆', nombre: 'Trofeo' },
+    { id: 'graduation', emoji: '🎓', nombre: 'Graduación' },
+    { id: 'star',       emoji: '⭐', nombre: 'Estrella' },
+    { id: 'party',      emoji: '🎉', nombre: 'Fiesta' },
+    { id: 'check',      emoji: '✅', nombre: 'Check' },
+    { id: 'cofre',      emoji: '🎁', nombre: 'Cofre' },
+  ];
+
+  mostrarPreviewAnimacion = false;
+  /** Si está undefined, el componente elige aleatorio. */
+  temaPreview: string | undefined = undefined;
+
+  abrirPreviewAnimacion(temaId?: string): void {
+    this.temaPreview = temaId;
+    // Forzar remount: si ya estaba abierto y se hace click en otro tema,
+    // el cambio de @if asegura que ngOnInit se vuelva a disparar y la
+    // animación arranque desde 0 con el nuevo tema.
+    this.mostrarPreviewAnimacion = false;
+    setTimeout(() => { this.mostrarPreviewAnimacion = true; }, 30);
+  }
+
+  cerrarPreviewAnimacion(): void {
+    this.mostrarPreviewAnimacion = false;
+    this.temaPreview = undefined;
   }
 
   // ═══════════════════════════════════════════════

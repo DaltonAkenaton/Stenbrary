@@ -78,3 +78,58 @@
   background: rgba(0, 0, 0, 0.5);
   z-index: $z-overlay;
 }
+
+// ─── RESPONSIVE HELPERS (v3.20) ──────────────────────────
+// Page container con padding que se reduce en móvil.
+// Reemplaza el patrón repetido `.X-container { padding: $spacing-lg }` que
+// dejaba 48px de padding lateral sin ajustar en pantallas <768px.
+@mixin responsive-page-container {
+  height: 100%;
+  overflow-y: auto;
+  padding: $spacing-lg;
+
+  @media (max-width: $breakpoint-sm) {
+    padding: $spacing-md;
+  }
+
+  @media (max-width: $breakpoint-xs) {
+    padding: $spacing-sm $spacing-md;
+  }
+}
+
+// Contenedor de tabla con scroll horizontal nativo en pantallas chicas
+// para que la tabla no rompa el layout cuando hay muchas columnas.
+@mixin scrollable-table {
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Footer de vista que respeta el alto de la bottom-nav móvil.
+// Útil cuando hay un elemento `position: fixed` (hint, FAB) por arriba
+// de la nav y el contenido debajo necesita más padding-bottom.
+@mixin safe-bottom-padding($extra: 0) {
+  @media (max-width: $breakpoint-sm) {
+    padding-bottom: calc(#{$bottom-nav-height} + #{$extra}px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+// Garantiza un área táctil ≥44×44px (WCAG 2.5.5) sin cambiar el tamaño
+// visual del elemento. Usa un pseudo-elemento expandido para capturar
+// el tap. Útil en botones-icono pequeños (chip remove, dot toggles).
+@mixin touch-target($min: 44px) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: $min;
+    height: $min;
+    transform: translate(-50%, -50%);
+    border-radius: inherit;
+  }
+}

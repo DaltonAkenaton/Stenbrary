@@ -315,6 +315,13 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       display: flex; flex-direction: column; gap: 20px;
       max-width: 1000px; margin: 0 auto; padding: 16px 16px 56px;
     }
+    /* Móvil: bottom-nav (58px) + refresh-hint-fixed (~30px) + safe-area
+       requieren más padding-bottom para que la última card no quede tapada. */
+    @media (max-width: 768px) {
+      .presencia-container {
+        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+      }
+    }
 
     /* ── HEADER ── */
     .page-header {

@@ -8,7 +8,7 @@
 // ║  - "Matrícula incorrecta" siempre visible            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -25,6 +25,7 @@ import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { CelebrationComponent } from '../../shared/components/celebration/celebration.component';
+import { SuccessAnimationComponent } from '../../shared/components/success-animation/success-animation.component';
 import { logError } from '../../core/utils/logger';
 
 @Component({
@@ -39,11 +40,12 @@ import { logError } from '../../core/utils/logger';
     MatRippleModule,
     MatTooltipModule,
     CelebrationComponent,
+    SuccessAnimationComponent,
   ],
   templateUrl: './seleccion-motivo.component.html',
   styleUrl: './seleccion-motivo.component.scss'
 })
-export class SeleccionMotivoComponent implements OnInit {
+export class SeleccionMotivoComponent implements OnInit, OnDestroy {
   alumno: Alumno | null = null;
   motivos: Motivo[] = [];
 
@@ -69,6 +71,13 @@ export class SeleccionMotivoComponent implements OnInit {
 
   /** Controla la visibilidad de la animación de celebración aleatoria. */
   mostrarCelebracion = false;
+
+  /** Timer de redirección al scanner tras éxito. Se cancela si el usuario
+   *  toca la pantalla para saltar manualmente. */
+  private exitoTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Duración (ms) que dura la pantalla de éxito. Configurable. */
+  tiempoExitoMs = 5000;
 
   constructor(
     private databaseService: DatabaseService,
@@ -250,10 +259,10 @@ export class SeleccionMotivoComponent implements OnInit {
           : undefined,
       );
 
-      // Feedback háptico
-      if (navigator.vibrate) {
-        navigator.vibrate([80, 40, 80]);
-      }
+      // Háptico generic-removed: el SuccessAnimationComponent ahora dispara
+      // su propio patrón de vibración específico al tema elegido (libro,
+      // trofeo, fiesta, etc.), así cada animación se siente distinta también
+      // en táctil.
       this.soundService.beepExito();
 
       this.registroExitoso = true;
@@ -265,11 +274,15 @@ export class SeleccionMotivoComponent implements OnInit {
 
       if (debeCelebrar) {
         this.mostrarCelebracion = true;
-        // Redirect retrasado para dejar terminar la animación
-        setTimeout(() => this.router.navigate(['/scanner']), 2500);
-      } else {
-        setTimeout(() => this.router.navigate(['/scanner']), 1500);
       }
+
+      // Tiempo configurable desde /configuracion (default 5000ms).
+      // El usuario puede tocar la pantalla para saltar antes.
+      this.tiempoExitoMs = this.configService.tiempoExitoMs;
+      this.exitoTimer = setTimeout(
+        () => this.router.navigate(['/scanner']),
+        this.tiempoExitoMs,
+      );
 
     } catch (error) {
       console.error('❌ Error al crear registro:', error);
@@ -304,6 +317,24 @@ export class SeleccionMotivoComponent implements OnInit {
     sessionStorage.removeItem('alumnoActual');
     this.toastService.info('Registro cancelado');
     this.router.navigate(['/scanner']);
+  }
+
+  /** Tap/click sobre la pantalla de éxito → saltar inmediatamente al scanner
+   *  cancelando el timer de redirección. Solo activo cuando ya hubo registro. */
+  saltarExito(): void {
+    if (!this.registroExitoso) return;
+    if (this.exitoTimer) {
+      clearTimeout(this.exitoTimer);
+      this.exitoTimer = null;
+    }
+    this.router.navigate(['/scanner']);
+  }
+
+  ngOnDestroy(): void {
+    if (this.exitoTimer) {
+      clearTimeout(this.exitoTimer);
+      this.exitoTimer = null;
+    }
   }
 
   // ═══════════════════════════════════════════════

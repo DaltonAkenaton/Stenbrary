@@ -13,24 +13,54 @@
 <div class="seleccion-container" [class.exito-mode]="registroExitoso">
 
   <!-- ═══════════════════════════════════════════════════
-       PANTALLA DE ÉXITO (overlay animado)
+       PANTALLA DE ÉXITO — Multi-capa animada (v3.20)
+       Capas: shockwaves → burst de partículas → sparkles
+              → checkmark con glow → texto con gradient shine
   ═══════════════════════════════════════════════════ -->
   @if (registroExitoso) {
-    <div class="exito-overlay">
+    <div class="exito-overlay"
+         [style.--exito-duracion.ms]="tiempoExitoMs"
+         (click)="saltarExito()"
+         role="button"
+         tabindex="0"
+         aria-label="Toca para continuar al scanner">
+
+      <!-- Capa 1: Shockwaves expansivas -->
+      <div class="exito-shockwaves" aria-hidden="true">
+        <div class="shockwave sw-1"></div>
+        <div class="shockwave sw-2"></div>
+        <div class="shockwave sw-3"></div>
+      </div>
+
+      <!-- Capa 2: Burst radial de 12 partículas -->
+      <div class="exito-burst" aria-hidden="true">
+        <span class="burst-dot d-1"></span>
+        <span class="burst-dot d-2"></span>
+        <span class="burst-dot d-3"></span>
+        <span class="burst-dot d-4"></span>
+        <span class="burst-dot d-5"></span>
+        <span class="burst-dot d-6"></span>
+        <span class="burst-dot d-7"></span>
+        <span class="burst-dot d-8"></span>
+        <span class="burst-dot d-9"></span>
+        <span class="burst-dot d-10"></span>
+        <span class="burst-dot d-11"></span>
+        <span class="burst-dot d-12"></span>
+      </div>
+
+      <!-- Capa 3: Sparkles giratorios alrededor del checkmark -->
+      <div class="exito-sparkles" aria-hidden="true">
+        <svg class="sparkle s-1" viewBox="0 0 24 24"><path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/></svg>
+        <svg class="sparkle s-2" viewBox="0 0 24 24"><path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/></svg>
+        <svg class="sparkle s-3" viewBox="0 0 24 24"><path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/></svg>
+        <svg class="sparkle s-4" viewBox="0 0 24 24"><path d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z"/></svg>
+      </div>
+
+      <!-- Contenido central -->
       <div class="exito-content">
 
-        <!-- Rings animados -->
-        <div class="exito-rings">
-          <div class="ring ring-1"></div>
-          <div class="ring ring-2"></div>
-          <div class="ring ring-3"></div>
-          <div class="exito-check">
-            <svg viewBox="0 0 52 52" class="checkmark-svg">
-              <circle class="checkmark-circle" cx="26" cy="26" r="24" fill="none"/>
-              <path class="checkmark-path" fill="none" d="M14 27l8 8 16-16"/>
-            </svg>
-          </div>
-        </div>
+        <!-- Animación dinámica: Lottie si hay JSON, fallback emoji gigante -->
+        <app-success-animation />
 
         <h1 class="exito-titulo">¡Registro Exitoso!</h1>
 
@@ -50,7 +80,7 @@
           <div class="exito-progress-bar">
             <div class="exito-progress-fill"></div>
           </div>
-          <span>Redirigiendo al scanner...</span>
+          <span>Toca la pantalla para continuar</span>
         </div>
       </div>
     </div>
@@ -265,17 +295,19 @@
       <div class="mobile-confirm-sheet">
         <div class="sheet-handle"></div>
 
-        @for (m of motivosSeleccionados; track m.id) {
-          <div class="sheet-motivo">
-            <div class="sheet-motivo-icon">
-              <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
+        <div class="sheet-scroll">
+          @for (m of motivosSeleccionados; track m.id) {
+            <div class="sheet-motivo">
+              <div class="sheet-motivo-icon">
+                <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
+              </div>
+              <div class="sheet-motivo-info">
+                <h3>{{ m.nombre }}</h3>
+                @if (m.descripcion) { <p>{{ m.descripcion }}</p> }
+              </div>
             </div>
-            <div class="sheet-motivo-info">
-              <h3>{{ m.nombre }}</h3>
-              @if (m.descripcion) { <p>{{ m.descripcion }}</p> }
-            </div>
-          </div>
-        }
+          }
+        </div>
 
         <div class="sheet-question">
           @if (motivosSeleccionados.length === 1) {

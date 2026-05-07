@@ -555,6 +555,7 @@ interface ResultadoImportacion {
       display: flex;
       gap: 16px;
       margin-bottom: 20px;
+      flex-wrap: wrap;
     }
 
     .resumen-item {

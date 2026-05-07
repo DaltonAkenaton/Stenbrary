@@ -684,34 +684,36 @@
             }
           </div>
 
-          <div class="crecimiento-bars">
-            @for (b of crecimiento12mBarras; track b.mes) {
-              <div class="crecimiento-col"
-                   [class.es-mejor]="b.esMejor"
-                   [class.es-peor]="b.esPeor"
-                   [class.es-actual]="b.esActual"
-                   [attr.title]="b.tooltip">
-                <span class="crecimiento-valor"
-                      [class.muted]="b.cantidad === 0">
-                  {{ b.cantidad }}
-                </span>
-                <div class="crecimiento-bar" [style.height.%]="b.altura">
-                  @if (b.esMejor) {
-                    <span class="crecimiento-medal" aria-label="Mejor mes">★</span>
+          <div class="crecimiento-bars-scroll">
+            <div class="crecimiento-bars">
+              @for (b of crecimiento12mBarras; track b.mes) {
+                <div class="crecimiento-col"
+                     [class.es-mejor]="b.esMejor"
+                     [class.es-peor]="b.esPeor"
+                     [class.es-actual]="b.esActual"
+                     [attr.title]="b.tooltip">
+                  <span class="crecimiento-valor"
+                        [class.muted]="b.cantidad === 0">
+                    {{ b.cantidad }}
+                  </span>
+                  <div class="crecimiento-bar" [style.height.%]="b.altura">
+                    @if (b.esMejor) {
+                      <span class="crecimiento-medal" aria-label="Mejor mes">★</span>
+                    }
+                  </div>
+                  <div class="crecimiento-label">{{ b.mes }}</div>
+                  @if (b.cambioMoMStr) {
+                    <div class="crecimiento-mom"
+                         [class.mom-up]="b.cambioMoM !== null && b.cambioMoM > 0"
+                         [class.mom-down]="b.cambioMoM !== null && b.cambioMoM < 0">
+                      {{ b.cambioMoMStr }}
+                    </div>
+                  } @else {
+                    <div class="crecimiento-mom muted">—</div>
                   }
                 </div>
-                <div class="crecimiento-label">{{ b.mes }}</div>
-                @if (b.cambioMoMStr) {
-                  <div class="crecimiento-mom"
-                       [class.mom-up]="b.cambioMoM !== null && b.cambioMoM > 0"
-                       [class.mom-down]="b.cambioMoM !== null && b.cambioMoM < 0">
-                    {{ b.cambioMoMStr }}
-                  </div>
-                } @else {
-                  <div class="crecimiento-mom muted">—</div>
-                }
-              </div>
-            }
+              }
+            </div>
           </div>
 
           @if (crecimiento12mAnalisis) {

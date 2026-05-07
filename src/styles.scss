@@ -400,6 +400,13 @@ router-outlet + * {
 }
 
 // ─── DIALOGS ─────────────────────────────────────────────
+// Fix global responsive: cualquier MatDialog abierto con width fijo
+// (380px/420px/600px en distintas llamadas a dialog.open()) queda
+// limitado al 95vw en pantallas chicas para no desbordar el viewport.
+.cdk-overlay-pane {
+  max-width: min(95vw, 1200px) !important;
+}
+
 .mat-mdc-dialog-container {
   .mdc-dialog__surface {
     background: linear-gradient(160deg, rgba($navy-800, 1) 0%, rgba($navy-900, 1) 100%) !important;
@@ -535,5 +542,108 @@ router-outlet + * {
 .mat-mdc-paginator {
   background: transparent !important;
   color: $text-secondary !important;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACCESIBILIDAD — prefers-reduced-motion (v3.20)
+// ═══════════════════════════════════════════════════════════
+// Algunos usuarios configuran a nivel de sistema operativo "reducir
+// movimiento" por vestibulopatía, fotosensibilidad o preferencia. Si
+// detectamos esa preferencia, neutralizamos las animaciones globales y
+// dejamos solo transiciones cortas para feedback de interacción.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  // La page-enter sigue funcionando pero instantánea.
+  router-outlet + * { animation: none !important; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// IMPRESIÓN — Estilos para Ctrl+P (v3.20)
+// ═══════════════════════════════════════════════════════════
+// La coordinadora puede imprimir reportes directamente desde la vista
+// de registros, alumnos o detalle-alumno sin necesidad de exportar PDF.
+// Ocultamos chrome (sidebar, topbar, bottom-nav, botones) y forzamos
+// fondo blanco con texto negro para ahorrar tinta.
+@media print {
+  // Reset de fondos y colores para imprimir en B/N legible.
+  html, body {
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  body::before { display: none !important; }
+
+  // Ocultar toda la chrome de navegación.
+  .sidebar,
+  .topbar,
+  .topbar-separator,
+  .bottom-nav,
+  .sidebar-backdrop,
+  .hamburger-btn,
+  .update-banner,
+  .bd-error-banner,
+  app-toast-container,
+  .page-header button,
+  .header-actions,
+  .filtros-row,
+  .rango-tabs,
+  .alumnos-vista-toggle {
+    display: none !important;
+  }
+
+  // El área de contenido ocupa toda la página, sin scroll.
+  .main-area,
+  .content-area {
+    height: auto !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  // Tablas con bordes visibles y colores neutros para impresión.
+  .mat-mdc-table,
+  .mat-mdc-cell,
+  .mat-mdc-header-cell {
+    background: white !important;
+    color: black !important;
+    border-color: #ccc !important;
+  }
+
+  .mat-mdc-row { page-break-inside: avoid; }
+
+  // Cards / containers sin sombras ni gradientes.
+  .card,
+  .mat-mdc-card,
+  .tabla-container {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  // Títulos en negro con buena legibilidad.
+  h1, h2, h3, h4, h5, h6 {
+    color: black !important;
+    text-shadow: none !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+            background-clip: initial !important;
+    -webkit-text-fill-color: black !important;
+  }
+
+  // Forzar tamaño de página razonable para reportes anchos.
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
 }
 

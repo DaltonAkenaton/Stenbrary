@@ -80,6 +80,11 @@ interface AppConfig {
   /** Probabilidad 0-1 de mostrar animación al registrar. Default 0.08 (8%). */
   celebracionProbabilidad: number;
 
+  // ── Animación de éxito al registrar (v3.20) ──
+  /** Duración en ms de la pantalla de éxito antes de redirigir al scanner.
+   *  El usuario puede tocar la pantalla para saltar a scanner antes. */
+  tiempoExitoMs: number;
+
   // ── Alertas de inactividad (v3.10.0) ──
   /** Umbral de días sin venir para considerar a un alumno "inactivo". 0 = desactivado. */
   umbralInactividadDias: number;
@@ -105,6 +110,7 @@ const DEFAULT_CONFIG: AppConfig = {
   horarioModo: 'advertir',
   celebracionActiva: true,
   celebracionProbabilidad: 0.08,
+  tiempoExitoMs: 5000,
   umbralInactividadDias: 30,
   umbralRecordatorioRespaldoDias: 14,
   ultimoRespaldoTs: 0,
@@ -280,6 +286,22 @@ export class ConfigService {
 
   setCelebracionProbabilidad(valor: number): void {
     this.config.celebracionProbabilidad = Math.max(0, Math.min(1, valor));
+    this.guardar();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // TIEMPO DE PANTALLA DE ÉXITO (v3.20)
+  // ═══════════════════════════════════════════════════════
+
+  get tiempoExitoMs(): number {
+    return this.config.tiempoExitoMs;
+  }
+
+  /** Acepta cualquier valor positivo en ms. La UI sugiere 1000–15000 pero
+   *  por principio de flexibilidad no se cap arriba — el coordinador manda. */
+  setTiempoExitoMs(ms: number): void {
+    const num = Math.max(500, Math.floor(ms) || 0);
+    this.config.tiempoExitoMs = num;
     this.guardar();
   }
 

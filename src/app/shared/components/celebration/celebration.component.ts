@@ -71,17 +71,25 @@ const FRASES = [
 
     .celebration-frase {
       position: absolute;
-      top: 38%;
+      /* Movido de 38% a 12% — el centro está reservado para la animación
+         de "registro exitoso" (emoji/Lottie/checkmark) y se solapaba el
+         texto. Ahora aparece como banner superior, sin chocar. */
+      top: 12%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.5);
       font-family: 'Space Grotesk', system-ui, sans-serif;
-      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-size: clamp(1.4rem, 3.5vw, 2.2rem);
       font-weight: 800;
       color: #00C8D7;
       text-shadow: 0 0 30px rgba(0, 200, 215, 0.6);
       animation: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       white-space: nowrap;
       letter-spacing: 0.02em;
+      padding: 8px 20px;
+      background: rgba(4, 9, 15, 0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 200, 215, 0.25);
+      border-radius: 100px;
     }
 
     .celebration-particles {

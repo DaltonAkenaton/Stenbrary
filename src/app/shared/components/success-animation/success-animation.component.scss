@@ -1,0 +1,628 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  success-animation.component.scss                    ║
+// ║  Stenbrary v3.20 — Animaciones multi-capa por tema   ║
+// ║                                                      ║
+// ║  Cada `.theme-X` tiene:                              ║
+// ║    - Animación del emoji principal                    ║
+// ║    - Movimiento único de los satélites                ║
+// ║    - Patrón único de partículas                       ║
+// ║    - Color de aura específico                         ║
+// ║    - Filtro CSS de "punch" en el peak                 ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../../styles/variables';
+
+// ─── STAGE PRINCIPAL ────────────────────────────────────
+.success-anim {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-xl;
+  // Permitir que satélites y partículas escapen del cuadro
+  overflow: visible;
+}
+
+// ─── AURA radial detrás de todo ─────────────────────────
+.anim-glow {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  z-index: 0;
+  filter: blur(12px);
+  animation: animGlow 1.8s 100ms ease-out both;
+  will-change: transform, opacity;
+}
+
+@keyframes animGlow {
+  0%   { transform: scale(0.4); opacity: 0; }
+  35%  { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+// ─── FLASH al peak ──────────────────────────────────────
+.anim-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(circle at center, currentColor 0%, transparent 60%);
+  opacity: 0;
+  animation: animFlash 700ms 350ms ease-out both;
+  will-change: opacity;
+}
+
+@keyframes animFlash {
+  0%   { opacity: 0; }
+  30%  { opacity: 0.18; }
+  100% { opacity: 0; }
+}
+
+// ─── EMOJI PRINCIPAL ────────────────────────────────────
+.anim-emoji {
+  position: relative;
+  z-index: 4;
+  font-size: clamp(6rem, 22vw, 9rem);
+  line-height: 1;
+  display: block;
+  filter: drop-shadow(0 0 24px rgba(0, 200, 215, 0.55));
+  transform-origin: center center;
+  will-change: transform;
+}
+
+// ─── LOTTIE ─────────────────────────────────────────────
+.anim-lottie {
+  position: relative;
+  z-index: 4;
+  width: 200px;
+  height: 200px;
+}
+
+// ─── CAPAS de satélites y partículas ────────────────────
+.satellite-layer,
+.particle-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.particle-layer { z-index: 1; }
+
+// Cada satélite se posiciona en un círculo según su índice (--i / --total).
+// El ángulo de cada uno = (i / total) * 360°.
+.satellite {
+  position: absolute;
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  filter: drop-shadow(0 0 8px rgba(0, 200, 215, 0.6));
+  --angle: calc((var(--i) / var(--total)) * 360deg);
+  --radius: 110px;
+  will-change: transform, opacity;
+}
+
+// Partículas: 14 distribuidas con jitter, animación dirigida por --i.
+.particle {
+  position: absolute;
+  font-size: clamp(1rem, 3.5vw, 1.6rem);
+  --col: calc((var(--i) % 7) - 3); // -3..3
+  --row: calc(floor(var(--i) / 7) - 1); // -1..1
+  will-change: transform, opacity;
+}
+
+// ═══════════════════════════════════════════════════════
+// 📚 LIBRO — Página abriéndose, libros flotando arriba
+// ═══════════════════════════════════════════════════════
+.theme-book {
+  .anim-glow {
+    background:
+      radial-gradient(circle at center,
+        rgba(0, 200, 215, 0.55) 0%,
+        rgba(245, 197, 106, 0.25) 35%,
+        transparent 65%);
+  }
+  .anim-flash { color: rgba(0, 200, 215, 0.5); }
+
+  .anim-emoji {
+    animation: bookOpen 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    filter: drop-shadow(0 0 30px rgba(0, 200, 215, 0.7));
+  }
+
+  // Satélites: 5 libros que aparecen en cascada radial alejándose
+  .satellite {
+    animation: bookCascade 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(200ms + var(--i) * 80ms);
+  }
+
+  // Partículas: emojis subiendo lento desde abajo (libros volando)
+  .particle {
+    animation: particleRise 2.2s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes bookOpen {
+  0%   { transform: scale(0)    rotate(-30deg); opacity: 0; }
+  35%  { transform: scale(1.25) rotate(15deg);  opacity: 1; }
+  55%  { transform: scale(0.92) rotate(-8deg); }
+  75%  { transform: scale(1.08) rotate(4deg); }
+  100% { transform: scale(1)    rotate(0deg); }
+}
+
+@keyframes bookCascade {
+  0%   { transform: rotate(var(--angle)) translateY(0)              scale(0); opacity: 0; }
+  60%  { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1)) scale(1.1); opacity: 1; }
+  100% { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1.3)) scale(0.7); opacity: 0; }
+}
+
+@keyframes particleRise {
+  0%   { transform: translate(calc(var(--col) * 50px), 100px) scale(var(--scale, 1)); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 50px - 30px), -180px) scale(calc(var(--scale, 1) * 0.5)); opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════
+// 👍 PULGAR ARRIBA — Corazones flotando, "likes" estilo redes sociales
+// ═══════════════════════════════════════════════════════
+.theme-thumbsup {
+  .anim-glow {
+    background:
+      radial-gradient(circle at center,
+        rgba(255, 80, 120, 0.5) 0%,
+        rgba(255, 140, 170, 0.25) 35%,
+        transparent 65%);
+  }
+  .anim-flash { color: rgba(255, 80, 120, 0.5); }
+
+  .anim-emoji {
+    animation: thumbsUp 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    filter: drop-shadow(0 0 26px rgba(255, 80, 120, 0.7));
+  }
+
+  // Satélites: corazones explotando hacia afuera con bounce
+  .satellite {
+    animation: heartBurst 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(300ms + var(--i) * 60ms);
+  }
+
+  // Partículas: lluvia de likes/corazones cayendo
+  .particle {
+    animation: particleRain 2s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes thumbsUp {
+  0%   { transform: scale(0)    rotate(-180deg) translateY(60px);  opacity: 0; }
+  50%  { transform: scale(1.3)  rotate(15deg)   translateY(-20px); opacity: 1; }
+  70%  { transform: scale(0.95) rotate(-8deg)   translateY(0); }
+  100% { transform: scale(1)    rotate(0deg)    translateY(0); }
+}
+
+@keyframes heartBurst {
+  0%   { transform: rotate(var(--angle)) translateY(0)                          scale(0)   rotate(calc(var(--angle) * -1)); opacity: 0; }
+  30%  { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1))   scale(1.2) rotate(calc(var(--angle) * -1)); opacity: 1; }
+  100% { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1.5)) scale(0.5) rotate(calc(var(--angle) * -1)); opacity: 0; }
+}
+
+@keyframes particleRain {
+  0%   { transform: translate(calc(var(--col) * 40px), -120px) scale(var(--scale, 1)); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 40px + 30px), 200px) scale(calc(var(--scale, 1) * 0.6)); opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════
+// 🏆 TROFEO — Confetti dorado + estrellas orbitando
+// ═══════════════════════════════════════════════════════
+.theme-trophy {
+  .anim-glow {
+    background:
+      radial-gradient(circle at center,
+        rgba(245, 197, 106, 0.6) 0%,
+        rgba(245, 166, 35, 0.3) 35%,
+        transparent 65%);
+  }
+  .anim-flash { color: rgba(245, 197, 106, 0.6); }
+
+  .anim-emoji {
+    animation: trophyDrop 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    filter: drop-shadow(0 0 32px rgba(245, 197, 106, 0.85));
+  }
+
+  // Satélites: estrellas orbitando alrededor del trofeo (rotación continua)
+  .satellite {
+    animation:
+      starOrbitEnter 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
+      starOrbitSpin 4s 600ms linear infinite;
+    animation-delay: calc(400ms + var(--i) * 80ms), calc(1000ms + var(--i) * 80ms);
+    color: #F5C56A;
+  }
+
+  // Partículas: confetti dorado lloviendo
+  .particle {
+    animation: particleConfetti 2.4s cubic-bezier(0.4, 0, 0.6, 1) both;
+    animation-delay: calc(var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes trophyDrop {
+  0%   { transform: translateY(-220px) scale(0.4) rotate(-20deg); opacity: 0; }
+  40%  { transform: translateY(20px)   scale(1.15) rotate(8deg);  opacity: 1; }
+  60%  { transform: translateY(-15px)  scale(0.95) rotate(-4deg); }
+  80%  { transform: translateY(8px)    scale(1.05) rotate(2deg); }
+  100% { transform: translateY(0)      scale(1)    rotate(0deg); }
+}
+
+@keyframes starOrbitEnter {
+  0%   { transform: rotate(var(--angle)) translateY(0) scale(0); opacity: 0; }
+  100% { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1)) scale(1); opacity: 1; }
+}
+
+@keyframes starOrbitSpin {
+  from { transform: rotate(var(--angle))         translateY(calc(var(--radius) * -1)) scale(1); }
+  to   { transform: rotate(calc(var(--angle) + 360deg)) translateY(calc(var(--radius) * -1)) scale(1); }
+}
+
+@keyframes particleConfetti {
+  0%   { transform: translate(calc(var(--col) * 45px), -140px) rotate(0deg)   scale(var(--scale, 1)); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 45px + 50px), 220px) rotate(720deg) scale(calc(var(--scale, 1) * 0.7)); opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════
+// 🎓 GRADUACIÓN — Toss de gorras + diplomas volando
+// ═══════════════════════════════════════════════════════
+.theme-graduation {
+  .anim-glow {
+    background:
+      radial-gradient(circle at center,
+        rgba(0, 200, 215, 0.5) 0%,
+        rgba(245, 197, 106, 0.25) 35%,
+        transparent 65%);
+  }
+  .anim-flash { color: rgba(0, 200, 215, 0.5); }
+
+  .anim-emoji {
+    animation: gradToss 1.6s cubic-bezier(0.5, 0, 0.5, 1) both;
+    filter: drop-shadow(0 0 28px rgba(0, 200, 215, 0.7));
+  }
+
+  // Satélites: gorras y diplomas en toss-up con ritmo
+  .satellite {
+    animation: gradTossSatellite 1.6s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(150ms + var(--i) * 100ms);
+  }
+
+  // Partículas: gorras y scrolls cayendo lento (después del toss)
+  .particle {
+    animation: particleGradFall 2.6s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes gradToss {
+  0%   { transform: translateY(80px)  scale(0)    rotate(0deg);   opacity: 0; }
+  30%  { transform: translateY(-120px) scale(1.2) rotate(-380deg); opacity: 1; }
+  60%  { transform: translateY(20px)  scale(1.1) rotate(-680deg); }
+  80%  { transform: translateY(-8px)  scale(0.95) rotate(-720deg); }
+  100% { transform: translateY(0)     scale(1)    rotate(-720deg); }
+}
+
+@keyframes gradTossSatellite {
+  0%   { transform: rotate(var(--angle)) translateY(0)                          scale(0)   rotate(calc(var(--angle) * -1)); opacity: 0; }
+  40%  { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1.4)) scale(1.1) rotate(calc(var(--angle) * -1 + 360deg)); opacity: 1; }
+  100% { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -0.5)) scale(0.6) rotate(calc(var(--angle) * -1 + 720deg)); opacity: 0; }
+}
+
+@keyframes particleGradFall {
+  0%   { transform: translate(calc(var(--col) * 40px), -150px) rotate(0deg)   scale(var(--scale, 1)); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 40px + 20px), 200px) rotate(540deg) scale(calc(var(--scale, 1) * 0.6)); opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════
+// ⭐ ESTRELLA — Constelación + shooting stars
+// ═══════════════════════════════════════════════════════
+.theme-star {
+  .anim-glow {
+    background:
+      radial-gradient(circle at center,
+        rgba(255, 240, 180, 0.65) 0%,
+        rgba(245, 197, 106, 0.3) 35%,
+        transparent 65%);
+  }
+  .anim-flash { color: rgba(255, 240, 180, 0.65); }
+
+  .anim-emoji {
+    animation: starPulse 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    filter: drop-shadow(0 0 36px rgba(255, 240, 180, 0.95));
+  }
+
+  // Satélites: constelación estática con twinkle (parpadeo)
+  .satellite {
+    animation:
+      starTwinkle 800ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
+      starBlink 1.8s 800ms ease-in-out infinite;
+    animation-delay: calc(300ms + var(--i) * 100ms), calc(1100ms + var(--i) * 200ms);
+  }
+
+  // Partículas: shooting stars (estrellas fugaces diagonales)
+  .particle {
+    animation: particleShootingStar 1.8s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes starPulse {
+  0%   { transform: scale(0)   rotate(0deg);    opacity: 0; }
+  30%  { transform: scale(1.5) rotate(180deg);  opacity: 1; }
+  50%  { transform: scale(0.85) rotate(360deg); }
+  70%  { transform: scale(1.15) rotate(380deg); }
+  100% { transform: scale(1)   rotate(360deg); }
+}
+
+@keyframes starTwinkle {
+  0%   { transform: rotate(var(--angle)) translateY(0)                         scale(0); opacity: 0; }
+  100% { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1)) scale(1); opacity: 1; }
+}
+
+@keyframes starBlink {
+  0%, 100% { opacity: 1;   filter: drop-shadow(0 0 6px rgba(255, 240, 180, 0.8)); }
+  50%      { opacity: 0.4; filter: drop-shadow(0 0 12px rgba(255, 240, 180, 1)); }
+}
+
+@keyframes particleShootingStar {
+  0%   { transform: translate(calc(var(--col) * -50px - 100px), calc(var(--row) * 50px - 100px)) scale(var(--scale, 1)); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 50px + 200px), calc(var(--row) * 50px + 200px)) scale(calc(var(--scale, 1) * 0.4)); opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════
+// 🎉 FIESTA — Caos máximo: explosión multidireccional
+// ═══════════════════════════════════════════════════════
+.theme-party {
+  .anim-glow {
+    background:
+      conic-gradient(from 0deg,
+        rgba(255, 80, 120, 0.5),
+        rgba(245, 197, 106, 0.5),
+        rgba(0, 200, 215, 0.5),
+        rgba(120, 220, 100, 0.5),
+        rgba(255, 80, 120, 0.5));
+    animation: animGlowSpin 1.8s 100ms ease-out both;
+  }
+  .anim-flash { color: rgba(255, 80, 120, 0.5); }
+
+  .anim-emoji {
+    animation: partyJump 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    filter: drop-shadow(0 0 28px rgba(255, 80, 120, 0.7));
+  }
+
+  // Satélites: explosión multidireccional con rotación
+  .satellite {
+    animation: partyExplode 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(200ms + var(--i) * 50ms);
+  }
+
+  // Partículas: confetti caos (todas direcciones)
+  .particle {
+    animation: particlePartyChaos 2.6s cubic-bezier(0.4, 0, 0.6, 1) both;
+    animation-delay: calc(var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes animGlowSpin {
+  0%   { transform: scale(0.4) rotate(0deg);   opacity: 0; }
+  35%  { transform: scale(1)   rotate(180deg); opacity: 1; }
+  100% { transform: scale(1.6) rotate(360deg); opacity: 0; }
+}
+
+@keyframes partyJump {
+  0%   { transform: scale(0)    rotate(0deg);   translate: 0 0;     opacity: 0; }
+  20%  { transform: scale(1.3)  rotate(-15deg); translate: 0 -30px; opacity: 1; }
+  40%  { transform: scale(0.95) rotate(15deg);  translate: 0 0; }
+  60%  { transform: scale(1.1)  rotate(-8deg);  translate: 0 -15px; }
+  80%  { transform: scale(0.97) rotate(4deg);   translate: 0 0; }
+  100% { transform: scale(1)    rotate(0deg);   translate: 0 0; }
+}
+
+@keyframes partyExplode {
+  0%   { transform: rotate(var(--angle)) translateY(0)                          scale(0)   rotate(calc(var(--angle) * -1)); opacity: 0; }
+  35%  { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1.2)) scale(1.3) rotate(calc(var(--angle) * -1 + 360deg)); opacity: 1; }
+  100% { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1.8)) scale(0.4) rotate(calc(var(--angle) * -1 + 720deg)); opacity: 0; }
+}
+
+@keyframes particlePartyChaos {
+  0%   { transform: translate(0, 0)                                              rotate(0deg)   scale(0); opacity: 0; }
+  15%  { transform: translate(calc(var(--col) * 30px), calc(var(--row) * 30px))  rotate(180deg) scale(var(--scale, 1)); opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 90px), calc(var(--row) * 90px + 200px)) rotate(720deg) scale(calc(var(--scale, 1) * 0.5)); opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════
+// ✅ CHECK — Sleek minimalismo, anillos pulsantes
+// ═══════════════════════════════════════════════════════
+.theme-check {
+  .anim-glow {
+    background:
+      radial-gradient(circle at center,
+        rgba(120, 220, 100, 0.55) 0%,
+        rgba(14, 176, 123, 0.25) 35%,
+        transparent 65%);
+  }
+  .anim-flash { color: rgba(120, 220, 100, 0.5); }
+
+  .anim-emoji {
+    animation: checkPop 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    filter: drop-shadow(0 0 28px rgba(14, 176, 123, 0.85));
+  }
+
+  // Satélites: pulsos concéntricos (escala + fade)
+  .satellite {
+    animation: checkPulseRing 1.6s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(400ms + var(--i) * 150ms);
+    color: #6FE3A1;
+  }
+
+  // Partículas: spike-burst (líneas radiales que se desvanecen)
+  .particle {
+    animation: particleCheckBurst 1.6s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes checkPop {
+  0%   { transform: scale(0);   opacity: 0; }
+  40%  { transform: scale(1.4); opacity: 1; }
+  60%  { transform: scale(0.9); }
+  80%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkPulseRing {
+  0%   { transform: scale(0);   opacity: 0; }
+  40%  { transform: scale(1.5); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes particleCheckBurst {
+  0%   { transform: translate(0, 0)                                              scale(0); opacity: 0; }
+  20%  { transform: translate(calc(var(--col) * 25px), calc(var(--row) * 25px))  scale(var(--scale, 1)); opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 100px), calc(var(--row) * 100px)) scale(0); opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════
+// 🎁 COFRE DEL TESORO — Aparece, tiembla, explosiona, tesoro burst
+// ═══════════════════════════════════════════════════════
+// Timeline interno (0%–100% sobre 2s totales):
+//   0–10%  : aparece desde abajo con bounce (suspense inicial)
+//   10–55% : SHAKE violento (el "cofre tembloroso" — gen Z entiende esto)
+//   55–65% : breve pausa (el "wait for it" momento)
+//   65–80% : explosión: scale 1.7x + flash de luz dorada
+//   80–100%: vuelve a tamaño 1, tesoro orbita
+// ═══════════════════════════════════════════════════════
+.theme-cofre {
+  .anim-glow {
+    background:
+      radial-gradient(circle at center,
+        rgba(245, 197, 106, 0.7) 0%,
+        rgba(255, 215, 130, 0.35) 30%,
+        rgba(255, 80, 120, 0.15) 55%,
+        transparent 70%);
+    // El glow esperá al peak de la explosión para crecer (delay)
+    animation: cofreGlow 2s 100ms ease-out both;
+  }
+  .anim-flash {
+    color: rgba(255, 220, 130, 0.7);
+    // Flash sincronizado con la "explosión" del cofre (~65%)
+    animation: cofreFlash 2s 100ms ease-out both;
+  }
+
+  .anim-emoji {
+    animation: cofreShakeOpen 2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    filter: drop-shadow(0 0 32px rgba(245, 197, 106, 0.95));
+  }
+
+  // Satélites: tesoros (gemas, monedas, estrellas) que salen disparados
+  // SOLO cuando el cofre "explosiona" (delay 1100ms = 55% de 2s)
+  .satellite {
+    animation: cofreTreasureBurst 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(1100ms + var(--i) * 50ms);
+  }
+
+  // Partículas: confetti dorado + tesoros pequeños que vuelan tras explosión
+  .particle {
+    animation: cofreParticleExplode 1.6s cubic-bezier(0.4, 0, 0.6, 1) both;
+    animation-delay: calc(1200ms + var(--delay-extra-ms) * 1ms);
+    transform: scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes cofreShakeOpen {
+  // Aparece desde abajo
+  0%   { transform: translateY(80px) scale(0)    rotate(0deg);  opacity: 0; }
+  10%  { transform: translateY(0)    scale(1)    rotate(0deg);  opacity: 1; }
+  // SHAKE — temblor intenso (el momento "Pokémon legendario")
+  15%  { transform: translateY(0)    scale(1.02) rotate(-12deg); }
+  20%  { transform: translateY(0)    scale(1.02) rotate(12deg); }
+  25%  { transform: translateY(0)    scale(1.04) rotate(-15deg); }
+  30%  { transform: translateY(0)    scale(1.04) rotate(15deg); }
+  35%  { transform: translateY(0)    scale(1.06) rotate(-10deg); }
+  40%  { transform: translateY(0)    scale(1.06) rotate(10deg); }
+  45%  { transform: translateY(0)    scale(1.08) rotate(-8deg); }
+  50%  { transform: translateY(0)    scale(1.08) rotate(8deg); }
+  // Pausa: se queda quieto un instante (suspense)
+  55%  { transform: translateY(-5px) scale(1.1)  rotate(0deg); }
+  // EXPLOSIÓN: crece DRAMÁTICAMENTE
+  65%  { transform: translateY(-15px) scale(1.7) rotate(0deg); }
+  75%  { transform: translateY(-5px)  scale(1.3) rotate(0deg); }
+  85%  { transform: translateY(0)     scale(1.1) rotate(0deg); }
+  100% { transform: translateY(0)     scale(1)   rotate(0deg);  opacity: 1; }
+}
+
+// Aura: silenciosa al principio, explota dorado al peak (~65%)
+@keyframes cofreGlow {
+  0%, 50%  { transform: scale(0.4); opacity: 0; }
+  65%      { transform: scale(1.4); opacity: 1; }
+  100%     { transform: scale(2);   opacity: 0; }
+}
+
+// Flash: invisible hasta el peak, luego destello fugaz
+@keyframes cofreFlash {
+  0%, 55%  { opacity: 0; }
+  65%      { opacity: 0.35; }
+  100%     { opacity: 0; }
+}
+
+// Tesoros saliendo: empiezan dentro del cofre, vuelan radialmente con bounce
+@keyframes cofreTreasureBurst {
+  0%   { transform: rotate(var(--angle)) translateY(0)                          scale(0)   rotate(calc(var(--angle) * -1)); opacity: 0; }
+  20%  { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -0.4)) scale(1.4) rotate(calc(var(--angle) * -1)); opacity: 1; }
+  60%  { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1.2)) scale(1.1) rotate(calc(var(--angle) * -1 + 180deg)); opacity: 1; }
+  100% { transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1.7)) scale(0.6) rotate(calc(var(--angle) * -1 + 360deg)); opacity: 0; }
+}
+
+// Partículas: confetti dorado y tesoros pequeños volando caos
+@keyframes cofreParticleExplode {
+  0%   { transform: translate(0, 0)                                                rotate(0deg)   scale(0); opacity: 0; }
+  20%  { transform: translate(calc(var(--col) * 35px), calc(var(--row) * 35px))    rotate(180deg) scale(var(--scale, 1)); opacity: 1; }
+  100% { transform: translate(calc(var(--col) * 110px), calc(var(--row) * 110px + 180px)) rotate(720deg) scale(calc(var(--scale, 1) * 0.5)); opacity: 0; }
+}
+
+// ─── REDUCED MOTION ──────────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  .anim-glow,
+  .anim-flash,
+  .satellite,
+  .particle {
+    animation: none !important;
+    opacity: 0.4;
+  }
+  .anim-emoji,
+  .anim-lottie {
+    animation: fadeIn 300ms ease both !important;
+    transform: none !important;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

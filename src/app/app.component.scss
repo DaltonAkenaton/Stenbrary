@@ -662,7 +662,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 58px;
+  height: $bottom-nav-height;
   padding-bottom: env(safe-area-inset-bottom, 0px); // notch iphone
   background: $navy-950;
   border-top: 1px solid $border-subtle;
@@ -772,7 +772,7 @@
 
   // Dejar espacio para la bottom nav
   .content-area {
-    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(#{$bottom-nav-height} + env(safe-area-inset-bottom, 0px));
   }
 }
 

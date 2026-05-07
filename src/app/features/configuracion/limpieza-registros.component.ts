@@ -211,6 +211,13 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
       flex: 1;
     }
 
+    /* En móvil los dos date-pickers no caben en una fila — apilar en column. */
+    @media (max-width: 480px) {
+      .fechas-custom {
+        flex-direction: column;
+      }
+    }
+
     .preview-box {
       display: flex;
       align-items: center;

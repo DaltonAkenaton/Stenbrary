@@ -2533,13 +2533,28 @@
   }
 }
 
+// Wrapper con scroll horizontal en móvil — 12 barras a 360px serían
+// ilegibles (~25px por columna). Min-width fuerza ancho usable.
+.crecimiento-bars-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -8px; // Compensar padding del card para que el scroll llegue al borde
+  padding: 0 8px;
+}
+
 .crecimiento-bars {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(12, minmax(36px, 1fr));
   gap: 4px;
   align-items: flex-end;
   min-height: 240px;
   padding: 8px 0;
+
+  @media (max-width: $breakpoint-sm) {
+    // En móvil, asegurar ancho mínimo total para que las barras sean legibles.
+    // El padre `.crecimiento-bars-scroll` permite arrastrar horizontalmente.
+    min-width: 540px;
+  }
 }
 
 .crecimiento-col {

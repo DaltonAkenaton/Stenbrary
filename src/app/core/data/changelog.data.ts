@@ -49,6 +49,86 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.20.0',
+    fecha: '2026-05-07',
+    titulo: 'Responsive total + animaciones de éxito',
+    destacado: true,
+    resumen:
+      'Auditoría responsive completa de todo el sistema (laptops, tablets y celulares chicos como Xiaomi/Redmi) y rediseño de la pantalla de "Registro Exitoso": ahora 8 animaciones distintas con emojis gigantes, satélites orbitando, partículas y un cofre del tesoro que tiembla y se abre. Los alumnos van a querer escanear varias veces para ver cuál les toca.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          '8 animaciones de éxito distintas que se eligen al azar al registrar: 📚 Libro, 👍 Pulgar arriba, 🏆 Trofeo, 🎓 Graduación, ⭐ Estrella, 🎉 Fiesta, ✅ Check y 🎁 Cofre del tesoro. Cada una tiene su propio efecto: estrellas orbitando, confetti dorado, gorras de graduación volando, un cofre que tiembla y explota con tesoros saliendo, etc.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva sección "Probar animaciones" en Configuración → Tiempo de pantalla de éxito: 9 botones para previsualizar cada tema sin tener que registrar a alguien (uno por tema más "Aleatorio"). Tap en la pantalla cierra el preview.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Tiempo de la pantalla de éxito ahora es configurable en /configuracion (presets: 2 s rápida, 5 s normal, 8 s lenta, 12 s quiosco) o cualquier valor libre. Por defecto dura 5 s.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Toca la pantalla de éxito para saltar inmediatamente al scanner — útil cuando hay cola de alumnos esperando registrarse.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Vibración háptica distinta por cada animación (en celulares con soporte): el cofre tiembla con 8 pulsos cortos, el trofeo simula un fanfare, la fiesta es ráfaga de 9 pulsos, etc. Cada tema se siente diferente también al tacto.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Bug crítico arreglado: la barra inferior con motivos seleccionados (Cancelar/Registrar) aparecía en pantallas grandes (laptops/desktop) cuando solo debía verse en celulares. Ahora desktop muestra el panel lateral correctamente y el celular sigue con la barra abajo.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'En celulares pequeños (Xiaomi/Redmi y similares), la barra de selección de motivos ya no queda tapada por la barra inferior de navegación. Tiene scroll interno cuando hay muchas actividades seleccionadas para que los botones Cancelar/Registrar siempre se vean.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Sistema 100 % responsive auditado de cabo a rabo: tablas de Alumnos y Registros ahora hacen scroll horizontal en celular en lugar de romper el layout. Las gráficas de Estadísticas (12 meses de actividad) se desplazan horizontalmente cuando no caben. Los horarios de operación apilan en columna en pantallas chicas. El padding lateral se reduce de 24 a 16 px en celular para aprovechar el espacio.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Diálogos del sistema (confirmaciones, búsqueda, atajos) limitados a 95 % del ancho de pantalla — en celulares de 360 px ya no se desbordan.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La luz de fondo (mesh radial cyan) ya no desaparece durante la pantalla de éxito — se conserva detrás de la animación, manteniendo la atmósfera del sistema.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Soporte para "Reducir movimiento" del sistema operativo: si el alumno o coordinador tiene activada esa preferencia (accesibilidad), las animaciones se desactivan globalmente y la pantalla de éxito muestra solo un fade-in del emoji.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Estilos de impresión (Ctrl+P): si imprimes Registros, Alumnos o Detalle de Alumno desde el navegador, la app oculta automáticamente la barra lateral, topbar y botones, deja fondo blanco con texto negro y formatea las tablas para hoja A4.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Frase de celebración aleatoria ("¡Sigue así!", "¡Excelente hábito!", etc.) reposicionada como banner superior con badge en lugar de ocupar el centro — ya no choca con el emoji de éxito cuando se dispara.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Botones pequeños (chip de quitar motivo) ahora tienen área táctil ampliada a 44×44 px en celular sin cambiar su tamaño visual. Cumple recomendaciones de accesibilidad WCAG.',
+      },
+    ],
+  },
+  {
     version: '3.19.0',
     fecha: '2026-05-05',
     titulo: 'Endurecimiento: rendimiento, robustez y privacidad',
