@@ -49,6 +49,28 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.21.1',
+    fecha: '2026-05-12',
+    titulo: 'Escáner instantáneo + ajustes finos',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nuevo preset "Instantáneo (recomendado)" en velocidad del escáner — el sistema detecta la credencial en cada frame de la cámara (lo más rápido posible). Ahora viene activado por defecto.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'El card "Comportamiento del Escáner" antiguo ahora se llama "Detección de duplicados", que es lo que realmente controla. El de velocidad/cooldown queda como único "Comportamiento del escáner".',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'En el recordatorio de respaldo programado, la hora ahora tiene presets rápidos (08:00, 12:00, 14:00, 18:00, 20:00) además del selector libre.',
+      },
+    ],
+  },
+  {
     version: '3.21.0',
     fecha: '2026-05-12',
     titulo: 'Dashboard con insights + más control',

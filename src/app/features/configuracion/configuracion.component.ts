@@ -252,7 +252,9 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
         <div style="margin-top: 6px;">
           <strong style="font-size: .9rem; color:#E8F4F8;">Velocidad de detección</strong>
           <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
-            Cuánto espera el escáner entre intentos. Más rápido = más CPU pero respuesta más ágil.
+            Por defecto está en <strong style="color:#E8F4F8">instantáneo</strong> — el escáner
+            intenta detectar la credencial en cada frame de la cámara (lo más rápido posible).
+            Solo súbelo si necesitas ahorrar batería en tablets.
           </p>
           <div class="auto-close-options">
             @for (op of opcionesEscanerVelocidad; track op.valor) {
@@ -271,7 +273,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                       matTooltip="Disminuir 10 ms">
                 <mat-icon>remove</mat-icon>
               </button>
-              <input id="velMsInput" type="number" min="30" step="10"
+              <input id="velMsInput" type="number" min="0" step="10"
                      class="aforo-number-input"
                      [ngModel]="configService.escanerVelocidadMs"
                      (ngModelChange)="configService.setEscanerVelocidadMs($event)">
@@ -936,14 +938,14 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
         </p>
       </mat-card>
 
-      <!-- ═══ COMPORTAMIENTO DEL ESCÁNER ═══ -->
+      <!-- ═══ DETECCIÓN DE DUPLICADOS ═══ -->
       <mat-card class="section-card">
         <div class="section-header">
-          <mat-icon>qr_code_scanner</mat-icon>
+          <mat-icon>content_copy</mat-icon>
           <h2>
-            Comportamiento del Escáner
+            Detección de duplicados
             <span style="display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;color:rgba(160,200,215,0.4);cursor:help;"
-                  matTooltip="Cuando un alumno escanea su credencial, el sistema verifica si ya tiene un registro reciente. Si hay uno dentro de este tiempo, se pedirá confirmación para evitar entradas accidentales. Por ejemplo: si un alumno entra y vuelve a escanear por error 5 minutos después, el sistema preguntará si realmente quiere registrar otra entrada."
+                  matTooltip="Cuando un alumno escanea su credencial, el sistema verifica si ya tiene un registro reciente. Si hay uno dentro de este tiempo, se pedirá confirmación para evitar entradas accidentales."
                   matTooltipPosition="above">
               <mat-icon style="font-size:15px;width:15px;height:15px;">help_outline</mat-icon>
             </span>
@@ -1065,14 +1067,28 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                 }
               </div>
             </div>
-            <div class="aforo-input-row" style="margin-top: 12px;">
-              <label for="respaldoHora">Hora del aviso</label>
-              <input id="respaldoHora"
-                     type="time"
-                     class="aforo-number-input"
-                     style="max-width: 140px;"
-                     [ngModel]="configService.recordatorioRespaldoHora"
-                     (ngModelChange)="configService.setRecordatorioRespaldoHora($event)">
+            <div style="margin-top: 12px;">
+              <label style="font-size: .85rem; color: rgba(200,230,240,.7); display: block; margin-bottom: 6px;">
+                Hora del aviso
+              </label>
+              <div class="auto-close-options" style="margin-bottom: 8px;">
+                @for (h of horasRespaldoOpciones; track h) {
+                  <button class="auto-close-btn"
+                          [class.active]="configService.recordatorioRespaldoHora === h"
+                          (click)="configService.setRecordatorioRespaldoHora(h)">
+                    {{ h }}
+                  </button>
+                }
+              </div>
+              <div class="aforo-input-row">
+                <label for="respaldoHora" style="font-size: .78rem; color: rgba(200,230,240,.55);">Otra hora</label>
+                <input id="respaldoHora"
+                       type="time"
+                       class="aforo-number-input"
+                       style="max-width: 140px;"
+                       [ngModel]="configService.recordatorioRespaldoHora"
+                       (ngModelChange)="configService.setRecordatorioRespaldoHora($event)">
+              </div>
             </div>
             <p class="section-hint">
               <mat-icon>info</mat-icon>
@@ -2081,6 +2097,8 @@ export class ConfiguracionComponent implements OnInit {
     { valor: 0, etiqueta: 'D' },
   ];
 
+  readonly horasRespaldoOpciones = ['08:00', '12:00', '14:00', '18:00', '20:00'];
+
   esDiaRespaldoActivo(dia: number): boolean {
     return this.configService.recordatorioRespaldoDiasSemana.includes(dia);
   }
@@ -2098,9 +2116,10 @@ export class ConfiguracionComponent implements OnInit {
   // ═══════════════════════════════════════════════
 
   readonly opcionesEscanerVelocidad = [
+    { valor: 0,   etiqueta: 'Instantáneo (recomendado)' },
     { valor: 100, etiqueta: 'Rápido (100 ms)' },
     { valor: 160, etiqueta: 'Normal (160 ms)' },
-    { valor: 250, etiqueta: 'Cuidadoso (250 ms)' },
+    { valor: 250, etiqueta: 'Ahorrador (250 ms)' },
   ];
 
   readonly opcionesEscanerCooldown = [

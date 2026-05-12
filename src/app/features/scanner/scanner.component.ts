@@ -694,16 +694,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
     // SIEMPRE incluimos las estrategias agresivas y SIEMPRE activamos sharpening.
     // El presupuesto de tiempo por frame previene bloqueos de UI.
     this.effectiveStrategies = [...LOWRES_EXTRA_STRATEGIES, ...PREPROCESS_STRATEGIES];
-    // v3.21: el coordinador puede ajustar la velocidad de detección desde
-    // /configuracion. El default sigue siendo 160 ms (120 para low-res) pero
-    // si configuró un valor distinto, ese gana.
-    const velConfig = this.configService.escanerVelocidadMs;
-    if (velConfig === SCAN_INTERVAL_MS) {
-      // Default → mantener heurística por resolución (120 para low-res)
-      this.effectiveScanInterval = this.esLowRes ? SCAN_INTERVAL_LOWRES_MS : SCAN_INTERVAL_MS;
-    } else {
-      this.effectiveScanInterval = velConfig;
-    }
+    // v3.21.1: el coordinador manda. 0 (default) = "lo más rápido posible"
+    // — escanea en cada frame del requestAnimationFrame sin throttle adicional.
+    // El presupuesto de tiempo por frame (`effectiveBudget`) sigue protegiendo
+    // contra bloqueos de UI. Cualquier otro valor se respeta tal cual.
+    this.effectiveScanInterval = Math.max(0, this.configService.escanerVelocidadMs);
     this.effectiveBudget = this.esLowRes ? 70 : 60;
     this.sharpenEnabled = true;
     console.log(`📷 Cámara ${vw}×${vh} — pipeline agresivo activado: ${this.effectiveStrategies.length} estrategias, sharpening ON, budget ${this.effectiveBudget}ms`);

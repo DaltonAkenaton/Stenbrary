@@ -146,7 +146,7 @@ const DEFAULT_CONFIG: AppConfig = {
   recordatorioRespaldoModo: 'intervalo',
   recordatorioRespaldoHora: '18:00',
   recordatorioRespaldoDiasSemana: [5], // viernes
-  escanerVelocidadMs: 160,
+  escanerVelocidadMs: 0,
   escanerCooldownMs: 1500,
   escanerSaltarConfirmacion: false,
   volumenBeep: 0.15,
@@ -492,8 +492,9 @@ export class ConfigService {
   }
 
   setEscanerVelocidadMs(ms: number): void {
-    // Mínimo 30ms para no quemar CPU; sin tope arriba por flexibilidad.
-    this.config.escanerVelocidadMs = Math.max(30, Math.floor(ms) || 30);
+    // 0 = sin throttle (cada frame del rAF). Sin tope arriba por flexibilidad.
+    const n = Math.floor(Number(ms));
+    this.config.escanerVelocidadMs = Math.max(0, isNaN(n) ? 0 : n);
     this.guardar();
   }
 
