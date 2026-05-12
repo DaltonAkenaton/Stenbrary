@@ -49,6 +49,23 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.21.5',
+    fecha: '2026-05-12',
+    titulo: 'Feedback en cambios de configuración',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Al cambiar la velocidad o cooldown del escáner, el sistema confirma el nuevo valor con un mensaje breve.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Al activar/desactivar "Saltar diálogo de confirmación", "Confirmar cierres automáticamente" o "Cerrar al final del horario", aparece un mensaje explicando qué pasará a partir de ahora.',
+      },
+    ],
+  },
+  {
     version: '3.21.4',
     fecha: '2026-05-12',
     titulo: 'Recordatorio más claro y con feedback',

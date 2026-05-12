@@ -260,7 +260,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             @for (op of opcionesEscanerVelocidad; track op.valor) {
               <button class="auto-close-btn"
                       [class.active]="configService.escanerVelocidadMs === op.valor"
-                      (click)="configService.setEscanerVelocidadMs(op.valor)">
+                      (click)="onSetEscanerVelocidad(op.valor, op.etiqueta)">
                 {{ op.etiqueta }}
               </button>
             }
@@ -297,7 +297,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             @for (op of opcionesEscanerCooldown; track op.valor) {
               <button class="auto-close-btn"
                       [class.active]="configService.escanerCooldownMs === op.valor"
-                      (click)="configService.setEscanerCooldownMs(op.valor)">
+                      (click)="onSetEscanerCooldown(op.valor, op.etiqueta)">
                 {{ op.etiqueta }}
               </button>
             }
@@ -335,7 +335,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             <span class="sound-status">{{ configService.escanerSaltarConfirmacion ? 'Activado' : 'Desactivado' }}</span>
             <button class="btn-inline"
                     [class.btn-inline-active]="configService.escanerSaltarConfirmacion"
-                    (click)="configService.setEscanerSaltarConfirmacion(!configService.escanerSaltarConfirmacion)">
+                    (click)="onToggleEscanerSaltarConfirmacion()">
               <mat-icon>{{ configService.escanerSaltarConfirmacion ? 'toggle_on' : 'toggle_off' }}</mat-icon>
               {{ configService.escanerSaltarConfirmacion ? 'Desactivar' : 'Activar' }}
             </button>
@@ -434,7 +434,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                 <span class="sound-status">{{ configService.cierreAutoConfirmar ? 'Activado' : 'Desactivado' }}</span>
                 <button class="btn-inline"
                         [class.btn-inline-active]="configService.cierreAutoConfirmar"
-                        (click)="configService.setCierreAutoConfirmar(!configService.cierreAutoConfirmar)">
+                        (click)="onToggleCierreAutoConfirmar()">
                   <mat-icon>{{ configService.cierreAutoConfirmar ? 'toggle_on' : 'toggle_off' }}</mat-icon>
                   {{ configService.cierreAutoConfirmar ? 'Desactivar' : 'Activar' }}
                 </button>
@@ -455,7 +455,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                 <button class="btn-inline"
                         [class.btn-inline-active]="configService.cierreAlHorario"
                         [disabled]="!configService.horarioActivo"
-                        (click)="configService.setCierreAlHorario(!configService.cierreAlHorario)">
+                        (click)="onToggleCierreAlHorario()">
                   <mat-icon>{{ configService.cierreAlHorario ? 'toggle_on' : 'toggle_off' }}</mat-icon>
                   {{ configService.cierreAlHorario ? 'Desactivar' : 'Activar' }}
                 </button>
@@ -2286,6 +2286,48 @@ export class ConfiguracionComponent implements OnInit {
     const n = typeof pct === 'string' ? parseInt(pct, 10) : pct;
     const clamped = Math.max(0, Math.min(100, isNaN(n) ? 0 : n));
     this.configService.setVolumenBeep(clamped / 100);
+  }
+
+  // ─── Feedback al cambiar settings con efecto diferido ───
+
+  onSetEscanerVelocidad(ms: number, etiqueta: string): void {
+    this.configService.setEscanerVelocidadMs(ms);
+    this.toastService.success(`Velocidad de detección: ${etiqueta}`);
+  }
+
+  onSetEscanerCooldown(ms: number, etiqueta: string): void {
+    this.configService.setEscanerCooldownMs(ms);
+    this.toastService.success(`Espera entre escaneos: ${etiqueta}`);
+  }
+
+  onToggleEscanerSaltarConfirmacion(): void {
+    const nuevo = !this.configService.escanerSaltarConfirmacion;
+    this.configService.setEscanerSaltarConfirmacion(nuevo);
+    this.toastService.success(
+      nuevo
+        ? 'El escáner ya no pedirá confirmación — procesará al instante'
+        : 'El escáner pedirá confirmación antes de procesar',
+    );
+  }
+
+  onToggleCierreAutoConfirmar(): void {
+    const nuevo = !this.configService.cierreAutoConfirmar;
+    this.configService.setCierreAutoConfirmar(nuevo);
+    this.toastService.success(
+      nuevo
+        ? 'Las salidas por timeout se confirmarán automáticamente'
+        : 'Las salidas por timeout requerirán revisión manual',
+    );
+  }
+
+  onToggleCierreAlHorario(): void {
+    const nuevo = !this.configService.cierreAlHorario;
+    this.configService.setCierreAlHorario(nuevo);
+    this.toastService.success(
+      nuevo
+        ? 'Al llegar la hora de cierre se cerrarán todas las entradas pendientes'
+        : 'Cierre por horario desactivado',
+    );
   }
 
   // ═══════════════════════════════════════════════
