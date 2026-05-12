@@ -49,6 +49,101 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.21.0',
+    fecha: '2026-05-12',
+    titulo: 'Dashboard con insights + más control',
+    destacado: true,
+    resumen:
+      'El resumen ahora cuenta una historia más rica del día: comparativa con ayer en "Accesos hoy", hora pico, alumnos nuevos del día, y un banner unificado que junta todos los avisos (respaldo, cierres automáticos, biblioteca cerrada, error de BD) en un solo lugar. Además, el botón "Exportar" del banner exporta directo sin abrir más ventanas. Y en Configuración se abrieron tres nuevos paneles: recordatorio de respaldo programado (días y hora), comportamiento del escáner (velocidad, espera, saltar confirmación, volumen) y cierre automático extendido (confirmar solo, cerrar al horario).',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Comparativa con ayer en el card "Accesos hoy": un chip indica si vienes con más o menos accesos que el mismo día anterior, con el porcentaje exacto.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva tira de mini-indicadores: alumnos nuevos hoy (clickeable, lleva a la lista de alumnos) y la franja horaria pico del día con cuántos accesos hubo.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Banner unificado de avisos: ahora un solo lugar muestra el recordatorio de respaldo, los cierres automáticos pendientes, si la biblioteca está cerrada por horario, o si hay un problema con la base de datos. Cada uno se puede descartar de manera independiente.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Actividades de hoy clickeables: tocar una actividad ("Estudiar", "Trabajo escolar", etc.) abre Registros con esa actividad ya filtrada.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'En "Últimas entradas" aparece un puntito verde junto a los alumnos que siguen dentro de la biblioteca (cuando el módulo de salida está activo).',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'El nombre de la institución (si lo configuraste) ahora se muestra en el saludo del dashboard.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Las actividades ahora cuentan motivos múltiples: si un alumno eligió "Estudiar + Tarea", suma a las dos categorías, no solo a la principal.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Auto-refresh más responsable: deja de consumir recursos cuando cambias de pestaña, y vuelve a actualizar al instante en cuanto regresas al dashboard.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El botón "Actualizar" ya no oculta todo el dashboard mientras carga; refresca en silencio para no perder el contexto visual.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El dashboard ya no carga TODA la historia de registros cada 30 segundos solo para contarlos. Ahora usa un conteo directo, lo que mejora el rendimiento mucho cuando hay miles de registros.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El saludo ("Buenos días/tardes/noches") se actualiza solo si dejas el dashboard abierto cruzando las 12:00 o las 18:00.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Mejor accesibilidad: los botones de refrescar, aforo y actividades tienen etiquetas legibles para lectores de pantalla.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El botón "Exportar" del banner de respaldo ahora exporta el archivo directo sin llevarte a Configuración. Aparece "Exportando…" mientras corre y el aviso desaparece solo al terminar.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Recordatorio de respaldo programado: además del modo por intervalo (cada N días), ahora puedes elegir días específicos de la semana y una hora exacta (ej. todos los viernes a las 18:00). El aviso desaparece automáticamente al exportar el respaldo del día.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Comportamiento del escáner totalmente configurable desde /configuracion: velocidad de detección (rápido/normal/cuidadoso o valor libre en ms), espera entre escaneos (cooldown), opción de saltar el diálogo de confirmación (útil en quiosco) y slider de volumen del beep.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Cierre automático extendido: nuevo toggle "Confirmar automáticamente" para que las salidas por timeout no requieran revisión manual, y "Cerrar al final del horario" para cerrar TODAS las entradas pendientes cuando la biblioteca termina su jornada.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Las horas de cierre automático ahora aceptan cualquier valor libre (no solo los presets) por la regla de flexibilidad — los presets son atajos, no restricciones.',
+      },
+    ],
+  },
+  {
     version: '3.20.0',
     fecha: '2026-05-07',
     titulo: 'Responsive total + animaciones de éxito',

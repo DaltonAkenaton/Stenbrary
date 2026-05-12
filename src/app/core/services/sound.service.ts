@@ -1,15 +1,14 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  sound.service.ts                                    ║
-// ║  Stenbrary v3.6.2 — Sonido de confirmación           ║
+// ║  Stenbrary v3.21 — Volumen configurable              ║
 // ║                                                      ║
 // ║  Genera un "beep" sutil usando Web Audio API          ║
 // ║  (sin archivos de audio externos).                    ║
-// ║  Configurable: on/off guardado en localStorage.       ║
-// ║                                                      ║
-// ║  UBICACIÓN: src/app/core/services/sound.service.ts    ║
+// ║  Configurable: on/off + volumen vía ConfigService.    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { ConfigService } from './config.service';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +17,7 @@ export class SoundService {
 
   private audioContext: AudioContext | null = null;
   private readonly STORAGE_KEY = 'stenbrary-sonido-activo';
+  private configService = inject(ConfigService);
 
   /**
    * Si el sonido está habilitado.
@@ -87,6 +87,7 @@ export class SoundService {
     tipo: OscillatorType
   ): void {
     if (!this.habilitado) return;
+    if (this.configService.volumenBeep <= 0) return;
 
     try {
       // Crear AudioContext lazily (requiere interacción del usuario)
@@ -108,11 +109,13 @@ export class SoundService {
       oscillator.type = tipo;
       oscillator.frequency.setValueAtTime(frecuencia, this.audioContext.currentTime);
 
-      // Volumen suave (0.15 de 1.0) — no queremos asustar a nadie
-      gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+      // Volumen configurable (default 0.15). Si el coordinador lo subió a 1
+      // suena fuerte; si está en 0 no reproduce nada.
+      const vol = Math.max(0.0001, this.configService.volumenBeep);
+      gainNode.gain.setValueAtTime(vol, this.audioContext.currentTime);
       // Fade out para evitar "click" al final
       gainNode.gain.exponentialRampToValueAtTime(
-        0.001,
+        0.0001,
         this.audioContext.currentTime + duracion
       );
 

@@ -307,7 +307,8 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
     <!-- Hint fijo al pie de pantalla -->
     <div class="refresh-hint-fixed">
       <mat-icon>schedule</mat-icon>
-      Actualización automática cada 30 s &nbsp;·&nbsp; Toca un alumno para registrar su salida
+      <span class="hint-full">Actualización automática cada 30 s &nbsp;·&nbsp; Toca un alumno para registrar su salida</span>
+      <span class="hint-short">Toca para registrar salida</span>
     </div>
   `,
   styles: [`
@@ -539,9 +540,21 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       font-size: .7rem; color: rgba(200,230,240,.28);
       z-index: 10;
       mat-icon { font-size: 13px; width: 13px; height: 13px; }
+
+      .hint-short { display: none; }
     }
     @media (max-width: 768px) {
       .refresh-hint-fixed { bottom: 58px; left: 0; }
+    }
+    @media (max-width: 480px) {
+      .refresh-hint-fixed {
+        padding: 3px 10px;
+        font-size: .62rem;
+        gap: 4px;
+
+        .hint-full { display: none; }
+        .hint-short { display: inline; }
+      }
     }
 
     /* ── CARD AUTO-BADGE ── */
@@ -639,6 +652,38 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       .aforo-card-top { flex-direction: column; align-items: flex-start; }
       .aforo-card-stats { width: 100%; justify-content: space-between; }
     }
+
+    @media (max-width: 480px) {
+      .presencia-container { padding: 12px 12px 96px; gap: 14px; }
+
+      .page-header { gap: 10px; }
+
+      .header-left {
+        gap: 10px;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .header-icon {
+        width: 40px; height: 40px;
+        border-radius: 12px;
+        mat-icon { font-size: 22px; width: 22px; height: 22px; }
+      }
+
+      h1 {
+        font-size: 1.15rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+        text-wrap: balance;
+      }
+
+      .header-subtitle { font-size: .76rem; }
+
+      .header-actions {
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+    }
   `],
 })
 export class PresenciaComponent implements OnInit, OnDestroy {
@@ -713,9 +758,11 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       // Primero ejecutar cierre automático si está configurado
       const horas = this.configService.horasAutoSalida;
       if (horas > 0) {
-        const cerrados = await this.databaseService.cerrarEntradasAntiguas(horas);
+        const autoConfirmar = this.configService.cierreAutoConfirmar;
+        const cerrados = await this.databaseService.cerrarEntradasAntiguas(horas, autoConfirmar);
         if (cerrados > 0) {
-          this.toastService.info(`${cerrados} entrada(s) cerradas automáticamente tras ${horas}h`);
+          const sufijo = autoConfirmar ? ' (sin requerir revisión)' : '';
+          this.toastService.info(`${cerrados} entrada(s) cerradas automáticamente tras ${horas}h${sufijo}`);
         }
       }
       const raw = await this.databaseService.obtenerRegistrosAbiertoHoy();

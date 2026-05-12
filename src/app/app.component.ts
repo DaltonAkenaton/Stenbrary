@@ -26,6 +26,7 @@ import { DatabaseService } from './core/services/database.service';
 import { GlobalSearchDialogComponent } from './shared/components/global-search/global-search-dialog.component';
 import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-shortcuts/keyboard-shortcuts-dialog.component';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
+import { ToastService } from './core/services/toast.service';
 
 interface NavItem {
   icon: string;
@@ -79,6 +80,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private routerSub: Subscription | null = null;
 
+  // ─── CIERRE POR HORARIO (v3.21) ─────────────────────────
+  private cierrePorHorarioInterval: ReturnType<typeof setInterval> | null = null;
+  /** Última fecha (YYYY-MM-DD) en la que ya se ejecutó el cierre por horario. */
+  private ultimoCierrePorHorarioDia = '';
+
   constructor(
     private router: Router,
     private swUpdate: SwUpdate,
@@ -86,6 +92,7 @@ export class AppComponent implements OnInit, OnDestroy {
     public configService: ConfigService,
     public changelogService: ChangelogService,
     public databaseService: DatabaseService,
+    private toastService: ToastService,
   ) {
     // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
     effect(() => {
@@ -111,6 +118,10 @@ export class AppComponent implements OnInit, OnDestroy {
     // Listeners de conexión
     window.addEventListener('online', this.onlineHandler);
     window.addEventListener('offline', this.offlineHandler);
+
+    // Cierre automático al cierre del horario operativo
+    this.iniciarCierrePorHorario();
+    document.addEventListener('visibilitychange', this.checkCierrePorHorario);
 
     // Listener de actualizaciones PWA
     if (this.swUpdate.isEnabled) {
@@ -144,8 +155,64 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     window.removeEventListener('online', this.onlineHandler);
     window.removeEventListener('offline', this.offlineHandler);
+    document.removeEventListener('visibilitychange', this.checkCierrePorHorario);
     this.routerSub?.unsubscribe();
+    if (this.cierrePorHorarioInterval) {
+      clearInterval(this.cierrePorHorarioInterval);
+      this.cierrePorHorarioInterval = null;
+    }
   }
+
+  // ═══════════════════════════════════════════════════════
+  // CIERRE POR HORARIO OPERATIVO (v3.21)
+  // ═══════════════════════════════════════════════════════
+  // Polling de baja frecuencia (60 s): si está activo el cierre por horario y
+  // ya pasó la hora de cierre del día, cierra todas las entradas abiertas.
+  // Idempotente vía `ultimoCierrePorHorarioDia`.
+
+  private iniciarCierrePorHorario(): void {
+    this.cierrePorHorarioInterval = setInterval(() => {
+      void this.checkCierrePorHorario();
+    }, 60_000);
+    // Disparo inmediato al cargar (cubre el caso de abrir la app después
+    // de la hora de cierre, p. ej. en la mañana siguiente).
+    void this.checkCierrePorHorario();
+  }
+
+  private checkCierrePorHorario = async (): Promise<void> => {
+    if (document.hidden) return;
+    if (!this.configService.cierreAlHorario) return;
+    if (!this.configService.horarioActivo) return;
+    if (!this.configService.registroSalidaActivo) return;
+
+    const ahora = new Date();
+    const diaKey = `${ahora.getFullYear()}-${ahora.getMonth()}-${ahora.getDate()}`;
+    if (this.ultimoCierrePorHorarioDia === diaKey) return;
+
+    const horarioDia = this.configService.horarios[ahora.getDay()];
+    if (!horarioDia || horarioDia.cerrado) return;
+
+    const m = /^(\d{1,2}):(\d{2})$/.exec(horarioDia.cierre || '');
+    if (!m) return;
+    const cierreMin = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    const ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
+    if (ahoraMin < cierreMin) return;
+
+    // Pasó la hora de cierre. Cerrar y marcar el día.
+    this.ultimoCierrePorHorarioDia = diaKey;
+    try {
+      const cerrados = await this.databaseService.cerrarTodasLasEntradasAbiertas(
+        this.configService.cierreAutoConfirmar,
+      );
+      if (cerrados > 0) {
+        const sufijo = this.configService.cierreAutoConfirmar ? '' : ' (revísalas en Biblioteca)';
+        this.toastService.info(`Horario cerrado: ${cerrados} entrada(s) cerrada(s)${sufijo}`);
+      }
+    } catch {
+      // Reintentaremos en el siguiente tick si falla
+      this.ultimoCierrePorHorarioDia = '';
+    }
+  };
 
   actualizarApp(): void {
     if (this.swUpdate.isEnabled) {

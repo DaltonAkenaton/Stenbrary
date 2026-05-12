@@ -162,8 +162,14 @@ columnas: string[] = [
     const horaDesde = qp.get('hora_desde');
     const horaHasta = qp.get('hora_hasta');
     const dowStr = qp.get('dow');
+    const motivo = qp.get('motivo');
 
     let cambio = false;
+
+    if (motivo) {
+      this.filtros.update(f => ({ ...f, motivo }));
+      cambio = true;
+    }
 
     if (fecha || desde || hasta) {
       this.filtros.update(f => ({ ...f, rangoFecha: 'personalizado' }));

@@ -49,6 +49,9 @@ export class AforoService {
     return Math.round((this._ocupacion() / cap) * 100);
   });
 
+  /** Porcentaje de ocupación recortado a [0, 100] — útil para anchos de barras. */
+  readonly porcentajeClamped = computed(() => Math.min(100, this.porcentaje()));
+
   /** Estado semántico para colorear UI */
   readonly estado = computed<EstadoAforo>(() => {
     if (!this.activo()) return 'inactivo';

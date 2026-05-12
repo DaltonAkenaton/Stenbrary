@@ -34,6 +34,13 @@ export type AforoModo = 'permitir' | 'confirmar' | 'bloquear';
 export type HorarioModo = 'advertir' | 'bloquear';
 
 /**
+ * Modo de disparo del recordatorio de respaldo:
+ * - 'intervalo': dispara cuando han pasado N días desde el último respaldo
+ * - 'programado': dispara en días de semana específicos a una hora específica
+ */
+export type RecordatorioRespaldoModo = 'intervalo' | 'programado';
+
+/**
  * Horario de un día de la semana.
  * `cerrado=true` significa que la biblioteca no opera ese día.
  * `apertura`/`cierre` en formato 'HH:mm' 24h.
@@ -89,11 +96,33 @@ interface AppConfig {
   /** Umbral de días sin venir para considerar a un alumno "inactivo". 0 = desactivado. */
   umbralInactividadDias: number;
 
-  // ── Recordatorio de respaldo (v3.11.0) ──
+  // ── Recordatorio de respaldo (v3.11.0 + extensión v3.21) ──
   /** Días sin exportar respaldo para mostrar recordatorio. 0 = desactivado. */
   umbralRecordatorioRespaldoDias: number;
   /** Timestamp (ms) del último respaldo exportado. 0 = nunca. */
   ultimoRespaldoTs: number;
+  /** Modo de disparo: intervalo (cada N días) o programado (día(s)+hora). */
+  recordatorioRespaldoModo: RecordatorioRespaldoModo;
+  /** Hora 'HH:mm' a partir de la cual aparece el recordatorio en modo programado. */
+  recordatorioRespaldoHora: string;
+  /** Días de la semana (0=domingo..6=sábado) en modo programado. Vacío = nunca. */
+  recordatorioRespaldoDiasSemana: number[];
+
+  // ── Escáner customizable (v3.21) ──
+  /** Intervalo entre intentos de escaneo en ms. Default 160 (rango sugerido 50–1000, libre). */
+  escanerVelocidadMs: number;
+  /** Cooldown tras detección antes de aceptar otro escaneo. Default 1500 ms. */
+  escanerCooldownMs: number;
+  /** Si true, no muestra el dialog de confirmación; procesa la matrícula directamente. */
+  escanerSaltarConfirmacion: boolean;
+  /** Volumen del beep de escaneo. 0 = silencio, 1 = máximo. Default 0.15. */
+  volumenBeep: number;
+
+  // ── Cierre automático extendido (v3.21) ──
+  /** Si true, al llegar la hora de cierre del horario operativo cierra todas las entradas pendientes. */
+  cierreAlHorario: boolean;
+  /** Si true, al cerrar por timeout no marca cierreAutomatico (no requiere revisión). */
+  cierreAutoConfirmar: boolean;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -114,6 +143,15 @@ const DEFAULT_CONFIG: AppConfig = {
   umbralInactividadDias: 30,
   umbralRecordatorioRespaldoDias: 14,
   ultimoRespaldoTs: 0,
+  recordatorioRespaldoModo: 'intervalo',
+  recordatorioRespaldoHora: '18:00',
+  recordatorioRespaldoDiasSemana: [5], // viernes
+  escanerVelocidadMs: 160,
+  escanerCooldownMs: 1500,
+  escanerSaltarConfirmacion: false,
+  volumenBeep: 0.15,
+  cierreAlHorario: false,
+  cierreAutoConfirmar: false,
 };
 
 const STORAGE_KEY = 'stenbrary-config';
@@ -356,16 +394,158 @@ export class ConfigService {
   }
 
   /**
-   * true cuando hay que mostrar el recordatorio:
-   * - Función activa (umbral > 0)
-   * - Y nunca se ha hecho un respaldo, o ya pasó el umbral.
+   * true cuando hay que mostrar el recordatorio. Soporta dos modos:
+   *
+   *  - 'intervalo': si pasó N días desde el último respaldo (o nunca se hizo).
+   *  - 'programado': si hoy es uno de los días configurados, ya pasó la hora
+   *    configurada, y NO se ha respaldado HOY.
    */
   get recordatorioRespaldoPendiente(): boolean {
+    if (this.config.recordatorioRespaldoModo === 'programado') {
+      const dias = this.config.recordatorioRespaldoDiasSemana || [];
+      if (dias.length === 0) return false;
+
+      const ahora = new Date();
+      if (!dias.includes(ahora.getDay())) return false;
+
+      const [hh, mm] = (this.config.recordatorioRespaldoHora || '00:00')
+        .split(':').map(n => parseInt(n, 10) || 0);
+      const ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
+      const objetivoMin = hh * 60 + mm;
+      if (ahoraMin < objetivoMin) return false;
+
+      // Suprimir si ya se respaldó hoy
+      const ts = this.config.ultimoRespaldoTs;
+      if (ts > 0) {
+        const u = new Date(ts);
+        const mismoDia =
+          u.getFullYear() === ahora.getFullYear() &&
+          u.getMonth() === ahora.getMonth() &&
+          u.getDate() === ahora.getDate();
+        if (mismoDia) return false;
+      }
+      return true;
+    }
+
+    // Modo 'intervalo' (default)
     const umbral = this.config.umbralRecordatorioRespaldoDias;
     if (umbral <= 0) return false;
     const dias = this.diasSinRespaldo();
     if (dias === null) return true;
     return dias >= umbral;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // RECORDATORIO PROGRAMADO (v3.21)
+  // ═══════════════════════════════════════════════════════
+
+  get recordatorioRespaldoModo(): RecordatorioRespaldoModo {
+    return this.config.recordatorioRespaldoModo;
+  }
+
+  setRecordatorioRespaldoModo(modo: RecordatorioRespaldoModo): void {
+    this.config.recordatorioRespaldoModo = modo;
+    this.guardar();
+  }
+
+  get recordatorioRespaldoHora(): string {
+    return this.config.recordatorioRespaldoHora;
+  }
+
+  setRecordatorioRespaldoHora(hhmm: string): void {
+    // Sanitizar 'HH:mm' con clamp; si inválido, usar 09:00
+    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+    if (!m) { this.config.recordatorioRespaldoHora = '09:00'; }
+    else {
+      const h = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+      const min = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+      this.config.recordatorioRespaldoHora = `${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+    }
+    this.guardar();
+  }
+
+  get recordatorioRespaldoDiasSemana(): number[] {
+    return [...this.config.recordatorioRespaldoDiasSemana];
+  }
+
+  setRecordatorioRespaldoDiasSemana(dias: number[]): void {
+    const limpios = Array.from(new Set(
+      (dias || []).map(d => Math.floor(d)).filter(d => d >= 0 && d <= 6),
+    )).sort();
+    this.config.recordatorioRespaldoDiasSemana = limpios;
+    this.guardar();
+  }
+
+  toggleRecordatorioRespaldoDia(dia: number): void {
+    const actuales = new Set(this.config.recordatorioRespaldoDiasSemana);
+    if (actuales.has(dia)) actuales.delete(dia);
+    else actuales.add(dia);
+    this.setRecordatorioRespaldoDiasSemana(Array.from(actuales));
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ESCÁNER CUSTOMIZABLE (v3.21)
+  // ═══════════════════════════════════════════════════════
+
+  get escanerVelocidadMs(): number {
+    return this.config.escanerVelocidadMs;
+  }
+
+  setEscanerVelocidadMs(ms: number): void {
+    // Mínimo 30ms para no quemar CPU; sin tope arriba por flexibilidad.
+    this.config.escanerVelocidadMs = Math.max(30, Math.floor(ms) || 30);
+    this.guardar();
+  }
+
+  get escanerCooldownMs(): number {
+    return this.config.escanerCooldownMs;
+  }
+
+  setEscanerCooldownMs(ms: number): void {
+    this.config.escanerCooldownMs = Math.max(0, Math.floor(ms) || 0);
+    this.guardar();
+  }
+
+  get escanerSaltarConfirmacion(): boolean {
+    return this.config.escanerSaltarConfirmacion;
+  }
+
+  setEscanerSaltarConfirmacion(valor: boolean): void {
+    this.config.escanerSaltarConfirmacion = valor;
+    this.guardar();
+  }
+
+  get volumenBeep(): number {
+    return this.config.volumenBeep;
+  }
+
+  setVolumenBeep(valor: number): void {
+    const n = Number(valor);
+    if (!isFinite(n)) return;
+    this.config.volumenBeep = Math.min(1, Math.max(0, n));
+    this.guardar();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // CIERRE AUTOMÁTICO EXTENDIDO (v3.21)
+  // ═══════════════════════════════════════════════════════
+
+  get cierreAlHorario(): boolean {
+    return this.config.cierreAlHorario;
+  }
+
+  setCierreAlHorario(valor: boolean): void {
+    this.config.cierreAlHorario = valor;
+    this.guardar();
+  }
+
+  get cierreAutoConfirmar(): boolean {
+    return this.config.cierreAutoConfirmar;
+  }
+
+  setCierreAutoConfirmar(valor: boolean): void {
+    this.config.cierreAutoConfirmar = valor;
+    this.guardar();
   }
 
   // ═══════════════════════════════════════════════════════

@@ -919,13 +919,17 @@ export class DatabaseService {
 
   /**
    * Cierra automáticamente entradas abiertas más antiguas que `horasUmbral`.
-   * Marca cierreAutomatico = true y estima horaSalida como fechaHora + umbral.
+   * Marca cierreAutomatico = true (a menos que `autoConfirmar` sea true) y
+   * estima horaSalida como fechaHora + umbral.
    * Retorna la cantidad de entradas cerradas.
    * Si horasUmbral <= 0, no hace nada (feature desactivado).
    *
    * Atómico: el batch ocurre dentro de una sola transacción readwrite.
+   *
+   * @param horasUmbral umbral en horas; si <=0 retorna 0
+   * @param autoConfirmar si true, NO marca cierreAutomatico (no requiere revisión)
    */
-  async cerrarEntradasAntiguas(horasUmbral: number): Promise<number> {
+  async cerrarEntradasAntiguas(horasUmbral: number, autoConfirmar = false): Promise<number> {
     if (horasUmbral <= 0) return 0;
     try {
       await this.inicializar();
@@ -935,7 +939,6 @@ export class DatabaseService {
       const limiteMs = horasUmbral * 60 * 60 * 1000;
       const ahora = Date.now();
 
-      // Pre-filtrar candidatos para no abrir tx si no hay nada que hacer
       const candidatos = abiertas.filter(r => {
         if (r.horaSalida) return false;
         const edad = ahora - new Date(r.fechaHora).getTime();
@@ -949,13 +952,11 @@ export class DatabaseService {
       let cerrados = 0;
 
       for (const r of candidatos) {
-        // Re-leer dentro de la tx para evitar pisar una salida manual
-        // que ocurrió entre obtenerRegistrosAbiertoHoy() y aquí.
         const actual = await store.get(r.id);
         if (!actual || actual.horaSalida) continue;
         actual.horaSalida = new Date(new Date(actual.fechaHora).getTime() + limiteMs);
         actual.duracionMinutos = horasUmbral * 60;
-        actual.cierreAutomatico = true;
+        actual.cierreAutomatico = !autoConfirmar;
         await store.put(actual);
         cerrados++;
       }
@@ -963,11 +964,54 @@ export class DatabaseService {
       await tx.done;
 
       if (cerrados > 0) {
-        log(`🔒 Cierre automático: ${cerrados} entrada(s) cerrada(s) tras ${horasUmbral}h`);
+        log(`🔒 Cierre automático: ${cerrados} entrada(s) cerrada(s) tras ${horasUmbral}h${autoConfirmar ? ' (auto-confirmadas)' : ''}`);
       }
       return cerrados;
     } catch (error) {
       logError('❌ Error en cierre automático:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Cierra TODAS las entradas abiertas del día sin requerir un umbral de horas.
+   * Útil para "cerrar al final del horario operativo": al llegar la hora de
+   * cierre, todas las personas que sigan dentro reciben horaSalida = ahora.
+   *
+   * @param autoConfirmar si true, NO marca cierreAutomatico
+   */
+  async cerrarTodasLasEntradasAbiertas(autoConfirmar = false): Promise<number> {
+    try {
+      await this.inicializar();
+      if (!this.db) return 0;
+
+      const abiertas = await this.obtenerRegistrosAbiertoHoy();
+      const candidatos = abiertas.filter(r => !r.horaSalida);
+      if (candidatos.length === 0) return 0;
+
+      const tx = this.db.transaction('registros', 'readwrite');
+      const store = tx.store;
+      const ahora = new Date();
+      let cerrados = 0;
+
+      for (const r of candidatos) {
+        const actual = await store.get(r.id);
+        if (!actual || actual.horaSalida) continue;
+        actual.horaSalida = ahora;
+        const dur = (ahora.getTime() - new Date(actual.fechaHora).getTime()) / 60000;
+        actual.duracionMinutos = Math.max(0, Math.round(dur));
+        actual.cierreAutomatico = !autoConfirmar;
+        await store.put(actual);
+        cerrados++;
+      }
+
+      await tx.done;
+      if (cerrados > 0) {
+        log(`🔒 Cierre por horario: ${cerrados} entrada(s) cerrada(s)${autoConfirmar ? ' (auto-confirmadas)' : ''}`);
+      }
+      return cerrados;
+    } catch (error) {
+      logError('❌ Error en cierre por horario:', error);
       return 0;
     }
   }

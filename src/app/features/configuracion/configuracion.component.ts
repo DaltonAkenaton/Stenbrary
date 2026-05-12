@@ -26,6 +26,7 @@ import { SoundService } from '../../core/services/sound.service';
 import { ConfigService, AforoModo, HorarioModo, HorarioDia } from '../../core/services/config.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
 import { ChangelogService } from '../../core/services/changelog.service';
+import { PwaUpdateService } from '../../core/services/pwa-update.service';
 import {
   BackupService,
   BackupData,
@@ -128,6 +129,20 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             Funciona sin internet
           </span>
         </div>
+
+        <button class="btn-action btn-restore"
+                style="margin-top: 18px;"
+                (click)="buscarActualizacion()"
+                [disabled]="buscandoActualizacion"
+                matTooltip="Consulta al servidor si hay una versión nueva y la instala">
+          @if (buscandoActualizacion) {
+            <mat-spinner diameter="16"></mat-spinner>
+            <span>Buscando...</span>
+          } @else {
+            <mat-icon>system_update</mat-icon>
+            <span>Buscar actualizaciones</span>
+          }
+        </button>
       </mat-card>
 
       <!-- ═══ IDENTIDAD DE LA INSTITUCIÓN ═══ -->
@@ -204,6 +219,126 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
           <mat-icon>play_arrow</mat-icon>
           <span>Probar sonido</span>
         </button>
+
+        <!-- v3.21: volumen del beep -->
+        <div style="margin-top: 16px;">
+          <div class="aforo-input-row" style="flex-wrap: wrap;">
+            <label for="volumenBeep">Volumen del beep</label>
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;">
+              <input id="volumenBeep" type="range" min="0" max="100" step="1"
+                     style="flex: 1;"
+                     [ngModel]="volumenBeepPct"
+                     (ngModelChange)="setVolumenBeepPct($event)">
+              <span class="mono" style="min-width: 48px; text-align: right; color: #E8F4F8;">
+                {{ volumenBeepPct }}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- ═══ ESCÁNER CUSTOMIZABLE (v3.21) ═══ -->
+      <mat-card class="section-card">
+        <div class="section-header">
+          <mat-icon>qr_code_scanner</mat-icon>
+          <h2>Comportamiento del escáner</h2>
+        </div>
+        <p class="section-desc">
+          Ajusta cómo responde el escáner al detectar credenciales: velocidad, tiempo entre
+          escaneos, y si quieres saltar el diálogo de confirmación.
+        </p>
+
+        <!-- Velocidad de detección -->
+        <div style="margin-top: 6px;">
+          <strong style="font-size: .9rem; color:#E8F4F8;">Velocidad de detección</strong>
+          <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+            Cuánto espera el escáner entre intentos. Más rápido = más CPU pero respuesta más ágil.
+          </p>
+          <div class="auto-close-options">
+            @for (op of opcionesEscanerVelocidad; track op.valor) {
+              <button class="auto-close-btn"
+                      [class.active]="configService.escanerVelocidadMs === op.valor"
+                      (click)="configService.setEscanerVelocidadMs(op.valor)">
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+          <div class="aforo-input-row" style="margin-top: 12px;">
+            <label for="velMsInput">Personalizado (ms)</label>
+            <div class="aforo-stepper" style="max-width: 220px;">
+              <button type="button" class="stepper-btn"
+                      (click)="configService.setEscanerVelocidadMs(configService.escanerVelocidadMs - 10)"
+                      matTooltip="Disminuir 10 ms">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <input id="velMsInput" type="number" min="30" step="10"
+                     class="aforo-number-input"
+                     [ngModel]="configService.escanerVelocidadMs"
+                     (ngModelChange)="configService.setEscanerVelocidadMs($event)">
+              <button type="button" class="stepper-btn"
+                      (click)="configService.setEscanerVelocidadMs(configService.escanerVelocidadMs + 10)"
+                      matTooltip="Aumentar 10 ms">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cooldown post-detección -->
+        <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+          <strong style="font-size: .9rem; color:#E8F4F8;">Espera entre escaneos (cooldown)</strong>
+          <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+            Tiempo que el escáner espera tras cada detección antes de aceptar otra.
+            Súbelo si los alumnos hacen doble escaneo accidental.
+          </p>
+          <div class="auto-close-options">
+            @for (op of opcionesEscanerCooldown; track op.valor) {
+              <button class="auto-close-btn"
+                      [class.active]="configService.escanerCooldownMs === op.valor"
+                      (click)="configService.setEscanerCooldownMs(op.valor)">
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+          <div class="aforo-input-row" style="margin-top: 12px;">
+            <label for="cdMsInput">Personalizado (ms)</label>
+            <div class="aforo-stepper" style="max-width: 220px;">
+              <button type="button" class="stepper-btn"
+                      (click)="configService.setEscanerCooldownMs(configService.escanerCooldownMs - 100)"
+                      [disabled]="configService.escanerCooldownMs <= 0"
+                      matTooltip="Disminuir 100 ms">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <input id="cdMsInput" type="number" min="0" step="100"
+                     class="aforo-number-input"
+                     [ngModel]="configService.escanerCooldownMs"
+                     (ngModelChange)="configService.setEscanerCooldownMs($event)">
+              <button type="button" class="stepper-btn"
+                      (click)="configService.setEscanerCooldownMs(configService.escanerCooldownMs + 100)"
+                      matTooltip="Aumentar 100 ms">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Saltar confirmación -->
+        <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+          <strong style="font-size: .9rem; color:#E8F4F8;">Saltar diálogo de confirmación</strong>
+          <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+            Si está activado, el escáner procesa la matrícula directamente sin pedirte que confirmes.
+            Útil en modo quiosco para acelerar el flujo, pero pierdes el control de errores de lectura.
+          </p>
+          <div class="sound-toggle">
+            <span class="sound-status">{{ configService.escanerSaltarConfirmacion ? 'Activado' : 'Desactivado' }}</span>
+            <button class="btn-inline"
+                    [class.btn-inline-active]="configService.escanerSaltarConfirmacion"
+                    (click)="configService.setEscanerSaltarConfirmacion(!configService.escanerSaltarConfirmacion)">
+              <mat-icon>{{ configService.escanerSaltarConfirmacion ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+              {{ configService.escanerSaltarConfirmacion ? 'Desactivar' : 'Activar' }}
+            </button>
+          </div>
+        </div>
       </mat-card>
 
       <!-- ═══ REGISTRO DE SALIDA ═══ -->
@@ -263,6 +398,67 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                 Desactivado — las entradas sin salida permanecerán abiertas indefinidamente.
               </p>
             }
+
+            <!-- v3.21: stepper personalizado para horas (libre) -->
+            <div class="aforo-input-row" style="margin-top: 12px;">
+              <label for="horasAutoSalidaInput">Horas personalizado</label>
+              <div class="aforo-stepper" style="max-width: 260px;">
+                <button type="button" class="stepper-btn"
+                        (click)="setHorasAutoSalida(configService.horasAutoSalida - 1)"
+                        [disabled]="configService.horasAutoSalida <= 0"
+                        matTooltip="Disminuir 1 hora">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <input id="horasAutoSalidaInput" type="number" min="0" step="1"
+                       class="aforo-number-input"
+                       [ngModel]="configService.horasAutoSalida"
+                       (ngModelChange)="setHorasAutoSalida($event)">
+                <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">h</span>
+                <button type="button" class="stepper-btn"
+                        (click)="setHorasAutoSalida(configService.horasAutoSalida + 1)"
+                        matTooltip="Aumentar 1 hora">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- v3.21: toggles extendidos -->
+            <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 6px;">
+              <strong style="font-size: .9rem; color: #E8F4F8;">Confirmar automáticamente</strong>
+              <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 0;">
+                Cuando el sistema cierre una entrada por timeout, no requiere que la revises manualmente en Biblioteca.
+              </p>
+              <div class="sound-toggle">
+                <span class="sound-status">{{ configService.cierreAutoConfirmar ? 'Activado' : 'Desactivado' }}</span>
+                <button class="btn-inline"
+                        [class.btn-inline-active]="configService.cierreAutoConfirmar"
+                        (click)="configService.setCierreAutoConfirmar(!configService.cierreAutoConfirmar)">
+                  <mat-icon>{{ configService.cierreAutoConfirmar ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                  {{ configService.cierreAutoConfirmar ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 6px;">
+              <strong style="font-size: .9rem; color: #E8F4F8;">Cerrar al final del horario</strong>
+              <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 0;">
+                Al llegar la hora de cierre del horario operativo, cierra TODAS las entradas
+                abiertas en lugar de esperar a que pasen las horas configuradas arriba.
+                @if (!configService.horarioActivo) {
+                  <br><em>Requiere que el "Horario de operación" esté activo.</em>
+                }
+              </p>
+              <div class="sound-toggle">
+                <span class="sound-status">{{ configService.cierreAlHorario ? 'Activado' : 'Desactivado' }}</span>
+                <button class="btn-inline"
+                        [class.btn-inline-active]="configService.cierreAlHorario"
+                        [disabled]="!configService.horarioActivo"
+                        (click)="configService.setCierreAlHorario(!configService.cierreAlHorario)">
+                  <mat-icon>{{ configService.cierreAlHorario ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                  {{ configService.cierreAlHorario ? 'Desactivar' : 'Activar' }}
+                </button>
+              </div>
+            </div>
           </div>
         }
       </mat-card>
@@ -832,6 +1028,63 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             }
           }
         </p>
+
+        <!-- ── MODO PROGRAMADO (v3.21) ── -->
+        <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+          <div class="section-header" style="margin-bottom: 6px;">
+            <mat-icon>schedule</mat-icon>
+            <h2 style="font-size: 0.95rem;">¿Cuándo aparece el aviso?</h2>
+          </div>
+          <p class="section-desc" style="margin-bottom: 10px;">
+            Por defecto el aviso aparece cuando han pasado los días configurados arriba.
+            También puedes programarlo para días y hora específicos (ej. cada viernes a las 18:00).
+          </p>
+          <div class="auto-close-options" style="margin-bottom: 12px;">
+            <button class="auto-close-btn"
+                    [class.active]="configService.recordatorioRespaldoModo === 'intervalo'"
+                    (click)="configService.setRecordatorioRespaldoModo('intervalo')">
+              Por intervalo (cada N días)
+            </button>
+            <button class="auto-close-btn"
+                    [class.active]="configService.recordatorioRespaldoModo === 'programado'"
+                    (click)="configService.setRecordatorioRespaldoModo('programado')">
+              Programado (día y hora)
+            </button>
+          </div>
+
+          @if (configService.recordatorioRespaldoModo === 'programado') {
+            <div class="aforo-input-row" style="flex-wrap: wrap;">
+              <label>Días de la semana</label>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                @for (d of diasSemanaOpciones; track d.valor) {
+                  <button class="auto-close-btn"
+                          [class.active]="esDiaRespaldoActivo(d.valor)"
+                          (click)="configService.toggleRecordatorioRespaldoDia(d.valor)">
+                    {{ d.etiqueta }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="aforo-input-row" style="margin-top: 12px;">
+              <label for="respaldoHora">Hora del aviso</label>
+              <input id="respaldoHora"
+                     type="time"
+                     class="aforo-number-input"
+                     style="max-width: 140px;"
+                     [ngModel]="configService.recordatorioRespaldoHora"
+                     (ngModelChange)="configService.setRecordatorioRespaldoHora($event)">
+            </div>
+            <p class="section-hint">
+              <mat-icon>info</mat-icon>
+              @if (configService.recordatorioRespaldoDiasSemana.length === 0) {
+                Selecciona al menos un día para activar el aviso programado.
+              } @else {
+                Avisar los {{ diasSemanaActivosTexto() }} a partir de las {{ configService.recordatorioRespaldoHora }}.
+                El aviso desaparece automáticamente al exportar el respaldo del día.
+              }
+            </p>
+          }
+        </div>
       </mat-card>
 
       <!-- ═══ BACKUP ═══ -->
@@ -1083,10 +1336,20 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
       border-radius: 16px; padding: 28px;
     }
 
+    /* align-items:flex-start evita que el icono quede flotando en el centro
+       vertical cuando el h2 wrappea a 2 líneas en pantallas chicas. */
     .section-header {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
-      mat-icon { color: #00C8D7; font-size: 22px; width: 22px; height: 22px; }
-      h2 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #E8F4F8; }
+      display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;
+      mat-icon {
+        color: #00C8D7; font-size: 22px; width: 22px; height: 22px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      h2 {
+        margin: 0; font-size: 1.1rem; font-weight: 700; color: #E8F4F8;
+        line-height: 1.3;
+        min-width: 0;
+      }
       &.danger mat-icon { color: #F05252; }
       &.danger h2 { color: #F05252; }
     }
@@ -1099,17 +1362,34 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
     .section-desc-list {
       display: flex; flex-direction: column; gap: 6px;
       margin: -6px 0 18px;
+      /* align-items:flex-start evita que el icono ✓ quede flotando en el
+         centro vertical entre líneas cuando el texto wrappea en pantallas
+         chicas. flex-shrink:0 en el icono asegura que no se aplaste. */
       span {
-        display: flex; align-items: center; gap: 8px;
+        display: flex; align-items: flex-start; gap: 8px;
         font-size: 0.8rem; color: rgba(200, 230, 240, 0.45);
-        mat-icon { font-size: 14px; width: 14px; height: 14px; color: #0BC4B7; }
+        line-height: 1.5;
+        mat-icon {
+          font-size: 14px; width: 14px; height: 14px; color: #0BC4B7;
+          flex-shrink: 0;
+          margin-top: 3px;
+        }
       }
     }
 
+    /* IMPORTANTE: NO usar display:flex aquí. Cada <strong> dentro del texto
+       se vuelve un flex item separado y en 320px parte el párrafo en
+       columnas estrechas. Mejor inline-block con vertical-align baseline. */
     .section-hint {
-      display: flex; align-items: center; gap: 6px;
-      margin: 14px 0 0; font-size: 0.78rem; color: rgba(200, 230, 240, 0.35);
-      mat-icon { font-size: 14px; width: 14px; height: 14px; }
+      margin: 14px 0 0; font-size: 0.78rem;
+      color: rgba(200, 230, 240, 0.35); line-height: 1.5;
+      mat-icon {
+        font-size: 14px; width: 14px; height: 14px;
+        vertical-align: middle;
+        margin-right: 6px;
+        position: relative;
+        top: -1px;
+      }
     }
 
     .info-grid {
@@ -1361,6 +1641,16 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
       .alert-duplicates { flex-wrap: wrap; }
     }
 
+    /* En pantallas extra-chicas (≤360px, ej. iPhone 5/SE 1ra gen, Xiaomi
+       Redmi en zoom): 1 columna y números más chicos para que "879.1 MB"
+       no rompa en dos líneas dentro de la card. */
+    @media (max-width: 360px) {
+      .info-grid { grid-template-columns: 1fr; gap: 10px; }
+      .info-stat { padding: 14px 12px; }
+      .stat-value { font-size: 1.5rem; }
+      .section-card { padding: 16px; }
+    }
+
     /* ─── AFORO ─── */
     .aforo-input-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -1550,6 +1840,9 @@ export class ConfiguracionComponent implements OnInit {
   // Identidad: borrador editable (se confirma al blur / Enter).
   nombreInstitucionBorrador = '';
 
+  // Búsqueda manual de actualización PWA
+  buscandoActualizacion = false;
+
   constructor(
     private databaseService: DatabaseService,
     private backupService: BackupService,
@@ -1558,6 +1851,7 @@ export class ConfiguracionComponent implements OnInit {
     public soundService: SoundService,
     public configService: ConfigService,
     public changelogService: ChangelogService,
+    private pwaUpdateService: PwaUpdateService,
     private dialog: MatDialog,
     private router: Router,
   ) {
@@ -1613,6 +1907,28 @@ export class ConfiguracionComponent implements OnInit {
     } catch (error) {
       console.error('Error al cargar info:', error);
       this.cargandoInfo = false;
+    }
+  }
+
+  async buscarActualizacion(): Promise<void> {
+    if (this.buscandoActualizacion) return;
+    if (!this.pwaUpdateService.habilitado) {
+      this.toastService.info('Búsqueda no disponible en modo desarrollo');
+      return;
+    }
+    this.buscandoActualizacion = true;
+    try {
+      const hay = await this.pwaUpdateService.buscarActualizacionAhora();
+      if (hay) {
+        this.toastService.success('Nueva versión encontrada — actualizando...');
+        setTimeout(() => this.pwaUpdateService.aplicarActualizacion(), 800);
+      } else {
+        this.toastService.info('Ya tienes la versión más reciente');
+        this.buscandoActualizacion = false;
+      }
+    } catch {
+      this.toastService.error('No se pudo verificar actualizaciones');
+      this.buscandoActualizacion = false;
     }
   }
 
@@ -1749,6 +2065,60 @@ export class ConfiguracionComponent implements OnInit {
     if (dias === 0) return 'Último respaldo: hoy.';
     if (dias === 1) return 'Último respaldo: hace 1 día.';
     return `Último respaldo: hace ${dias} días.`;
+  }
+
+  // ═══════════════════════════════════════════════
+  // RECORDATORIO PROGRAMADO (v3.21)
+  // ═══════════════════════════════════════════════
+
+  readonly diasSemanaOpciones = [
+    { valor: 1, etiqueta: 'L' },
+    { valor: 2, etiqueta: 'M' },
+    { valor: 3, etiqueta: 'X' },
+    { valor: 4, etiqueta: 'J' },
+    { valor: 5, etiqueta: 'V' },
+    { valor: 6, etiqueta: 'S' },
+    { valor: 0, etiqueta: 'D' },
+  ];
+
+  esDiaRespaldoActivo(dia: number): boolean {
+    return this.configService.recordatorioRespaldoDiasSemana.includes(dia);
+  }
+
+  diasSemanaActivosTexto(): string {
+    const nombres = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+    const dias = [...this.configService.recordatorioRespaldoDiasSemana].sort();
+    if (dias.length === 0) return 'ningún día';
+    if (dias.length === 7) return 'todos los días';
+    return dias.map(d => nombres[d]).join(', ');
+  }
+
+  // ═══════════════════════════════════════════════
+  // ESCÁNER CUSTOMIZABLE (v3.21)
+  // ═══════════════════════════════════════════════
+
+  readonly opcionesEscanerVelocidad = [
+    { valor: 100, etiqueta: 'Rápido (100 ms)' },
+    { valor: 160, etiqueta: 'Normal (160 ms)' },
+    { valor: 250, etiqueta: 'Cuidadoso (250 ms)' },
+  ];
+
+  readonly opcionesEscanerCooldown = [
+    { valor: 0,    etiqueta: 'Sin espera' },
+    { valor: 800,  etiqueta: '0.8 s' },
+    { valor: 1500, etiqueta: '1.5 s' },
+    { valor: 3000, etiqueta: '3 s' },
+  ];
+
+  /** Volumen del beep como porcentaje 0-100 para el slider. */
+  get volumenBeepPct(): number {
+    return Math.round(this.configService.volumenBeep * 100);
+  }
+
+  setVolumenBeepPct(pct: number | string): void {
+    const n = typeof pct === 'string' ? parseInt(pct, 10) : pct;
+    const clamped = Math.max(0, Math.min(100, isNaN(n) ? 0 : n));
+    this.configService.setVolumenBeep(clamped / 100);
   }
 
   // ═══════════════════════════════════════════════

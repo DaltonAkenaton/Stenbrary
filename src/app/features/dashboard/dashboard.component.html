@@ -1,9 +1,13 @@
 <!-- ╔══════════════════════════════════════════════════════╗ -->
-<!-- ║  dashboard.component.html — Stenbrary v3.6.2        ║ -->
-<!-- ║  Auto-refresh toggleable + saludo dinámico           ║ -->
+<!-- ║  dashboard.component.html — Stenbrary v3.21.0       ║ -->
 <!-- ║                                                      ║ -->
-<!-- ║  FIX v3.6.2:                                         ║ -->
-<!-- ║  - *ngIf → @if (consistencia con Angular 17+)       ║ -->
+<!-- ║  - Banner unificado de alertas                       ║ -->
+<!-- ║  - Stats con delta vs ayer                           ║ -->
+<!-- ║  - Mini-stats: nuevos hoy / hora pico                 ║ -->
+<!-- ║  - Actividades clickeables                           ║ -->
+<!-- ║  - Indicador dentro/ya salió en últimos registros    ║ -->
+<!-- ║  - nombreInstitucion en header                       ║ -->
+<!-- ║  - aria-label en botones, aforo como button          ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 
 <div class="dashboard-container">
@@ -15,21 +19,29 @@
     </div>
   } @else {
 
-    <!-- ── RECORDATORIO DE RESPALDO (oculto en quiosco) ── -->
-    @if (mostrarRecordatorioRespaldo()) {
-      <div class="respaldo-banner" role="status">
-        <mat-icon>cloud_off</mat-icon>
-        <div class="respaldo-text">
-          <span class="respaldo-titulo">Respaldo pendiente</span>
-          <span class="respaldo-detalle">{{ textoRecordatorioRespaldo() }}</span>
-        </div>
-        <button class="respaldo-btn" (click)="irAConfiguracionRespaldo()">
-          <mat-icon>download</mat-icon>
-          Exportar
-        </button>
-        <button class="respaldo-close" (click)="descartarRecordatorioRespaldo()" aria-label="Descartar">
-          <mat-icon>close</mat-icon>
-        </button>
+    <!-- ── BANNER UNIFICADO DE ALERTAS ── -->
+    @if (alertas.length > 0) {
+      <div class="alertas-stack">
+        @for (a of alertas; track a.tipo) {
+          <div class="alerta-banner" [attr.data-tipo]="a.tipo" role="status">
+            <mat-icon class="alerta-icon">{{ a.icono }}</mat-icon>
+            <div class="alerta-text">
+              <span class="alerta-titulo">{{ a.titulo }}</span>
+              <span class="alerta-detalle">{{ a.detalle }}</span>
+            </div>
+            @if (a.cta) {
+              <button class="alerta-btn"
+                      (click)="a.cta.accion()"
+                      [disabled]="a.tipo === 'respaldo' && exportandoRespaldo">
+                <mat-icon>{{ a.tipo === 'respaldo' && exportandoRespaldo ? 'hourglass_top' : a.cta.icono }}</mat-icon>
+                {{ a.tipo === 'respaldo' && exportandoRespaldo ? 'Exportando…' : a.cta.texto }}
+              </button>
+            }
+            <button class="alerta-close" (click)="descartarAlerta(a.tipo)" [attr.aria-label]="'Descartar ' + a.titulo">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
       </div>
     }
 
@@ -39,8 +51,10 @@
         <div class="header-icon">
           <mat-icon>dashboard</mat-icon>
         </div>
-        <div>
-          <h1>{{ saludo }}</h1>
+        <div class="header-titulos">
+          <h1>
+            {{ saludo }}@if (institucion) {<span class="header-inst">  · {{ institucion }}</span>}
+          </h1>
           <p class="header-subtitle">
             @if (ultimoRegistroHora) {
               Último registro a las {{ ultimoRegistroHora }}
@@ -51,17 +65,20 @@
         </div>
       </div>
       <div class="header-right">
-        <!-- Indicador auto-refresh -->
         <button class="btn-auto-refresh"
           [class.active]="autoRefreshActivo"
           (click)="toggleAutoRefresh()"
+          [attr.aria-label]="autoRefreshActivo ? 'Auto-refresh activo, clic para desactivar' : 'Auto-refresh desactivado, clic para activar'"
           [matTooltip]="autoRefreshActivo ? 'Auto-refresh activo (30s) — clic para desactivar' : 'Auto-refresh desactivado — clic para activar'">
           @if (autoRefreshActivo) {
             <span class="pulse-dot"></span>
           }
           <mat-icon>{{ autoRefreshActivo ? 'sync' : 'sync_disabled' }}</mat-icon>
         </button>
-        <button class="btn-refresh" (click)="cargarDatos()" matTooltip="Actualizar datos">
+        <button class="btn-refresh"
+          (click)="refrescarManual()"
+          aria-label="Actualizar datos del dashboard"
+          matTooltip="Actualizar datos">
           <mat-icon [class.spinning]="actualizando">refresh</mat-icon>
         </button>
       </div>
@@ -77,7 +94,23 @@
             <mat-icon [style.color]="stat.color">{{ stat.icono }}</mat-icon>
           </div>
           <div class="stat-data">
-            <span class="stat-valor mono">{{ stat.valor }}</span>
+            <div class="stat-valor-row">
+              <span class="stat-valor mono">{{ stat.valor }}</span>
+              @if (stat.delta) {
+                <span class="stat-delta" [attr.data-direccion]="stat.delta.direccion"
+                  [matTooltip]="'vs ayer: ' + (stat.delta.direccion === 'up' ? '+' : stat.delta.direccion === 'down' ? '−' : '') + stat.delta.porcentaje + '%'"
+                  matTooltipPosition="above">
+                  @if (stat.delta.direccion === 'up') {
+                    <mat-icon>arrow_upward</mat-icon>
+                  } @else if (stat.delta.direccion === 'down') {
+                    <mat-icon>arrow_downward</mat-icon>
+                  } @else {
+                    <mat-icon>remove</mat-icon>
+                  }
+                  {{ stat.delta.porcentaje }}%
+                </span>
+              }
+            </div>
             <span class="stat-label">{{ stat.etiqueta }}</span>
             <span class="stat-subtexto">{{ stat.subtexto }}</span>
           </div>
@@ -91,10 +124,32 @@
       }
     </div>
 
+    <!-- ── MINI-STATS (nuevos / hora pico) ── -->
+    @if (miniStats.length > 0) {
+      <div class="mini-stats">
+        @for (m of miniStats; track m.etiqueta) {
+          @if (m.ruta) {
+            <button class="mini-stat" (click)="navegar(m.ruta)" [matTooltip]="m.tooltip" matTooltipPosition="above">
+              <mat-icon [style.color]="m.color">{{ m.icono }}</mat-icon>
+              <span class="mini-valor mono">{{ m.valor }}</span>
+              <span class="mini-etiqueta">{{ m.etiqueta }}</span>
+            </button>
+          } @else {
+            <div class="mini-stat mini-stat--static" [matTooltip]="m.tooltip" matTooltipPosition="above">
+              <mat-icon [style.color]="m.color">{{ m.icono }}</mat-icon>
+              <span class="mini-valor mono">{{ m.valor }}</span>
+              <span class="mini-etiqueta">{{ m.etiqueta }}</span>
+            </div>
+          }
+        }
+      </div>
+    }
+
     <!-- ── INDICADOR DE AFORO ── -->
     @if (aforoService.activo()) {
-      <div class="aforo-dashboard" [attr.data-estado]="aforoService.estado()"
+      <button class="aforo-dashboard" [attr.data-estado]="aforoService.estado()"
            (click)="navegar('/presencia')"
+           aria-label="Ver detalle de aforo en biblioteca"
            matTooltip="Ver detalle en biblioteca">
         <div class="aforo-dashboard-left">
           <mat-icon>groups</mat-icon>
@@ -119,22 +174,22 @@
           }
           <div class="aforo-dashboard-bar">
             <div class="aforo-dashboard-bar-fill"
-                 [style.width.%]="aforoService.porcentaje() > 100 ? 100 : aforoService.porcentaje()">
+                 [style.width.%]="aforoService.porcentajeClamped()">
             </div>
           </div>
         </div>
-      </div>
+      </button>
     }
 
     <!-- ── CONTENIDO EN DOS COLUMNAS ── -->
     <div class="content-grid">
 
-      <!-- Actividades de hoy -->
+      <!-- Actividades de hoy (clickeables) -->
       <div class="panel">
         <div class="panel-header">
           <h2>
             Actividades de hoy
-            <span class="panel-help" matTooltip="Muestra cuántos alumnos eligieron cada tipo de actividad al entrar hoy" matTooltipPosition="above">
+            <span class="panel-help" matTooltip="Muestra cuántos alumnos eligieron cada tipo de actividad al entrar hoy. Clic en una actividad para ver sus registros." matTooltipPosition="above">
               <mat-icon>help_outline</mat-icon>
             </span>
           </h2>
@@ -147,7 +202,9 @@
         @if (actividadesHoy.length > 0) {
           <div class="actividades-list">
             @for (a of actividadesHoy; track a.nombre) {
-              <div class="actividad-item">
+              <button class="actividad-item"
+                (click)="navegarActividad(a)"
+                [attr.aria-label]="'Ver ' + a.cantidad + ' registros de ' + a.nombre">
                 <div class="actividad-icon"
                   [style.background]="a.color + '14'"
                   [style.border-color]="a.color + '25'">
@@ -158,7 +215,7 @@
                       [matTooltip]="a.cantidad + ' ' + (a.cantidad === 1 ? 'alumno eligió esta actividad' : 'alumnos eligieron esta actividad')">
                   {{ a.cantidad }}
                 </span>
-              </div>
+              </button>
             }
             @if (totalActividadesDistintas > 6) {
               <div class="actividad-more">
@@ -179,7 +236,7 @@
         }
       </div>
 
-      <!-- Últimos registros -->
+      <!-- Últimos registros con indicador dentro/ya salió -->
       <div class="panel">
         <div class="panel-header">
           <h2>
@@ -200,7 +257,15 @@
               <div class="registro-item">
                 <span class="registro-hora mono">{{ r._horaStr }}</span>
                 <div class="registro-info">
-                  <span class="registro-nombre">{{ r.nombreCompleto }}</span>
+                  <span class="registro-nombre">
+                    @if (configService.registroSalidaActivo) {
+                      <span class="registro-presencia"
+                            [class.adentro]="r._adentro"
+                            [matTooltip]="r._adentro ? 'Sigue en la biblioteca' : 'Ya salió'"
+                            matTooltipPosition="above"></span>
+                    }
+                    {{ r.nombreCompleto }}
+                  </span>
                   <span class="registro-motivo">{{ r.motivoNombre }}</span>
                 </div>
                 <span class="registro-matricula mono">{{ r.matricula }}</span>

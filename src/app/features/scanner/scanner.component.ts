@@ -694,7 +694,16 @@ export class ScannerComponent implements OnInit, OnDestroy {
     // SIEMPRE incluimos las estrategias agresivas y SIEMPRE activamos sharpening.
     // El presupuesto de tiempo por frame previene bloqueos de UI.
     this.effectiveStrategies = [...LOWRES_EXTRA_STRATEGIES, ...PREPROCESS_STRATEGIES];
-    this.effectiveScanInterval = this.esLowRes ? SCAN_INTERVAL_LOWRES_MS : SCAN_INTERVAL_MS;
+    // v3.21: el coordinador puede ajustar la velocidad de detección desde
+    // /configuracion. El default sigue siendo 160 ms (120 para low-res) pero
+    // si configuró un valor distinto, ese gana.
+    const velConfig = this.configService.escanerVelocidadMs;
+    if (velConfig === SCAN_INTERVAL_MS) {
+      // Default → mantener heurística por resolución (120 para low-res)
+      this.effectiveScanInterval = this.esLowRes ? SCAN_INTERVAL_LOWRES_MS : SCAN_INTERVAL_MS;
+    } else {
+      this.effectiveScanInterval = velConfig;
+    }
     this.effectiveBudget = this.esLowRes ? 70 : 60;
     this.sharpenEnabled = true;
     console.log(`📷 Cámara ${vw}×${vh} — pipeline agresivo activado: ${this.effectiveStrategies.length} estrategias, sharpening ON, budget ${this.effectiveBudget}ms`);
@@ -1299,13 +1308,17 @@ export class ScannerComponent implements OnInit, OnDestroy {
     console.log(`✅ Detectado [${fuente}]: ${texto}`);
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     this.soundService.beepScan();
-    // Solo detener (y eventualmente reanudar) la cámara si estaba activa.
-    // Para detecciones por USB HID, la cámara puede no haberse iniciado.
     const habiaCamara = this.scannerActivo;
     if (habiaCamara) this.detenerScanner();
     this.ngZone.run(() => {
       this.toastService.success(`Código detectado: ${texto}`);
-      this.mostrarConfirmacionMatricula(texto, habiaCamara);
+      // v3.21: si el coordinador activó "saltar confirmación" desde
+      // /configuracion, procesar directo sin dialog (acelera flujos quiosco).
+      if (this.configService.escanerSaltarConfirmacion) {
+        this.procesarMatricula(texto, 'camara');
+      } else {
+        this.mostrarConfirmacionMatricula(texto, habiaCamara);
+      }
     });
   }
 
@@ -1355,12 +1368,14 @@ export class ScannerComponent implements OnInit, OnDestroy {
         // Guardado en confirmTimer → cancelable en ngOnDestroy si el
         // usuario navega antes del disparo.
         if (this.confirmTimer !== null) clearTimeout(this.confirmTimer);
+        // v3.21: cooldown configurable desde /configuracion.
+        const cd = Math.max(0, this.configService.escanerCooldownMs);
         this.confirmTimer = window.setTimeout(() => {
           this.confirmTimer = null;
           this.ultimoQrEscaneado = '';
           this.enCooldown = false;
           if (reiniciarCamara) this.iniciarScanner();
-        }, 1500);
+        }, cd);
       }
     });
   }

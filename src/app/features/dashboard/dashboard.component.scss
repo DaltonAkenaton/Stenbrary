@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  dashboard.component.scss — Stenbrary v3.3            ║
-// ║  Resumen simplificado — Cyan Cube Dark Theme          ║
+// ║  dashboard.component.scss — Stenbrary v3.21.0         ║
+// ║  Resumen con insights — Cyan Cube Dark Theme          ║
 // ╚══════════════════════════════════════════════════════╝
 
 @import '../../../styles/variables';
@@ -10,21 +10,51 @@
   @include responsive-page-container;
 }
 
-// ─── BANNER RECORDATORIO DE RESPALDO ─────────────────────
-// Movido desde scanner a dashboard en v3.12.0 — ya no interrumpe
-// el flujo de registro, aparece solo en la vista de resumen.
-.respaldo-banner {
+// ─── BANNER UNIFICADO DE ALERTAS (v3.21) ─────────────────
+// Stack vertical de alertas: respaldo, auto-close, horario
+// cerrado, error BD. Cada tipo tiene su tinte semántico.
+.alertas-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: $spacing-md;
+}
+
+.alerta-banner {
   padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(245, 166, 35, 0.08);
-  border: 1px solid rgba(245, 166, 35, 0.32);
   border-radius: $border-radius-md;
   color: $text-primary;
+  background: rgba(245, 166, 35, 0.08);
+  border: 1px solid rgba(245, 166, 35, 0.32);
 
-  > mat-icon {
+  &[data-tipo="autoclose"] {
+    background: rgba(0, 200, 215, 0.06);
+    border-color: rgba(0, 200, 215, 0.32);
+    .alerta-icon, .alerta-titulo { color: $cyan-400; }
+    .alerta-btn {
+      background: rgba(0, 200, 215, 0.18);
+      color: $cyan-400;
+      border-color: rgba(0, 200, 215, 0.42);
+      &:hover { background: rgba(0, 200, 215, 0.30); }
+    }
+  }
+
+  &[data-tipo="horario"] {
+    background: rgba(120, 130, 150, 0.08);
+    border-color: rgba(120, 130, 150, 0.32);
+    .alerta-icon, .alerta-titulo { color: $text-secondary; }
+  }
+
+  &[data-tipo="bd"] {
+    background: rgba(240, 82, 82, 0.08);
+    border-color: rgba(240, 82, 82, 0.42);
+    .alerta-icon, .alerta-titulo { color: $warn-color; }
+  }
+
+  .alerta-icon {
     color: $amber-color;
     font-size: 24px;
     width: 24px;
@@ -32,27 +62,27 @@
     flex-shrink: 0;
   }
 
-  .respaldo-text {
+  .alerta-text {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
     min-width: 0;
   }
-  .respaldo-titulo {
+  .alerta-titulo {
     font-family: $font-display;
     font-size: 13px;
     font-weight: 700;
     color: $amber-color;
     letter-spacing: 0.02em;
   }
-  .respaldo-detalle {
+  .alerta-detalle {
     font-size: 12.5px;
     color: $text-secondary;
     line-height: 1.35;
   }
 
-  .respaldo-btn {
+  .alerta-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -72,7 +102,7 @@
     &:hover { background: rgba(245, 166, 35, 0.32); }
   }
 
-  .respaldo-close {
+  .alerta-close {
     width: 28px;
     height: 28px;
     display: grid;
@@ -90,9 +120,9 @@
 
   @media (max-width: $breakpoint-xs) {
     flex-wrap: wrap;
-    .respaldo-text { flex-basis: 100%; order: 0; }
-    .respaldo-btn  { order: 1; }
-    .respaldo-close { order: 2; margin-left: auto; }
+    .alerta-text { flex-basis: 100%; order: 0; }
+    .alerta-btn  { order: 1; }
+    .alerta-close { order: 2; margin-left: auto; }
   }
 }
 
@@ -794,5 +824,256 @@ h1 {
 @media (max-width: 600px) {
   .actions-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+// ─── HEADER: nombre de institución (v3.21) ───────────────
+.header-titulos { min-width: 0; }
+
+.header-inst {
+  font-family: $font-display;
+  font-weight: 500;
+  font-size: 0.95em;
+  color: $text-secondary;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ─── STAT CARD: delta vs ayer (v3.21) ────────────────────
+.stat-valor-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stat-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+
+  mat-icon {
+    font-size: 12px !important;
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  &[data-direccion="up"] {
+    background: rgba(14, 176, 123, 0.12);
+    color: $success-color;
+  }
+  &[data-direccion="down"] {
+    background: rgba(240, 82, 82, 0.12);
+    color: $warn-color;
+  }
+  &[data-direccion="igual"] {
+    background: rgba(200, 230, 240, 0.06);
+    color: $text-muted;
+  }
+}
+
+// ─── MINI-STATS (v3.21) ──────────────────────────────────
+.mini-stats {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-lg;
+  animation: slideInUp 400ms 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mini-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  color: $text-secondary;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &--static { cursor: default; }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .mini-valor {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: $text-primary;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mini-etiqueta {
+    font-size: 0.78rem;
+    color: $text-muted;
+  }
+
+  &:not(.mini-stat--static):hover {
+    border-color: $border-glow;
+    background: linear-gradient(160deg, rgba($cyan-500, 0.04) 0%, $navy-800 100%);
+  }
+}
+
+// ─── ACTIVIDAD ITEM como button (v3.21) ──────────────────
+button.actividad-item {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+
+  &:hover { background: $navy-600; }
+}
+
+// ─── REGISTRO: indicador dentro/ya salió (v3.21) ─────────
+.registro-presencia {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(200, 230, 240, 0.18);
+  margin-right: 6px;
+  vertical-align: middle;
+
+  &.adentro {
+    background: $success-color;
+    box-shadow: 0 0 0 2px rgba(14, 176, 123, 0.18);
+  }
+}
+
+// ─── AFORO como button accesible (v3.21) ─────────────────
+button.aforo-dashboard {
+  width: 100%;
+  border: 1px solid rgba(0, 200, 215, 0.20);
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+// ─── EXTRA-SMALL (320–480px) ─────────────────────────────
+// Endurece títulos y panel-headers para que no rompan feo
+// (Actividades de hoy / Últimas entradas / saludo h1).
+@media (max-width: 480px) {
+  .dashboard-container { padding: $spacing-sm; }
+
+  .page-header {
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+  }
+
+  .header-left {
+    gap: $spacing-sm;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 20px; }
+  }
+
+  h1 {
+    font-size: 1.15rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .header-subtitle { font-size: 0.74rem; }
+
+  .panel { padding: $spacing-md; }
+
+  // El h2 + link-btn dejan de competir por una sola fila:
+  // se apilan, cada uno con su propio espacio.
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: $spacing-sm;
+
+    h2 {
+      font-size: 0.95rem;
+      flex-wrap: wrap;
+      gap: 4px;
+      line-height: 1.25;
+      width: 100%;
+    }
+  }
+
+  .link-btn {
+    font-size: 0.74rem;
+    align-self: flex-end;
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+
+  // Asegura que ningún hijo del panel exija ancho mínimo
+  // mayor al viewport (causa del scroll horizontal).
+  .panel,
+  .actividades-list,
+  .registros-preview { min-width: 0; max-width: 100%; }
+
+  .actividad-item {
+    padding: 8px 10px;
+    gap: 8px;
+
+    .actividad-icon {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    }
+
+    .actividad-nombre {
+      min-width: 0;
+      font-size: 0.82rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .actividad-count { font-size: 0.85rem; flex-shrink: 0; }
+  }
+
+  // El registro-item pasa de 1 fila (hora|info|matricula) a un
+  // grid 2x2: hora + matricula arriba, nombre + motivo abajo.
+  // Así nada compite por el ancho del viewport de 320px.
+  .registro-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "hora      .       matricula"
+      "nombre    nombre  nombre"
+      "motivo    motivo  motivo";
+    gap: 2px 8px;
+    padding: 10px 10px;
+
+    .registro-hora     { grid-area: hora; min-width: 0; font-size: 0.74rem; }
+    // display: contents → nombre + motivo se vuelven grid items directos
+    .registro-info     { display: contents; }
+    .registro-nombre   { grid-area: nombre; font-size: 0.82rem; min-width: 0; }
+    .registro-motivo   { grid-area: motivo; font-size: 0.7rem; min-width: 0; }
+    .registro-matricula{ grid-area: matricula; font-size: 0.7rem; padding: 1px 6px; justify-self: end; }
   }
 }
