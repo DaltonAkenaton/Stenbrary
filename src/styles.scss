@@ -544,6 +544,21 @@ router-outlet + * {
   color: $text-secondary !important;
 }
 
+// ─── NUMBER INPUTS — Ocultar steppers nativos del navegador ─────
+// Los <input type="number"> traen flechitas arriba/abajo nativas que
+// roban ~16px del input width. En pantallas chicas, eso hace que el
+// matSuffix (ej. "λ", "días") se desborde fuera del form-field.
+// Las flechitas no son útiles en touch tampoco — el usuario tipea.
+input[type="number"] {
+  -moz-appearance: textfield; // Firefox
+  appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 // ═══════════════════════════════════════════════════════════
 // ACCESIBILIDAD — prefers-reduced-motion (v3.20)
 // ═══════════════════════════════════════════════════════════

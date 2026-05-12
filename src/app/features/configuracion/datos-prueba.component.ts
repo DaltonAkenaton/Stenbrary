@@ -156,7 +156,8 @@ const MS_POR_ALUMNO = 5;
         </mat-select>
       </mat-form-field>
 
-      <!-- Controles libres -->
+      <!-- Controles libres — los textos largos van como mat-hint debajo
+           para no competir con el input numérico en pantallas chicas. -->
       <div class="controles-libres">
         <mat-form-field appearance="outline">
           <mat-label>Cantidad de alumnos</mat-label>
@@ -168,11 +169,11 @@ const MS_POR_ALUMNO = 5;
             [(ngModel)]="config.cantidadAlumnos"
             (ngModelChange)="onConfigChange()"
             [disabled]="generando()">
-          <span matSuffix>/ máx 3000</span>
+          <mat-hint align="end">máx 3000</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Ventana temporal (días hacia atrás)</mat-label>
+          <mat-label>Ventana temporal</mat-label>
           <input
             matInput
             type="number"
@@ -181,7 +182,8 @@ const MS_POR_ALUMNO = 5;
             [(ngModel)]="config.ventanaDias"
             (ngModelChange)="onConfigChange()"
             [disabled]="generando()">
-          <span matSuffix>días (máx 3 años)</span>
+          <span matSuffix>d</span>
+          <mat-hint align="end">días hacia atrás (máx 3 años)</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -401,6 +403,11 @@ const MS_POR_ALUMNO = 5;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
     }
+    /* Form-fields ocupan toda la celda del grid — sin esto su width
+       natural deja al matSuffix saliendo del card en pantallas chicas. */
+    .controles-libres mat-form-field {
+      width: 100%;
+    }
 
     .estimacion {
       display: flex;
@@ -522,10 +529,10 @@ const MS_POR_ALUMNO = 5;
       height: 18px;
     }
 
+    /* Inline (no flex) para que los <code> interpolados fluyan con el
+       texto en lugar de volverse flex items separados que rompen el
+       párrafo en columnas estrechas en 320px. */
     .nota {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
       font-size: 12px;
       color: var(--text-muted);
       margin: 0;
@@ -537,8 +544,15 @@ const MS_POR_ALUMNO = 5;
       width: 16px;
       height: 16px;
       color: var(--text-muted);
-      flex-shrink: 0;
-      margin-top: 1px;
+      vertical-align: middle;
+      margin-right: 8px;
+      position: relative;
+      top: -1px;
+    }
+
+    .nota code {
+      white-space: nowrap;
+      display: inline-block;
     }
 
     .spinning {

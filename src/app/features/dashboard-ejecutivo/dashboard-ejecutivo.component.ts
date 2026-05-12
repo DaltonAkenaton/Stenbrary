@@ -412,15 +412,45 @@ formatHora(h: number): string {
     if (this.datosListos) {
       requestAnimationFrame(() => requestAnimationFrame(() => this.renderizarGraficas()));
     }
+    this.esMovilActual = this.esMovilViewport();
+    window.addEventListener('resize', this.onResize);
   }
 
   ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onResize);
+    if (this.resizeTimer) clearTimeout(this.resizeTimer);
     this.chartDiario?.destroy();
     this.chartMotivos?.destroy();
     this.chartCarreras?.destroy();
     this.chartCompararA?.destroy();
     this.chartCompararB?.destroy();
   }
+
+  /** Estado actual del breakpoint móvil; se re-evalúa en resize. */
+  private esMovilActual = false;
+  private resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** True si el viewport está en modo móvil (sparkline). */
+  private esMovilViewport(): boolean {
+    return typeof window !== 'undefined' && window.innerWidth <= 480;
+  }
+
+  /** Si cruzamos el threshold de 480px, hay que recrear el chart diario
+   *  (de bar a line o viceversa). Debounce para evitar trabajo durante
+   *  arrastres continuos del borde de la ventana. */
+  private onResize = (): void => {
+    if (this.resizeTimer) clearTimeout(this.resizeTimer);
+    this.resizeTimer = setTimeout(() => {
+      const movilAhora = this.esMovilViewport();
+      if (movilAhora !== this.esMovilActual) {
+        this.esMovilActual = movilAhora;
+        if (this.datosListos && this.tabActiva === 'resumen') {
+          this.ngZone.runOutsideAngular(() => this.renderizarGraficaDiaria());
+        }
+        this.cdr.markForCheck();
+      }
+    }, 200);
+  };
 
   // ═══════════════════════════════════════════════
   // RANGOS POR PRESET
@@ -689,6 +719,30 @@ formatHora(h: number): string {
     const mm = String(fecha.getMonth() + 1).padStart(2, '0');
     const dd = String(fecha.getDate()).padStart(2, '0');
     this.router.navigate(['/registros'], { queryParams: { fecha: `${yyyy}-${mm}-${dd}` } });
+  }
+
+  /** Pico (máximo) del rango actual — para encabezado sparkline móvil. */
+  get picoDiarioInfo(): { valor: number; etiqueta: string } | null {
+    if (!this.datosDiarios || this.datosDiarios.cantidades.length === 0) return null;
+    const max = Math.max(...this.datosDiarios.cantidades);
+    const idx = this.datosDiarios.cantidades.indexOf(max);
+    return { valor: max, etiqueta: this.datosDiarios.etiquetas[idx] };
+  }
+
+  /** Último bucket (día/semana/mes más reciente) — encabezado sparkline móvil. */
+  get ultimoDiarioInfo(): { valor: number; etiqueta: string } | null {
+    if (!this.datosDiarios || this.datosDiarios.cantidades.length === 0) return null;
+    const n = this.datosDiarios.cantidades.length;
+    return {
+      valor: this.datosDiarios.cantidades[n - 1],
+      etiqueta: this.datosDiarios.etiquetas[n - 1],
+    };
+  }
+
+  /** Rango compacto "12 abr — 11 may" para el footer del sparkline móvil. */
+  get labelRangoSparkline(): string {
+    if (!this.rangoActivo) return '';
+    return `${this.formatearFechaCorta(this.rangoActivo.inicio)} — ${this.formatearFechaCorta(this.rangoActivo.fin)}`;
   }
 
   /** Tier D23: descripción textual de una gráfica para lectores de pantalla. */
@@ -2228,19 +2282,28 @@ this.sparkRegistros = counts;
     const border = cantidades.map((_, i) =>
       domingoSet.has(i) ? '#F05252' : '#00C8D7');
 
-    // Si la chart actual apunta a un canvas distinto al actual (cambió por tab),
-    // hay que destruir y recrear. NO update in-place.
-    if (this.chartDiario && this.chartDiario.canvas !== canvas) {
+    // En ≤480px usamos sparkline (line + área) en lugar de barras: 30 barras
+    // diarias en 320px de ancho se ven amontonadas. La línea con área aprovecha
+    // el ancho completo y deja respirar la lectura.
+    const esMovil = typeof window !== 'undefined' && window.innerWidth <= 480;
+    const tipoDeseado: 'bar' | 'line' = esMovil ? 'line' : 'bar';
+
+    // Si la chart actual apunta a un canvas distinto, o el tipo cambió (rotación
+    // del dispositivo, resize), destruir y recrear.
+    const tipoActual = (this.chartDiario?.config as { type?: string } | undefined)?.type;
+    if (this.chartDiario && (this.chartDiario.canvas !== canvas || tipoActual !== tipoDeseado)) {
       this.chartDiario.destroy();
       this.chartDiario = null;
     }
 
-    // Update in-place si la chart sigue ligada al canvas vivo
+    // Update in-place si la chart sigue ligada al canvas vivo Y el tipo coincide
     if (this.chartDiario) {
       this.chartDiario.data.labels = this.datosDiarios.etiquetas;
       this.chartDiario.data.datasets[0].data = cantidades;
-      this.chartDiario.data.datasets[0].backgroundColor = bg;
-      this.chartDiario.data.datasets[0].borderColor = border;
+      if (tipoDeseado === 'bar') {
+        this.chartDiario.data.datasets[0].backgroundColor = bg;
+        this.chartDiario.data.datasets[0].borderColor = border;
+      }
       this.chartDiario.update('none');
       return;
     }
@@ -2248,6 +2311,60 @@ this.sparkRegistros = counts;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    if (esMovil) {
+      // Sparkline minimalista: línea con área, sin ejes, sin grid.
+      this.chartDiario = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: this.datosDiarios.etiquetas,
+          datasets: [{
+            label: 'Registros',
+            data: cantidades,
+            borderColor: '#00C8D7',
+            backgroundColor: 'rgba(0, 200, 215, 0.18)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#00C8D7',
+            pointHoverBorderColor: '#04090F',
+            pointHoverBorderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: this.animDuracion },
+          interaction: { mode: 'index', intersect: false },
+          layout: { padding: { left: 4, right: 4, top: 8, bottom: 0 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#142033', titleColor: '#E8F4F8', bodyColor: '#E8F4F8',
+              borderColor: 'rgba(0, 200, 215, 0.3)', borderWidth: 1, cornerRadius: 10,
+              padding: 10, displayColors: false,
+              callbacks: {
+                title: (items) => items[0]?.label || '',
+                label: (item) => `${item.raw} registros`,
+              },
+            },
+          },
+          scales: {
+            x: { display: false },
+            y: { display: false, beginAtZero: true },
+          },
+          onClick: (_, elements) => {
+            if (elements.length > 0 && this.datosDiarios?.granularidad === 'dia') {
+              this.ngZone.run(() => this.drillDia(elements[0].index));
+            }
+          },
+          onHover: (event, elements) => {
+            const target = event.native?.target as HTMLElement | undefined;
+            if (target) target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+          },
+        },
+      });
+    } else {
       this.chartDiario = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -2292,7 +2409,6 @@ this.sparkRegistros = counts;
               },
             },
           },
-          // Tier C18: click en barra → drill-down a /registros del día
           onClick: (_, elements) => {
             if (elements.length > 0 && this.datosDiarios?.granularidad === 'dia') {
               this.ngZone.run(() => this.drillDia(elements[0].index));
@@ -2304,6 +2420,7 @@ this.sparkRegistros = counts;
           },
         },
       });
+    }
 
 
 

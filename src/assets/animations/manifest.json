@@ -1,0 +1,4 @@
+{
+  "_documentation": "Lista de IDs de tema que tienen su archivo Lottie en esta carpeta. Si descargas book.json, agrega 'book' al array. Si tienes thumbsup.json, agrega 'thumbsup'. Sin esta entrada, el componente cae al fallback emoji silenciosamente sin generar 404s en consola. IDs válidos: book, thumbsup, trophy, graduation, star, party, check, cofre.",
+  "available": []
+}

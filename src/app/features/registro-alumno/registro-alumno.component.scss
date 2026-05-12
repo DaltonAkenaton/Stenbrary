@@ -201,3 +201,50 @@
     display: none;
   }
 }
+
+@media (max-width: 480px) {
+  .registro-container { padding: $spacing-sm; }
+
+  .registro-header {
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+    min-width: 0;
+
+    h1 {
+      font-size: 1.1rem;
+      line-height: 1.2;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .registro-card {
+    mat-card-header {
+      margin-bottom: $spacing-md;
+
+      .card-header-content {
+        gap: $spacing-sm;
+        min-width: 0;
+
+        .header-icon {
+          font-size: 1.8rem;
+          width: 1.8rem;
+          height: 1.8rem;
+          flex-shrink: 0;
+        }
+
+        > div { min-width: 0; flex: 1; }
+
+        mat-card-title { font-size: 1.05rem; }
+        mat-card-subtitle { font-size: 0.78rem; overflow-wrap: anywhere; }
+      }
+    }
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    button { width: 100%; }
+  }
+}

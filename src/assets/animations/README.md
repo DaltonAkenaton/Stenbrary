@@ -21,7 +21,21 @@ aquí, el sistema usa emojis animados grandes como fallback automático.
 
 3. Descarga el JSON (botón "Lottie JSON" → "Download").
 4. **Renómbralo** según la tabla y déjalo en esta carpeta.
-5. Recompila la app (`npx ng build` o `npx ng serve`).
+5. **Edita `manifest.json`** y agrega el ID del tema al array `available`.
+   Ejemplo: si descargaste `book.json`, el manifest queda así:
+   ```json
+   { "available": ["book"] }
+   ```
+   Si tienes book + thumbsup + cofre:
+   ```json
+   { "available": ["book", "thumbsup", "cofre"] }
+   ```
+6. Recompila la app (`npx ng build` o `npx ng serve`).
+
+> **¿Por qué el manifest?** Sin él, el componente probaría 7 archivos en
+> consola y mostraría 404s ruidosos cuando no están todos descargados.
+> Con el manifest, solo intenta cargar los que están disponibles → consola
+> limpia siempre.
 
 ## Cómo funciona
 

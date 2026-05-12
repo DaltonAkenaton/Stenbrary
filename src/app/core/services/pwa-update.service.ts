@@ -58,6 +58,27 @@ export class PwaUpdateService {
     console.log('✅ PWA Update Service inicializado');
   }
 
+  /** True si el Service Worker está activo (false en `ng serve`). */
+  get habilitado(): boolean {
+    return this.swUpdate.isEnabled;
+  }
+
+  /**
+   * Buscar actualizaciones bajo demanda (botón en Configuración).
+   * Devuelve true si se detectó una nueva versión lista para instalar.
+   * No aplica la actualización; el llamador decide qué hacer.
+   */
+  async buscarActualizacionAhora(): Promise<boolean> {
+    if (!this.swUpdate.isEnabled) return false;
+    try {
+      const hay = await this.swUpdate.checkForUpdate();
+      if (hay) this.hayActualizacion$.next(true);
+      return hay;
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Aplicar la actualización y recargar la página.
    */

@@ -109,10 +109,19 @@ h1 {
   margin-bottom: $spacing-md;
 
   > mat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    box-sizing: border-box;
     color: $cyan-400;
     background: rgba($cyan-500, 0.10);
+    border: 1px solid rgba($cyan-500, 0.20);
     border-radius: $border-radius-sm;
-    padding: 6px;
+    padding: 0;
+    font-size: 20px;
+    line-height: 1;
     flex-shrink: 0;
   }
 
@@ -773,6 +782,10 @@ h1 {
     flex-direction: column;
     align-items: stretch;
 
+    // En column flex, `flex: 1 1 280px` del .buscador hace que el
+    // basis 280px actúe como altura → hueco vacío encima del input.
+    .buscador { flex: 0 0 auto; width: 100%; }
+
     .filtro-item select { min-width: 0; width: 100%; }
   }
 
@@ -787,4 +800,119 @@ h1 {
   .cards-grid {
     grid-template-columns: 1fr;
   }
+}
+
+// ─── RESPONSIVE EXTRA-SMALL (320–480px) ──────────────────
+@media (max-width: 480px) {
+  .inactivos-container { padding: $spacing-sm; }
+
+  .page-header {
+    margin-bottom: $spacing-md;
+    gap: $spacing-sm;
+  }
+
+  .header-left { gap: $spacing-sm; min-width: 0; flex: 1 1 auto; }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    flex-shrink: 0;
+
+    mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  }
+
+  h1 { font-size: 1.2rem; line-height: 1.15; }
+  .header-subtitle { font-size: 0.76rem; }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .panel,
+  .filtros-panel { padding: $spacing-md; }
+
+  .panel { margin-bottom: $spacing-md; }
+
+  .panel-title {
+    gap: $spacing-sm;
+    margin-bottom: $spacing-sm;
+
+    > mat-icon { width: 32px; height: 32px; font-size: 18px; }
+    h3 { font-size: 0.95rem; }
+    p { font-size: 0.78rem; }
+  }
+
+  .preset-chip { padding: 5px 11px; font-size: 0.78rem; }
+
+  .stepper-row {
+    gap: 6px;
+
+    .step-btn { width: 34px; height: 34px; }
+    .step-input { width: 64px; height: 34px; font-size: 0.95rem; }
+    .btn-ghost { height: 34px; padding: 0 10px; }
+  }
+
+  .summary-chip {
+    font-size: 0.76rem;
+    padding: 5px 10px;
+  }
+
+  // Lista: layout en grid para que avatar+info+acción queden arriba
+  // y el badge ocupe toda la fila inferior sin solaparse con el texto.
+  .fila {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "avatar info action"
+      "badge  badge badge";
+    gap: 10px 12px;
+    padding: 12px;
+
+    .fila-avatar {
+      grid-area: avatar;
+      width: 38px;
+      height: 38px;
+      font-size: 0.85rem;
+    }
+
+    .fila-info {
+      grid-area: info;
+
+      h4 { font-size: 0.9rem; }
+      .meta { font-size: 0.72rem; .sep { margin: 0 4px; } }
+      .ultima { font-size: 0.72rem; }
+    }
+
+    .action-btn {
+      grid-area: action;
+      width: 34px;
+      height: 34px;
+    }
+
+    .badge {
+      grid-area: badge;
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: center;
+      gap: 6px;
+      min-width: 0;
+      width: 100%;
+      padding: 6px 10px;
+      margin-left: 0;
+
+      strong { font-size: 1.05rem; }
+      span { margin-top: 0; font-size: 0.7rem; }
+    }
+  }
+
+  .card { padding: $spacing-md; }
+  .card-avatar { width: 42px; height: 42px; font-size: 0.9rem; }
+  .card-badge {
+    padding: 5px 10px;
+    strong { font-size: 1.2rem; }
+  }
+  .card-nombre { font-size: 0.95rem; }
 }

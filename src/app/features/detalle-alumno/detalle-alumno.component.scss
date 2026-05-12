@@ -647,11 +647,18 @@
 
   .stats-grid { grid-template-columns: 1fr 1fr; }
 
-  .motivo-item {
-    grid-template-columns: 1fr;
+  // Especificidad: el .motivos-card .motivo-item original gana sobre
+  // .motivo-item suelto, por eso anidamos el override aquí.
+  .motivos-card .motivo-item {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "nombre cantidad"
+      "bar    bar";
+    gap: 6px 12px;
 
-    .motivo-bar { order: 3; }
-    .motivo-cantidad { text-align: left; }
+    .motivo-nombre   { grid-area: nombre; }
+    .motivo-cantidad { grid-area: cantidad; text-align: right; }
+    .motivo-bar      { grid-area: bar; min-width: 0; }
   }
 }
 
@@ -659,4 +666,10 @@
   .detalle-alumno-container { padding: $spacing-md; }
   .info-card { padding: $spacing-md; }
   .stats-grid { grid-template-columns: 1fr; }
+
+  .motivos-card {
+    padding: $spacing-md;
+
+    .motivo-item .motivo-bar { height: 14px; }
+  }
 }

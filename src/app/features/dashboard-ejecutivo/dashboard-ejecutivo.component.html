@@ -378,6 +378,22 @@
               </mat-icon>
             </h2>
           </div>
+
+          @if (picoDiarioInfo && ultimoDiarioInfo && kpiTotalRegistros > 0) {
+            <div class="spark-stats">
+              <div class="spark-stat">
+                <span class="spark-label">Pico</span>
+                <span class="spark-value">{{ picoDiarioInfo.valor }}</span>
+                <span class="spark-sub">· {{ picoDiarioInfo.etiqueta }}</span>
+              </div>
+              <div class="spark-stat spark-stat-right">
+                <span class="spark-label">Último</span>
+                <span class="spark-value spark-value-muted">{{ ultimoDiarioInfo.valor }}</span>
+                <span class="spark-sub">· {{ ultimoDiarioInfo.etiqueta }}</span>
+              </div>
+            </div>
+          }
+
           <div class="chart-wrapper">
             @if (kpiTotalRegistros === 0) {
               <div class="chart-empty">
@@ -388,6 +404,14 @@
             }
             <canvas #chartDiario [hidden]="kpiTotalRegistros === 0"></canvas>
           </div>
+
+          @if (labelRangoSparkline && kpiTotalRegistros > 0) {
+            <div class="spark-footer">
+              <span class="spark-footer-line"></span>
+              {{ labelRangoSparkline }}
+              <span class="spark-footer-line"></span>
+            </div>
+          }
         </mat-card>
 
         <mat-card class="chart-card chart-narrow">

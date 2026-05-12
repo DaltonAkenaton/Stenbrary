@@ -131,14 +131,18 @@ export interface RegistroDetalleDialogData {
       border-radius: 8px;
       margin-bottom: 20px;
       border-left: 3px solid var(--cyan-500, #00C8D7);
+
+      > div { min-width: 0; flex: 1; }
     }
 
     .avatar-icon {
       font-size: 36px;
       width: 36px;
       height: 36px;
+      line-height: 36px;
       color: var(--cyan-500, #00C8D7);
       opacity: 0.85;
+      flex-shrink: 0;
     }
 
     .alumno-nombre {
@@ -146,12 +150,14 @@ export interface RegistroDetalleDialogData {
       font-weight: 600;
       font-size: 0.95rem;
       color: var(--navy-100, #e2e8f0);
+      overflow-wrap: anywhere;
     }
 
     .alumno-meta {
       margin: 2px 0 0;
       font-size: 0.78rem;
       color: var(--navy-400, #94a3b8);
+      overflow-wrap: anywhere;
     }
 
     .mono {
@@ -233,6 +239,21 @@ export interface RegistroDetalleDialogData {
 
     mat-dialog-actions {
       padding: 8px 16px 16px;
+    }
+
+    @media (max-width: 480px) {
+      h2[mat-dialog-title] { padding: 16px 16px 8px; font-size: 1rem; }
+      .dialog-content { min-width: 0; padding: 8px 16px 12px; }
+      .alumno-header { padding: 10px 12px; gap: 10px; margin-bottom: 14px; }
+      .avatar-icon { font-size: 28px; width: 28px; height: 28px; line-height: 28px; }
+      .alumno-nombre { font-size: 0.88rem; }
+      .alumno-meta { font-size: 0.74rem; }
+      .info-row { grid-template-columns: 1fr; gap: 8px; }
+      .info-grid { gap: 8px; }
+      .info-item { padding: 8px 10px; }
+      .label { font-size: 0.65rem; }
+      .value { font-size: 0.82rem; }
+      mat-dialog-actions { padding: 6px 12px 12px; }
     }
   `],
 })

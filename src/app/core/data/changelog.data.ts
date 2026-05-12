@@ -49,6 +49,33 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.22.0',
+    fecha: '2026-05-12',
+    titulo: 'Responsive 320–480px y check manual de actualizaciones',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Refinamiento responsive en pantallas muy pequeñas (320–480px) para Dashboard Ejecutivo, Inactivos, Selección de Motivo, Registro de Alumno y la animación de éxito: títulos a tamaño justo, paneles sin scroll horizontal, controles que no se cortan y mejor uso del ancho disponible.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'En Dashboard Ejecutivo (≤480px) la gráfica diaria pasa de barras a sparkline (línea con área) para que 30 días caben sin amontonarse, con encabezado de pico/último bucket y footer con el rango de fechas.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nuevo método "buscar actualizaciones ahora" en el servicio PWA: permite cablear un botón manual de comprobación de versión en Configuración.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'En "Datos de prueba": los textos largos del formulario pasan a hints debajo del input para no romper el layout en celulares chicos.',
+      },
+    ],
+  },
+  {
     version: '3.21.6',
     fecha: '2026-05-12',
     titulo: 'Feedback en toda la configuración',

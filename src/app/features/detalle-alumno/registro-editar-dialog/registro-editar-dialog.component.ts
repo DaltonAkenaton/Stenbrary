@@ -135,7 +135,16 @@ export interface RegistroEditarResultado {
       border-left: 3px solid #00C8D7;
       border-radius: 8px;
 
-      mat-icon { font-size: 32px; width: 32px; height: 32px; color: #00C8D7; }
+      mat-icon {
+        font-size: 32px; width: 32px; height: 32px;
+        line-height: 32px; color: #00C8D7;
+        flex-shrink: 0;
+      }
+      > div { min-width: 0; }
+    }
+    .alumno-nombre,
+    .alumno-meta {
+      overflow-wrap: anywhere;
     }
     .alumno-nombre { margin: 0; font-weight: 600; font-size: .95rem; color: #E8F4F8; }
     .alumno-meta { margin: 2px 0 0; font-size: .78rem; color: rgba(200,230,240,.55); }

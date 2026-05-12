@@ -2958,3 +2958,341 @@ button:focus-visible {
 canvas {
   touch-action: pan-y;
 }
+
+// ─── Sparkline móvil: por defecto OCULTOS en desktop.
+// El media query de abajo los activa en ≤480px. ────
+.spark-stats,
+.spark-footer { display: none; }
+
+// ═══════════════════════════════════════════════════
+// RESPONSIVE — pantallas muy angostas (320–480px)
+// Corrige títulos h2 sin font-size (heredan el headline
+// de Material ~36px), grids que no colapsan, y chips
+// de filtro que se cortan.
+// ═══════════════════════════════════════════════════
+@media (max-width: 480px) {
+  .dashboard-ejecutivo-container {
+    padding: $spacing-sm;
+  }
+
+  // ─── Header ──────────────────────────────────────
+  .header {
+    gap: $spacing-sm;
+    margin-bottom: $spacing-lg;
+
+    .header-info {
+      flex: 1;
+      min-width: 0;
+
+      h1 {
+        font-size: 1.3rem;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        font-size: 0.78rem;
+      }
+    }
+
+    .header-help-btn {
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
+  // ─── Banner rango activo ────────────────────────
+  .rango-activo-banner {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    gap: 8px;
+
+    .rango-activo-text {
+      min-width: 0;
+      font-size: 0.82rem;
+    }
+
+    .rango-comparativo {
+      padding-left: 0;
+      border-left: none;
+      font-size: 0.74rem;
+    }
+  }
+
+  // ─── Cards: padding compacto + h2 con tamaño explícito
+  // (los h2 sin font-size heredan ~2.25rem de Material y
+  // se ven enormes en 320px) ──────────────────────
+  .tendencia-card,
+  .heatmap-card,
+  .top-alumnos-card,
+  .chart-card,
+  .comparador-card,
+  .acciones-card {
+    padding: $spacing-md !important;
+
+    h2 {
+      font-size: 1rem !important;
+      gap: 6px;
+      line-height: 1.25;
+
+      mat-icon:not(.info-icon) {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+
+      .info-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+
+  // ─── Chart cards (Registros por día / Motivos):
+  // ajuste fino para maximizar el ancho útil del canvas
+  // en 320–480px. El padding lateral del card desperdicia
+  // ~32px (16+16) que podrían ser barras más anchas. ──
+  .chart-card {
+    padding: 14px 12px !important;
+  }
+
+  .charts-row {
+    gap: 12px;
+  }
+
+  .chart-header {
+    margin-bottom: 8px;
+  }
+
+  // Sparkline (line + área): más bajo, sin chrome de ejes.
+  // Doughnut conserva su proporción (220px desde $breakpoint-sm).
+  .chart-card.chart-wide .chart-wrapper {
+    height: 140px;
+  }
+
+  // Stats encima del sparkline: Pico y Último
+  .spark-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+    padding: 0 2px;
+  }
+
+  .spark-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .spark-stat-right { text-align: right; }
+
+  .spark-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .spark-value {
+    font-family: $font-display;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: $cyan-400;
+    line-height: 1;
+
+    &.spark-value-muted { color: $text-secondary; }
+  }
+
+  .spark-sub {
+    font-size: 0.72rem;
+    color: $text-muted;
+    font-family: $font-mono;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Footer con rango de fechas
+  .spark-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 0.72rem;
+    color: $text-muted;
+    font-family: $font-mono;
+    justify-content: center;
+  }
+
+  .spark-footer-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(0, 200, 215, 0.18), transparent);
+  }
+
+  // ─── KPI hero ────────────────────────────────────
+  .kpi-hero {
+    padding: 16px 14px;
+
+    .kpi-hero-left .kpi-hero-value {
+      font-size: clamp(1.9rem, 12vw, 2.6rem);
+    }
+
+    .kpi-hero-left .kpi-hero-sub {
+      font-size: 0.82rem;
+    }
+  }
+
+  // ─── KPIs grid ──────────────────────────────────
+  .kpis-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 14px;
+
+    .kpi-value {
+      font-size: 1.35rem;
+    }
+  }
+
+  // ─── Tendencia: forzar 1 columna (la regla base
+  // .tendencia-card .tendencia-grid gana al
+  // @media $breakpoint-lg por especificidad) ─────
+  .tendencia-card .tendencia-grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-md;
+
+    .tendencia-icono { order: -1; }
+  }
+
+  .tendencia-card .tendencia-stat .tendencia-valor {
+    font-size: 1.6rem;
+
+    &.grande { font-size: 1.9rem; }
+  }
+
+  .tendencia-card .tendencia-stat .tendencia-fechas {
+    font-size: 0.72rem;
+    word-break: break-word;
+  }
+
+  // ─── Heatmap header ────────────────────────────
+  .heatmap-card {
+    .heatmap-controls {
+      width: 100%;
+    }
+
+    .heatmap-sublabel,
+    .heatmap-aviso {
+      font-size: 0.72rem;
+    }
+  }
+
+  // ─── Mini período selector: revertir el nowrap
+  // de $breakpoint-sm para que las chips wrapeen
+  // (en 320px el scroll horizontal se ve cortado) ─
+  .mini-periodo-selector {
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+  }
+
+  .mini-periodo-btn {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  // ─── Section header row ─────────────────────────
+  .section-header-row {
+    .section-actions {
+      width: 100%;
+    }
+  }
+
+  // ─── Comparador: padding tighter, slots compactos
+  .comparador-card {
+    padding: $spacing-md !important;
+  }
+
+  .comparador-slot {
+    padding: 12px;
+  }
+
+  .slot-rango-real {
+    font-size: 0.72rem;
+    word-break: break-word;
+  }
+
+  .slot-kpi.big .slot-kpi-value {
+    font-size: 1.7rem;
+  }
+
+  .slot-kpi-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  // ─── Insights ───────────────────────────────────
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  // ─── Top alumno item: evitar transform que provoca
+  // overflow horizontal en hover táctil ──────────
+  .top-alumnos-card .top-alumno-item {
+    padding: 12px;
+
+    &:hover { transform: none; }
+
+    .alumno-info h3 {
+      font-size: 0.9rem;
+    }
+  }
+
+  // ─── Tabs: ya esconde span en $breakpoint-sm,
+  // refinar padding para que entren los 5 iconos ──
+  .tabs-nav {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    padding: 8px 10px;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// RESPONSIVE — ultra-narrow (≤360px, ej. 320×480)
+// ═══════════════════════════════════════════════════
+@media (max-width: 360px) {
+  .header .header-info h1 {
+    font-size: 1.15rem;
+  }
+
+  .tendencia-card,
+  .heatmap-card,
+  .top-alumnos-card,
+  .chart-card,
+  .comparador-card {
+    h2 {
+      font-size: 0.92rem !important;
+    }
+  }
+
+  .kpi-hero-left .kpi-hero-value {
+    font-size: clamp(1.7rem, 14vw, 2.3rem);
+  }
+}

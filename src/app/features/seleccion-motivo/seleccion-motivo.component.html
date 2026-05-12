@@ -296,17 +296,20 @@
         <div class="sheet-handle"></div>
 
         <div class="sheet-scroll">
-          @for (m of motivosSeleccionados; track m.id) {
-            <div class="sheet-motivo">
-              <div class="sheet-motivo-icon">
+          <div class="sheet-chips">
+            @for (m of motivosSeleccionados; track m.id) {
+              <span class="sheet-chip" [style.--chip-color]="m.color || '#00C8D7'">
                 <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
-              </div>
-              <div class="sheet-motivo-info">
-                <h3>{{ m.nombre }}</h3>
-                @if (m.descripcion) { <p>{{ m.descripcion }}</p> }
-              </div>
-            </div>
-          }
+                <span class="sheet-chip-name">{{ m.nombre }}</span>
+                <button class="sheet-chip-remove"
+                        (click)="seleccionarMotivo(m)"
+                        [disabled]="registrando"
+                        aria-label="Quitar motivo">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </span>
+            }
+          </div>
         </div>
 
         <div class="sheet-question">

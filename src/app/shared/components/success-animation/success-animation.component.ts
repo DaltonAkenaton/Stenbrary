@@ -175,9 +175,12 @@ export class SuccessAnimationComponent implements OnInit {
       try { navigator.vibrate(elegido.haptic); } catch { /* silenciar */ }
     }
 
-    // Lottie opcional — verificar JSON y cargarlo si existe.
-    const path = `assets/animations/${elegido.lottieFile}`;
-    if (await this.verificarJson(path)) {
+    // Lottie opcional: el manifest.json de la carpeta lista qué temas
+    // tienen archivo bundleado. Si el tema elegido está ahí, lo usa.
+    // Si no (caso default), cae a emoji sin generar ningún 404.
+    const disponibles = await SuccessAnimationComponent.cargarManifest();
+    if (disponibles.includes(elegido.id)) {
+      const path = `assets/animations/${elegido.lottieFile}`;
       this.lottieOptions.set({ path, loop: false, autoplay: true });
       this.lottieDisponible.set(true);
     }
@@ -203,12 +206,28 @@ export class SuccessAnimationComponent implements OnInit {
     return arr;
   }
 
-  private async verificarJson(path: string): Promise<boolean> {
+  /** Manifest.json existe siempre (con array vacío por default), así que
+   *  este fetch nunca da 404. La lista cacheada vive en memoria mientras
+   *  dure la sesión — recarga al refrescar página. */
+  private static manifestCache: string[] | null = null;
+
+  private static async cargarManifest(): Promise<string[]> {
+    if (SuccessAnimationComponent.manifestCache !== null) {
+      return SuccessAnimationComponent.manifestCache;
+    }
     try {
-      const res = await fetch(path, { method: 'HEAD' });
-      return res.ok;
+      const res = await fetch('assets/animations/manifest.json');
+      if (!res.ok) {
+        SuccessAnimationComponent.manifestCache = [];
+        return [];
+      }
+      const data = await res.json();
+      const list = Array.isArray(data?.available) ? data.available : [];
+      SuccessAnimationComponent.manifestCache = list;
+      return list;
     } catch {
-      return false;
+      SuccessAnimationComponent.manifestCache = [];
+      return [];
     }
   }
 }
