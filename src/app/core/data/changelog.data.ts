@@ -49,6 +49,18 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.21.3',
+    fecha: '2026-05-12',
+    titulo: 'Minutos al detalle en el recordatorio',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'El selector de minutos del recordatorio ahora acepta cualquier valor del 00 al 59 (antes solo iba de 5 en 5). Si quieres poner el aviso a las 11:21 exactas, ya se puede.',
+      },
+    ],
+  },
+  {
     version: '3.21.2',
     fecha: '2026-05-12',
     titulo: 'Selector de hora del tema oscuro',

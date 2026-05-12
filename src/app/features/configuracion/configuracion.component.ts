@@ -2160,8 +2160,8 @@ export class ConfiguracionComponent implements OnInit {
 
   /** 0..23 para el <select> de hora. */
   readonly horasNumOpciones = Array.from({ length: 24 }, (_, i) => i);
-  /** 0,5,10,...,55 para el <select> de minutos. */
-  readonly minutosNumOpciones = Array.from({ length: 12 }, (_, i) => i * 5);
+  /** 0..59 — granularidad de 1 minuto (regla de flexibilidad). */
+  readonly minutosNumOpciones = Array.from({ length: 60 }, (_, i) => i);
 
   pad2(n: number): string {
     return n < 10 ? `0${n}` : `${n}`;
@@ -2178,9 +2178,7 @@ export class ConfiguracionComponent implements OnInit {
   }
 
   get respaldoHoraM(): number {
-    const m = this.parseHoraActual().m;
-    // Cuajar al múltiplo de 5 más cercano para que se vea reflejado en el select
-    return Math.round(m / 5) * 5 % 60;
+    return this.parseHoraActual().m;
   }
 
   setRespaldoHoraH(h: number | string): void {
