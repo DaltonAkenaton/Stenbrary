@@ -49,6 +49,23 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.21.6',
+    fecha: '2026-05-12',
+    titulo: 'Feedback en toda la configuración',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Ahora todos los ajustes de Configuración muestran un mensaje de confirmación al cambiarlos. Antes algunos cambiaban en silencio y parecía que no servían — ahora siempre sabes qué pasó.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Para inputs continuos (slider de volumen, porcentaje de animación, segundos de pantalla, PIN, horarios, velocidad y cooldown del escáner) el mensaje aparece solo al terminar de ajustar, no en cada keystroke — sin saturar con avisos.',
+      },
+    ],
+  },
+  {
     version: '3.21.5',
     fecha: '2026-05-12',
     titulo: 'Feedback en cambios de configuración',

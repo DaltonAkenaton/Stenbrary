@@ -269,16 +269,16 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             <label for="velMsInput">Personalizado (ms)</label>
             <div class="aforo-stepper" style="max-width: 220px;">
               <button type="button" class="stepper-btn"
-                      (click)="configService.setEscanerVelocidadMs(configService.escanerVelocidadMs - 10)"
+                      (click)="onChangeEscanerVelocidad(configService.escanerVelocidadMs - 10)"
                       matTooltip="Disminuir 10 ms">
                 <mat-icon>remove</mat-icon>
               </button>
               <input id="velMsInput" type="number" min="0" step="10"
                      class="aforo-number-input"
                      [ngModel]="configService.escanerVelocidadMs"
-                     (ngModelChange)="configService.setEscanerVelocidadMs($event)">
+                     (ngModelChange)="onChangeEscanerVelocidad($event)">
               <button type="button" class="stepper-btn"
-                      (click)="configService.setEscanerVelocidadMs(configService.escanerVelocidadMs + 10)"
+                      (click)="onChangeEscanerVelocidad(configService.escanerVelocidadMs + 10)"
                       matTooltip="Aumentar 10 ms">
                 <mat-icon>add</mat-icon>
               </button>
@@ -306,7 +306,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             <label for="cdMsInput">Personalizado (ms)</label>
             <div class="aforo-stepper" style="max-width: 220px;">
               <button type="button" class="stepper-btn"
-                      (click)="configService.setEscanerCooldownMs(configService.escanerCooldownMs - 100)"
+                      (click)="onChangeEscanerCooldown(configService.escanerCooldownMs - 100)"
                       [disabled]="configService.escanerCooldownMs <= 0"
                       matTooltip="Disminuir 100 ms">
                 <mat-icon>remove</mat-icon>
@@ -314,9 +314,9 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
               <input id="cdMsInput" type="number" min="0" step="100"
                      class="aforo-number-input"
                      [ngModel]="configService.escanerCooldownMs"
-                     (ngModelChange)="configService.setEscanerCooldownMs($event)">
+                     (ngModelChange)="onChangeEscanerCooldown($event)">
               <button type="button" class="stepper-btn"
-                      (click)="configService.setEscanerCooldownMs(configService.escanerCooldownMs + 100)"
+                      (click)="onChangeEscanerCooldown(configService.escanerCooldownMs + 100)"
                       matTooltip="Aumentar 100 ms">
                 <mat-icon>add</mat-icon>
               </button>
@@ -2286,6 +2286,48 @@ export class ConfiguracionComponent implements OnInit {
     const n = typeof pct === 'string' ? parseInt(pct, 10) : pct;
     const clamped = Math.max(0, Math.min(100, isNaN(n) ? 0 : n));
     this.configService.setVolumenBeep(clamped / 100);
+    this.debouncedToast('volumen', `Volumen del beep: ${clamped}%`);
+  }
+
+  // ═══════════════════════════════════════════════
+  // DEBOUNCE DE TOAST PARA INPUTS CONTINUOS (v3.21.6)
+  // ═══════════════════════════════════════════════
+  // Cuando el coordinador escribe en un input numérico o arrastra un slider,
+  // disparar un toast por cada cambio sería spam. Este helper colapsa todos
+  // los cambios consecutivos en un único toast tras `ms` de inactividad.
+
+  private toastDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  private debouncedToast(key: string, mensaje: string, ms = 700): void {
+    const prev = this.toastDebounceTimers.get(key);
+    if (prev) clearTimeout(prev);
+    const t = setTimeout(() => {
+      this.toastService.success(mensaje);
+      this.toastDebounceTimers.delete(key);
+    }, ms);
+    this.toastDebounceTimers.set(key, t);
+  }
+
+  // ─── Handlers de feedback para escáner (input/stepper libres) ───
+
+  onChangeEscanerVelocidad(ms: number | string): void {
+    const n = typeof ms === 'string' ? parseInt(ms, 10) : ms;
+    this.configService.setEscanerVelocidadMs(isNaN(n) ? 0 : n);
+    const v = this.configService.escanerVelocidadMs;
+    this.debouncedToast(
+      'escaner-vel',
+      v === 0 ? 'Velocidad de detección: Instantáneo' : `Velocidad de detección: ${v} ms`,
+    );
+  }
+
+  onChangeEscanerCooldown(ms: number | string): void {
+    const n = typeof ms === 'string' ? parseInt(ms, 10) : ms;
+    this.configService.setEscanerCooldownMs(isNaN(n) ? 0 : n);
+    const v = this.configService.escanerCooldownMs;
+    this.debouncedToast(
+      'escaner-cd',
+      v === 0 ? 'Sin espera entre escaneos' : `Espera entre escaneos: ${v} ms`,
+    );
   }
 
   // ─── Feedback al cambiar settings con efecto diferido ───
@@ -2389,6 +2431,11 @@ export class ConfiguracionComponent implements OnInit {
 
   setQuioscoPin(valor: string): void {
     this.configService.setQuioscoPin(valor);
+    const pin = this.configService.quioscoPin;
+    this.debouncedToast(
+      'quiosco-pin',
+      pin ? `PIN del modo quiosco: ${pin.length} dígito(s)` : 'PIN del modo quiosco eliminado',
+    );
   }
 
   // ═══════════════════════════════════════════════
@@ -2426,12 +2473,23 @@ export class ConfiguracionComponent implements OnInit {
 
   toggleDiaCerrado(dia: number): void {
     const actual = this.configService.horarios[dia];
-    this.configService.setHorarioDia(dia, { ...actual, cerrado: !actual.cerrado });
+    const nuevoCerrado = !actual.cerrado;
+    this.configService.setHorarioDia(dia, { ...actual, cerrado: nuevoCerrado });
+    const nombre = DIAS_SEMANA[dia] ?? `Día ${dia}`;
+    this.toastService.success(
+      nuevoCerrado ? `${nombre}: cerrado` : `${nombre}: abierto ${actual.apertura}–${actual.cierre}`,
+    );
   }
 
   setHorarioCampo(dia: number, campo: 'apertura' | 'cierre', valor: string): void {
     const actual = this.configService.horarios[dia];
     this.configService.setHorarioDia(dia, { ...actual, [campo]: valor });
+    const nombre = DIAS_SEMANA[dia] ?? `Día ${dia}`;
+    const etiqueta = campo === 'apertura' ? 'apertura' : 'cierre';
+    this.debouncedToast(
+      `horario-${dia}-${campo}`,
+      `${nombre} — ${etiqueta}: ${valor}`,
+    );
   }
 
   // ═══════════════════════════════════════════════
@@ -2473,6 +2531,7 @@ export class ConfiguracionComponent implements OnInit {
     if (isNaN(num)) return;
     const acotado = Math.max(0, Math.min(100, Math.round(num)));
     this.configService.setCelebracionProbabilidad(acotado / 100);
+    this.debouncedToast('celebracion', `Frecuencia de animación: ${acotado}%`);
   }
 
   // ═══════════════════════════════════════════════
@@ -2497,11 +2556,14 @@ export class ConfiguracionComponent implements OnInit {
     if (isNaN(num)) return;
     const seg = Math.max(1, Math.round(num));
     this.configService.setTiempoExitoMs(seg * 1000);
+    this.debouncedToast('tiempo-exito', `Pantalla de éxito: ${seg} s`);
   }
 
   /** Setter desde presets (ya en ms). */
   setTiempoExito(ms: number): void {
     this.configService.setTiempoExitoMs(ms);
+    const etiqueta = this.opcionesTiempoExito.find(o => o.valor === ms)?.etiqueta ?? `${Math.round(ms / 1000)} s`;
+    this.toastService.success(`Pantalla de éxito: ${etiqueta}`);
   }
 
   // ═══════════════════════════════════════════════
