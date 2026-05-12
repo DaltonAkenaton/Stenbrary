@@ -1081,13 +1081,26 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                 }
               </div>
               <div class="aforo-input-row">
-                <label for="respaldoHora" style="font-size: .78rem; color: rgba(200,230,240,.55);">Otra hora</label>
-                <input id="respaldoHora"
-                       type="time"
-                       class="aforo-number-input"
-                       style="max-width: 140px;"
-                       [ngModel]="configService.recordatorioRespaldoHora"
-                       (ngModelChange)="configService.setRecordatorioRespaldoHora($event)">
+                <label style="font-size: .78rem; color: rgba(200,230,240,.55);">Otra hora</label>
+                <div class="time-picker">
+                  <select class="time-select"
+                          [ngModel]="respaldoHoraH"
+                          (ngModelChange)="setRespaldoHoraH($event)"
+                          aria-label="Hora">
+                    @for (h of horasNumOpciones; track h) {
+                      <option [value]="h">{{ pad2(h) }}</option>
+                    }
+                  </select>
+                  <span class="time-separator">:</span>
+                  <select class="time-select"
+                          [ngModel]="respaldoHoraM"
+                          (ngModelChange)="setRespaldoHoraM($event)"
+                          aria-label="Minutos">
+                    @for (m of minutosNumOpciones; track m) {
+                      <option [value]="m">{{ pad2(m) }}</option>
+                    }
+                  </select>
+                </div>
               </div>
             </div>
             <p class="section-hint">
@@ -1748,10 +1761,56 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
       }
     }
 
+    /* Selector de hora (HH : MM) consistente con el tema oscuro */
+    .time-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #0a1420;
+      border: 1px solid rgba(0, 200, 215, 0.18);
+      border-radius: 10px;
+      padding: 6px 10px;
+    }
+
+    .time-select {
+      background: transparent;
+      color: #E8F4F8;
+      border: none;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 6px 22px 6px 6px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23E8F4F8' d='M0 0l5 6 5-6z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      background-size: 8px;
+
+      &:focus {
+        outline: none;
+        background-color: rgba(0, 200, 215, 0.06);
+      }
+
+      option {
+        background: #101c2c;
+        color: #E8F4F8;
+      }
+    }
+
+    .time-separator {
+      color: rgba(200, 230, 240, 0.55);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
     @media (max-width: 480px) {
       .aforo-input-row { flex-direction: column; align-items: stretch; }
       .aforo-stepper { width: 100%; }
       .aforo-number-input { flex: 1; width: auto; }
+      .time-picker { align-self: flex-start; }
     }
 
     /* ── Horarios semanales ── */
@@ -2098,6 +2157,43 @@ export class ConfiguracionComponent implements OnInit {
   ];
 
   readonly horasRespaldoOpciones = ['08:00', '12:00', '14:00', '18:00', '20:00'];
+
+  /** 0..23 para el <select> de hora. */
+  readonly horasNumOpciones = Array.from({ length: 24 }, (_, i) => i);
+  /** 0,5,10,...,55 para el <select> de minutos. */
+  readonly minutosNumOpciones = Array.from({ length: 12 }, (_, i) => i * 5);
+
+  pad2(n: number): string {
+    return n < 10 ? `0${n}` : `${n}`;
+  }
+
+  private parseHoraActual(): { h: number; m: number } {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(this.configService.recordatorioRespaldoHora || '');
+    if (!m) return { h: 9, m: 0 };
+    return { h: parseInt(m[1], 10), m: parseInt(m[2], 10) };
+  }
+
+  get respaldoHoraH(): number {
+    return this.parseHoraActual().h;
+  }
+
+  get respaldoHoraM(): number {
+    const m = this.parseHoraActual().m;
+    // Cuajar al múltiplo de 5 más cercano para que se vea reflejado en el select
+    return Math.round(m / 5) * 5 % 60;
+  }
+
+  setRespaldoHoraH(h: number | string): void {
+    const hn = typeof h === 'string' ? parseInt(h, 10) : h;
+    const { m } = this.parseHoraActual();
+    this.configService.setRecordatorioRespaldoHora(`${this.pad2(hn)}:${this.pad2(m)}`);
+  }
+
+  setRespaldoHoraM(min: number | string): void {
+    const mn = typeof min === 'string' ? parseInt(min, 10) : min;
+    const { h } = this.parseHoraActual();
+    this.configService.setRecordatorioRespaldoHora(`${this.pad2(h)}:${this.pad2(mn)}`);
+  }
 
   esDiaRespaldoActivo(dia: number): boolean {
     return this.configService.recordatorioRespaldoDiasSemana.includes(dia);

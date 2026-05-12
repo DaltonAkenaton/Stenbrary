@@ -49,6 +49,18 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.21.2',
+    fecha: '2026-05-12',
+    titulo: 'Selector de hora del tema oscuro',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'El campo "Otra hora" del recordatorio de respaldo ya no usa el input nativo del navegador (que rompía el tema oscuro y era incómodo de manejar). Ahora son dos selectores estilizados — hora (00–23) y minutos (en intervalos de 5) — consistentes con el resto de la app.',
+      },
+    ],
+  },
+  {
     version: '3.21.1',
     fecha: '2026-05-12',
     titulo: 'Escáner instantáneo + ajustes finos',
