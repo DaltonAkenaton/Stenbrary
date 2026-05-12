@@ -49,6 +49,23 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.21.4',
+    fecha: '2026-05-12',
+    titulo: 'Recordatorio más claro y con feedback',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'El texto del recordatorio de respaldo ahora especifica que el aviso aparece en el Resumen (pantalla principal), no en otro lugar.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Retroalimentación al configurar el recordatorio: cada vez que cambias el modo, un día o la hora, aparece un mensaje confirmando el nuevo estado (ej. "Aviso programado: martes, viernes a las 11:21").',
+      },
+    ],
+  },
+  {
     version: '3.21.3',
     fecha: '2026-05-12',
     titulo: 'Minutos al detalle en el recordatorio',

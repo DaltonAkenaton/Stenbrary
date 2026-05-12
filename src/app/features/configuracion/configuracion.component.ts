@@ -23,7 +23,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
-import { ConfigService, AforoModo, HorarioModo, HorarioDia } from '../../core/services/config.service';
+import { ConfigService, AforoModo, HorarioModo, HorarioDia, RecordatorioRespaldoModo } from '../../core/services/config.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
 import { ChangelogService } from '../../core/services/changelog.service';
 import { PwaUpdateService } from '../../core/services/pwa-update.service';
@@ -977,8 +977,9 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
           <h2>Recordatorio de respaldo</h2>
         </div>
         <p class="section-desc">
-          El sistema te avisará en la pantalla principal si pasan más de X días sin que hagas
-          una copia de seguridad. Ajusta cada cuánto quieres el recordatorio.
+          El aviso aparece como una alerta en el <strong style="color:#E8F4F8">Resumen</strong>
+          (pantalla principal) con un botón para exportar el respaldo directamente.
+          Ajusta cada cuánto quieres recibirlo.
         </p>
         <div class="auto-close-options">
           @for (op of recordatorioRespaldoOpciones; track op.valor) {
@@ -1024,7 +1025,10 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
           @if (configService.umbralRecordatorioRespaldoDias === 0) {
             Recordatorio desactivado.
           } @else {
-            Avisar si pasan más de {{ configService.umbralRecordatorioRespaldoDias }} día(s) sin respaldar.
+            Si pasan más de
+            <strong style="color:#E8F4F8">{{ configService.umbralRecordatorioRespaldoDias }} día(s)</strong>
+            sin respaldar, aparecerá una alerta en el
+            <strong style="color:#E8F4F8">Resumen</strong> con un botón para exportar.
             @if (diasSinRespaldoTexto()) {
               <br>{{ diasSinRespaldoTexto() }}
             }
@@ -1038,18 +1042,18 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
             <h2 style="font-size: 0.95rem;">¿Cuándo aparece el aviso?</h2>
           </div>
           <p class="section-desc" style="margin-bottom: 10px;">
-            Por defecto el aviso aparece cuando han pasado los días configurados arriba.
+            Por defecto el aviso aparece en el Resumen cuando han pasado los días configurados arriba.
             También puedes programarlo para días y hora específicos (ej. cada viernes a las 18:00).
           </p>
           <div class="auto-close-options" style="margin-bottom: 12px;">
             <button class="auto-close-btn"
                     [class.active]="configService.recordatorioRespaldoModo === 'intervalo'"
-                    (click)="configService.setRecordatorioRespaldoModo('intervalo')">
+                    (click)="onSetModoRespaldo('intervalo')">
               Por intervalo (cada N días)
             </button>
             <button class="auto-close-btn"
                     [class.active]="configService.recordatorioRespaldoModo === 'programado'"
-                    (click)="configService.setRecordatorioRespaldoModo('programado')">
+                    (click)="onSetModoRespaldo('programado')">
               Programado (día y hora)
             </button>
           </div>
@@ -1061,7 +1065,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                 @for (d of diasSemanaOpciones; track d.valor) {
                   <button class="auto-close-btn"
                           [class.active]="esDiaRespaldoActivo(d.valor)"
-                          (click)="configService.toggleRecordatorioRespaldoDia(d.valor)">
+                          (click)="onToggleDiaRespaldo(d.valor)">
                     {{ d.etiqueta }}
                   </button>
                 }
@@ -1075,7 +1079,7 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
                 @for (h of horasRespaldoOpciones; track h) {
                   <button class="auto-close-btn"
                           [class.active]="configService.recordatorioRespaldoHora === h"
-                          (click)="configService.setRecordatorioRespaldoHora(h)">
+                          (click)="onSetHoraRespaldo(h)">
                     {{ h }}
                   </button>
                 }
@@ -1108,8 +1112,10 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
               @if (configService.recordatorioRespaldoDiasSemana.length === 0) {
                 Selecciona al menos un día para activar el aviso programado.
               } @else {
-                Avisar los {{ diasSemanaActivosTexto() }} a partir de las {{ configService.recordatorioRespaldoHora }}.
-                El aviso desaparece automáticamente al exportar el respaldo del día.
+                Cada <strong style="color:#E8F4F8">{{ diasSemanaActivosTexto() }}</strong>
+                a las <strong style="color:#E8F4F8">{{ configService.recordatorioRespaldoHora }}</strong>
+                aparecerá una alerta en el <strong style="color:#E8F4F8">Resumen</strong> con un
+                botón para exportar el respaldo. La alerta desaparece sola al exportar el respaldo del día.
               }
             </p>
           }
@@ -2185,12 +2191,60 @@ export class ConfiguracionComponent implements OnInit {
     const hn = typeof h === 'string' ? parseInt(h, 10) : h;
     const { m } = this.parseHoraActual();
     this.configService.setRecordatorioRespaldoHora(`${this.pad2(hn)}:${this.pad2(m)}`);
+    this.notificarCambioRespaldo();
   }
 
   setRespaldoHoraM(min: number | string): void {
     const mn = typeof min === 'string' ? parseInt(min, 10) : min;
     const { h } = this.parseHoraActual();
     this.configService.setRecordatorioRespaldoHora(`${this.pad2(h)}:${this.pad2(mn)}`);
+    this.notificarCambioRespaldo();
+  }
+
+  // ─── Handlers con feedback al coordinador ──────────────
+
+  onSetModoRespaldo(modo: RecordatorioRespaldoModo): void {
+    this.configService.setRecordatorioRespaldoModo(modo);
+    if (modo === 'programado') {
+      const dias = this.configService.recordatorioRespaldoDiasSemana.length;
+      if (dias === 0) {
+        this.toastService.info('Modo programado activado — selecciona los días del aviso');
+      } else {
+        this.notificarCambioRespaldo();
+      }
+    } else {
+      const n = this.configService.umbralRecordatorioRespaldoDias;
+      this.toastService.success(
+        n > 0
+          ? `Aviso si pasan ${n} día(s) sin respaldar`
+          : 'Modo por intervalo activado',
+      );
+    }
+  }
+
+  onSetHoraRespaldo(hhmm: string): void {
+    this.configService.setRecordatorioRespaldoHora(hhmm);
+    this.notificarCambioRespaldo();
+  }
+
+  onToggleDiaRespaldo(dia: number): void {
+    this.configService.toggleRecordatorioRespaldoDia(dia);
+    this.notificarCambioRespaldo();
+  }
+
+  /** Toast resumen del estado actual del recordatorio programado. */
+  private notificarCambioRespaldo(): void {
+    if (this.configService.recordatorioRespaldoModo !== 'programado') return;
+
+    const dias = this.configService.recordatorioRespaldoDiasSemana.length;
+    if (dias === 0) {
+      this.toastService.warning('Aviso desactivado — selecciona al menos un día');
+      return;
+    }
+    const hora = this.configService.recordatorioRespaldoHora;
+    this.toastService.success(
+      `Aviso programado: ${this.diasSemanaActivosTexto()} a las ${hora}`,
+    );
   }
 
   esDiaRespaldoActivo(dia: number): boolean {
