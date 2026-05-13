@@ -23,7 +23,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { SoundService } from '../../core/services/sound.service';
-import { ConfigService, AforoModo, HorarioModo, HorarioDia, RecordatorioRespaldoModo } from '../../core/services/config.service';
+import { ConfigService, AforoModo, HorarioModo, HorarioDia, RecordatorioRespaldoModo, CamaraPreferida } from '../../core/services/config.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
 import { ChangelogService } from '../../core/services/changelog.service';
 import { PwaUpdateService } from '../../core/services/pwa-update.service';
@@ -339,6 +339,66 @@ import { SuccessAnimationComponent } from '../../shared/components/success-anima
               <mat-icon>{{ configService.escanerSaltarConfirmacion ? 'toggle_on' : 'toggle_off' }}</mat-icon>
               {{ configService.escanerSaltarConfirmacion ? 'Desactivar' : 'Activar' }}
             </button>
+          </div>
+        </div>
+
+        <!-- Preferencia de cámara (v3.23) -->
+        <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+          <strong style="font-size: .9rem; color:#E8F4F8;">Cámara preferida</strong>
+          <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+            En móvil/tablet con varias cámaras, elige cuál usar al abrir el escáner.
+            Si la cámara elegida no existe, el navegador usa la disponible automáticamente.
+          </p>
+          <div class="auto-close-options">
+            @for (op of opcionesCamara; track op.valor) {
+              <button class="auto-close-btn"
+                      [class.active]="configService.camaraPreferida === op.valor"
+                      (click)="onSetCamaraPreferida(op.valor, op.etiqueta)">
+                <mat-icon style="vertical-align: middle; font-size: 18px; height: 18px; width: 18px;">{{ op.icono }}</mat-icon>
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Zoom inicial del scanner (v3.23) -->
+        <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+          <strong style="font-size: .9rem; color:#E8F4F8;">Zoom inicial del escáner</strong>
+          <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+            Nivel de zoom aplicado al abrir el scanner. Por defecto
+            <strong style="color:#E8F4F8">100%</strong> (sin zoom). Súbelo si la cámara
+            tiene foco fijo y necesitas acercar las credenciales. Se sigue pudiendo
+            cambiar manualmente dentro del scanner.
+          </p>
+          <div class="auto-close-options">
+            @for (op of opcionesZoomDefault; track op.valor) {
+              <button class="auto-close-btn"
+                      [class.active]="zoomDefaultPct === op.valor"
+                      (click)="onSetZoomDefault(op.valor, op.etiqueta)">
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+          <div class="aforo-input-row" style="margin-top: 12px;">
+            <label for="zoomDefInput">Personalizado (%)</label>
+            <div class="aforo-stepper" style="max-width: 220px;">
+              <button type="button" class="stepper-btn"
+                      (click)="onChangeZoomDefaultPct(zoomDefaultPct - 10)"
+                      [disabled]="zoomDefaultPct <= 100"
+                      matTooltip="Disminuir 10%">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <input id="zoomDefInput" type="number" min="100" max="300" step="10"
+                     class="aforo-number-input"
+                     [ngModel]="zoomDefaultPct"
+                     (ngModelChange)="onChangeZoomDefaultPct($event)">
+              <button type="button" class="stepper-btn"
+                      (click)="onChangeZoomDefaultPct(zoomDefaultPct + 10)"
+                      [disabled]="zoomDefaultPct >= 300"
+                      matTooltip="Aumentar 10%">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
           </div>
         </div>
       </mat-card>
@@ -2277,6 +2337,26 @@ export class ConfiguracionComponent implements OnInit {
     { valor: 3000, etiqueta: '3 s' },
   ];
 
+  // ── Cámara y zoom (v3.23) ──
+  readonly opcionesCamara: { valor: CamaraPreferida; etiqueta: string; icono: string }[] = [
+    { valor: 'auto',        etiqueta: 'Automática',  icono: 'autorenew' },
+    { valor: 'environment', etiqueta: 'Trasera',     icono: 'photo_camera_back' },
+    { valor: 'user',        etiqueta: 'Frontal',     icono: 'photo_camera_front' },
+  ];
+
+  readonly opcionesZoomDefault = [
+    { valor: 100, etiqueta: '100% (sin zoom)' },
+    { valor: 150, etiqueta: '150%' },
+    { valor: 200, etiqueta: '200%' },
+    { valor: 250, etiqueta: '250%' },
+    { valor: 300, etiqueta: '300%' },
+  ];
+
+  /** Zoom default expresado como porcentaje 100-300 para la UI. */
+  get zoomDefaultPct(): number {
+    return Math.round(this.configService.zoomScannerDefault * 100);
+  }
+
   /** Volumen del beep como porcentaje 0-100 para el slider. */
   get volumenBeepPct(): number {
     return Math.round(this.configService.volumenBeep * 100);
@@ -2350,6 +2430,27 @@ export class ConfiguracionComponent implements OnInit {
         ? 'El escáner ya no pedirá confirmación — procesará al instante'
         : 'El escáner pedirá confirmación antes de procesar',
     );
+  }
+
+  // ─── Handlers de cámara y zoom (v3.23) ───
+
+  onSetCamaraPreferida(valor: CamaraPreferida, etiqueta: string): void {
+    this.configService.setCamaraPreferida(valor);
+    this.toastService.success(
+      `Cámara preferida: ${etiqueta}. Se aplicará la próxima vez que abras el escáner.`,
+    );
+  }
+
+  onSetZoomDefault(pct: number, etiqueta: string): void {
+    this.configService.setZoomScannerDefault(pct / 100);
+    this.toastService.success(`Zoom inicial del escáner: ${etiqueta}`);
+  }
+
+  onChangeZoomDefaultPct(pct: number | string): void {
+    const n = typeof pct === 'string' ? parseInt(pct, 10) : pct;
+    const clamped = Math.max(100, Math.min(300, isNaN(n) ? 100 : n));
+    this.configService.setZoomScannerDefault(clamped / 100);
+    this.debouncedToast('zoom-def', `Zoom inicial del escáner: ${clamped}%`);
   }
 
   onToggleCierreAutoConfirmar(): void {

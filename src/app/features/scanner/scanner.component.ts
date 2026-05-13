@@ -622,31 +622,41 @@ export class ScannerComponent implements OnInit, OnDestroy {
     // Progresión de constraints: ideal alta calidad → fallback básico.
     // Se pide 1080p + 30fps para maximizar la nitidez del código de barras;
     // si la cámara no lo soporta, se degrada automáticamente.
+    //
+    // v3.23: facingMode se toma de la configuración del coordinador. Si la
+    // cámara preferida no existe, el navegador hace fallback automático y
+    // los últimos intentos quitan la preferencia por completo.
+    const pref = this.configService.camaraPreferida;
+    const facing: 'environment' | 'user' | null =
+      pref === 'environment' ? 'environment' :
+      pref === 'user' ? 'user' :
+      null; // 'auto' → no especificamos facingMode
+
+    const withFacing = (v: any): any =>
+      facing ? { ...v, facingMode: { ideal: facing } } : v;
+
     const intentos: MediaStreamConstraints[] = [
       {
-        video: {
-          facingMode:  { ideal: 'environment' },
+        video: withFacing({
           width:       { ideal: 1920, min: 320 },
           height:      { ideal: 1080, min: 240 },
           frameRate:   { ideal: 30,  min: 10  },
           // Foco y exposición continuos mejoran la nitidez en webcams de escritorio
           advanced: [{ focusMode: 'continuous' as any, exposureMode: 'continuous' as any }] as any,
-        },
+        }),
       },
       {
-        video: {
-          facingMode: { ideal: 'environment' },
+        video: withFacing({
           width:      { ideal: 1280 },
           height:     { ideal: 720  },
           frameRate:  { ideal: 30   },
-        },
+        }),
       },
       {
-        video: {
-          facingMode: { ideal: 'environment' },
+        video: withFacing({
           width:      { ideal: 640 },
           height:     { ideal: 480 },
-        },
+        }),
       },
       { video: true }, // último recurso: cualquier cámara disponible
     ];
@@ -720,9 +730,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
    * El zoom por software se aplica al video visible (CSS transform) Y al
    * pipeline de decodificación (ROI recortada + escalada).
    *
-   * Auto-aplica zoom 2× al inicio.
+   * v3.23: el zoom inicial se toma de `configService.zoomScannerDefault`
+   * (default 1 = 100%). El coordinador puede ajustarlo desde Configuración.
    */
   private async detectarYAplicarZoom(): Promise<void> {
+    const zoomDefault = this.configService.zoomScannerDefault || 1;
+
     // 1. Intentar zoom por hardware
     try {
       const track = this.mediaStream?.getVideoTracks()[0];
@@ -735,10 +748,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
           if (this.zoomMax > this.zoomMin) {
             this.zoomDisponible = true;
             this.zoomHardware = true;
-            const autoZoom = Math.min(2, this.zoomMax);
+            // Clamp del default al rango real de la cámara
+            const autoZoom = Math.min(this.zoomMax, Math.max(this.zoomMin, zoomDefault));
             await track.applyConstraints({ advanced: [{ zoom: autoZoom } as any] });
             this.zoomActual = autoZoom;
-            console.log(`📷 Zoom HARDWARE [${this.zoomMin}×–${this.zoomMax}×] — auto-zoom ${autoZoom}×`);
+            console.log(`📷 Zoom HARDWARE [${this.zoomMin}×–${this.zoomMax}×] — zoom inicial ${autoZoom}×`);
             return;
           }
         }
@@ -748,17 +762,16 @@ export class ScannerComponent implements OnInit, OnDestroy {
     }
 
     // 2. Fallback: zoom por software (crop + scale)
-    // Arranca en 1× (sin degradación visual) — el usuario puede subirlo si
-    // lo necesita. El zoom software no añade detalle real, solo recorta
-    // el centro para que el decodificador trabaje sobre un área más chica.
+    // El zoom software no añade detalle real, solo recorta el centro
+    // para que el decodificador trabaje sobre un área más chica.
     this.zoomDisponible = true;
     this.zoomHardware   = false;
     this.zoomMin        = 1;
     this.zoomMax        = 3;
     this.zoomStep       = 0.5;
-    this.zoomActual     = 1;
+    this.zoomActual     = Math.min(this.zoomMax, Math.max(this.zoomMin, zoomDefault));
     this.aplicarZoomSoftware();
-    console.log(`📷 Zoom SOFTWARE disponible [${this.zoomMin}×–${this.zoomMax}×]`);
+    console.log(`📷 Zoom SOFTWARE [${this.zoomMin}×–${this.zoomMax}×] — zoom inicial ${this.zoomActual}×`);
   }
 
   /**

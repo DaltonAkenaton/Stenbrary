@@ -49,6 +49,28 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.23.0',
+    fecha: '2026-05-12',
+    titulo: 'Zoom inicial y cámara preferida del escáner',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nuevo ajuste en Configuración → Comportamiento del escáner: define el zoom inicial al abrir el scanner (100%–300%, presets + porcentaje libre). El valor se recuerda entre sesiones y reemplaza al antiguo 200% automático.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nuevo selector de cámara preferida (Automática / Trasera / Frontal) en Configuración. En móviles o tablets con varias cámaras puedes fijar cuál usar; si la elegida no existe, el navegador hace fallback automático.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'El zoom del escáner ahora arranca en 100% por defecto (antes 200×). Puedes seguir ajustándolo desde los botones del propio scanner o cambiar el default en Configuración.',
+      },
+    ],
+  },
+  {
     version: '3.22.0',
     fecha: '2026-05-12',
     titulo: 'Responsive 320–480px y check manual de actualizaciones',

@@ -1,19 +1,19 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  config.service.ts                                   ║
-// ║  Stenbrary v3.11.0 — Recordatorio de respaldo        ║
+// ║  Stenbrary v3.23.0 — Zoom default + preferencia cám  ║
 // ║                                                      ║
 // ║  Persiste ajustes en localStorage.                   ║
-// ║  Gestiona:                                           ║
+// ║  Gestiona, entre otros:                              ║
+// ║  - zoomScannerDefault (1×–3×) y camaraPreferida      ║
+// ║    (auto/environment/user) (v3.23)                   ║
 // ║  - registroSalidaActivo / horasAutoSalida            ║
-// ║  - nombreInstitucion                                 ║
-// ║  - umbralDuplicadoMin                                ║
+// ║  - nombreInstitucion / umbralDuplicadoMin            ║
 // ║  - aforoMaximo / aforoModo                           ║
-// ║  - modoQuiosco / quioscoPin (v3.9.0)                 ║
-// ║  - horarioActivo / horarios / horarioModo (v3.9.0)   ║
+// ║  - modoQuiosco / quioscoPin                          ║
+// ║  - horarioActivo / horarios / horarioModo            ║
 // ║  - celebracionActiva / celebracionProbabilidad       ║
-// ║  - umbralInactividadDias (v3.10.0)                   ║
-// ║  - umbralRecordatorioRespaldoDias + ultimoRespaldoTs ║
-// ║    (v3.11.0)                                         ║
+// ║  - umbralInactividadDias                             ║
+// ║  - escaner* (velocidad/cooldown/saltar/beep)         ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable, signal } from '@angular/core';
@@ -39,6 +39,16 @@ export type HorarioModo = 'advertir' | 'bloquear';
  * - 'programado': dispara en días de semana específicos a una hora específica
  */
 export type RecordatorioRespaldoModo = 'intervalo' | 'programado';
+
+/**
+ * Preferencia de cámara para el scanner:
+ * - 'auto': sin preferencia (deja que el navegador escoja la primera disponible)
+ * - 'environment': cámara trasera (móvil) — comportamiento histórico por defecto
+ * - 'user': cámara frontal/selfie
+ *
+ * Si la cámara preferida no existe, el navegador hace fallback automático.
+ */
+export type CamaraPreferida = 'auto' | 'environment' | 'user';
 
 /**
  * Horario de un día de la semana.
@@ -123,6 +133,12 @@ interface AppConfig {
   cierreAlHorario: boolean;
   /** Si true, al cerrar por timeout no marca cierreAutomatico (no requiere revisión). */
   cierreAutoConfirmar: boolean;
+
+  // ── Zoom y cámara del scanner (v3.23) ──
+  /** Zoom inicial al abrir el scanner. 1 = 100%, 3 = 300%. Default 1 (100%). */
+  zoomScannerDefault: number;
+  /** Preferencia de cámara (auto/trasera/frontal). Default 'auto'. */
+  camaraPreferida: CamaraPreferida;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -152,6 +168,8 @@ const DEFAULT_CONFIG: AppConfig = {
   volumenBeep: 0.15,
   cierreAlHorario: false,
   cierreAutoConfirmar: false,
+  zoomScannerDefault: 1,
+  camaraPreferida: 'auto',
 };
 
 const STORAGE_KEY = 'stenbrary-config';
@@ -546,6 +564,33 @@ export class ConfigService {
 
   setCierreAutoConfirmar(valor: boolean): void {
     this.config.cierreAutoConfirmar = valor;
+    this.guardar();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ZOOM Y CÁMARA DEL SCANNER (v3.23)
+  // ═══════════════════════════════════════════════════════
+
+  get zoomScannerDefault(): number {
+    return this.config.zoomScannerDefault;
+  }
+
+  /** Acepta valores entre 1× y 3× (rango natural del zoom por software).
+   *  El scanner clampa internamente al máximo real de la cámara al aplicarlo. */
+  setZoomScannerDefault(valor: number): void {
+    const n = Number(valor);
+    if (!isFinite(n)) return;
+    this.config.zoomScannerDefault = Math.min(3, Math.max(1, n));
+    this.guardar();
+  }
+
+  get camaraPreferida(): CamaraPreferida {
+    return this.config.camaraPreferida;
+  }
+
+  setCamaraPreferida(valor: CamaraPreferida): void {
+    if (valor !== 'auto' && valor !== 'environment' && valor !== 'user') return;
+    this.config.camaraPreferida = valor;
     this.guardar();
   }
 
