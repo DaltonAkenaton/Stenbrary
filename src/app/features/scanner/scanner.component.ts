@@ -1479,23 +1479,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.router.navigate(['/seleccion-motivo']);
 
       } else {
-        // Caso de borde: SOLO en modo quiosco bloqueamos los IDs desconocidos
-        // (en quiosco no se registran alumnos nuevos; eso lo hace el encargado
-        // saliendo del modo quiosco). Si solo está activo "En Biblioteca"
-        // sin quiosco, vamos al flujo normal de registro de alumno.
-        // En input manual ("¿Olvidaste tu credencial?") siempre va a registro.
-        const enQuiosco = this.configService.modoQuioscoSignal();
-        if (origen === 'camara' && enQuiosco) {
-          this.soundService.beepError();
-          if (navigator.vibrate) navigator.vibrate(150);
-          this.toastService.warning(
-            'ID no reconocido. Si es visitante, contacte al encargado',
-            5000,
-          );
-          this.resetEstado();
-          return;
-        }
-
+        // Alumno no encontrado: vamos al flujo de registro tanto en modo
+        // normal como en quiosco. /registro-alumno está explícitamente
+        // permitido en quiosco (ver AppComponent.rutasPermitidasEnQuiosco)
+        // — bloquear aquí sería inconsistente con la política de rutas.
+        // Los visitantes externos tienen su propio flujo ("Acceso invitado").
         this.toastService.info('Alumno no registrado. Procede a registrarlo');
         sessionStorage.setItem('matriculaTemp', matricula);
         this.router.navigate(['/registro-alumno']);

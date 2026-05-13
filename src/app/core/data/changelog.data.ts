@@ -49,14 +49,14 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
-    version: '3.23.1',
+    version: '3.23.2',
     fecha: '2026-05-12',
-    titulo: 'Registro de alumnos nuevos sin bloqueo + multi-tap para salir de quiosco',
+    titulo: 'Registro de alumnos nuevos también en quiosco + multi-tap para salir de quiosco',
     cambios: [
       {
         tipo: 'fix',
         texto:
-          'Al escanear una credencial no registrada con "En Biblioteca" activado, el sistema ya no bloquea con el toast "ID no reconocido" — manda al flujo de registro de alumno como cuando el módulo está apagado. El bloqueo sigue aplicando solo en modo quiosco (donde no se permite registrar alumnos nuevos sin desactivar quiosco primero).',
+          'Al escanear una credencial no registrada ya no aparece el toast "ID no reconocido" — el sistema te lleva al flujo de "Registrar alumno", incluso con "En Biblioteca" o el modo quiosco activos. /registro-alumno ya estaba permitido en quiosco, así que bloquearlo desde el escáner era inconsistente. Los visitantes siguen teniendo su propio botón "Acceso invitado".',
       },
       {
         tipo: 'feat',
