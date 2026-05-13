@@ -49,6 +49,23 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.23.1',
+    fecha: '2026-05-12',
+    titulo: 'Registro de alumnos nuevos sin bloqueo + multi-tap para salir de quiosco',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Al escanear una credencial no registrada con "En Biblioteca" activado, el sistema ya no bloquea con el toast "ID no reconocido" — manda al flujo de registro de alumno como cuando el módulo está apagado. El bloqueo sigue aplicando solo en modo quiosco (donde no se permite registrar alumnos nuevos sin desactivar quiosco primero).',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva forma de pedir el PIN para salir del modo quiosco: 5 taps rápidos sobre el área del scanner (gap ≤ 600 ms) abren el diálogo del PIN. Sigue funcionando el long-press de 3 segundos.',
+      },
+    ],
+  },
+  {
     version: '3.23.0',
     fecha: '2026-05-12',
     titulo: 'Zoom inicial y cámara preferida del escáner',

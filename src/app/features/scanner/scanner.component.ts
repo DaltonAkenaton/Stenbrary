@@ -430,6 +430,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
       clearTimeout(this.pressTimer);
       this.pressTimer = null;
     }
+    if (this.tapTimer !== null) {
+      clearTimeout(this.tapTimer);
+      this.tapTimer = null;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1475,14 +1479,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.router.navigate(['/seleccion-motivo']);
 
       } else {
-        // Caso de borde: SOLO cuando el ID viene de la cámara (escaneo físico)
-        // y el modo salida/quiosco está activo, lo tratamos como visitante
-        // colado. En input manual ("¿Olvidaste tu credencial?") el alumno
-        // está declarando explícitamente su matrícula → si no existe, va a
-        // registro normal.
-        const enModoSalida = this.configService.registroSalidaActivo;
+        // Caso de borde: SOLO en modo quiosco bloqueamos los IDs desconocidos
+        // (en quiosco no se registran alumnos nuevos; eso lo hace el encargado
+        // saliendo del modo quiosco). Si solo está activo "En Biblioteca"
+        // sin quiosco, vamos al flujo normal de registro de alumno.
+        // En input manual ("¿Olvidaste tu credencial?") siempre va a registro.
         const enQuiosco = this.configService.modoQuioscoSignal();
-        if (origen === 'camara' && (enModoSalida || enQuiosco)) {
+        if (origen === 'camara' && enQuiosco) {
           this.soundService.beepError();
           if (navigator.vibrate) navigator.vibrate(150);
           this.toastService.warning(
@@ -1817,30 +1820,81 @@ export class ScannerComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  // ── Gesto secreto para salir del modo quiosco ──
-  // El template debe llamar `pressDownQuiosco()` en mousedown/touchstart sobre
-  // el header del scanner y `pressUpQuiosco()` en mouseup/touchend/leave.
-  // Tras 3 segundos sostenidos, se abre el dialog de PIN.
+  // ── Gestos secretos para salir del modo quiosco ──
+  // El template llama `pressDownQuiosco()` en mousedown/touchstart sobre el
+  // contenedor del scanner y `pressUpQuiosco()` en mouseup/touchend/leave.
+  // Hay dos formas de invocar el dialog del PIN:
+  //   1. Mantener presionado 3 segundos (long-press).
+  //   2. Hacer 5 taps rápidos seguidos (gap ≤ 600 ms entre cada uno).
+  // Ambos abren `QuioscoPinDialogComponent`. Si se valida el PIN, se sale.
 
   // pressTimer ya está declarado arriba como `private pressTimer: number | null`.
   pressActivo = false;
 
+  // Multi-tap (5 taps rápidos en el contenedor del scanner)
+  private tapCount = 0;
+  private tapTimer: number | null = null;
+  private lastTapTs = 0;
+  /** Número de taps consecutivos que abren el dialog. */
+  private static readonly TAPS_PARA_SALIR = 5;
+  /** Gap máximo entre taps para considerarlos parte de la misma secuencia. */
+  private static readonly TAP_MAX_GAP_MS = 600;
+  /** Si el press dura menos que esto, lo consideramos tap (no long-press). */
+  private static readonly TAP_MAX_DURATION_MS = 400;
+  private tapDownTs = 0;
+
   pressDownQuiosco(): void {
     if (!this.configService.modoQuiosco) return;
     this.pressActivo = true;
+    this.tapDownTs = Date.now();
     if (this.pressTimer !== null) clearTimeout(this.pressTimer);
     this.pressTimer = window.setTimeout(() => {
       this.pressTimer = null;
       this.pressActivo = false;
+      // Long-press completado: reseteamos el contador de taps para que no se
+      // mezcle con esta vía.
+      this.tapCount = 0;
+      if (this.tapTimer !== null) { clearTimeout(this.tapTimer); this.tapTimer = null; }
       this.abrirDialogSalidaQuiosco();
     }, 3000);
   }
 
   pressUpQuiosco(): void {
+    const eraPressActivo = this.pressActivo;
     this.pressActivo = false;
+    const pressPending = this.pressTimer !== null;
     if (this.pressTimer !== null) {
       clearTimeout(this.pressTimer);
       this.pressTimer = null;
+    }
+    // Si el press se soltó ANTES de que disparara el long-press y el modo
+    // quiosco está activo, lo contamos como tap rápido. Evita registrar como
+    // "tap" un long-press abortado (el usuario soltó tarde por error).
+    if (!eraPressActivo || !pressPending) return;
+    if (!this.configService.modoQuiosco) return;
+    const duracion = Date.now() - this.tapDownTs;
+    if (duracion > ScannerComponent.TAP_MAX_DURATION_MS) return;
+    this.registrarTapQuiosco();
+  }
+
+  private registrarTapQuiosco(): void {
+    const ahora = Date.now();
+    if (ahora - this.lastTapTs > ScannerComponent.TAP_MAX_GAP_MS) {
+      this.tapCount = 0;
+    }
+    this.tapCount++;
+    this.lastTapTs = ahora;
+
+    if (this.tapTimer !== null) clearTimeout(this.tapTimer);
+    this.tapTimer = window.setTimeout(() => {
+      this.tapCount = 0;
+      this.tapTimer = null;
+    }, ScannerComponent.TAP_MAX_GAP_MS);
+
+    if (this.tapCount >= ScannerComponent.TAPS_PARA_SALIR) {
+      this.tapCount = 0;
+      if (this.tapTimer !== null) { clearTimeout(this.tapTimer); this.tapTimer = null; }
+      this.abrirDialogSalidaQuiosco();
     }
   }
 
