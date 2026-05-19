@@ -2,9 +2,13 @@
 
 Snapshot de qué tiene el sistema **hoy** y qué queda pendiente.
 Se actualiza al cerrar cada tanda relevante. No reemplaza a
-`CHANGELOG` (cambios por versión) ni a `DEVLOG.md` (bitácora técnica).
+`CHANGELOG` (cambios por versión) ni a `DEVLOG.md` (bitácora técnica)
+ni a `docs/ROADMAP.md` (visión a largo plazo y fases del producto).
 
-**Versión actual:** `3.12.1` · Última actualización: `2026-04-20`.
+**Versión actual:** `3.25.0` · Última actualización: `2026-05-18`.
+
+**Cierre de Fase 1 (v4.0)**: ver §2.0 abajo. Después de v4.0 arranca
+**Fase 2** (backend + auth + sync) — detalle en `docs/ROADMAP.md`.
 
 ---
 
@@ -117,6 +121,15 @@ Se actualiza al cerrar cada tanda relevante. No reemplaza a
 
 Prioridad: **🔴 alta** · **🟡 media** · **🟢 baja**.
 
+### 2.0 Cierre de Fase 1 — v4.0 🔴 (en curso)
+
+Última milla antes de cerrar Fase 1 y arrancar Fase 2.
+
+- [x] **Rediseño de `/configuración`** (v3.24.0): shell con sidebar de 7 categorías + buscador + URL fragment. Las 7 categorías (General, Escáner, Operación, Quiosco, Experiencia, Datos, Avanzado) son sub-componentes standalone con OnPush. Monolito de 2897 líneas dividido. Versión clásica accesible en `/configuracion-legacy` hasta validación en producción.
+- [ ] **Borrar `configuracion.component.ts` legacy** tras 1-2 semanas de operación sin issues. Quitar también ruta `/configuracion-legacy`.
+- [x] **Command palette Ctrl+K** (v3.25.0): 18 comandos de navegación + 6 toggles de configuración + 6 acciones. Catálogo en `CommandPaletteService` (`providedIn: 'root'`). Búsqueda fuzzy ignora acentos. Chips de color por grupo. Atajos directos a cada categoría de config via URL fragment.
+- [ ] **Revisión de tooltips en dashboard ejecutivo**: con el fix global de scroll strategy (v3.24.0) ya no causan lag; restaurar caso por caso donde aporten valor (no por reflejo).
+
 ### 2.1 Infra de datos 🔴
 
 - [ ] **`DB_VERSION = 2`**: migración que normaliza `fechaHora` string → Date + crea store `audit`. Al bump, implementar `onupgradeneeded`. _(Ahora el código usa fallback `getAll() + filter` para compensar.)_
@@ -134,7 +147,7 @@ Prioridad: **🔴 alta** · **🟡 media** · **🟢 baja**.
 
 ### 2.3 UX y analítica 🟡
 
-- [ ] **Búsqueda global Ctrl+K** (spotlight): alumnos + registros + acciones frecuentes.
+- [x] ~~Búsqueda global Ctrl+K (spotlight)~~ — la versión básica ya existe; la expansión a command palette (toggles + acciones) está en §2.0 como parte del cierre v4.0.
 - [ ] **Tags para alumnos**: etiquetas libres (ej. "becario", "comité", "baja temporal").
 - [ ] **Comparativas temporales avanzadas**: overlay del mismo período año anterior en `/estadisticas`.
 - [ ] **Alertas persistentes** (dashboard): notificar caídas de asistencia, umbrales de aforo cruzados, inactividad de alumnos clave.
@@ -176,19 +189,20 @@ Anotadas en sesión v3.17.x para después de la entrega; el coordinador pidió e
 
 - [ ] **Rol admin para operaciones sensibles**: editar matrícula de un alumno existente, eliminar alumno con historial, cambios masivos de carreras. Hoy no hay auth, la protección es solo un `ConfirmDialog`. Depende de §2.4.
 
-### 2.4 Multi-usuario y auth 🟢 (requiere backend)
+### 2.4 Multi-usuario, auth y sync — Fase 2 🔴 (planeada post-v4.0)
 
-- [ ] **Roles**: coordinador, personal de biblioteca, consulta-only.
-- [ ] **Login con password local** (sin backend) como primer paso.
-- [ ] **Auth real** cuando haya backend (Firebase Auth o similar).
-- [ ] El Activity Log (§2.1) se enriquece con `usuarioId` cuando esta feature llegue.
+**Plan completo en `docs/ROADMAP.md` §Fase 2.** Aquí solo el resumen:
 
-### 2.5 Sincronización y cloud 🟢
+- **Stack decidido:** Supabase (Postgres + Auth + Storage + Realtime).
+- **4 roles:** super-admin, coordinador, asistente, alumno.
+- **Sync supervisado**: offline-first con bandeja de sincronización; el coordinador revisa y descarta antes de subir (caso "alumno travieso"). NO sync automático ciego.
+- **Sub-fases 2.0 a 2.5** documentadas con deliverables, estimaciones y riesgos en el ROADMAP.
+- **Estimado total**: 4–5 meses part-time.
+- El **Activity Log** (§2.1) se enriquece con `usuarioId` cuando esta fase aterrice (Fase 2.3).
 
-- [ ] **Backend opcional** (Firebase / Supabase / propio) para sync entre sedes.
-- [ ] **Modo híbrido**: offline-first con push cuando hay internet.
-- [ ] **Conflict resolution**: estrategia de merge para registros concurrentes.
-- [ ] **Dashboard cross-institución** (si se vende a grupos universitarios).
+### 2.5 Comercialización a otras universidades — Fase 5
+
+**Plan completo en `docs/ROADMAP.md` §Fase 5.** Requisitos bloqueantes ya rastreados en §3 abajo.
 
 ### 2.6 Hardening pre-producción 🟡
 

@@ -1,0 +1,304 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/datos.component.html                     ║ -->
+<!-- ║  Respaldo + Backup + Restore + Limpieza +            ║ -->
+<!-- ║  Datos de prueba + Mantenimiento                     ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── RECORDATORIO DE RESPALDO ── -->
+<div class="section-card" id="respaldo">
+  <div class="section-header">
+    <mat-icon>event_repeat</mat-icon>
+    <h2>Recordatorio de respaldo</h2>
+  </div>
+  <p class="section-desc">
+    El aviso aparece como una alerta en el <strong style="color:#E8F4F8">Resumen</strong>
+    (pantalla principal) con un botón para exportar el respaldo directamente.
+    Ajusta cada cuánto quieres recibirlo.
+  </p>
+  <div class="auto-close-options">
+    @for (op of recordatorioRespaldoOpciones; track op.valor) {
+      <button class="auto-close-btn"
+              [class.active]="configService.umbralRecordatorioRespaldoDias === op.valor"
+              (click)="setUmbralRecordatorioRespaldo(op.valor)">
+        {{ op.etiqueta }}
+      </button>
+    }
+  </div>
+  <div class="aforo-input-row" style="margin-top: 14px;">
+    <label for="respaldoDias">Días personalizado</label>
+    <div class="aforo-stepper" style="max-width: 260px;">
+      <button type="button" class="stepper-btn"
+              (click)="setUmbralRecordatorioRespaldo(configService.umbralRecordatorioRespaldoDias - 1)"
+              [disabled]="configService.umbralRecordatorioRespaldoDias <= 0"
+              matTooltip="Disminuir 1 día"
+              matTooltipPosition="above">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <input id="respaldoDias" type="number" min="0" max="3650" step="1"
+             class="aforo-number-input"
+             [ngModel]="configService.umbralRecordatorioRespaldoDias"
+             (ngModelChange)="setUmbralRecordatorioRespaldo($event)"
+             placeholder="0">
+      <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">días</span>
+      <button type="button" class="stepper-btn"
+              (click)="setUmbralRecordatorioRespaldo(configService.umbralRecordatorioRespaldoDias + 1)"
+              matTooltip="Aumentar 1 día"
+              matTooltipPosition="above">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
+  <p class="section-hint">
+    <mat-icon>info</mat-icon>
+    @if (configService.umbralRecordatorioRespaldoDias === 0) {
+      Recordatorio desactivado.
+    } @else {
+      Si pasan más de
+      <strong style="color:#E8F4F8">{{ configService.umbralRecordatorioRespaldoDias }} día(s)</strong>
+      sin respaldar, aparecerá una alerta en el
+      <strong style="color:#E8F4F8">Resumen</strong> con un botón para exportar.
+      @if (diasSinRespaldoTexto()) {
+        <br>{{ diasSinRespaldoTexto() }}
+      }
+    }
+  </p>
+
+  <!-- Modo programado -->
+  <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+    <div class="section-header" style="margin-bottom: 6px;">
+      <mat-icon>schedule</mat-icon>
+      <h2 style="font-size: 0.95rem;">¿Cuándo aparece el aviso?</h2>
+    </div>
+    <p class="section-desc" style="margin-bottom: 10px;">
+      Por defecto el aviso aparece en el Resumen cuando han pasado los días configurados arriba.
+      También puedes programarlo para días y hora específicos (ej. cada viernes a las 18:00).
+    </p>
+    <div class="auto-close-options" style="margin-bottom: 12px;">
+      <button class="auto-close-btn"
+              [class.active]="configService.recordatorioRespaldoModo === 'intervalo'"
+              (click)="onSetModoRespaldo('intervalo')">
+        Por intervalo (cada N días)
+      </button>
+      <button class="auto-close-btn"
+              [class.active]="configService.recordatorioRespaldoModo === 'programado'"
+              (click)="onSetModoRespaldo('programado')">
+        Programado (día y hora)
+      </button>
+    </div>
+
+    @if (configService.recordatorioRespaldoModo === 'programado') {
+      <div class="aforo-input-row" style="flex-wrap: wrap;">
+        <label>Días de la semana</label>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          @for (d of diasSemanaOpciones; track d.valor) {
+            <button class="auto-close-btn"
+                    [class.active]="esDiaRespaldoActivo(d.valor)"
+                    (click)="onToggleDiaRespaldo(d.valor)">
+              {{ d.etiqueta }}
+            </button>
+          }
+        </div>
+      </div>
+      <div style="margin-top: 12px;">
+        <label style="font-size: .85rem; color: rgba(200,230,240,.7); display: block; margin-bottom: 6px;">
+          Hora del aviso
+        </label>
+        <div class="auto-close-options" style="margin-bottom: 8px;">
+          @for (h of horasRespaldoOpciones; track h) {
+            <button class="auto-close-btn"
+                    [class.active]="configService.recordatorioRespaldoHora === h"
+                    (click)="onSetHoraRespaldo(h)">
+              {{ h }}
+            </button>
+          }
+        </div>
+        <div class="aforo-input-row">
+          <label style="font-size: .78rem; color: rgba(200,230,240,.55);">Otra hora</label>
+          <div class="time-picker">
+            <select class="time-select"
+                    [ngModel]="respaldoHoraH"
+                    (ngModelChange)="setRespaldoHoraH($event)"
+                    aria-label="Hora">
+              @for (h of horasNumOpciones; track h) {
+                <option [value]="h">{{ pad2(h) }}</option>
+              }
+            </select>
+            <span class="time-separator">:</span>
+            <select class="time-select"
+                    [ngModel]="respaldoHoraM"
+                    (ngModelChange)="setRespaldoHoraM($event)"
+                    aria-label="Minutos">
+              @for (m of minutosNumOpciones; track m) {
+                <option [value]="m">{{ pad2(m) }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+      <p class="section-hint">
+        <mat-icon>info</mat-icon>
+        @if (configService.recordatorioRespaldoDiasSemana.length === 0) {
+          Selecciona al menos un día para activar el aviso programado.
+        } @else {
+          Cada <strong style="color:#E8F4F8">{{ diasSemanaActivosTexto() }}</strong>
+          a las <strong style="color:#E8F4F8">{{ configService.recordatorioRespaldoHora }}</strong>
+          aparecerá una alerta en el <strong style="color:#E8F4F8">Resumen</strong> con un
+          botón para exportar el respaldo. La alerta desaparece sola al exportar el respaldo del día.
+        }
+      </p>
+    }
+  </div>
+</div>
+
+<!-- ── BACKUP ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>cloud_download</mat-icon>
+    <h2>Guardar una copia de seguridad</h2>
+  </div>
+  <p class="section-desc">
+    Descarga un archivo con <strong>todos los datos del sistema</strong>: alumnos,
+    registros de acceso y tipos de actividades.
+    Guárdalo en una USB, Google Drive o donde prefieras.
+  </p>
+  <div class="section-desc-list">
+    <span><mat-icon>check_circle</mat-icon> Recomendado hacerlo periódicamente</span>
+    <span><mat-icon>check_circle</mat-icon> Si cambias de computadora, usa este archivo para restaurar todo</span>
+    <span><mat-icon>check_circle</mat-icon> El archivo se puede abrir con cualquier editor de texto</span>
+  </div>
+  <button class="btn-action btn-backup"
+          (click)="exportarBackup()"
+          [disabled]="procesando">
+    <mat-icon>download</mat-icon>
+    <span>{{ procesando ? 'Generando archivo...' : 'Descargar copia de seguridad' }}</span>
+  </button>
+  <p class="section-hint">
+    <mat-icon>schedule</mat-icon>
+    {{ ultimoBackup ? 'Última copia: ' + ultimoBackup : 'Aún no has descargado ninguna copia en esta sesión' }}
+  </p>
+</div>
+
+<!-- ── RESTORE ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>cloud_upload</mat-icon>
+    <h2>Restaurar desde una copia de seguridad</h2>
+  </div>
+  <p class="section-desc">
+    Si tienes un archivo de copia de seguridad (descargado previamente desde esta misma pantalla),
+    puedes cargarlo aquí para recuperar tus datos.
+    Los datos nuevos se agregarán <strong>sin borrar los existentes</strong>.
+  </p>
+
+  <input type="file" #fileInput accept=".json"
+         (change)="onArchivoSeleccionado($event)" style="display: none">
+
+  <div class="restore-actions">
+    <button class="btn-action btn-restore"
+            (click)="fileInput.click()"
+            [disabled]="procesando">
+      <mat-icon>upload_file</mat-icon>
+      <span>Seleccionar archivo de copia de seguridad</span>
+    </button>
+  </div>
+
+  @if (backupPreview) {
+    <div class="restore-preview">
+      <div class="preview-header">
+        <mat-icon>description</mat-icon>
+        <span>{{ nombreArchivoSeleccionado }}</span>
+      </div>
+      <div class="preview-stats">
+        <span class="preview-stat">
+          <strong>{{ backupPreview.meta.totalAlumnos }}</strong> alumnos
+        </span>
+        <span class="preview-stat">
+          <strong>{{ backupPreview.meta.totalRegistros }}</strong> registros
+        </span>
+        <span class="preview-stat">
+          <strong>{{ backupPreview.meta.totalMotivos }}</strong> motivos
+        </span>
+        <span class="preview-stat fecha">
+          <mat-icon>event</mat-icon>
+          {{ formatearFechaBackup(backupPreview.meta.fecha) }}
+        </span>
+      </div>
+      <div class="preview-actions">
+        <button class="btn-action btn-merge"
+                (click)="importarBackup('merge')"
+                [disabled]="procesando"
+                matTooltip="Recomendado: agrega los datos del archivo sin borrar lo que ya existe en el sistema">
+          <mat-icon>merge_type</mat-icon>
+          <span>Combinar (recomendado)</span>
+        </button>
+        <button class="btn-action btn-replace"
+                (click)="importarBackup('replace')"
+                [disabled]="procesando"
+                matTooltip="CUIDADO: Borra TODOS los datos actuales y los reemplaza con los del archivo">
+          <mat-icon>swap_horiz</mat-icon>
+          <span>Reemplazar todo</span>
+        </button>
+        <button class="btn-action btn-cancel-preview"
+                (click)="cancelarImportacion()"
+                [disabled]="procesando">
+          <mat-icon>close</mat-icon>
+          <span>Cancelar</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (resultadoImportacion) {
+    <div class="import-result"
+         [class.success]="resultadoImportacion.exitoso">
+      <mat-icon>{{ resultadoImportacion.exitoso ? 'check_circle' : 'error' }}</mat-icon>
+      <div class="result-text">
+        <strong>{{ resultadoImportacion.exitoso ? 'Importación exitosa' : 'Error en importación' }}</strong>
+        @if (resultadoImportacion.exitoso) {
+          <span>
+            {{ resultadoImportacion.alumnosImportados }} alumnos,
+            {{ resultadoImportacion.registrosImportados }} registros,
+            {{ resultadoImportacion.motivosImportados }} motivos importados
+            @if (resultadoImportacion.alumnosOmitidos > 0) {
+              <span>· {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos</span>
+            }
+            @if (resultadoImportacion.motivosOmitidos > 0) {
+              <span>· {{ resultadoImportacion.motivosOmitidos }} motivos omitidos</span>
+            }
+          </span>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ── ELIMINACIÓN MASIVA DE REGISTROS (sub-comp existente) ── -->
+<div class="section-card">
+  <app-limpieza-registros />
+</div>
+
+<!-- ── DATOS DE PRUEBA (sub-comp existente) ── -->
+<div class="section-card">
+  <app-datos-prueba (datosCambiaron)="onDatosPruebaCambiaron()" />
+</div>
+
+<!-- ── MANTENIMIENTO ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>build</mat-icon>
+    <h2>Mantenimiento</h2>
+  </div>
+  <p class="section-desc">
+    Si notas que algunas actividades aparecen repetidas al registrar accesos,
+    usa esta herramienta para limpiar duplicados automáticamente.
+  </p>
+  <div class="maintenance-actions">
+    <button class="btn-action btn-maintenance"
+            (click)="limpiarDuplicados()"
+            [disabled]="procesando"
+            matTooltip="Elimina actividades que estén duplicadas en la base de datos">
+      <mat-icon>content_copy</mat-icon>
+      <span>Limpiar actividades duplicadas</span>
+    </button>
+  </div>
+</div>

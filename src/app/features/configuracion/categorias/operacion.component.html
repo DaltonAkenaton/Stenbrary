@@ -1,0 +1,246 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/operacion.component.html                 ║ -->
+<!-- ║  Registro de salida + Aforo + Duplicados             ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── REGISTRO DE SALIDA ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>sensor_door</mat-icon>
+    <h2>Registro de Salida</h2>
+  </div>
+  <p class="section-desc">
+    Activa el módulo <strong style="color:#E8F4F8">En Biblioteca</strong> para llevar un control
+    de quién está en la biblioteca en este momento. Cuando está activo, el scanner detectará
+    si un alumno ya tiene una entrada abierta y ofrecerá registrar su salida automáticamente.
+  </p>
+  <div class="sound-toggle">
+    <span class="sound-status">
+      {{ configService.registroSalidaActivo ? 'Activado' : 'Desactivado' }}
+    </span>
+    <button class="btn-inline"
+      [class.btn-inline-active]="configService.registroSalidaActivo"
+      (click)="toggleRegistroSalida()">
+      <mat-icon>{{ configService.registroSalidaActivo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+      {{ configService.registroSalidaActivo ? 'Desactivar' : 'Activar' }}
+    </button>
+  </div>
+  @if (!configService.registroSalidaActivo) {
+    <p class="section-hint">
+      <mat-icon>info</mat-icon>
+      Si los alumnos no registran salida con regularidad, desactiva esta opción para evitar datos incompletos.
+    </p>
+  } @else {
+    <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+      <mat-icon>check_circle</mat-icon>
+      Módulo activo — aparece como "En Biblioteca" en el menú de navegación.
+    </p>
+
+    <!-- Cierre automático -->
+    <div style="margin-top: 20px;">
+      <div class="section-header" style="margin-bottom: 10px;">
+        <mat-icon>timer_off</mat-icon>
+        <h2 style="font-size: 0.95rem;">Cierre automático de entradas</h2>
+      </div>
+      <p class="section-desc" style="margin-bottom: 12px;">
+        Si un alumno no registra salida, el sistema la marcará automáticamente después de este tiempo.
+      </p>
+      <div class="auto-close-options">
+        @for (op of opcionesAutoSalida; track op.valor) {
+          <button class="auto-close-btn"
+            [class.active]="configService.horasAutoSalida === op.valor"
+            (click)="setHorasAutoSalida(op.valor)">
+            {{ op.etiqueta }}
+          </button>
+        }
+      </div>
+      @if (configService.horasAutoSalida === 0) {
+        <p class="section-hint">
+          <mat-icon>warning</mat-icon>
+          Desactivado — las entradas sin salida permanecerán abiertas indefinidamente.
+        </p>
+      }
+
+      <div class="aforo-input-row" style="margin-top: 12px;">
+        <label for="horasAutoSalidaInput">Horas personalizado</label>
+        <div class="aforo-stepper" style="max-width: 260px;">
+          <button type="button" class="stepper-btn"
+                  (click)="setHorasAutoSalida(configService.horasAutoSalida - 1)"
+                  [disabled]="configService.horasAutoSalida <= 0"
+                  matTooltip="Disminuir 1 hora">
+            <mat-icon>remove</mat-icon>
+          </button>
+          <input id="horasAutoSalidaInput" type="number" min="0" step="1"
+                 class="aforo-number-input"
+                 [ngModel]="configService.horasAutoSalida"
+                 (ngModelChange)="setHorasAutoSalida($event)">
+          <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">h</span>
+          <button type="button" class="stepper-btn"
+                  (click)="setHorasAutoSalida(configService.horasAutoSalida + 1)"
+                  matTooltip="Aumentar 1 hora">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 6px;">
+        <strong style="font-size: .9rem; color: #E8F4F8;">Confirmar automáticamente</strong>
+        <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 0;">
+          Cuando el sistema cierre una entrada por timeout, no requiere que la revises manualmente en Biblioteca.
+        </p>
+        <div class="sound-toggle">
+          <span class="sound-status">{{ configService.cierreAutoConfirmar ? 'Activado' : 'Desactivado' }}</span>
+          <button class="btn-inline"
+                  [class.btn-inline-active]="configService.cierreAutoConfirmar"
+                  (click)="onToggleCierreAutoConfirmar()">
+            <mat-icon>{{ configService.cierreAutoConfirmar ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            {{ configService.cierreAutoConfirmar ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 6px;">
+        <strong style="font-size: .9rem; color: #E8F4F8;">Cerrar al final del horario</strong>
+        <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 0;">
+          Al llegar la hora de cierre del horario operativo, cierra TODAS las entradas
+          abiertas en lugar de esperar a que pasen las horas configuradas arriba.
+          @if (!configService.horarioActivo) {
+            <br><em>Requiere que el "Horario de operación" esté activo.</em>
+          }
+        </p>
+        <div class="sound-toggle">
+          <span class="sound-status">{{ configService.cierreAlHorario ? 'Activado' : 'Desactivado' }}</span>
+          <button class="btn-inline"
+                  [class.btn-inline-active]="configService.cierreAlHorario"
+                  [disabled]="!configService.horarioActivo"
+                  (click)="onToggleCierreAlHorario()">
+            <mat-icon>{{ configService.cierreAlHorario ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+            {{ configService.cierreAlHorario ? 'Desactivar' : 'Activar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ── CONTROL DE AFORO ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>groups</mat-icon>
+    <h2>Control de Aforo</h2>
+  </div>
+  <p class="section-desc">
+    Define la <strong style="color:#E8F4F8">capacidad máxima</strong> del recinto y cómo
+    debe reaccionar el sistema cuando se alcance. Útil para cumplir con normas de seguridad
+    o aforo permitido.
+  </p>
+
+  @if (!configService.registroSalidaActivo) {
+    <p class="section-hint">
+      <mat-icon>warning</mat-icon>
+      Activa primero el <strong>Registro de Salida</strong> arriba — sin él, el sistema
+      no sabe quién sigue dentro y el aforo no puede calcularse correctamente.
+    </p>
+  }
+
+  @if (configService.registroSalidaActivo) {
+    <div>
+      <div class="aforo-input-row">
+        <label for="aforoMax">Capacidad máxima (personas)</label>
+        <div class="aforo-stepper">
+          <button type="button"
+                  class="stepper-btn"
+                  (click)="setAforoMaximo(configService.aforoMaximo - 1)"
+                  [disabled]="configService.aforoMaximo <= 0"
+                  matTooltip="Disminuir"
+                  matTooltipPosition="above"
+                  aria-label="Disminuir capacidad">
+            <mat-icon>remove</mat-icon>
+          </button>
+          <input id="aforoMax"
+                 type="number"
+                 min="0"
+                 step="1"
+                 class="aforo-number-input"
+                 [ngModel]="configService.aforoMaximo"
+                 (ngModelChange)="setAforoMaximo($event)"
+                 placeholder="0">
+          <button type="button"
+                  class="stepper-btn"
+                  (click)="setAforoMaximo(configService.aforoMaximo + 1)"
+                  matTooltip="Aumentar"
+                  matTooltipPosition="above"
+                  aria-label="Aumentar capacidad">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      @if (configService.aforoMaximo === 0) {
+        <p class="section-hint">
+          <mat-icon>info</mat-icon>
+          Aforo desactivado — no se aplicará ningún límite.
+        </p>
+      } @else {
+        <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+          <mat-icon>check_circle</mat-icon>
+          Aforo configurado: <strong>{{ configService.aforoMaximo }}</strong> personas máximo.
+        </p>
+
+        <div style="margin-top: 18px;">
+          <div class="section-header" style="margin-bottom: 10px;">
+            <mat-icon>policy</mat-icon>
+            <h2 style="font-size: 0.95rem;">Al alcanzar el aforo máximo</h2>
+          </div>
+          <div class="auto-close-options">
+            @for (op of opcionesAforoModo; track op.valor) {
+              <button class="auto-close-btn"
+                [class.active]="configService.aforoModo === op.valor"
+                (click)="setAforoModo(op.valor)"
+                [matTooltip]="op.descripcion"
+                matTooltipPosition="above">
+                {{ op.etiqueta }}
+              </button>
+            }
+          </div>
+          <p class="section-hint">
+            <mat-icon>info</mat-icon>
+            {{ descripcionModoActual }}
+          </p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ── DETECCIÓN DE DUPLICADOS ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>content_copy</mat-icon>
+    <h2>
+      Detección de duplicados
+      <span style="display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px;color:rgba(160,200,215,0.4);cursor:help;"
+            matTooltip="Cuando un alumno escanea su credencial, el sistema verifica si ya tiene un registro reciente. Si hay uno dentro de este tiempo, se pedirá confirmación para evitar entradas accidentales."
+            matTooltipPosition="above">
+        <mat-icon style="font-size:15px;width:15px;height:15px;">help_outline</mat-icon>
+      </span>
+    </h2>
+  </div>
+  <p class="section-desc">
+    Tiempo mínimo entre dos registros del mismo alumno. Si escanea antes de que pase este tiempo,
+    el sistema pedirá confirmación para evitar registros accidentales.
+  </p>
+  <div class="auto-close-options">
+    @for (op of opcionesUmbral; track op.valor) {
+      <button class="auto-close-btn"
+        [class.active]="configService.umbralDuplicadoMin === op.valor"
+        (click)="setUmbralDuplicado(op.valor)">
+        {{ op.etiqueta }}
+      </button>
+    }
+  </div>
+  <p class="section-hint">
+    <mat-icon>info</mat-icon>
+    Actualmente: {{ configService.umbralDuplicadoMin }} minutos entre registros del mismo alumno.
+  </p>
+</div>

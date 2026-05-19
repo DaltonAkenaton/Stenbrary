@@ -1,0 +1,97 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  configuracion-v2.component.html                     ║ -->
+<!-- ║  Shell del nuevo /configuración (v4.0 beta)          ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<div class="config-shell" [class.sidebar-open]="sidebarAbierto()">
+
+  <!-- ── BOTÓN MENÚ (móvil) ── -->
+  <button class="sidebar-toggle"
+    type="button"
+    (click)="toggleSidebar()"
+    aria-label="Abrir menú de categorías">
+    <mat-icon>{{ sidebarAbierto() ? 'close' : 'menu' }}</mat-icon>
+  </button>
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="config-sidebar" [class.abierto]="sidebarAbierto()">
+    <div class="sidebar-header">
+      <mat-icon>settings</mat-icon>
+      <h1>Configuración</h1>
+    </div>
+
+    <div class="sidebar-search">
+      <mat-icon>search</mat-icon>
+      <input type="search"
+        placeholder="Buscar opción…"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+        aria-label="Buscar categoría de configuración">
+      @if (busqueda()) {
+        <button type="button"
+          class="sidebar-search-clear"
+          (click)="busqueda.set('')"
+          aria-label="Limpiar búsqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <nav class="sidebar-nav" role="navigation" aria-label="Categorías de configuración">
+      @for (cat of categoriasFiltradas(); track cat.id) {
+        <button class="sidebar-item"
+          [class.active]="categoriaActiva() === cat.id"
+          [class.no-migrada]="!migradas.has(cat.id)"
+          (click)="seleccionar(cat.id)"
+          type="button">
+          <mat-icon>{{ cat.icono }}</mat-icon>
+          <div class="sidebar-item-text">
+            <span class="sidebar-item-nombre">{{ cat.nombre }}</span>
+            <span class="sidebar-item-desc">{{ cat.descripcion }}</span>
+          </div>
+          @if (!migradas.has(cat.id)) {
+            <span class="sidebar-item-badge" aria-label="En migración">beta</span>
+          }
+        </button>
+      }
+      @if (categoriasFiltradas().length === 0) {
+        <p class="sidebar-empty">
+          Sin coincidencias para "{{ busqueda() }}".
+        </p>
+      }
+    </nav>
+
+  </aside>
+
+  <!-- ── PANEL DE LA CATEGORÍA ── -->
+  <main class="config-panel">
+    <header class="panel-header">
+      <div class="panel-header-inner">
+        <div class="panel-icon">
+          <mat-icon>{{ categoriaActual().icono }}</mat-icon>
+        </div>
+        <div class="panel-titulos">
+          <h2>{{ categoriaActual().nombre }}</h2>
+          <p>{{ categoriaActual().descripcion }}</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="panel-body">
+      @switch (categoriaActiva()) {
+        @case ('general')     { <app-config-general /> }
+        @case ('escaner')     { <app-config-escaner /> }
+        @case ('operacion')   { <app-config-operacion /> }
+        @case ('quiosco')     { <app-config-quiosco /> }
+        @case ('experiencia') { <app-config-experiencia /> }
+        @case ('datos')       { <app-config-datos (datosCambiaron)="onDatosCambiaron()" /> }
+        @case ('avanzado')    { <app-config-avanzado /> }
+      }
+    </div>
+  </main>
+
+  <!-- Backdrop para cerrar el sidebar en móvil -->
+  @if (sidebarAbierto()) {
+    <div class="sidebar-backdrop" (click)="toggleSidebar()" aria-hidden="true"></div>
+  }
+</div>

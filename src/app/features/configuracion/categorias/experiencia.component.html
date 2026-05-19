@@ -1,0 +1,253 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/experiencia.component.html               ║ -->
+<!-- ║  Celebración + Tiempo de éxito + Inactividad         ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── ANIMACIÓN CELEBRATORIA ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>celebration</mat-icon>
+    <h2>Animación celebratoria</h2>
+  </div>
+  <p class="section-desc">
+    Después de un registro exitoso, el sistema puede mostrar una <strong style="color:#E8F4F8">animación
+    sorpresa</strong> con confeti — al estilo de los reconocimientos de Microsoft Teams.
+    Es opcional y de baja probabilidad para que se sienta especial sin volverse molesta.
+  </p>
+  <div class="sound-toggle">
+    <span class="sound-status">
+      {{ configService.celebracionActiva ? 'Activada' : 'Desactivada' }}
+    </span>
+    <button class="btn-inline"
+      [class.btn-inline-active]="configService.celebracionActiva"
+      (click)="toggleCelebracion()">
+      <mat-icon>{{ configService.celebracionActiva ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+      {{ configService.celebracionActiva ? 'Desactivar' : 'Activar' }}
+    </button>
+  </div>
+
+  @if (configService.celebracionActiva) {
+    <div style="margin-top: 18px;">
+      <div class="section-header" style="margin-bottom: 10px;">
+        <mat-icon>casino</mat-icon>
+        <h2 style="font-size: 0.95rem;">Frecuencia</h2>
+      </div>
+
+      <div class="auto-close-options">
+        @for (op of opcionesCelebracion; track op.valor) {
+          <button class="auto-close-btn"
+            [class.active]="celebracionMatch(op.valor)"
+            (click)="setCelebracionPorcentaje(op.valor * 100)">
+            {{ op.etiqueta }}
+          </button>
+        }
+      </div>
+
+      <div class="aforo-input-row" style="margin-top: 14px;">
+        <label for="celebracionPct">Porcentaje personalizado</label>
+        <div class="aforo-stepper" style="max-width: 260px;">
+          <button type="button"
+                  class="stepper-btn"
+                  (click)="setCelebracionPorcentaje(porcentajeCelebracion - 1)"
+                  [disabled]="porcentajeCelebracion <= 0"
+                  matTooltip="Disminuir 1%"
+                  matTooltipPosition="above">
+            <mat-icon>remove</mat-icon>
+          </button>
+          <input id="celebracionPct"
+                 type="number"
+                 min="0"
+                 max="100"
+                 step="1"
+                 class="aforo-number-input"
+                 [ngModel]="porcentajeCelebracion"
+                 (ngModelChange)="setCelebracionPorcentaje($event)"
+                 placeholder="0">
+          <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">%</span>
+          <button type="button"
+                  class="stepper-btn"
+                  (click)="setCelebracionPorcentaje(porcentajeCelebracion + 1)"
+                  [disabled]="porcentajeCelebracion >= 100"
+                  matTooltip="Aumentar 1%"
+                  matTooltipPosition="above">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <p class="section-hint">
+        <mat-icon>info</mat-icon>
+        Aproximadamente <strong>{{ porcentajeCelebracion }}%</strong> de los registros mostrarán animación.
+        @if (porcentajeCelebracion === 0) {
+          (0% = desactivada)
+        } @else if (porcentajeCelebracion === 100) {
+          (siempre se muestra)
+        }
+      </p>
+    </div>
+  }
+</div>
+
+<!-- ── TIEMPO DE PANTALLA DE ÉXITO ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>timer</mat-icon>
+    <h2>Tiempo de pantalla de éxito</h2>
+  </div>
+  <p class="section-desc">
+    Cuántos segundos dura la animación de "¡Registro exitoso!" antes de
+    volver al scanner. El alumno puede tocar la pantalla en cualquier
+    momento para saltar y continuar. Los presets son atajos; el input
+    admite cualquier valor.
+  </p>
+
+  <div class="auto-close-options">
+    @for (op of opcionesTiempoExito; track op.valor) {
+      <button class="auto-close-btn"
+        [class.active]="configService.tiempoExitoMs === op.valor"
+        (click)="setTiempoExito(op.valor)">
+        {{ op.etiqueta }}
+      </button>
+    }
+  </div>
+
+  <div class="aforo-input-row" style="margin-top: 14px;">
+    <label for="tiempoExito">Segundos personalizados</label>
+    <div class="aforo-stepper" style="max-width: 260px;">
+      <button type="button"
+              class="stepper-btn"
+              (click)="setTiempoExitoSegundos(tiempoExitoSegundos - 1)"
+              [disabled]="tiempoExitoSegundos <= 1"
+              matTooltip="Disminuir 1 s"
+              matTooltipPosition="above">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <input id="tiempoExito"
+             type="number"
+             min="1"
+             max="60"
+             step="1"
+             class="aforo-number-input"
+             [ngModel]="tiempoExitoSegundos"
+             (ngModelChange)="setTiempoExitoSegundos($event)"
+             placeholder="5">
+      <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">s</span>
+      <button type="button"
+              class="stepper-btn"
+              (click)="setTiempoExitoSegundos(tiempoExitoSegundos + 1)"
+              matTooltip="Aumentar 1 s"
+              matTooltipPosition="above">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <p class="section-hint">
+    <mat-icon>info</mat-icon>
+    La pantalla durará <strong>{{ tiempoExitoSegundos }} s</strong>.
+    @if (tiempoExitoSegundos < 2) {
+      (muy corta — el alumno puede no alcanzar a leer)
+    } @else if (tiempoExitoSegundos > 10) {
+      (larga — útil para modo quiosco con cola de alumnos)
+    }
+  </p>
+
+  <!-- Preview de animaciones -->
+  <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(0, 200, 215, 0.10);">
+    <div class="section-header" style="margin-bottom: 10px;">
+      <mat-icon>play_circle</mat-icon>
+      <h3 style="margin: 0; font-size: 1rem; color: #E8F4F8;">Probar animaciones</h3>
+    </div>
+    <p class="section-desc" style="margin-bottom: 12px;">
+      Hay 8 temas. Toca cualquiera para verlo a pantalla completa
+      (igual que lo verá el alumno). Tap en la pantalla cierra el preview.
+    </p>
+    <div class="auto-close-options" style="flex-wrap: wrap;">
+      <button class="auto-close-btn" (click)="abrirPreviewAnimacion()">
+        <mat-icon>shuffle</mat-icon>
+        Aleatorio
+      </button>
+      @for (t of temasPreview; track t.id) {
+        <button class="auto-close-btn" (click)="abrirPreviewAnimacion(t.id)">
+          <span style="font-size: 1.1rem; margin-right: 4px;">{{ t.emoji }}</span>
+          {{ t.nombre }}
+        </button>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Overlay de preview fullscreen -->
+@if (mostrarPreviewAnimacion) {
+  <div class="preview-overlay" (click)="cerrarPreviewAnimacion()">
+    <app-success-animation [temaForzado]="temaPreview" />
+    <div class="preview-hint-tap">
+      <mat-icon>touch_app</mat-icon>
+      Toca para cerrar
+    </div>
+  </div>
+}
+
+<!-- ── ALERTAS DE INACTIVIDAD ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>notifications_paused</mat-icon>
+    <h2>Alertas de inactividad</h2>
+  </div>
+  <p class="section-desc">
+    Define a partir de cuántos días sin venir un alumno se considera
+    <strong style="color:#E8F4F8">inactivo</strong>. La lista aparece en
+    <a routerLink="/inactivos" style="color:#00C8D7;text-decoration:none;">Consulta → Inactivos</a>.
+    Los presets son atajos; el input admite cualquier número.
+  </p>
+
+  <div class="auto-close-options">
+    @for (op of opcionesUmbralInactividad; track op.valor) {
+      <button class="auto-close-btn"
+        [class.active]="configService.umbralInactividadDias === op.valor"
+        (click)="setUmbralInactividad(op.valor)">
+        {{ op.etiqueta }}
+      </button>
+    }
+  </div>
+
+  <div class="aforo-input-row" style="margin-top: 14px;">
+    <label for="umbralInactividad">Días personalizados</label>
+    <div class="aforo-stepper" style="max-width: 260px;">
+      <button type="button"
+              class="stepper-btn"
+              (click)="setUmbralInactividad(configService.umbralInactividadDias - 1)"
+              [disabled]="configService.umbralInactividadDias <= 0"
+              matTooltip="Disminuir 1 día"
+              matTooltipPosition="above">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <input id="umbralInactividad"
+             type="number"
+             min="0"
+             max="3650"
+             step="1"
+             class="aforo-number-input"
+             [ngModel]="configService.umbralInactividadDias"
+             (ngModelChange)="setUmbralInactividad($event)"
+             placeholder="0">
+      <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">días</span>
+      <button type="button"
+              class="stepper-btn"
+              (click)="setUmbralInactividad(configService.umbralInactividadDias + 1)"
+              matTooltip="Aumentar 1 día"
+              matTooltipPosition="above">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <p class="section-hint">
+    <mat-icon>info</mat-icon>
+    @if (configService.umbralInactividadDias === 0) {
+      Las alertas están <strong>desactivadas</strong>. La vista de Inactivos seguirá disponible con umbral ajustable en vivo.
+    } @else {
+      Alumnos con más de <strong>{{ configService.umbralInactividadDias }} días</strong> sin venir aparecerán en la lista de Inactivos.
+    }
+  </p>
+</div>

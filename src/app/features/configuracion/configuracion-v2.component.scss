@@ -1,0 +1,397 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  configuracion-v2.component.scss                     ║
+// ║  Shell layout: sidebar 280px + panel scrollable.     ║
+// ║  Estilos *específicos* del shell — los compartidos   ║
+// ║  con sub-componentes están en configuracion.styles   ║
+// ╚══════════════════════════════════════════════════════╝
+
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.config-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 64px); // descuenta topbar de AppComponent
+  position: relative;
+}
+
+// ─── SIDEBAR ────────────────────────────────────────────
+.config-sidebar {
+  background: #0a1420;
+  border-right: 1px solid rgba(0, 200, 215, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  // Sidebar fijo en desktop, scroll interno solo en la nav.
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 64px);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 20px 16px;
+  border-bottom: 1px solid rgba(0, 200, 215, 0.06);
+
+  mat-icon {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+    color: #00C8D7;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #E8F4F8;
+    letter-spacing: -0.01em;
+  }
+}
+
+.sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 16px;
+  padding: 8px 12px;
+  background: #06101c;
+  border: 1px solid rgba(0, 200, 215, 0.12);
+  border-radius: 10px;
+  transition: border-color .2s;
+
+  &:focus-within {
+    border-color: rgba(0, 200, 215, 0.4);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: rgba(200, 230, 240, 0.4);
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #E8F4F8;
+    font-family: inherit;
+    font-size: 0.85rem;
+    min-width: 0;
+
+    &::placeholder { color: rgba(200, 230, 240, 0.35); }
+  }
+}
+
+.sidebar-search-clear {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+
+  mat-icon {
+    color: rgba(200, 230, 240, 0.4);
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+  &:hover mat-icon { color: rgba(200, 230, 240, 0.7); }
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+  transition: background .15s, border-color .15s, color .15s;
+  color: rgba(200, 230, 240, 0.7);
+
+  & > mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: rgba(200, 230, 240, 0.5);
+    flex-shrink: 0;
+    transition: color .15s;
+  }
+
+  &:hover {
+    background: rgba(0, 200, 215, 0.05);
+    border-color: rgba(0, 200, 215, 0.10);
+    color: #E8F4F8;
+    & > mat-icon { color: #00C8D7; }
+  }
+
+  &.active {
+    background: rgba(0, 200, 215, 0.12);
+    border-color: rgba(0, 200, 215, 0.28);
+    color: #E8F4F8;
+    & > mat-icon { color: #00C8D7; }
+
+    .sidebar-item-nombre { color: #E8F4F8; }
+  }
+
+  &.no-migrada {
+    .sidebar-item-nombre::after { content: ''; }
+  }
+}
+
+.sidebar-item-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sidebar-item-nombre {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: inherit;
+  line-height: 1.2;
+}
+
+.sidebar-item-desc {
+  font-size: 0.72rem;
+  color: rgba(200, 230, 240, 0.4);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.sidebar-item-badge {
+  padding: 2px 8px;
+  background: rgba(245, 166, 35, 0.15);
+  color: #F5A623;
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.sidebar-empty {
+  padding: 18px 8px;
+  font-size: 0.82rem;
+  color: rgba(200, 230, 240, 0.4);
+  text-align: center;
+  margin: 0;
+}
+
+// ─── BOTÓN MENÚ (móvil) ─────────────────────────────────
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 76px;
+  left: 12px;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #101c2c;
+  border: 1px solid rgba(0, 200, 215, 0.22);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: #00C8D7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  mat-icon { font-size: 22px; width: 22px; height: 22px; }
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 9, 15, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 90;
+}
+
+// ─── PANEL ─────────────────────────────────────────────
+.config-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // evita overflow del grid
+}
+
+.panel-header {
+  border-bottom: 1px solid rgba(0, 200, 215, 0.06);
+  background: linear-gradient(180deg, rgba(0, 200, 215, 0.02), transparent);
+}
+
+.panel-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 32px 18px;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.panel-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(0, 200, 215, 0.10);
+  border: 1px solid rgba(0, 200, 215, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 28px; width: 28px; height: 28px; color: #00C8D7; }
+}
+
+.panel-titulos {
+  flex: 1;
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #E8F4F8;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 0.88rem;
+    color: rgba(200, 230, 240, 0.5);
+  }
+}
+
+.panel-body {
+  flex: 1;
+  padding: 24px 32px 48px;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.placeholder-card {
+  background: #101c2c;
+  border: 1px dashed rgba(245, 166, 35, 0.35);
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #F5A623;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+    color: #E8F4F8;
+  }
+
+  p {
+    margin: 0 0 22px;
+    color: rgba(200, 230, 240, 0.55);
+    font-size: 0.9rem;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+}
+
+.btn-legacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: 1px solid rgba(0, 200, 215, 0.25);
+  background: rgba(0, 200, 215, 0.10);
+  color: #00C8D7;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover { background: rgba(0, 200, 215, 0.20); }
+}
+
+// ─── RESPONSIVE ─────────────────────────────────────────
+@media (max-width: 900px) {
+  .config-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-toggle { display: flex; }
+
+  .config-sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    width: 290px;
+    height: calc(100vh - 64px);
+    z-index: 95;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+
+    &.abierto { transform: translateX(0); }
+  }
+
+  .config-shell.sidebar-open .sidebar-backdrop { display: block; }
+
+  .panel-header-inner { padding: 64px 18px 16px; }
+  .panel-body { padding: 18px 18px 48px; }
+}
+
+@media (max-width: 480px) {
+  .panel-header-inner {
+    gap: 12px;
+    padding: 60px 14px 14px;
+  }
+  .panel-icon { width: 44px; height: 44px; }
+  .panel-titulos h2 { font-size: 1.2rem; }
+  .panel-titulos p { font-size: 0.8rem; }
+  .panel-body { padding: 14px 14px 40px; }
+}

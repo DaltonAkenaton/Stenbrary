@@ -1,0 +1,129 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/general.component.html                   ║ -->
+<!-- ║  Info del sistema + Identidad de la institución      ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── INFO DEL SISTEMA ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>info</mat-icon>
+    <h2>Información del Sistema</h2>
+  </div>
+
+  @if (!cargandoInfo) {
+    <div class="info-grid">
+      <div class="info-stat">
+        <div class="stat-value cyan">{{ conteoAlumnos }}</div>
+        <div class="stat-label">Alumnos registrados</div>
+      </div>
+      <div class="info-stat">
+        <div class="stat-value teal">{{ conteoRegistros }}</div>
+        <div class="stat-label">Registros de acceso</div>
+      </div>
+      <div class="info-stat">
+        <div class="stat-value amber">{{ conteoMotivos }}</div>
+        <div class="stat-label">Motivos / actividades</div>
+      </div>
+      <div class="info-stat">
+        <div class="stat-value purple">{{ almacenamientoEstimado }}</div>
+        <div class="stat-label">Almacenamiento usado</div>
+      </div>
+    </div>
+  }
+
+  @if (motivosDuplicados > 0) {
+    <div class="alert-duplicates">
+      <mat-icon>warning</mat-icon>
+      <span>
+        Se detectaron <strong>{{ motivosDuplicados }}</strong> motivos duplicados.
+      </span>
+      <button class="btn-inline" (click)="limpiarDuplicados()" [disabled]="procesando">
+        Limpiar ahora
+      </button>
+    </div>
+  }
+
+  <div class="info-meta">
+    <button class="meta-chip meta-chip-link"
+            type="button"
+            (click)="navegar('/novedades')"
+            matTooltip="Ver el historial de cambios y novedades">
+      <mat-icon>code</mat-icon>
+      Stenbrary v{{ changelogService.versionActualSignal().version }}
+      @if (changelogService.hayNovedades()) {
+        <span class="meta-chip-dot"></span>
+      }
+    </button>
+    <span class="meta-chip" matTooltip="Los datos se guardan en este dispositivo, sin necesidad de internet">
+      <mat-icon>storage</mat-icon>
+      Datos guardados localmente
+    </span>
+    <span class="meta-chip" matTooltip="Funciona sin internet. Instálala en tu dispositivo para acceso rápido">
+      <mat-icon>phone_android</mat-icon>
+      Funciona sin internet
+    </span>
+  </div>
+
+  <button class="btn-action btn-restore"
+          style="margin-top: 18px;"
+          (click)="buscarActualizacion()"
+          [disabled]="buscandoActualizacion"
+          matTooltip="Consulta al servidor si hay una versión nueva y la instala">
+    @if (buscandoActualizacion) {
+      <mat-spinner diameter="16"></mat-spinner>
+      <span>Buscando...</span>
+    } @else {
+      <mat-icon>system_update</mat-icon>
+      <span>Buscar actualizaciones</span>
+    }
+  </button>
+</div>
+
+<!-- ── IDENTIDAD DE LA INSTITUCIÓN ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>apartment</mat-icon>
+    <h2>Identidad de la Institución</h2>
+  </div>
+  <p class="section-desc">
+    Nombre que aparecerá en los <strong style="color:#E8F4F8">documentos exportados</strong>
+    (constancia en PDF, reportes). Déjalo vacío si no quieres mostrar una institución.
+  </p>
+
+  <div class="aforo-input-row" style="margin-top: 6px;">
+    <label for="nombreInstitucion">Nombre de la institución</label>
+    <div class="aforo-stepper" style="max-width: 420px;">
+      <input id="nombreInstitucion"
+             type="text"
+             maxlength="80"
+             class="aforo-number-input"
+             style="text-align:left; padding-left: 12px;"
+             [ngModel]="nombreInstitucionBorrador"
+             (ngModelChange)="nombreInstitucionBorrador = $event"
+             (blur)="guardarNombreInstitucion()"
+             (keyup.enter)="guardarNombreInstitucion()"
+             placeholder="Ej: Universidad Autónoma de Tamaulipas">
+      @if (nombreInstitucionBorrador) {
+        <button type="button"
+                class="stepper-btn"
+                (click)="limpiarNombreInstitucion()"
+                matTooltip="Borrar nombre"
+                matTooltipPosition="above">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (!configService.nombreInstitucion) {
+    <p class="section-hint">
+      <mat-icon>info</mat-icon>
+      Sin institución configurada — los documentos se generarán sin etiqueta institucional.
+    </p>
+  } @else {
+    <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+      <mat-icon>check_circle</mat-icon>
+      Actualmente: <strong>{{ configService.nombreInstitucion }}</strong>
+    </p>
+  }
+</div>

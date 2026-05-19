@@ -15,6 +15,23 @@ Senior Angular engineer. PWA, offline-first, performance-focused.
 
 El sistema debe ser **moldeable**. Toda configuración visible al coordinador debe ser **editable sin límites arbitrarios**: los presets son atajos, no restricciones. Al diseñar cualquier ajuste numérico (umbrales, porcentajes, tiempos, capacidades), además de ofrecer valores recomendados, siempre incluir un input libre con su rango natural (p. ej. 0–100 para porcentajes, 0+ para capacidades, etc.). El coordinador manda sobre los defaults.
 
+## Visión del producto y fases
+
+Stenbrary va más allá de la versión actual. El plan completo está en `docs/ROADMAP.md` (fuente única de verdad del largo plazo). Aquí el resumen para tener contexto al tomar decisiones:
+
+- **Fase 1 — PWA offline-first (cerrando, v3.x → v4.0).** Sistema actual: scanner, registros, motivos, aforo, horarios, quiosco, estadísticas, todo en IndexedDB. Última milla antes de cerrar Fase 1: rediseño de `/configuración` (sidebar + panel) y **command palette Ctrl+K** (navegación + toggles de settings + acciones).
+- **Fase 2 — Backend + auth + sync (post-v4.0).** Migrar a un modelo cliente-servidor manteniendo offline-first. Stack elegido: **Supabase** (Postgres + Auth + Storage + Realtime). 4 roles: super-admin, coordinador, asistente, alumno. Sync **supervisado por el coordinador** (no automático ciego — debe poder descartar registros basura antes de subir). Sub-fases 2.0 a 2.5 detalladas en `ROADMAP.md`.
+- **Fase 3 — Pulir el producto.** Post-Fase 2: hardening, performance con volumen real, accesibilidad, UX refinada, documentación para usuario final, capacitación.
+- **Fase 4 — Módulo de préstamos.** Largo plazo. Requiere investigación con el coordinador antes de diseñar (catálogo de libros, reservas, devoluciones, multas, integración con el sistema bibliotecario existente si lo hay).
+- **Fase 5 — Comercialización.** Distribuir a otras universidades. Bloqueada hasta que esté: multi-tenant real (preparación en Fase 2.5), calendario escolar configurable (`docs/ESTADO.md` §2.2), catálogos editables (§2.3.1), branding por institución, plan de capacitación, modelo de licenciamiento.
+
+**Cómo usar esta visión al implementar:** cualquier decisión técnica de Fase 1 debe respetar las decisiones tomadas para Fase 2. Ejemplos prácticos:
+- No introducir patrones que dificulten agregar `organization_id` a los modelos.
+- Cualquier nuevo `Service` que muta datos debe quedar listo para que un futuro `SyncService` lo intercepte (idempotencia, IDs estables).
+- Evitar lógica de permisos hardcoded — preparar el terreno para que un `roleGuard` la reemplace en Fase 2.3.
+
+Si una decisión actual entra en conflicto con la visión, **plantearla explícitamente al usuario**, no asumir cambio silencioso.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
@@ -234,6 +251,7 @@ En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la cl
 - `ngZone.run()` para actualizar Angular desde callbacks de browser APIs (scanner, audio, `requestAnimationFrame`).
 - Los comentarios de encabezado de archivo usan el formato `╔══╗` con versión y cambios recientes. Mantener este estilo al editar/crear archivos nuevos cuando el contexto lo justifique.
 - `changelog.data.ts` es fuente única de verdad del historial de versiones: el primer elemento del array es la versión más reciente, `version` debe coincidir con `package.json`, fechas `YYYY-MM-DD`, tipos `feat | fix | mejora | cambio`.
+- **MatTooltip scroll strategy**: configurado globalmente en `app.config.ts` como `overlay.scrollStrategies.close()` (no el default `reposition`). Razón: `reposition` registra cada trigger como `cdkScrollable` y dispara reflows en cada evento de scroll; con muchos tooltips por vista (dashboard tenía ~18) causaba lag perceptible. Si necesitas el comportamiento de reposicionar en una vista puntual, sobreescríbelo localmente con `MAT_TOOLTIP_SCROLL_STRATEGY`, no toques el global.
 
 ## Errores a evitar
 

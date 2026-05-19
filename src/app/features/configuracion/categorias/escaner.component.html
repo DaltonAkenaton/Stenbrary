@@ -1,0 +1,212 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/escaner.component.html                   ║ -->
+<!-- ║  Sonido + Comportamiento del escáner                 ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── SONIDO DE CONFIRMACIÓN ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>volume_up</mat-icon>
+    <h2>Sonido de Confirmación</h2>
+  </div>
+  <p class="section-desc">
+    Reproduce un sonido al registrar accesos y salidas.
+    Útil en ambientes ruidosos donde no siempre se ve la pantalla.
+  </p>
+  <div class="sound-toggle">
+    <span class="sound-status">
+      {{ soundService.habilitado ? 'Activado' : 'Desactivado' }}
+    </span>
+    <button class="btn-inline"
+      [class.btn-inline-active]="soundService.habilitado"
+      (click)="toggleSonido()">
+      <mat-icon>{{ soundService.habilitado ? 'volume_up' : 'volume_off' }}</mat-icon>
+      {{ soundService.habilitado ? 'Desactivar' : 'Activar' }}
+    </button>
+  </div>
+  <button class="btn-action btn-restore" (click)="probarSonido()">
+    <mat-icon>play_arrow</mat-icon>
+    <span>Probar sonido</span>
+  </button>
+
+  <div style="margin-top: 16px;">
+    <div class="aforo-input-row" style="flex-wrap: wrap;">
+      <label for="volumenBeep">Volumen del beep</label>
+      <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;">
+        <input id="volumenBeep" type="range" min="0" max="100" step="1"
+               style="flex: 1;"
+               [ngModel]="volumenBeepPct"
+               (ngModelChange)="setVolumenBeepPct($event)">
+        <span class="mono" style="min-width: 48px; text-align: right; color: #E8F4F8;">
+          {{ volumenBeepPct }}%
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── COMPORTAMIENTO DEL ESCÁNER ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>qr_code_scanner</mat-icon>
+    <h2>Comportamiento del escáner</h2>
+  </div>
+  <p class="section-desc">
+    Ajusta cómo responde el escáner al detectar credenciales: velocidad, tiempo entre
+    escaneos, y si quieres saltar el diálogo de confirmación.
+  </p>
+
+  <!-- Velocidad de detección -->
+  <div style="margin-top: 6px;">
+    <strong style="font-size: .9rem; color:#E8F4F8;">Velocidad de detección</strong>
+    <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+      Por defecto está en <strong style="color:#E8F4F8">instantáneo</strong> — el escáner
+      intenta detectar la credencial en cada frame de la cámara (lo más rápido posible).
+      Solo súbelo si necesitas ahorrar batería en tablets.
+    </p>
+    <div class="auto-close-options">
+      @for (op of opcionesEscanerVelocidad; track op.valor) {
+        <button class="auto-close-btn"
+                [class.active]="configService.escanerVelocidadMs === op.valor"
+                (click)="onSetEscanerVelocidad(op.valor, op.etiqueta)">
+          {{ op.etiqueta }}
+        </button>
+      }
+    </div>
+    <div class="aforo-input-row" style="margin-top: 12px;">
+      <label for="velMsInput">Personalizado (ms)</label>
+      <div class="aforo-stepper" style="max-width: 220px;">
+        <button type="button" class="stepper-btn"
+                (click)="onChangeEscanerVelocidad(configService.escanerVelocidadMs - 10)"
+                matTooltip="Disminuir 10 ms">
+          <mat-icon>remove</mat-icon>
+        </button>
+        <input id="velMsInput" type="number" min="0" step="10"
+               class="aforo-number-input"
+               [ngModel]="configService.escanerVelocidadMs"
+               (ngModelChange)="onChangeEscanerVelocidad($event)">
+        <button type="button" class="stepper-btn"
+                (click)="onChangeEscanerVelocidad(configService.escanerVelocidadMs + 10)"
+                matTooltip="Aumentar 10 ms">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cooldown post-detección -->
+  <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+    <strong style="font-size: .9rem; color:#E8F4F8;">Espera entre escaneos (cooldown)</strong>
+    <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+      Tiempo que el escáner espera tras cada detección antes de aceptar otra.
+      Súbelo si los alumnos hacen doble escaneo accidental.
+    </p>
+    <div class="auto-close-options">
+      @for (op of opcionesEscanerCooldown; track op.valor) {
+        <button class="auto-close-btn"
+                [class.active]="configService.escanerCooldownMs === op.valor"
+                (click)="onSetEscanerCooldown(op.valor, op.etiqueta)">
+          {{ op.etiqueta }}
+        </button>
+      }
+    </div>
+    <div class="aforo-input-row" style="margin-top: 12px;">
+      <label for="cdMsInput">Personalizado (ms)</label>
+      <div class="aforo-stepper" style="max-width: 220px;">
+        <button type="button" class="stepper-btn"
+                (click)="onChangeEscanerCooldown(configService.escanerCooldownMs - 100)"
+                [disabled]="configService.escanerCooldownMs <= 0"
+                matTooltip="Disminuir 100 ms">
+          <mat-icon>remove</mat-icon>
+        </button>
+        <input id="cdMsInput" type="number" min="0" step="100"
+               class="aforo-number-input"
+               [ngModel]="configService.escanerCooldownMs"
+               (ngModelChange)="onChangeEscanerCooldown($event)">
+        <button type="button" class="stepper-btn"
+                (click)="onChangeEscanerCooldown(configService.escanerCooldownMs + 100)"
+                matTooltip="Aumentar 100 ms">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saltar confirmación -->
+  <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+    <strong style="font-size: .9rem; color:#E8F4F8;">Saltar diálogo de confirmación</strong>
+    <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+      Si está activado, el escáner procesa la matrícula directamente sin pedirte que confirmes.
+      Útil en modo quiosco para acelerar el flujo, pero pierdes el control de errores de lectura.
+    </p>
+    <div class="sound-toggle">
+      <span class="sound-status">{{ configService.escanerSaltarConfirmacion ? 'Activado' : 'Desactivado' }}</span>
+      <button class="btn-inline"
+              [class.btn-inline-active]="configService.escanerSaltarConfirmacion"
+              (click)="onToggleEscanerSaltarConfirmacion()">
+        <mat-icon>{{ configService.escanerSaltarConfirmacion ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+        {{ configService.escanerSaltarConfirmacion ? 'Desactivar' : 'Activar' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Preferencia de cámara -->
+  <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+    <strong style="font-size: .9rem; color:#E8F4F8;">Cámara preferida</strong>
+    <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+      En móvil/tablet con varias cámaras, elige cuál usar al abrir el escáner.
+      Si la cámara elegida no existe, el navegador usa la disponible automáticamente.
+    </p>
+    <div class="auto-close-options">
+      @for (op of opcionesCamara; track op.valor) {
+        <button class="auto-close-btn"
+                [class.active]="configService.camaraPreferida === op.valor"
+                (click)="onSetCamaraPreferida(op.valor, op.etiqueta)">
+          <mat-icon style="vertical-align: middle; font-size: 18px; height: 18px; width: 18px;">{{ op.icono }}</mat-icon>
+          {{ op.etiqueta }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Zoom inicial del scanner -->
+  <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+    <strong style="font-size: .9rem; color:#E8F4F8;">Zoom inicial del escáner</strong>
+    <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+      Nivel de zoom aplicado al abrir el scanner. Por defecto
+      <strong style="color:#E8F4F8">100%</strong> (sin zoom). Súbelo si la cámara
+      tiene foco fijo y necesitas acercar las credenciales. Se sigue pudiendo
+      cambiar manualmente dentro del scanner.
+    </p>
+    <div class="auto-close-options">
+      @for (op of opcionesZoomDefault; track op.valor) {
+        <button class="auto-close-btn"
+                [class.active]="zoomDefaultPct === op.valor"
+                (click)="onSetZoomDefault(op.valor, op.etiqueta)">
+          {{ op.etiqueta }}
+        </button>
+      }
+    </div>
+    <div class="aforo-input-row" style="margin-top: 12px;">
+      <label for="zoomDefInput">Personalizado (%)</label>
+      <div class="aforo-stepper" style="max-width: 220px;">
+        <button type="button" class="stepper-btn"
+                (click)="onChangeZoomDefaultPct(zoomDefaultPct - 10)"
+                [disabled]="zoomDefaultPct <= 100"
+                matTooltip="Disminuir 10%">
+          <mat-icon>remove</mat-icon>
+        </button>
+        <input id="zoomDefInput" type="number" min="100" max="300" step="10"
+               class="aforo-number-input"
+               [ngModel]="zoomDefaultPct"
+               (ngModelChange)="onChangeZoomDefaultPct($event)">
+        <button type="button" class="stepper-btn"
+                (click)="onChangeZoomDefaultPct(zoomDefaultPct + 10)"
+                [disabled]="zoomDefaultPct >= 300"
+                matTooltip="Aumentar 10%">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -52,8 +52,15 @@ interface QuickStat {
   tooltip: string;
   color: string;
   ruta: string;
-  /** Delta vs período anterior (porcentaje). Solo para "Accesos hoy". */
-  delta?: { porcentaje: number; direccion: 'up' | 'down' | 'igual' };
+  /** Delta vs período anterior. Solo para "Accesos hoy". */
+  delta?: {
+    porcentaje: number;
+    direccion: 'up' | 'down' | 'igual';
+    /** Texto corto para el tooltip: "vs lunes pasado" / "vs ayer". */
+    referencia: string;
+    /** Valor crudo del período comparado, para mostrar en hover. */
+    valorReferencia: number;
+  };
 }
 
 interface ActividadHoy {
@@ -71,6 +78,29 @@ interface MiniStat {
   color: string;
   ruta?: string;
   tooltip: string;
+}
+
+interface HoraFlujo {
+  /** 0–23 */
+  hora: number;
+  count: number;
+  /** % del máximo de la serie, 0–100. Define la altura visual de la barra. */
+  alturaPct: number;
+  /** true si es la hora con más visitas. Se pinta diferente. */
+  esPico: boolean;
+  /** Hora formateada para mostrar: "07h", "14h". */
+  label: string;
+  /** Tooltip largo para hover. */
+  tooltip: string;
+}
+
+/** Tono visual del insight — pinta el icono y el borde. */
+type InsightTono = 'positivo' | 'neutro' | 'alerta';
+
+interface InsightDia {
+  texto: string;
+  icono: string;
+  tono: InsightTono;
 }
 
 type TipoAlerta = 'respaldo' | 'autoclose' | 'horario' | 'bd';
@@ -108,6 +138,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // ─── Mini-stats (alumnos nuevos, hora pico, inactivos) ──
   miniStats: MiniStat[] = [];
 
+  // ─── Flujo del día (mini-chart de barras por hora) ──────
+  flujoDia: HoraFlujo[] = [];
+  flujoDiaTotal = 0;
+  flujoDiaPicoHora: number | null = null;
+
+  // ─── Insight automático del día ─────────────────────────
+  insightDia: InsightDia | null = null;
+
   // ─── Actividades de hoy (top motivos) ───────────────────
   actividadesHoy: ActividadHoy[] = [];
   totalActividadesDistintas = 0;
@@ -131,8 +169,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Evita que dos refreshes se solapen si uno tarda > REFRESH_MS. */
   private inFlight = false;
 
-  /** Fecha (YYYY-MM-DD) usada en la última comparativa con "ayer", para detectar cambio de día. */
-  private fechaAyerCacheada = '';
+  /** Fecha (YYYY-MM-DD) usada en la última comparativa, para detectar cambio de día. */
+  private fechaComparativaCacheada = '';
+  /** Conteo del mismo día de la semana pasada (referencia principal). */
+  private registrosSemanaPasadaCount = 0;
+  /** Conteo de ayer (fallback si la semana pasada no tiene datos). */
   private registrosAyerCount = 0;
 
   constructor(
@@ -354,16 +395,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
         motivos.map(m => [m.nombre, m]),
       );
 
-      // Comparativa vs ayer (cargada solo si cambió la fecha)
+      // Comparativa vs MISMO DÍA de la semana pasada (referencia principal).
+      // Fallback a "ayer" si la semana pasada no tiene datos (sistema reciente).
+      // Solo se recarga al cambiar de día — los conteos históricos son inmutables.
       const hoyKey = this.fechaKey(new Date());
-      if (this.fechaAyerCacheada !== hoyKey) {
+      if (this.fechaComparativaCacheada !== hoyKey) {
         try {
+          const semanaPasada = new Date();
+          semanaPasada.setDate(semanaPasada.getDate() - 7);
           const ayer = new Date();
           ayer.setDate(ayer.getDate() - 1);
-          const regsAyer = await this.databaseService.obtenerRegistrosPorFecha(ayer);
+          const [regsSemana, regsAyer] = await Promise.all([
+            this.databaseService.obtenerRegistrosPorFecha(semanaPasada),
+            this.databaseService.obtenerRegistrosPorFecha(ayer),
+          ]);
+          this.registrosSemanaPasadaCount = regsSemana.length;
           this.registrosAyerCount = regsAyer.length;
-          this.fechaAyerCacheada = hoyKey;
+          this.fechaComparativaCacheada = hoyKey;
         } catch {
+          this.registrosSemanaPasadaCount = 0;
           this.registrosAyerCount = 0;
         }
       }
@@ -378,7 +428,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           tooltip: 'Cuántos alumnos han ingresado a la biblioteca el día de hoy. Se reinicia a medianoche.',
           color: '#00C8D7',
           ruta: '/registros',
-          delta: this.calcularDelta(registrosHoy.length, this.registrosAyerCount),
+          delta: this.calcularDeltaComparativa(registrosHoy.length),
         },
         {
           icono: 'groups',
@@ -411,6 +461,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
       // ─── Mini-stats: nuevos hoy / hora pico / inactivos ─
       this.miniStats = this.calcularMiniStats(alumnos, registrosHoy);
+
+      // ─── Flujo del día (barras por hora) ─────────────
+      this.calcularFlujoDia(registrosHoy);
+
+      // ─── Insight automático del día ──────────────────
+      this.insightDia = this.calcularInsightDia(registrosHoy);
 
       // ─── Actividades de hoy (agrupar por motivo, soporta motivoIds[]) ─
       const porMotivo = new Map<string, { cantidad: number; icono: string; color: string; motivoId?: string }>();
@@ -472,14 +528,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  private calcularDelta(actual: number, anterior: number): QuickStat['delta'] {
-    if (anterior === 0 && actual === 0) return { porcentaje: 0, direccion: 'igual' };
-    if (anterior === 0) return { porcentaje: 100, direccion: 'up' };
-    const pct = Math.round(((actual - anterior) / anterior) * 100);
+  /**
+   * Calcula el delta vs la mejor referencia disponible:
+   * - Si la semana pasada tiene datos, compara vs ese mismo día (más
+   *   relevante porque elimina estacionalidad semanal — lunes vs lunes).
+   * - Si no, cae a "ayer" (sistema nuevo o semana atípica).
+   * - Si tampoco hay ayer, no muestra delta (devuelve undefined).
+   */
+  private calcularDeltaComparativa(actual: number): QuickStat['delta'] {
+    const usarSemana = this.registrosSemanaPasadaCount > 0;
+    const referenciaValor = usarSemana ? this.registrosSemanaPasadaCount : this.registrosAyerCount;
+    const nombreDia = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][new Date().getDay()];
+    const referenciaTexto = usarSemana ? `vs ${nombreDia} pasado` : 'vs ayer';
+
+    if (referenciaValor === 0 && actual === 0) {
+      return undefined; // sin contexto, no mostrar delta
+    }
+    if (referenciaValor === 0) {
+      return { porcentaje: 100, direccion: 'up', referencia: referenciaTexto, valorReferencia: 0 };
+    }
+    const pct = Math.round(((actual - referenciaValor) / referenciaValor) * 100);
     let direccion: 'up' | 'down' | 'igual' = 'igual';
     if (pct > 0) direccion = 'up';
     else if (pct < 0) direccion = 'down';
-    return { porcentaje: Math.abs(pct), direccion };
+    return {
+      porcentaje: Math.abs(pct),
+      direccion,
+      referencia: referenciaTexto,
+      valorReferencia: referenciaValor,
+    };
   }
 
   private calcularMiniStats(alumnos: { fechaRegistro: Date }[], registrosHoy: Registro[]): MiniStat[] {
@@ -527,6 +604,195 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private pad2(n: number): string {
     return n < 10 ? `0${n}` : `${n}`;
+  }
+
+  /**
+   * Calcula el flujo del día (visitas por hora) para el mini-chart.
+   *
+   * Rango visible: respeta el horario de operación configurado para el día
+   * actual; si no hay horario activo, usa 7–22 como ventana razonable.
+   * En cualquier caso, expande la ventana para incluir cualquier hora con
+   * registros (un alumno entró antes de abrir, por ejemplo).
+   */
+  private calcularFlujoDia(registrosHoy: Registro[]): void {
+    if (registrosHoy.length === 0) {
+      this.flujoDia = [];
+      this.flujoDiaTotal = 0;
+      this.flujoDiaPicoHora = null;
+      return;
+    }
+
+    // Contar registros por hora
+    const counts = new Array<number>(24).fill(0);
+    for (const r of registrosHoy) {
+      const h = new Date(r.fechaHora).getHours();
+      counts[h]++;
+    }
+
+    // Determinar rango visible
+    let minHora = 7;
+    let maxHora = 22;
+    const diaHoy = new Date().getDay();
+    if (this.configService.horarioActivo) {
+      const horario = this.configService.horarios[diaHoy];
+      if (horario && !horario.cerrado) {
+        const [hAp] = horario.apertura.split(':').map(Number);
+        const [hCi] = horario.cierre.split(':').map(Number);
+        if (!isNaN(hAp)) minHora = hAp;
+        if (!isNaN(hCi)) maxHora = Math.max(hCi, hAp);
+      }
+    }
+    // Expandir si hay registros fuera del horario configurado
+    for (let h = 0; h < 24; h++) {
+      if (counts[h] > 0) {
+        if (h < minHora) minHora = h;
+        if (h > maxHora) maxHora = h;
+      }
+    }
+
+    const max = Math.max(...counts);
+    const picoHora = counts.indexOf(max);
+
+    const flujo: HoraFlujo[] = [];
+    for (let h = minHora; h <= maxHora; h++) {
+      const c = counts[h];
+      const alturaPct = max > 0 ? Math.round((c / max) * 100) : 0;
+      const horaStr = this.pad2(h);
+      flujo.push({
+        hora: h,
+        count: c,
+        alturaPct,
+        esPico: c > 0 && h === picoHora,
+        label: `${horaStr}h`,
+        tooltip: c === 0
+          ? `${horaStr}:00 — sin registros`
+          : `${horaStr}:00 — ${c} ${c === 1 ? 'acceso' : 'accesos'}`,
+      });
+    }
+
+    this.flujoDia = flujo;
+    this.flujoDiaTotal = registrosHoy.length;
+    this.flujoDiaPicoHora = max > 0 ? picoHora : null;
+  }
+
+  /**
+   * Detecta el patrón más interesante del día y lo expresa en una frase corta.
+   *
+   * Sistema de reglas en orden de prioridad — se muestra la PRIMERA que
+   * aplica. La idea es no abrumar: una sola observación, la más relevante.
+   *
+   * Si en el futuro queremos rotar entre varios insights del mismo día,
+   * convertir esto en un array y agregar un timer en el template.
+   */
+  private calcularInsightDia(registrosHoy: Registro[]): InsightDia | null {
+    const ahora = new Date();
+    const horaActual = ahora.getHours();
+
+    // ─── Regla 1: sin registros aún (alerta si ya pasó la apertura) ─
+    if (registrosHoy.length === 0) {
+      // Si es muy temprano (antes de 7am), neutro. Si ya pasaron horas, alerta.
+      if (horaActual < 8) {
+        return {
+          texto: 'Aún sin registros — la biblioteca todavía no abre.',
+          icono: 'bedtime',
+          tono: 'neutro',
+        };
+      }
+      return {
+        texto: `Sin registros hasta ahora (${this.pad2(horaActual)}h) — verifica que el escáner esté operando.`,
+        icono: 'report_problem',
+        tono: 'alerta',
+      };
+    }
+
+    // ─── Regla 2: día atípico vs semana pasada (>30% diferencia) ─
+    if (this.registrosSemanaPasadaCount > 0) {
+      const pctDif = Math.round(
+        ((registrosHoy.length - this.registrosSemanaPasadaCount) / this.registrosSemanaPasadaCount) * 100,
+      );
+      const nombreDia = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][ahora.getDay()];
+
+      if (pctDif >= 30) {
+        return {
+          texto: `Día activo: ${pctDif}% más accesos que el ${nombreDia} pasado.`,
+          icono: 'trending_up',
+          tono: 'positivo',
+        };
+      }
+      if (pctDif <= -30) {
+        return {
+          texto: `Día tranquilo: ${Math.abs(pctDif)}% menos accesos que el ${nombreDia} pasado.`,
+          icono: 'trending_down',
+          tono: 'neutro',
+        };
+      }
+    }
+
+    // ─── Regla 3: alta concentración temporal (>60% en 2 horas) ─
+    if (this.flujoDia.length > 0 && registrosHoy.length >= 10) {
+      // counts ordenados desc
+      const top2 = [...this.flujoDia]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 2);
+      const sumaTop2 = top2[0].count + (top2[1]?.count ?? 0);
+      const pctConcentracion = Math.round((sumaTop2 / registrosHoy.length) * 100);
+      if (pctConcentracion >= 60) {
+        const desde = Math.min(top2[0].hora, top2[1]?.hora ?? top2[0].hora);
+        const hasta = Math.max(top2[0].hora, top2[1]?.hora ?? top2[0].hora) + 1;
+        return {
+          texto: `Actividad muy concentrada: ${pctConcentracion}% de los accesos entre ${this.pad2(desde)} y ${this.pad2(hasta)}h.`,
+          icono: 'bolt',
+          tono: 'neutro',
+        };
+      }
+    }
+
+    // ─── Regla 4: muchos invitados (>30%) ─
+    const invitados = registrosHoy.filter(r => r.matricula === 'INVITADO').length;
+    const pctInvitados = Math.round((invitados / registrosHoy.length) * 100);
+    if (invitados >= 5 && pctInvitados >= 30) {
+      return {
+        texto: `Día con muchos visitantes: ${pctInvitados}% de los accesos son invitados (${invitados} de ${registrosHoy.length}).`,
+        icono: 'person_outline',
+        tono: 'neutro',
+      };
+    }
+
+    // ─── Regla 5: actividad sin pausas largas ─
+    // Último registro hace > 2 horas en horario operativo (8am–8pm)
+    if (horaActual >= 8 && horaActual < 20 && this.ultimoRegistroHora) {
+      const ultimoReg = this.ultimosRegistros[0];
+      if (ultimoReg) {
+        const minutosDesde = Math.floor((ahora.getTime() - new Date(ultimoReg.fechaHora).getTime()) / 60000);
+        if (minutosDesde >= 120) {
+          const horas = Math.floor(minutosDesde / 60);
+          return {
+            texto: `Sin nuevos accesos desde las ${this.ultimoRegistroHora} (hace ${horas}h ${minutosDesde % 60}m).`,
+            icono: 'pause_circle',
+            tono: 'neutro',
+          };
+        }
+      }
+    }
+
+    // ─── Regla 6: hora pico identificada (positivo si ya pasó) ─
+    if (this.flujoDiaPicoHora !== null && horaActual > this.flujoDiaPicoHora) {
+      const picoCount = this.flujoDia.find(h => h.hora === this.flujoDiaPicoHora)?.count ?? 0;
+      if (picoCount >= 5) {
+        return {
+          texto: `Hora pico del día: ${this.pad2(this.flujoDiaPicoHora)}–${this.pad2(this.flujoDiaPicoHora + 1)}h (${picoCount} accesos).`,
+          icono: 'whatshot',
+          tono: 'positivo',
+        };
+      }
+    }
+
+    // ─── Regla 7 (default): día normal con resumen ─
+    return {
+      texto: `${registrosHoy.length} ${registrosHoy.length === 1 ? 'acceso registrado' : 'accesos registrados'} hasta ahora — día dentro de lo normal.`,
+      icono: 'check_circle',
+      tono: 'positivo',
+    };
   }
 
   // ═══════════════════════════════════════════════

@@ -68,9 +68,11 @@ export const routes: Routes = [
     title: 'Stenbrary — Gestión de Motivos',
   },
   {
+    // Shell con sidebar de 7 categorías + buscador. Cada categoría es un
+    // sub-componente standalone en features/configuracion/categorias/.
     path: 'configuracion',
     loadComponent: () =>
-      import('./features/configuracion/configuracion.component').then(m => m.ConfiguracionComponent),
+      import('./features/configuracion/configuracion-v2.component').then(m => m.ConfiguracionV2Component),
     title: 'Stenbrary — Configuración',
   },
   {

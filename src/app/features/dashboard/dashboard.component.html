@@ -98,7 +98,7 @@
               <span class="stat-valor mono">{{ stat.valor }}</span>
               @if (stat.delta) {
                 <span class="stat-delta" [attr.data-direccion]="stat.delta.direccion"
-                  [matTooltip]="'vs ayer: ' + (stat.delta.direccion === 'up' ? '+' : stat.delta.direccion === 'down' ? '−' : '') + stat.delta.porcentaje + '%'"
+                  [matTooltip]="stat.delta.referencia + ' (' + stat.delta.valorReferencia + ' accesos): ' + (stat.delta.direccion === 'up' ? '+' : stat.delta.direccion === 'down' ? '−' : '') + stat.delta.porcentaje + '%'"
                   matTooltipPosition="above">
                   @if (stat.delta.direccion === 'up') {
                     <mat-icon>arrow_upward</mat-icon>
@@ -123,6 +123,46 @@
         </button>
       }
     </div>
+
+    <!-- ── INSIGHT DEL DÍA (frase generada automáticamente) ── -->
+    @if (insightDia) {
+      <div class="insight-dia" [attr.data-tono]="insightDia.tono" role="status">
+        <mat-icon class="insight-icon">{{ insightDia.icono }}</mat-icon>
+        <span class="insight-texto">{{ insightDia.texto }}</span>
+      </div>
+    }
+
+    <!-- ── FLUJO DEL DÍA (mini-chart de barras por hora) ── -->
+    @if (flujoDia.length > 0) {
+      <div class="flujo-dia">
+        <div class="flujo-dia-header">
+          <div class="flujo-dia-titulo">
+            <mat-icon>show_chart</mat-icon>
+            <h2>Flujo del día</h2>
+          </div>
+          <span class="flujo-dia-total">
+            <strong>{{ flujoDiaTotal }}</strong>
+            {{ flujoDiaTotal === 1 ? 'acceso' : 'accesos' }} hasta ahora
+          </span>
+        </div>
+        <div class="flujo-dia-chart" role="img" aria-label="Distribución de accesos por hora del día">
+          @for (h of flujoDia; track h.hora) {
+            <div class="flujo-bar-col"
+                 [matTooltip]="h.tooltip"
+                 matTooltipPosition="above">
+              <div class="flujo-bar-track">
+                <div class="flujo-bar-fill"
+                     [class.es-pico]="h.esPico"
+                     [class.sin-datos]="h.count === 0"
+                     [style.height.%]="h.alturaPct"
+                     [attr.aria-hidden]="true"></div>
+              </div>
+              <span class="flujo-bar-label">{{ h.label }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
 
     <!-- ── MINI-STATS (nuevos / hora pico) ── -->
     @if (miniStats.length > 0) {

@@ -1,0 +1,69 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/avanzado.component.html                  ║ -->
+<!-- ║  Accesos directos + Zona peligrosa                   ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── ACCESOS DIRECTOS ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>apps</mat-icon>
+    <h2>Accesos Directos</h2>
+  </div>
+  <p class="section-desc">
+    Accede rápidamente a otras secciones del sistema desde aquí.
+  </p>
+  <div class="shortcuts-grid">
+    <button class="shortcut-btn" (click)="navegar('/gestion-motivos')">
+      <mat-icon>category</mat-icon>
+      <div class="shortcut-info">
+        <span class="shortcut-title">Gestión de Actividades</span>
+        <span class="shortcut-desc">Agregar, editar o eliminar tipos de actividades</span>
+      </div>
+      <mat-icon class="shortcut-arrow">chevron_right</mat-icon>
+    </button>
+    <button class="shortcut-btn" (click)="navegar('/importar-alumnos')">
+      <mat-icon>upload_file</mat-icon>
+      <div class="shortcut-info">
+        <span class="shortcut-title">Importar Alumnos</span>
+        <span class="shortcut-desc">Cargar alumnos desde un archivo Excel (.xlsx)</span>
+      </div>
+      <mat-icon class="shortcut-arrow">chevron_right</mat-icon>
+    </button>
+    <button class="shortcut-btn" (click)="navegar('/estadisticas')">
+      <mat-icon>bar_chart</mat-icon>
+      <div class="shortcut-info">
+        <span class="shortcut-title">Estadísticas Avanzadas</span>
+        <span class="shortcut-desc">Gráficas, tendencias y análisis del sistema</span>
+      </div>
+      <mat-icon class="shortcut-arrow">chevron_right</mat-icon>
+    </button>
+  </div>
+</div>
+
+<!-- ── ZONA PELIGROSA ── -->
+<div class="section-card danger-zone">
+  <div class="section-header danger">
+    <mat-icon>warning</mat-icon>
+    <h2>Zona Peligrosa — Lee antes de usar</h2>
+  </div>
+  <p class="section-desc">
+    Las acciones de esta sección <strong>no se pueden deshacer</strong>.
+    Antes de continuar, asegúrate de haber descargado una copia de seguridad arriba.
+    Si tienes dudas, contacta al administrador del sistema.
+  </p>
+  <div class="danger-actions">
+    <button class="btn-action btn-danger"
+            (click)="limpiarTodosDatos()"
+            [disabled]="procesando || !DESTRUCCION_HABILITADA"
+            matTooltip="Desactivado por seguridad. Solo el desarrollador puede activar esta función en el código fuente."
+            matTooltipPosition="above">
+      <mat-icon>delete_forever</mat-icon>
+      <span>Eliminar todos los datos</span>
+    </button>
+    <p class="danger-note">
+      <mat-icon>lock</mat-icon>
+      Esta acción está desactivada por seguridad. Para habilitarla, el desarrollador debe cambiar
+      <code>DESTRUCCION_HABILITADA</code> a <code>true</code> en el código fuente.
+    </p>
+  </div>
+</div>

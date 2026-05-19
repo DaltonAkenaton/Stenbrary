@@ -9,6 +9,193 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-05-18 — Fix de lag por matTooltip + alineación de roadmap Fase 2
+
+Tanda mixta: un fix puntual de performance y, sobre todo, **acordar el
+rumbo a largo plazo** del producto. Se sentaron decisiones que orientan
+los próximos 4-5 meses de trabajo.
+
+**Hecho:**
+- `app.config.ts`: provider global de `MAT_TOOLTIP_SCROLL_STRATEGY` →
+  `overlay.scrollStrategies.close()` (default es `reposition`). El
+  dashboard tenía lag perceptible al scrollear con ~18 tooltips
+  activos; ahora el tooltip se cierra al scrollear y los listeners
+  reactivos desaparecen. Cambio aplica a toda la app.
+- `MAT_TOOLTIP_DEFAULT_OPTIONS` también global con
+  `disableTooltipInteractivity: true`.
+- `CLAUDE.md`: nueva sección **"Visión del producto y fases"** con
+  resumen de las 5 fases y referencia a `docs/ROADMAP.md`. También
+  línea sobre la convención del scroll strategy en "Convenciones".
+- `docs/ROADMAP.md`: documento nuevo, fuente única de verdad del
+  largo plazo. Cubre las 5 fases, decisiones arquitectónicas de
+  Fase 2 (stack, tenancy, sync, roles), riesgos y mitigaciones.
+
+**Descubierto:**
+- El `MatTooltip` con scroll strategy default `reposition` registra
+  **cada trigger como `cdkScrollable`**, lo que dispara un evento
+  global por cada scroll y multiplica reflows. Con 18 tooltips por
+  vista es notable. Solución global > arreglar caso por caso.
+- El dashboard ejecutivo había quitado tooltips por este mismo lag;
+  con el fix global se pueden restaurar caso por caso (donde aporten
+  valor, no por reflejo).
+
+**Decidido:**
+- **Stack de Fase 2: Supabase** (no Firebase). Razón principal: modelo
+  relacional (alumnos/registros/motivos) encaja en Postgres y las
+  queries de `EstadisticasAvanzadasService` (joins, agregaciones) son
+  nativas en SQL. Firestore obligaría a denormalizar y multiplicar
+  costo de lecturas. Aprendizaje (Postgres + RLS) también más
+  transferible profesionalmente.
+- **Tenancy**: single-tenant ahora con `organization_id` nullable en
+  todas las tablas desde el inicio. Multi-tenant llega en Fase 2.5.
+- **Sync**: offline-first con **bandeja de sincronización supervisada
+  por el coordinador**. NO sync automático ciego — el coordinador
+  debe poder descartar registros antes de subir (caso "alumno
+  travieso"). Sync automático opcional configurable por horario.
+- **4 roles**: super-admin, coordinador, asistente, alumno. El
+  portal alumno prepara terreno para el módulo de préstamos (Fase 4).
+- **Orden**: cerrar Fase 1 (rediseño `/configuración` + command
+  palette Ctrl+K) antes de arrancar Fase 2. ~2 sem de UX que entrega
+  v4.0 visible al cliente.
+
+**Hecho (segunda mitad de la tanda) — refactor `/configuración`:**
+- Estructura nueva en `features/configuracion/`:
+  - `configuracion.types.ts`: 7 categorías con id, nombre, icono,
+    descripción y `keywords[]` (para búsqueda y futuro command palette).
+  - `configuracion.styles.scss`: ~580 líneas extraídas del legacy para
+    que el shell y los 7 sub-componentes reutilicen sin duplicar.
+  - `configuracion-v2.component.{ts,html,scss}`: shell con sidebar
+    (280px) + panel scrollable. Sidebar tiene buscador (filtra por
+    nombre + descripción + keywords), nav de categorías y link a
+    "versión clásica". Responsive: drawer + backdrop ≤900px.
+  - Categoría activa persistida en `localStorage` y reflejada en URL
+    como fragment (`/configuracion-v2#datos`) — permite bookmarks.
+  - `categorias/general.component.{ts,html}`: info del sistema +
+    identidad institución. ChangeDetection OnPush.
+  - `categorias/avanzado.component.{ts,html}`: accesos directos +
+    zona peligrosa (DESTRUCCION_HABILITADA sigue en false).
+- Ruta nueva `/configuracion-v2` agregada en `app.routes.ts`. El
+  legacy `/configuracion` queda intacto y muestra un banner
+  cyan-teal "Prueba la nueva configuración (beta)" arriba.
+- Las 5 categorías no migradas (Escáner, Operación, Quiosco,
+  Experiencia, Datos) muestran un placeholder con CTA al legacy.
+  El sidebar las marca con badge "beta" para que el coordinador
+  sepa cuál ya está migrada.
+
+**Decisiones de implementación:**
+- Sub-componentes inyectan servicios directamente (ConfigService,
+  BackupService, etc.) en lugar de crear un `ConfiguracionStateService`
+  intermedio. Razón: los servicios actuales ya están bien diseñados
+  y el state-service intermedio sería un wrapper sin valor añadido.
+- Coexistencia de v1 + v2 con feature flag implícito (la ruta
+  v2 existe pero no es default) — patrón canary. Permite validar
+  con el coordinador antes de swap.
+
+**Hecho (tercera mitad — cierre del refactor):**
+- Migradas las 5 categorías restantes siguiendo el mismo patrón:
+  - **Escáner** (`escaner.component.{ts,html}`): sonido + velocidad +
+    cooldown + saltar confirmación + cámara preferida + zoom inicial.
+  - **Operación** (`operacion.component.{ts,html}`): registro de salida
+    + cierre auto + confirmación auto + cierre al horario + aforo
+    (capacidad + modo) + duplicados.
+  - **Quiosco** (`quiosco.component.{ts,html}`): modo quiosco + PIN
+    + horarios por día + modo (advertir/bloquear).
+  - **Experiencia** (`experiencia.component.{ts,html}`): celebración
+    + tiempo de pantalla de éxito + preview de los 8 temas
+    + alertas de inactividad.
+  - **Datos** (`datos.component.{ts,html}`): recordatorio de respaldo
+    (intervalo / programado por día y hora) + backup + restore + integra
+    `LimpiezaRegistrosComponent` y `DatosPruebaComponent` existentes
+    + mantenimiento (limpiar motivos duplicados).
+- Shell `configuracion-v2.component.ts` actualizado: las 7 categorías
+  importadas, switch del template las enruta todas, conjunto `migradas`
+  cubre las 7. Placeholder de "Sección en migración" eliminado.
+- **Swap de routing**:
+  - `/configuracion` → ahora apunta al `ConfiguracionV2Component`
+    (shell nuevo). Es la ruta por defecto que ve el coordinador.
+  - `/configuracion-legacy` → mantiene el monolito de 2897 líneas
+    para acceso de emergencia mientras valida.
+  - `/configuracion-v2` → redirect a `/configuracion` (backward compat).
+  - Botón "Ver versión clásica" del shell apunta a `/configuracion-legacy`.
+  - Banner del legacy invierte su mensaje: ahora dice "Estás en la
+    clásica, ve a la nueva".
+- Release **v3.24.0** registrada en `CHANGELOG` (destacado=true,
+  resumen + 5 cambios visibles al usuario). `package.json` bumpeado.
+  Guardrail de versión verde.
+
+**Decisiones de cierre:**
+- NO borrar `configuracion.component.ts` legacy todavía. Sigue accesible
+  en `/configuracion-legacy` por si en producción aparece un edge case
+  que el rediseño no contempló. Se borrará en una tanda posterior cuando
+  el coordinador haya operado al menos 1-2 semanas con el shell nuevo.
+  Deuda técnica documentada — tracked en task pendiente.
+- `DatosCategoriaComponent` emite `(datosCambiaron)` cuando importa
+  backup o limpia duplicados; el shell lo recibe pero por ahora no
+  reacciona (el `GeneralCategoriaComponent` relee conteos al re-montar
+  via switch, que es comportamiento esperado). Si en el futuro
+  necesitamos refresco cruzado en vivo, agregar un signal en
+  `ConfigService` o `DatabaseService` que las categorías afectadas
+  observen.
+
+**Hecho (cuarta mitad — fix de centrado + command palette completo):**
+
+- **Fix de centrado del shell**: el panel-body tenía `max-width: 920px`
+  pero sin `margin: 0 auto`, así que quedaba pegado al sidebar dejando
+  un hueco enorme a la derecha. Solución: separar `panel-header` (full
+  width, conserva border-bottom completo) de `.panel-header-inner`
+  (max-width 920px, centrado). Mismo tratamiento al `.panel-body`.
+- **Command palette (v3.25.0)** — extiende el global-search existente:
+  - Nuevo `core/services/command-palette.service.ts` con catálogo de
+    comandos. 3 grupos: Navegación (18), Configuración (6 toggles),
+    Acciones (6). Cada comando: `id`, `label` (puede ser función para
+    estado dinámico), `descripcion`, `icono`, `keywords[]`,
+    `visible?()`, `ejecutar()`.
+  - Toggles muestran label dinámico: "Activar/Desactivar modo quiosco"
+    según estado actual. Misma técnica para celebración, sonido,
+    registro salida, horario, saltar confirmación.
+  - `global-search-dialog.component.ts` reescrito (363→~430 líneas):
+    inyecta `CommandPaletteService`, suma comandos a los resultados,
+    materializa labels/descripciones que son funciones, normaliza
+    queries para búsqueda fuzzy (ignora acentos).
+  - Sin query → muestra 6 sugerencias rápidas (toggles + exportar
+    respaldo) en lugar de placeholder vacío. Convierte el palette en
+    una "central" del sistema, no solo un buscador.
+  - Chips de color por grupo: cyan (Navegación), ámbar (Configuración),
+    teal (Acciones), violeta (Alumnos), gris (Hoy).
+  - Atajos directos a cada categoría de Configuración via URL fragment
+    (`/configuracion#datos`) — reutiliza el shell del rediseño.
+  - El dialog se cierra ANTES de ejecutar comando, para que el toast
+    del comando sea visible y no quede tapado por el palette.
+- Ctrl+K ya estaba wired en `AppComponent` desde v3.11 — no requirió
+  cambios. El nuevo dialog se monta directamente.
+
+**Decisiones de implementación:**
+- El catálogo de comandos vive en un service singleton (`providedIn:
+  'root'`), no inline en el dialog. Razón: el catálogo crecerá (Fase 2
+  añadirá auth, sync, roles…) y conviene que esté centralizado para
+  agregar comandos sin tocar el dialog.
+- `getCommands()` retorna el catálogo filtrado por `visible()` cada vez
+  que se llama — no se cachea. Permite que los toggles reflejen el
+  estado actual en cada apertura del palette.
+- Búsqueda fuzzy sin librería externa: `normalize('NFD').replace(/[̀-ͯ]/g, '')`
+  + lowercase. Suficiente para el volumen actual (~30 comandos +
+  ~N alumnos).
+- En ≤480px se ocultan los chips para no ocupar espacio del título.
+
+**Siguiente (próxima tanda):**
+- Validar con el coordinador real `/configuracion` + Ctrl+K (operación
+  1-2 semanas). Si todo OK, borrar archivo legacy + ruta
+  `/configuracion-legacy`.
+- Considerar agregar al palette: filtros de `/registros` (ej. "registros
+  de hoy", "registros de esta semana"), historial reciente de comandos,
+  fuzzy ranking por uso frecuente.
+- **Fase 2.0** — setup Supabase + auth básica (ver `docs/ROADMAP.md`
+  §Fase 2). Ya cerrada la "última milla UX" de Fase 1.
+
+**Commits:** pendientes al final de la tanda.
+
+---
+
 ## 2026-04-20 — Endurecimiento de calidad y tooling (retroactivo)
 
 Primera entrada retroactiva: cubre la fase previa al arranque formal del

@@ -49,6 +49,120 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.26.0',
+    fecha: '2026-05-18',
+    titulo: 'Resumen enriquecido — insight del día, flujo por hora y comparativa semanal',
+    destacado: true,
+    resumen: 'El Resumen ya no es solo una lista de números. Ahora cuenta la historia del día: una frase destaca lo más importante, un mini-chart muestra el ritmo hora por hora, y la comparativa principal ahora es contra el mismo día de la semana pasada (más justo que contra ayer).',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Insight automático del día arriba del Resumen: el sistema detecta lo más interesante (día activo, día tranquilo, hora pico, muchos invitados, sin registros recientes, etc.) y lo muestra en una sola frase con color según la importancia.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Mini-chart "Flujo del día": barras por hora que muestran cuántos accesos hubo en cada franja. La hora pico se destaca en ámbar. Útil para ver de un vistazo si el día fue parejo o concentrado en ciertas horas. Respeta el horario configurado.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La comparativa del KPI "Accesos hoy" ahora es contra el MISMO día de la semana pasada (lunes vs lunes, etc.) en lugar de contra ayer. Es más justo porque elimina la estacionalidad semanal — los lunes y los viernes no son comparables.',
+      },
+    ],
+  },
+  {
+    version: '3.25.1',
+    fecha: '2026-05-18',
+    titulo: 'Pulido: tooltips de estadísticas restaurados + textos más claros',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Tooltips de explicación restaurados en Estadísticas. Pasa el cursor sobre los iconos de "?" y verás qué significa cada métrica (variación diaria, tasa de retención, hora pico, etc.) sin tener que abrir la pantalla de fórmulas.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'En Ctrl+K, el comando del escáner ahora dice exactamente qué hace: "Procesar escaneos al instante" o "Pedir confirmación al escanear", con el estado actual visible. Antes el texto se entendía al revés.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Eliminada la versión clásica de Configuración (la que se accedía en /configuracion-legacy). El nuevo diseño con sidebar ya está validado.',
+      },
+    ],
+  },
+  {
+    version: '3.25.0',
+    fecha: '2026-05-18',
+    titulo: 'Command palette Ctrl+K — busca, ejecuta y configura desde un solo lugar',
+    destacado: true,
+    resumen: 'La búsqueda global ahora hace mucho más que buscar alumnos. Ctrl+K abre un panel donde puedes navegar a cualquier sección, activar/desactivar settings (modo quiosco, celebración, sonido, etc.) y disparar acciones (exportar respaldo, limpiar duplicados…) sin perder tiempo en menús.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Ctrl+K (o Cmd+K en Mac) abre un command palette al estilo VS Code / Linear. Cuando no escribes nada, aparecen los 6 atajos más útiles como sugerencia. Cuando escribes, busca entre comandos, alumnos y registros del día en tiempo real.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Toggles desde Ctrl+K: escribe "quiosco", "celebración", "sonido", "salida", "horario" o "saltar confirmación" y actívalo o desactívalo con Enter. El label dice exactamente qué va a pasar ("Activar modo quiosco" o "Desactivar modo quiosco").',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Acciones desde Ctrl+K: "exportar respaldo" descarga el .json sin abrir Configuración; "limpiar duplicados", "buscar actualizaciones", "generar datos de prueba", "eliminar registros por rango" y "restaurar respaldo" están todas a un par de teclas.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Búsqueda fuzzy que ignora acentos — "celebracion" encuentra "Celebración" y "Reservas" encuentra registros con "ó" o sin ella. Cada resultado lleva un chip de color (Navegación, Configuración, Acciones, Alumno, Hoy) para identificarlo de un vistazo.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Atajos directos a cada categoría de Configuración: "configuración escáner", "configuración datos", etc. te llevan a esa sección con un Enter — sin pasar por la pantalla principal.',
+      },
+    ],
+  },
+  {
+    version: '3.24.0',
+    fecha: '2026-05-18',
+    titulo: 'Nueva configuración con sidebar y buscador',
+    destacado: true,
+    resumen: 'Configuración rediseñada al estilo de los sistemas profesionales (VS Code, GitHub). En lugar de una sola página larga, ahora tienes 7 categorías a la izquierda y un panel a la derecha. Encuentra cualquier opción en segundos.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Configuración rediseñada: sidebar con 7 categorías (General, Escáner, Operación, Quiosco, Experiencia, Datos, Avanzado) + panel de la opción seleccionada. Adiós al scroll infinito.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Buscador en el sidebar: escribe "quiosco", "celebración", "respaldo" o cualquier palabra y filtra las categorías que la contienen. Tu última categoría visitada se recuerda entre sesiones.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'URL con marcador de categoría — comparte un link directo a una sección (ej. /configuracion#datos abre Datos directamente). Útil para soporte.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Versión clásica de Configuración sigue disponible en /configuracion-legacy por si encuentras algo que no funcione igual. Avísanos y lo arreglamos antes de retirarla.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Tooltips en toda la app ya no causan lag al hacer scroll. El dashboard se siente fluido aunque haya muchos elementos con ayuda contextual.',
+      },
+    ],
+  },
+  {
     version: '3.23.2',
     fecha: '2026-05-12',
     titulo: 'Registro de alumnos nuevos también en quiosco + multi-tap para salir de quiosco',

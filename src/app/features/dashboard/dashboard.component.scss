@@ -1077,3 +1077,174 @@ button.aforo-dashboard {
     .registro-matricula{ grid-area: matricula; font-size: 0.7rem; padding: 1px 6px; justify-self: end; }
   }
 }
+
+// ═══════════════════════════════════════════════
+// INSIGHT DEL DÍA (frase automática) — v3.26.0
+// ═══════════════════════════════════════════════
+.insight-dia {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: $navy-900;
+  border: 1px solid rgba($cyan-500, 0.10);
+  border-left-width: 3px;
+  border-radius: 12px;
+  animation: slideInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &[data-tono="positivo"] {
+    border-left-color: $success-color;
+    .insight-icon { color: $success-color; }
+  }
+  &[data-tono="neutro"] {
+    border-left-color: $cyan-500;
+    .insight-icon { color: $cyan-500; }
+  }
+  &[data-tono="alerta"] {
+    border-left-color: $amber-color;
+    .insight-icon { color: $amber-color; }
+    background: rgba($amber-color, 0.04);
+  }
+}
+
+.insight-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.insight-texto {
+  flex: 1;
+  font-size: 0.9rem;
+  color: $text-primary;
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .insight-dia { padding: 12px 14px; gap: 10px; }
+  .insight-texto { font-size: 0.82rem; }
+}
+
+// ═══════════════════════════════════════════════
+// FLUJO DEL DÍA (mini-chart de barras por hora) — v3.26.0
+// ═══════════════════════════════════════════════
+.flujo-dia {
+  background: $navy-900;
+  border: 1px solid rgba($cyan-500, 0.08);
+  border-radius: 16px;
+  padding: 18px 22px 14px;
+  animation: slideInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.flujo-dia-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.flujo-dia-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  mat-icon {
+    color: $cyan-500;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: $text-primary;
+  }
+}
+
+.flujo-dia-total {
+  font-size: 0.82rem;
+  color: $text-secondary;
+
+  strong {
+    color: $text-primary;
+    font-family: $font-mono;
+    font-weight: 700;
+    margin-right: 2px;
+  }
+}
+
+.flujo-dia-chart {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  align-items: end;
+  height: 100px;
+  padding-top: 4px;
+}
+
+.flujo-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  cursor: default;
+
+  &:hover .flujo-bar-fill:not(.sin-datos) {
+    filter: brightness(1.2);
+  }
+}
+
+.flujo-bar-track {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 4px;
+}
+
+.flujo-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, $cyan-500, rgba($cyan-500, 0.55));
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  transition: height 400ms cubic-bezier(0.16, 1, 0.3, 1), filter 150ms;
+
+  &.es-pico {
+    background: linear-gradient(180deg, $amber-color, rgba($amber-color, 0.55));
+    box-shadow: 0 0 12px rgba($amber-color, 0.30);
+  }
+
+  &.sin-datos {
+    background: rgba(255, 255, 255, 0.04);
+    min-height: 0;
+  }
+}
+
+.flujo-bar-label {
+  font-family: $font-mono;
+  font-size: 0.62rem;
+  color: rgba($text-secondary, 0.6);
+  line-height: 1;
+}
+
+@media (max-width: 480px) {
+  .flujo-dia { padding: 14px 14px 10px; }
+  .flujo-dia-chart { height: 80px; gap: 2px; }
+  .flujo-bar-label { font-size: 0.55rem; }
+}
+
+@media (max-width: 360px) {
+  .flujo-dia-chart { height: 70px; }
+  // En 320px las 16 horas saturan — escondemos label en horas alternadas
+  .flujo-bar-col:nth-child(even) .flujo-bar-label { visibility: hidden; }
+}
