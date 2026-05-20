@@ -17,6 +17,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatRippleModule } from '@angular/material/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
@@ -24,6 +26,7 @@ import { ConfigService } from './core/services/config.service';
 import { ChangelogService } from './core/services/changelog.service';
 import { DatabaseService } from './core/services/database.service';
 import { AuthService } from './core/auth/auth.service';
+import { computed } from '@angular/core';
 import { GlobalSearchDialogComponent } from './shared/components/global-search/global-search-dialog.component';
 import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-shortcuts/keyboard-shortcuts-dialog.component';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
@@ -52,6 +55,8 @@ interface NavSection {
     MatTooltipModule,
     MatRippleModule,
     MatDialogModule,
+    MatMenuModule,
+    MatButtonModule,
     ToastContainerComponent,
 ],
   templateUrl: './app.component.html',
@@ -86,6 +91,25 @@ export class AppComponent implements OnInit, OnDestroy {
   /** Última fecha (YYYY-MM-DD) en la que ya se ejecutó el cierre por horario. */
   private ultimoCierrePorHorarioDia = '';
 
+  // ─── SESIÓN / AUTH ──────────────────────────────────────
+  // Inicial del nombre (o '?') para el avatar del topbar.
+  readonly inicialUsuario = computed(() => {
+    const nombre = this.authService.currentUser()?.nombre ?? '';
+    return nombre.trim().charAt(0).toUpperCase() || '?';
+  });
+
+  /** Etiqueta legible del rol — pendiente de traducción si llegan más. */
+  readonly rolLegible = computed(() => {
+    const rol = this.authService.currentRole();
+    switch (rol) {
+      case 'super_admin': return 'Super admin';
+      case 'coordinador': return 'Coordinador';
+      case 'asistente':   return 'Asistente';
+      case 'alumno':      return 'Alumno';
+      default:            return '';
+    }
+  });
+
   constructor(
     private router: Router,
     private swUpdate: SwUpdate,
@@ -98,7 +122,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // arrancar la app y empieza a escuchar onAuthStateChange (necesario
     // para capturar el callback del magic link aunque el usuario no esté
     // en /login). Si Supabase no está configurado, queda en local-only.
-    _authService: AuthService,
+    public authService: AuthService,
   ) {
     // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
     effect(() => {
@@ -235,6 +259,18 @@ export class AppComponent implements OnInit, OnDestroy {
   /** Llamado por el banner de error de BD para reintentar la apertura. */
   recargarApp(): void {
     document.location.reload();
+  }
+
+  // ─── SESIÓN: navegar a login / cerrar sesión ────────────
+  irALogin(): void {
+    this.router.navigate(['/login'], {
+      queryParams: { returnUrl: this.router.url },
+    });
+  }
+
+  async cerrarSesion(): Promise<void> {
+    await this.authService.signOut();
+    this.toastService.info('Sesión cerrada');
   }
 
   // ─── BÚSQUEDA GLOBAL (Ctrl+K / icono topbar) ────────────

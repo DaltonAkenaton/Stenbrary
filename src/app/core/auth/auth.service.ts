@@ -176,7 +176,11 @@ export class AuthService {
 
     if (error || !profile) {
       // Sesión existe pero el perfil no — trigger debe crearlo automáticamente.
-      // Si llegamos aquí es bug de schema o fallo del trigger handle_new_user.
+      // Si llegamos aquí es bug de schema, fallo del trigger handle_new_user
+      // o policy RLS mal configurada (caso real visto: recursión infinita en
+      // profiles_select devolvía 500). Por eso logueamos a consola para que
+      // el próximo fallo no pase silencioso como "sesión cerrada misteriosa".
+      console.error('[AuthService] No se pudo cargar user_profiles:', error);
       this.stateSignal.set({
         status: 'signed-out',
         user: null,

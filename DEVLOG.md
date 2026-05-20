@@ -9,6 +9,84 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-05-20 (tarde) — Cierre UX del login: indicador de sesión + fix RLS
+
+Segunda tanda del día. La fundación de auth (commit `796d6c0`) ya
+funcionaba contra Supabase pero `/login` quedaba huérfana — no había
+forma de llegar desde la UI ni de ver "estoy logueado". Esta tanda
+cierra ese loop y arregla un bug crítico de RLS encontrado al probar
+el flujo end-to-end por segunda vez.
+
+**Hecho:**
+- **Indicador de sesión en topbar** (`app.component.html` + `.scss`):
+  - `signed-in`: chip pill con avatar circular cyan→teal (inicial del
+    nombre) + nombre + caret. Click abre `MatMenu` con avatar grande,
+    nombre, email, chip de rol y botón "Cerrar sesión".
+  - `signed-out` (Supabase configurado): botón "Iniciar sesión" en
+    cyan → navega a `/login?returnUrl=<ruta_actual>`.
+  - `local-only`: nada (no confundir cuando se opera sin red).
+  - En móvil (≤720px) ambos colapsan: solo avatar / solo icono.
+- `inicialUsuario` y `rolLegible` como computed signals en `AppComponent`.
+- Métodos `irALogin()` y `cerrarSesion()` con toast confirmatorio.
+- Estilos del dropdown viven en `styles.scss` global (no en
+  `app.component.scss`) porque el `MatMenu` se renderiza en
+  `cdk-overlay-container`, fuera del view encapsulado del componente.
+  Se aplica la clase `.account-menu` al panel.
+- **Fix RLS recursiva** (`supabase/migrations/0002_fix_rls_recursion.sql`):
+  - Bug: la policy `profiles_select` tenía un sub-SELECT contra
+    `user_profiles` dentro del USING clause. Esa subquery también
+    pasa por la misma RLS → recursión infinita → Postgres devolvía
+    **500**. AuthService no podía cargar el perfil; `signed-out`
+    silencioso aunque el JWT estuviera presente.
+  - Solución: nueva función `current_user_role()` con `security
+    definer + set search_path = public`. Bypasea RLS dentro de la
+    función (mismo patrón que `is_super_admin()` y
+    `current_organization_id()` ya tenían). Policy reescrita para
+    consumirla.
+- `AuthService.loadProfile()`: `console.error(...)` cuando falla el
+  fetch del perfil. Sin esto el próximo fallo así pasaría como "sesión
+  cerrada misteriosa". Coste cero, valor diagnóstico real.
+
+**Descubierto:**
+- **Trampa clásica de Postgres RLS**: cualquier subquery directa a la
+  misma tabla dentro de USING/WITH CHECK reactiva la policy. Antídoto
+  estándar es envolver en función `security definer`. Detalle a
+  recordar para las migrations 2.1+ cuando agregue policies de
+  `alumnos / registros / motivos`.
+- En la primera prueba el bug NO se manifestó (probablemente el plan
+  query no encontró el ciclo todavía); apareció en la segunda. Buena
+  señal para validar siempre el flujo dos veces antes de declarar OK.
+- `MatMenu` no propaga estilos encapsulados del componente. Mover a
+  global con `class` en `<mat-menu>` resuelve.
+
+**Decidido:**
+- **No agregar `authGuard` a rutas todavía.** Fase 2 sigue siendo
+  opt-in: el coordinador puede ignorar el login y la app funciona
+  igual. Los guards reales llegan en Fase 2.3 cuando los roles
+  cuenten para decidir visibilidad de features.
+- **El chip de sesión no se muestra en modo solo-local.** Mostrar un
+  "Iniciar sesión" cuando no hay backend confundiría — no hay nada
+  a qué loguearse. Decisión silenciosa, sin badge.
+- **No mostrar el chip en modo quiosco.** Ya está cubierto: el modo
+  quiosco oculta el topbar completo (clase `.kiosk-mode` en el shell).
+
+**Validado end-to-end (segunda vez):**
+- Cerrar sesión → chip desaparece → aparece "Iniciar sesión".
+- Click "Iniciar sesión" → llega a `/login?returnUrl=/scanner`.
+- Magic link nuevo → recibo correo → click → vuelvo a `/scanner` con
+  el chip activo.
+- Sin errores en consola (solo el warning de `lottie-web` CJS,
+  preexistente).
+
+**Pendientes que quedan visibles tras esta tanda:**
+- `/login` sigue sin link en el sidebar — solo se llega vía botón del
+  topbar (`signed-out`) o navegando manualmente. Decisión consciente:
+  no contaminar el sidebar mientras auth no es obligatoria.
+- Build de prod sigue arrojando warning de presupuesto SCSS en
+  `dashboard-ejecutivo` (preexistente, no relacionado).
+
+---
+
 ## 2026-05-20 — Fase 2.0 cerrada: fundación de auth con Supabase
 
 Primera tanda de Fase 2 después del cierre de Fase 1 (v3.26.0). Objetivo:

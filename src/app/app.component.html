@@ -167,6 +167,49 @@
             Offline
           </span>
         }
+
+        <!-- ═══ INDICADOR DE SESIÓN ═══
+             - signed-in: avatar con dropdown (nombre, rol, cerrar sesión)
+             - signed-out (con backend): botón "Iniciar sesión"
+             - local-only: nada (no confundir al coordinador que opera sin red) -->
+        @if (authService.isSignedIn()) {
+          <button
+            class="topbar-account-btn"
+            [matMenuTriggerFor]="accountMenu"
+            matTooltip="Cuenta"
+            matTooltipPosition="below"
+            aria-label="Abrir menú de cuenta">
+            <span class="account-avatar">{{ inicialUsuario() }}</span>
+            <span class="account-name">{{ authService.currentUser()?.nombre }}</span>
+            <mat-icon class="account-caret">expand_more</mat-icon>
+          </button>
+
+          <mat-menu #accountMenu="matMenu" xPosition="before" class="account-menu">
+            <div class="account-menu-header" (click)="$event.stopPropagation()">
+              <div class="account-menu-avatar">{{ inicialUsuario() }}</div>
+              <div class="account-menu-info">
+                <span class="account-menu-name">{{ authService.currentUser()?.nombre }}</span>
+                <span class="account-menu-email">{{ authService.currentUser()?.email }}</span>
+                <span class="account-menu-rol">{{ rolLegible() }}</span>
+              </div>
+            </div>
+            <div class="account-menu-divider"></div>
+            <button mat-menu-item (click)="cerrarSesion()">
+              <mat-icon>logout</mat-icon>
+              <span>Cerrar sesión</span>
+            </button>
+          </mat-menu>
+        } @else if (authService.state().status === 'signed-out') {
+          <button
+            class="topbar-login-btn"
+            (click)="irALogin()"
+            matTooltip="Iniciar sesión"
+            matTooltipPosition="below"
+            aria-label="Iniciar sesión">
+            <mat-icon>login</mat-icon>
+            <span class="login-label">Iniciar sesión</span>
+          </button>
+        }
       </div>
     </header>
 
