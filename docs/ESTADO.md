@@ -125,10 +125,21 @@ Prioridad: **🔴 alta** · **🟡 media** · **🟢 baja**.
 
 Última milla antes de cerrar Fase 1 y arrancar Fase 2.
 
-- [x] **Rediseño de `/configuración`** (v3.24.0): shell con sidebar de 7 categorías + buscador + URL fragment. Las 7 categorías (General, Escáner, Operación, Quiosco, Experiencia, Datos, Avanzado) son sub-componentes standalone con OnPush. Monolito de 2897 líneas dividido. Versión clásica accesible en `/configuracion-legacy` hasta validación en producción.
-- [ ] **Borrar `configuracion.component.ts` legacy** tras 1-2 semanas de operación sin issues. Quitar también ruta `/configuracion-legacy`.
+- [x] **Rediseño de `/configuración`** (v3.24.0): shell con sidebar de 7 categorías + buscador + URL fragment. Las 7 categorías (General, Escáner, Operación, Quiosco, Experiencia, Datos, Avanzado) son sub-componentes standalone con OnPush. Monolito de 2897 líneas dividido. Versión clásica eliminada (v3.25.1).
 - [x] **Command palette Ctrl+K** (v3.25.0): 18 comandos de navegación + 6 toggles de configuración + 6 acciones. Catálogo en `CommandPaletteService` (`providedIn: 'root'`). Búsqueda fuzzy ignora acentos. Chips de color por grupo. Atajos directos a cada categoría de config via URL fragment.
 - [ ] **Revisión de tooltips en dashboard ejecutivo**: con el fix global de scroll strategy (v3.24.0) ya no causan lag; restaurar caso por caso donde aporten valor (no por reflejo).
+
+### 2.0.1 Fase 2.0 — Fundación de auth (Supabase) ✅ COMPLETADA (2026-05-20)
+
+Primera tanda real de Fase 2. Validado end-to-end con magic link y trigger.
+
+- [x] Proyecto Supabase dev creado (`stenbrary-dev`).
+- [x] `@supabase/supabase-js` + `environment.supabase.{url,anonKey}` en Git (la `sb_publishable_*` es pública por diseño).
+- [x] `src/app/core/auth/`: `supabase.client.ts` (singleton PKCE), `auth.types.ts`, `auth.service.ts` (signals reactivos), `auth.guard.ts` (deja pasar en modo solo-local).
+- [x] `/login` con magic link, 4 estados visuales, auto-redirect post-callback vía `effect`.
+- [x] Migration `supabase/migrations/0001_auth_foundation.sql`: enum `user_role`, `organizations`, `user_profiles`, trigger `handle_new_user`, helpers `is_super_admin()` / `current_organization_id()`, RLS habilitada.
+- [x] **Modo solo-local explícito**: si `environment.supabase` está vacío, app sigue 100% funcional offline. No hay forma de llegar a `/login` desde la UI todavía — es opt-in mientras maduramos.
+- [x] ADR `docs/adr/0001-supabase-auth-foundation.md`.
 
 ### 2.1 Infra de datos 🔴
 

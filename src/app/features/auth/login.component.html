@@ -1,0 +1,121 @@
+<div class="login-shell">
+  <div class="login-card">
+    <header class="login-header">
+      <div class="brand">
+        <span class="brand-mark">S</span>
+        <div class="brand-text">
+          <h1>Stenbrary</h1>
+          <p>Control de acceso a biblioteca</p>
+        </div>
+      </div>
+    </header>
+
+    @if (isLocalOnly()) {
+      <!-- Modo solo-local: backend no configurado. -->
+      <section class="login-body">
+        <div class="badge badge-info">
+          <mat-icon>cloud_off</mat-icon>
+          <span>Modo solo-local</span>
+        </div>
+        <h2>No hay backend configurado</h2>
+        <p>
+          La aplicación funciona completamente contra el almacenamiento local
+          del navegador. Cuando el equipo conecte un proyecto Supabase, esta
+          pantalla pedirá iniciar sesión.
+        </p>
+        <button
+          mat-flat-button
+          color="primary"
+          class="login-cta"
+          (click)="continuarLocal()"
+        >
+          Entrar a la aplicación
+        </button>
+      </section>
+    } @else if (isSignedIn()) {
+      <!-- Sesión activa. -->
+      <section class="login-body">
+        <div class="badge badge-ok">
+          <mat-icon>verified</mat-icon>
+          <span>Sesión activa</span>
+        </div>
+        <h2>Hola, {{ currentUser()?.nombre || currentUser()?.email }}</h2>
+        <p class="muted">
+          Rol: <strong>{{ currentUser()?.rol }}</strong>
+        </p>
+        <div class="actions-row">
+          <a mat-flat-button color="primary" routerLink="/scanner">
+            Continuar
+          </a>
+          <button mat-stroked-button (click)="cerrarSesion()">
+            Cerrar sesión
+          </button>
+        </div>
+      </section>
+    } @else if (status() === 'sent') {
+      <!-- Magic link enviado. -->
+      <section class="login-body">
+        <div class="badge badge-ok">
+          <mat-icon>mark_email_read</mat-icon>
+          <span>Enlace enviado</span>
+        </div>
+        <h2>Revisa tu correo</h2>
+        <p>
+          Te enviamos un enlace de acceso a <strong>{{ email() }}</strong>.
+          Ábrelo desde este mismo dispositivo para entrar.
+        </p>
+        <p class="muted">¿No llegó? Revisa la carpeta de spam o reintenta en un par de minutos.</p>
+        <button mat-stroked-button (click)="reintentar()">Usar otro correo</button>
+      </section>
+    } @else {
+      <!-- Formulario de envío. -->
+      <section class="login-body">
+        <h2>Iniciar sesión</h2>
+        <p class="muted">
+          Te enviaremos un enlace de un solo uso a tu correo. Sin contraseñas.
+        </p>
+
+        <form (submit)="$event.preventDefault(); enviarEnlace()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Correo electrónico</mat-label>
+            <input
+              matInput
+              type="email"
+              autocomplete="email"
+              [ngModel]="email()"
+              (ngModelChange)="email.set($event)"
+              name="email"
+              [disabled]="status() === 'sending'"
+              required
+            />
+            <mat-icon matSuffix>mail</mat-icon>
+          </mat-form-field>
+
+          @if (errorMessage()) {
+            <p class="error-text">{{ errorMessage() }}</p>
+          }
+
+          <button
+            mat-flat-button
+            color="primary"
+            class="login-cta"
+            type="submit"
+            [disabled]="!canSubmit()"
+          >
+            @if (status() === 'sending') {
+              <mat-spinner diameter="18"></mat-spinner>
+              <span>Enviando…</span>
+            } @else {
+              <span>Enviar enlace</span>
+            }
+          </button>
+        </form>
+
+        <p class="muted footer-note">
+          ¿Solo quieres usar el sistema sin cuenta? Pide al coordinador que
+          active el <strong>modo solo-local</strong>.
+        </p>
+      </section>
+    }
+  </div>
+</div>

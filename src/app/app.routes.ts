@@ -19,6 +19,12 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/login.component').then(m => m.LoginComponent),
+    title: 'Stenbrary — Iniciar sesión',
+  },
+  {
     path: 'scanner',
     loadComponent: () =>
       import('./features/scanner/scanner.component').then(m => m.ScannerComponent),

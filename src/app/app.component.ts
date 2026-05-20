@@ -23,6 +23,7 @@ import { Subscription } from 'rxjs';
 import { ConfigService } from './core/services/config.service';
 import { ChangelogService } from './core/services/changelog.service';
 import { DatabaseService } from './core/services/database.service';
+import { AuthService } from './core/auth/auth.service';
 import { GlobalSearchDialogComponent } from './shared/components/global-search/global-search-dialog.component';
 import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-shortcuts/keyboard-shortcuts-dialog.component';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
@@ -93,6 +94,11 @@ export class AppComponent implements OnInit, OnDestroy {
     public changelogService: ChangelogService,
     public databaseService: DatabaseService,
     private toastService: ToastService,
+    // Bootstrap del AuthService: al inyectarlo aquí se inicializa al
+    // arrancar la app y empieza a escuchar onAuthStateChange (necesario
+    // para capturar el callback del magic link aunque el usuario no esté
+    // en /login). Si Supabase no está configurado, queda en local-only.
+    _authService: AuthService,
   ) {
     // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
     effect(() => {

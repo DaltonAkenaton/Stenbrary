@@ -9,6 +9,110 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-05-20 — Fase 2.0 cerrada: fundación de auth con Supabase
+
+Primera tanda de Fase 2 después del cierre de Fase 1 (v3.26.0). Objetivo:
+montar la infraestructura mínima de autenticación sin romper nada de la
+app actual.
+
+**Hecho:**
+- Proyecto Supabase de dev creado (`stenbrary-dev`, región us-east-1).
+- `@supabase/supabase-js` instalado.
+- `environment.ts` con `supabase.url` + `supabase.anonKey` (formato nuevo
+  `sb_publishable_*` — funciona igual que la anon JWT clásica).
+- `src/app/core/auth/`:
+  - `supabase.client.ts` — singleton `getSupabaseClient()` (PKCE flow,
+    persistSession, storageKey custom `stenbrary-auth`).
+  - `auth.types.ts` — `AuthUser`, `UserRole` (super_admin/coordinador/
+    asistente/alumno), `AuthState` (status: local-only/signed-out/
+    signed-in/loading), `Organization`.
+  - `auth.service.ts` — signals `state`, `currentUser`, `isSignedIn`,
+    `isLocalOnly`, `currentRole`. Métodos `signInWithMagicLink`,
+    `signOut`, `refreshProfile`. Suscrito a `onAuthStateChange`.
+  - `auth.guard.ts` — `authGuard` funcional. **Importante**: en modo
+    local-only deja pasar siempre (offline-first es innegociable).
+- `features/auth/login.component.{ts,html,scss}` — pantalla con 4 estados
+  visuales: form, sending, sent ("Revisa tu correo"), error. Más vistas
+  para `local-only` y `signed-in`. Auto-redirect tras callback con
+  `effect` que detecta `isSignedIn() === true` y navega al `returnUrl`.
+- Ruta `/login` en `app.routes.ts` (lazy).
+- `AppComponent` inyecta `AuthService` para forzar bootstrap al arrancar
+  (necesario para que `onAuthStateChange` capture el callback del magic
+  link aunque el usuario no esté en `/login`).
+- `supabase/migrations/0001_auth_foundation.sql`:
+  - Tipo enum `user_role` con los 4 roles.
+  - Tabla `organizations` (single-tenant ahora, multi en 2.5).
+  - Tabla `user_profiles` con `id` FK a `auth.users(id)`, `organization_id`
+    nullable, `rol` default `'asistente'`, `nombre`, `matricula` opcional.
+  - Función `handle_new_user()` + trigger `trg_on_auth_user_created` en
+    `auth.users` — autocrea perfil al registro.
+  - Helpers `is_super_admin()` y `current_organization_id()` (security
+    definer, search_path fijado).
+  - RLS habilitada en ambas tablas con policies básicas (select propio +
+    coordinador ve su org + super_admin ve todo).
+- `docs/adr/0001-supabase-auth-foundation.md` — ADR completo con
+  contexto, decisión, alternativas (Firebase, backend propio, PocketBase),
+  consecuencias.
+
+**Validado end-to-end:**
+- `npm install` OK, type-check limpio, build de prod OK (sin warnings
+  nuevos).
+- Usuario real (correo personal del autor) recibió magic link, click
+  inició sesión, trigger creó perfil con rol `asistente` + nombre
+  derivado del correo. Verificado por SQL.
+- Sesión persiste en localStorage (`stenbrary-auth`).
+- Refresh de página mantiene sesión y `effect` redirige a `/scanner`
+  automáticamente.
+
+**Descubierto:**
+- El formato nuevo `sb_publishable_*` de Supabase funciona idéntico a la
+  anon JWT — `supabase-js` lo acepta sin cambios. Vars `NEXT_PUBLIC_*`
+  son de Next.js; en Angular las metemos directo en `environment.ts`.
+- Bug de UX inicial: tras el callback del magic link, el componente
+  mostraba "Hola, X" en vez de redirigir. Fix: `effect` reactivo en
+  `LoginComponent` que escucha `isSignedIn()` y dispara navigate.
+- El trigger en `auth.users` requiere `security definer` + `set
+  search_path` para funcionar (Supabase lo recomienda y previene
+  ataques de search_path hijacking).
+
+**Decidido:**
+- **No bumpear versión** ni tocar `changelog.data.ts`. Fase 2 aún no es
+  feature visible al coordinador — no hay forma de llegar a `/login`
+  desde el sidebar y la app sigue funcionando exactamente igual sin
+  loguearse. El changelog visible se actualiza cuando arme algo
+  utilizable (probablemente al cerrar 2.1 o 2.2).
+- **`environment.supabase` con credenciales reales en Git** está OK: la
+  publishable key es pública por diseño. El URL del proyecto también.
+  Lo que NUNCA va a Git es la `service_role` key.
+- **Modo solo-local explícito** desde el día 1: si `environment.supabase`
+  está vacío, `getSupabaseClient()` devuelve `null` y el resto del
+  código tolera la ausencia. Esto permite desarrollo sin red y respeta
+  el principio offline-first del producto.
+- **Auth como providedIn: 'root'** sin APP_INITIALIZER: el bootstrap
+  pasa por inyectarlo en `AppComponent`. APP_INITIALIZER sería más
+  ortodoxo pero introduce un await al cold start que retrasaría el
+  scanner — la app debe arrancar offline-first, no esperando red.
+
+**Pendientes inmediatos (Fase 2.1):**
+- Migration `0002_data_tables.sql`: `alumnos`, `registros`, `motivos`
+  como espejo de IndexedDB con `organization_id` nullable y RLS básica.
+- `RemoteDatabaseService` con la misma interfaz pública de
+  `DatabaseService` (adapter pattern) para poder hacer feature-flag
+  swap durante desarrollo.
+- Importador one-shot: subir el IndexedDB de UAT al Supabase como
+  prueba con datos reales.
+
+**Notas para el futuro:**
+- Aún no hay control de roles real (solo `asistente` por default). Eso
+  llega en Fase 2.3. Por ahora cualquiera que se loguea puede hacer todo.
+- En el sidebar/topbar todavía no hay indicador de sesión activa ni
+  botón de logout. Va a hacer falta cuando empecemos a depender de la
+  identidad (Fase 2.1+).
+- `/login` está abierta pero no hay forma de llegar desde la UI — si
+  quieres probar, navega manualmente.
+
+---
+
 ## 2026-05-18 — Fix de lag por matTooltip + alineación de roadmap Fase 2
 
 Tanda mixta: un fix puntual de performance y, sobre todo, **acordar el
