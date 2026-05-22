@@ -9,7 +9,7 @@
 // ║  hasta que el desarrollador lo active en el código.   ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +19,9 @@ import { DatabaseService } from '../../../core/services/database.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingService } from '../../../core/services/loading.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { AuthService } from '../../../core/auth/auth.service';
+import { RemoteDatabaseService } from '../../../core/services/remote-database.service';
+import { SubirSupabaseDialogComponent } from '../dialogs/subir-supabase-dialog.component';
 
 @Component({
   selector: 'app-config-avanzado',
@@ -40,6 +43,12 @@ export class AvanzadoCategoriaComponent {
 
   procesando = false;
 
+  // Sesión / Supabase — la sección "Subir a la nube" solo aparece si hay
+  // sesión activa Y el backend está configurado.
+  protected readonly auth = inject(AuthService);
+  private readonly remote = inject(RemoteDatabaseService);
+  readonly backendDisponible = this.remote.isAvailable();
+
   constructor(
     private databaseService: DatabaseService,
     private toastService: ToastService,
@@ -51,6 +60,13 @@ export class AvanzadoCategoriaComponent {
 
   navegar(ruta: string): void {
     void this.router.navigate([ruta]);
+  }
+
+  abrirSubidaSupabase(): void {
+    this.dialog.open(SubirSupabaseDialogComponent, {
+      autoFocus: false,
+      maxWidth: '92vw',
+    });
   }
 
   async limpiarTodosDatos(): Promise<void> {

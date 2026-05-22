@@ -1,0 +1,137 @@
+<div class="subir-dialog" [attr.data-estado]="estado()">
+
+  <header class="subir-header">
+    <div class="subir-icon">
+      <mat-icon>cloud_upload</mat-icon>
+    </div>
+    <div class="subir-titulo">
+      <h2>Subir datos a la nube</h2>
+      <p>Sincroniza tu IndexedDB local con tu cuenta de Supabase.</p>
+    </div>
+  </header>
+
+  @switch (estado()) {
+
+    @case ('cargando-preview') {
+      <section class="subir-loading">
+        <mat-spinner diameter="36"></mat-spinner>
+        <p>Comparando datos locales y remotos…</p>
+      </section>
+    }
+
+    @case ('preview') {
+      <section class="subir-preview">
+        <p class="subir-intro">
+          Esto subirá todos los datos del navegador a tu proyecto Supabase.
+          Es <strong>idempotente</strong>: si ya están en la nube no se duplican.
+        </p>
+
+        <div class="conteos-grid">
+          <article class="conteo-col">
+            <header>
+              <mat-icon>storage</mat-icon>
+              <span>En este navegador</span>
+            </header>
+            <ul>
+              <li><strong>{{ preview()?.local?.motivos }}</strong> motivos</li>
+              <li><strong>{{ preview()?.local?.alumnos }}</strong> alumnos</li>
+              <li><strong>{{ preview()?.local?.registros }}</strong> registros</li>
+            </ul>
+          </article>
+          <div class="conteos-arrow">
+            <mat-icon>arrow_forward</mat-icon>
+          </div>
+          <article class="conteo-col">
+            <header>
+              <mat-icon>cloud</mat-icon>
+              <span>Hoy en la nube</span>
+            </header>
+            <ul>
+              <li><strong>{{ preview()?.remote?.motivos }}</strong> motivos</li>
+              <li><strong>{{ preview()?.remote?.alumnos }}</strong> alumnos</li>
+              <li><strong>{{ preview()?.remote?.registros }}</strong> registros</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="subir-actions">
+          <button mat-stroked-button (click)="cerrar()">Cancelar</button>
+          <button mat-flat-button color="primary" (click)="iniciar()">
+            <mat-icon>cloud_upload</mat-icon>
+            Subir ahora
+          </button>
+        </div>
+      </section>
+    }
+
+    @case ('running') {
+      <section class="subir-running">
+        @if (progreso(); as p) {
+          <p class="subir-fase">{{ etiquetaFase(p.fase) }}</p>
+          <mat-progress-bar mode="determinate" [value]="porcentaje()"></mat-progress-bar>
+          <p class="subir-conteo">{{ p.procesados }} / {{ p.total }}</p>
+        } @else {
+          <mat-spinner diameter="32"></mat-spinner>
+          <p>Iniciando…</p>
+        }
+      </section>
+    }
+
+    @case ('done') {
+      <section class="subir-done">
+        @if (reporte(); as r) {
+          <div class="subir-resumen">
+            <mat-icon class="ok-icon">check_circle</mat-icon>
+            <h3>Subida completada</h3>
+          </div>
+          <ul class="resumen-list">
+            <li>
+              <strong>{{ r.motivos.subidos }}</strong> motivos
+              @if (r.motivos.errores > 0) {
+                <span class="resumen-err">— {{ r.motivos.errores }} errores</span>
+              }
+            </li>
+            <li>
+              <strong>{{ r.alumnos.subidos }}</strong> alumnos
+              @if (r.alumnos.errores > 0) {
+                <span class="resumen-err">— {{ r.alumnos.errores }} errores</span>
+              }
+            </li>
+            <li>
+              <strong>{{ r.registros.subidos }}</strong> registros
+              @if (r.registros.errores > 0) {
+                <span class="resumen-err">— {{ r.registros.errores }} errores</span>
+              }
+            </li>
+          </ul>
+
+          @if (r.detalleErrores.length > 0) {
+            <details class="errores-detalle">
+              <summary>Ver detalle de errores ({{ r.detalleErrores.length }})</summary>
+              <ul>
+                @for (e of r.detalleErrores; track $index) {
+                  <li>{{ e }}</li>
+                }
+              </ul>
+            </details>
+          }
+        }
+        <div class="subir-actions">
+          <button mat-flat-button color="primary" (click)="cerrar()">Cerrar</button>
+        </div>
+      </section>
+    }
+
+    @case ('error') {
+      <section class="subir-error">
+        <mat-icon>error_outline</mat-icon>
+        <h3>No se pudo iniciar la subida</h3>
+        <p>{{ errorMsg() }}</p>
+        <div class="subir-actions">
+          <button mat-flat-button (click)="cerrar()">Cerrar</button>
+        </div>
+      </section>
+    }
+
+  }
+</div>

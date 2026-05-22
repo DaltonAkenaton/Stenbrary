@@ -38,6 +38,12 @@ export function getSupabaseClient(): SupabaseClient | null {
       autoRefreshToken: true,
       detectSessionInUrl: true,
       storageKey: 'stenbrary-auth',
+      // Silencia el warning "Acquiring an exclusive Navigator LockManager
+      // lock immediately failed" de supabase-js. El SDK intenta tomar un
+      // lock global para coordinar el refresh del JWT entre pestañas; en
+      // una PWA típica de Stenbrary (1 pestaña activa) no aporta y
+      // produce ruido en consola. Le pasamos un lock pass-through.
+      lock: async (_name, _acquireTimeout, fn) => fn(),
     },
   });
 

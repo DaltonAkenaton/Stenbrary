@@ -40,6 +40,29 @@
   </div>
 </div>
 
+<!-- ── SINCRONIZACIÓN EN LA NUBE (Fase 2.1) ──
+     Solo si hay sesión activa + backend configurado. En modo solo-local
+     o sin login esta tarjeta no se muestra para no confundir. -->
+@if (backendDisponible && auth.isSignedIn()) {
+  <div class="section-card">
+    <div class="section-header">
+      <mat-icon>cloud_sync</mat-icon>
+      <h2>Sincronización en la nube</h2>
+    </div>
+    <p class="section-desc">
+      Sube los datos guardados en este navegador a tu cuenta de Supabase.
+      Es idempotente: si ya están en la nube, no se duplican. La
+      sincronización supervisada continua llega en una próxima versión.
+    </p>
+    <div class="danger-actions">
+      <button class="btn-action" (click)="abrirSubidaSupabase()" [disabled]="procesando">
+        <mat-icon>cloud_upload</mat-icon>
+        <span>Subir datos a la nube</span>
+      </button>
+    </div>
+  </div>
+}
+
 <!-- ── ZONA PELIGROSA ── -->
 <div class="section-card danger-zone">
   <div class="section-header danger">

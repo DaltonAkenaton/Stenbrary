@@ -9,6 +9,103 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-05-22 — Fase 2.1 cerrada: schema espejo + adapter + importador one-shot
+
+Primera tanda de Fase 2.1. Objetivo: subir el IndexedDB local a Postgres
+manteniendo los UUIDs y validar end-to-end con datos reales del UAT.
+
+**Hecho:**
+- `supabase/migrations/0003_data_tables.sql`: tablas `motivos`, `alumnos`,
+  `registros`, `registro_motivos` (join table). Snapshots denormalizados
+  en `registros` (matricula, nombre_completo, carrera, motivo_principal_nombre,
+  turno) para que renombres futuros no rompan reportes históricos.
+  `organization_id` nullable + `unique nulls not distinct` para
+  single→multi-tenant. RLS con `is not distinct from` para tratar null=null
+  como tenant válido. Función `crear_registro_completo(payload jsonb)` con
+  UPSERT atómico de registro + motivos.
+- `supabase/migrations/0004_invitados_alumno_nullable.sql`: `alumno_id`
+  nullable + reescribir `crear_registro_completo` con `nullif` en todos los
+  cast a uuid (defense in depth contra `''`).
+- `supabase/migrations/0005_fix_alumnos_trigger.sql`: dropear el trigger
+  genérico `trg_alumnos_updated_at` que asumía `new.updated_at` (la tabla
+  usa `fecha_actualizacion`).
+- `src/app/core/services/remote-database.service.ts`: adapter contra
+  Supabase con CRUD básico de alumnos/motivos/registros. Mappers
+  snake_case↔camelCase. Helper `asUuidOrNull` para sanear IDs sintéticos
+  como `invitado-<timestamp>` (los manda como null al backend).
+- `src/app/core/services/import-supabase.service.ts`: importador one-shot
+  con preview, progreso por fase (motivos→alumnos→registros) y reporte
+  final con conteos + errores acumulados (max 20).
+- `features/configuracion/dialogs/subir-supabase-dialog.component.{ts,html,scss}`:
+  diálogo con 4 estados (loading-preview, preview, running, done, error).
+- `features/configuracion/categorias/avanzado.component`: sección
+  "Sincronización en la nube" — visible solo si `isSignedIn` + backend
+  configurado.
+- `supabase.client.ts`: lock pass-through para silenciar el warning de
+  NavigatorLockManager (irrelevante en PWA de una pestaña).
+
+**Validado end-to-end con datos UAT reales:**
+- 500+ alumnos, 5000+ registros, 5 motivos subidos sin errores tras
+  resolver los 3 bugs encontrados.
+- Idempotencia verificada: re-corrida no duplica, todos `subidos = N` y
+  `errores = 0`.
+- Registros del flujo "acceso invitado" (matricula='INVITADO',
+  `alumnoId=invitado-<timestamp>`) ahora suben con `alumno_id = null`.
+
+**Bugs encontrados y corregidos (en orden):**
+1. **PostgREST schema cache pegado**: tras crear `crear_registro_completo`,
+   la API REST tardó en verla — devolvía PGRST202 "function not found".
+   Fix: `notify pgrst, 'reload schema'` o botón "Reload" en
+   Supabase Dashboard → Settings → API.
+2. **Generated column no-IMMUTABLE**: `duracion_minutos integer generated
+   always as ((extract(epoch from (hora_salida - fecha_hora)) / 60)::integer)
+   stored` falla porque `timestamptz - timestamptz` no es IMMUTABLE para
+   Postgres (depende de zona horaria). **Toda la migration aborta** porque
+   SQL Editor envuelve en transacción. Fix: trigger
+   `set_registro_duracion` BEFORE INSERT OR UPDATE OF que calcula la columna.
+3. **`alumno_id` not null vs invitados**: los registros de invitados tienen
+   `alumnoId = 'invitado-<timestamp>'` que no es UUID. Fix: `alumno_id`
+   nullable + `asUuidOrNull` en el adapter.
+4. **Trigger genérico colisionando con columna**: `trg_alumnos_updated_at`
+   intentaba `new.updated_at` pero la tabla `alumnos` usa
+   `fecha_actualizacion`. Fix: drop del trigger genérico (el específico
+   ya cubría el caso).
+
+**Lecciones aprendidas:**
+- Supabase SQL Editor corre todo el bloque como una transacción: si un
+  statement falla, ROLLBACK total. Sin retroalimentación parcial — el
+  primer error abortar deja todo igual que antes. Implicación: testear
+  migrations en chunks pequeños cuando sospechas problemas.
+- Generated columns con expresiones de fecha/tiempo son riesgosas. Mejor
+  usar trigger.
+- Cuando una tabla diverge en nombres de columna (caso `alumnos` con
+  `fecha_actualizacion` en vez de `updated_at`), no copiar triggers
+  genéricos — escribirlos específicos.
+- IDs sintéticos del flujo local pueden no ser UUIDs. Sanear en el adapter.
+
+**Feedback recibido del usuario:**
+- Confirmó que la idempotencia funciona (UPSERT cubre el escenario "el
+  coordinador re-corre por error").
+- Pidió **opciones más granulares** de subida: sólo registros de hoy,
+  sólo nuevos, sólo alumnos nuevos. Esto es exactamente lo que la
+  Fase 2.2 cubre con la "bandeja de sincronización supervisada"
+  (`/sincronizacion`). Para esta tanda lo dejé documentado y pendiente
+  de decisión: extender el one-shot con filtros simples (rápido) vs.
+  saltar directo a la bandeja completa (~6 sem según ROADMAP).
+
+**Estado al cierre:**
+- `/configuracion#avanzado` muestra la nueva sección de sincronización
+  solo si hay sesión activa.
+- La app sigue 100% offline-first; subir a la nube es opt-in manual.
+- Sin guards en rutas todavía. Sigue siendo Fase 2 opt-in.
+
+**Pendientes inmediatos:**
+- Decidir granularidad de subida (extensión one-shot vs. Fase 2.2).
+- Spike de 1 semana para Fase 2.2 (sync engine) cuando se acuerde
+  arrancar — el ROADMAP lo recomienda fuerte.
+
+---
+
 ## 2026-05-20 (tarde) — Cierre UX del login: indicador de sesión + fix RLS
 
 Segunda tanda del día. La fundación de auth (commit `796d6c0`) ya

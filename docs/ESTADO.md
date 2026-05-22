@@ -140,6 +140,23 @@ Primera tanda real de Fase 2. Validado end-to-end con magic link y trigger.
 - [x] Migration `supabase/migrations/0001_auth_foundation.sql`: enum `user_role`, `organizations`, `user_profiles`, trigger `handle_new_user`, helpers `is_super_admin()` / `current_organization_id()`, RLS habilitada.
 - [x] **Modo solo-local explícito**: si `environment.supabase` está vacío, app sigue 100% funcional offline. No hay forma de llegar a `/login` desde la UI todavía — es opt-in mientras maduramos.
 - [x] ADR `docs/adr/0001-supabase-auth-foundation.md`.
+- [x] Indicador de sesión en topbar + fix RLS recursiva (0002).
+- [x] Lock pass-through en `supabase.client.ts` para silenciar warning de NavigatorLockManager.
+
+### 2.0.2 Fase 2.1 — Modelo de datos espejo + importador one-shot ✅ COMPLETADA (2026-05-22)
+
+Schema de Postgres + adapter + subida idempotente de IndexedDB a Supabase.
+
+- [x] **Migration 0003**: `motivos`, `alumnos`, `registros`, `registro_motivos` (join table) con snapshots denormalizados, `organization_id` nullable, `unique nulls not distinct` para matrícula, RLS con `is not distinct from`. Función SQL `crear_registro_completo(payload jsonb)` con UPSERT atómico.
+- [x] **Migration 0004**: `alumno_id` nullable + saneo de IDs sintéticos (`invitado-*`) en la función SQL con `nullif`.
+- [x] **Migration 0005**: drop del trigger genérico `trg_alumnos_updated_at` que asumía columna `updated_at` inexistente.
+- [x] `RemoteDatabaseService` (adapter contra Supabase, mismo shape que `DatabaseService` local): mappers snake↔camel, helper `asUuidOrNull` para IDs sintéticos.
+- [x] `ImportSupabaseService`: preview + subida en 3 fases (motivos → alumnos → registros) con reporte final.
+- [x] UI: diálogo `SubirSupabaseDialogComponent` (preview / running / done / error) accesible desde `/configuracion#avanzado` solo si signed-in.
+- [x] Validado con dataset UAT (500+ alumnos, 5000+ registros): 0 errores tras los 3 fixes encontrados.
+- [x] Idempotencia probada: re-corrida sin duplicados.
+
+**Granularidad pendiente** (sólo hoy / sólo nuevos / etc.): es Fase 2.2. Decidir si extender el one-shot con filtros simples o saltar a la bandeja de sincronización completa.
 
 ### 2.1 Infra de datos 🔴
 
