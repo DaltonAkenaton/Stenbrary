@@ -30,10 +30,17 @@ interface RoleGuardData {
   roles?: UserRole[];
 }
 
-export const roleGuard: CanActivateFn = (route, state) => {
+export const roleGuard: CanActivateFn = async (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const toast = inject(ToastService);
+
+  // ── 0. Esperar al bootstrap inicial ──
+  // Sin esto, al refrescar una ruta protegida el guard corre mientras auth
+  // está en 'loading' (isSignedIn = false) y rebota a /login un instante
+  // antes de rehidratar la sesión (flash de "inicia sesión"). `ready`
+  // resuelve apenas termina el bootstrap (o de inmediato en local-only).
+  await auth.ready;
 
   // ── 1. Modo local-only: la app sigue siendo 100% offline-first ──
   // Sin backend no hay roles que aplicar. Coherente con la filosofía

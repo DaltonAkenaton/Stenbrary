@@ -77,6 +77,17 @@ export class AuthService {
     () => this.stateSignal().user?.rol ?? null,
   );
 
+  /**
+   * Resuelve cuando el bootstrap inicial terminó (status ≠ 'loading').
+   * Los guards la esperan para no rebotar a /login durante la rehidratación
+   * de la sesión (causaba un flash de "inicia sesión" al refrescar).
+   * En modo solo-local resuelve de inmediato.
+   */
+  private resolveReady: (() => void) | null = null;
+  readonly ready: Promise<void> = this.supabase
+    ? new Promise<void>(r => { this.resolveReady = r; })
+    : Promise.resolve();
+
   constructor() {
     if (!this.supabase) return;
 
@@ -144,21 +155,28 @@ export class AuthService {
 
   private async bootstrap(): Promise<void> {
     if (!this.supabase) return;
-    const { data, error } = await this.supabase.auth.getSession();
+    try {
+      const { data, error } = await this.supabase.auth.getSession();
 
-    if (error) {
-      this.stateSignal.set({
-        status: 'signed-out',
-        user: null,
-        error: error.message,
-      });
-      return;
-    }
+      if (error) {
+        this.stateSignal.set({
+          status: 'signed-out',
+          user: null,
+          error: error.message,
+        });
+        return;
+      }
 
-    if (data.session) {
-      await this.loadProfile(data.session);
-    } else {
-      this.stateSignal.set({ status: 'signed-out', user: null, error: null });
+      if (data.session) {
+        await this.loadProfile(data.session);
+      } else {
+        this.stateSignal.set({ status: 'signed-out', user: null, error: null });
+      }
+    } finally {
+      // Pase lo que pase, marcar el bootstrap como terminado para liberar
+      // a los guards que esperan `ready`.
+      this.resolveReady?.();
+      this.resolveReady = null;
     }
   }
 

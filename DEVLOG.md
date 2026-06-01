@@ -47,11 +47,21 @@ correcta, datos suben), pero salieron bugs de auth/offline y fricción de UX.
 - `/inactivos` restringido a `super_admin`/`coordinador` (era visible para
   asistente). Es vista analítica, alineada con `/estadisticas`.
 
-**Pendiente (cosmético, próxima tanda):** mostrar email completo cuando el
-nombre es autogenerado (`split_part(email,'@',1)` del trigger); quitar el
-flash de "inicia sesión" 1 s en F5 (estado `loading` sin splash); chequeo
-activo de conectividad (el ícono verde miente porque `navigator.onLine`
-solo ve el adaptador, no internet real).
+**Batch cosmético (misma fecha, commit aparte):**
+- **C — conectividad real.** `navigator.onLine` solo ve el adaptador → el
+  ícono quedaba verde sin internet. Nuevo `ConnectivityService`: combina la
+  señal del navegador (negativo rápido) con sondeo activo periódico
+  (`fetch` no-cors al health de Supabase, 30 s + en `online`/`visibilitychange`).
+  `AppComponent.isOnline` ahora viene del service (quitados los listeners
+  locales). Sin backend cae a `navigator.onLine`.
+- **G — nombre mostrado.** Si `nombre` es el default autogenerado (== parte
+  local del email), el topbar muestra el email completo. `nombreMostrado()`
+  computed; el dropdown oculta la línea de email cuando duplicaría el nombre.
+- **H — flash de login en F5.** El `roleGuard` corría con auth en `loading`
+  (isSignedIn=false) y rebotaba a /login antes de rehidratar. Fix:
+  `AuthService.ready` (promise que resuelve al terminar el bootstrap, vía
+  `finally`); el guard es ahora `async` y hace `await auth.ready` antes de
+  decidir. En local-only resuelve de inmediato.
 
 **Verificación:** type-check app/spec + `ng build` (AOT) en verde.
 

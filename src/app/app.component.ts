@@ -10,7 +10,7 @@
 // ║  - Configuración en sección Administración            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, signal, OnInit, OnDestroy, effect, HostListener } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, effect, HostListener, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,6 +26,7 @@ import { ConfigService } from './core/services/config.service';
 import { ChangelogService } from './core/services/changelog.service';
 import { DatabaseService } from './core/services/database.service';
 import { SyncService } from './core/services/sync.service';
+import { ConnectivityService } from './core/services/connectivity.service';
 import { AuthService } from './core/auth/auth.service';
 import { PermissionsService } from './core/auth/permissions.service';
 import { computed } from '@angular/core';
@@ -78,10 +79,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   // ─── ESTADO DE CONEXIÓN ─────────────────────────────────
-  isOnline = signal(navigator.onLine);
-
-  private onlineHandler = () => this.isOnline.set(true);
-  private offlineHandler = () => this.isOnline.set(false);
+  // Conexión REAL (sondeo activo), no solo navigator.onLine. Ver
+  // ConnectivityService — registra sus propios listeners globales.
+  private readonly connectivity = inject(ConnectivityService);
+  readonly isOnline = this.connectivity.online;
 
   // ─── PWA UPDATE ─────────────────────────────────────────
   hayActualizacion = false;
@@ -98,6 +99,21 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly inicialUsuario = computed(() => {
     const nombre = this.authService.currentUser()?.nombre ?? '';
     return nombre.trim().charAt(0).toUpperCase() || '?';
+  });
+
+  /**
+   * Nombre a mostrar en el topbar. El trigger de Supabase pone
+   * `nombre = parte-local-del-email` cuando no hay nombre real (p.ej.
+   * "dalton.akenaton"). En ese caso mostramos el email completo, más
+   * informativo, hasta que /usuarios permita asignar un nombre real.
+   */
+  readonly nombreMostrado = computed(() => {
+    const u = this.authService.currentUser();
+    if (!u) return '';
+    const nombre = (u.nombre ?? '').trim();
+    const local = (u.email ?? '').split('@')[0];
+    if (!nombre || nombre === local) return u.email || nombre;
+    return nombre;
   });
 
   /** Etiqueta legible del rol — pendiente de traducción si llegan más. */
@@ -158,9 +174,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Listeners de conexión
-    window.addEventListener('online', this.onlineHandler);
-    window.addEventListener('offline', this.offlineHandler);
+    // El estado de conexión lo maneja ConnectivityService (listeners +
+    // sondeo activo) — ya no registramos online/offline aquí.
 
     // Cierre automático al cierre del horario operativo
     this.iniciarCierrePorHorario();
@@ -196,8 +211,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    window.removeEventListener('online', this.onlineHandler);
-    window.removeEventListener('offline', this.offlineHandler);
     document.removeEventListener('visibilitychange', this.checkCierrePorHorario);
     this.routerSub?.unsubscribe();
     if (this.cierrePorHorarioInterval) {

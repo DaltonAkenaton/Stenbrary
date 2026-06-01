@@ -186,7 +186,7 @@
             matTooltipPosition="below"
             aria-label="Abrir menú de cuenta">
             <span class="account-avatar">{{ inicialUsuario() }}</span>
-            <span class="account-name">{{ authService.currentUser()?.nombre }}</span>
+            <span class="account-name">{{ nombreMostrado() }}</span>
             <mat-icon class="account-caret">expand_more</mat-icon>
           </button>
 
@@ -194,8 +194,10 @@
             <div class="account-menu-header" (click)="$event.stopPropagation()">
               <div class="account-menu-avatar">{{ inicialUsuario() }}</div>
               <div class="account-menu-info">
-                <span class="account-menu-name">{{ authService.currentUser()?.nombre }}</span>
-                <span class="account-menu-email">{{ authService.currentUser()?.email }}</span>
+                <span class="account-menu-name">{{ nombreMostrado() }}</span>
+                @if (authService.currentUser()?.email && nombreMostrado() !== authService.currentUser()?.email) {
+                  <span class="account-menu-email">{{ authService.currentUser()?.email }}</span>
+                }
                 <span class="account-menu-rol">{{ rolLegible() }}</span>
               </div>
             </div>
