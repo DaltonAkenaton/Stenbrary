@@ -154,10 +154,13 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Refrescar conteo de pendientes cuando el usuario se loguea
-    // (alimenta el badge del sidebar). Se vuelve a refrescar cada vez
-    // que el componente de /sincronizacion termina un upload / descarte.
+    // Refrescar el conteo de pendientes (badge del sidebar) en tiempo real:
+    // el effect depende de `cambiosSync` (se incrementa en cada mutación
+    // local) y de `isSignedIn`. Así el badge se actualiza al registrar,
+    // editar o subir/descartar — sin esperar a re-login ni a entrar a
+    // /sincronizacion.
     effect(() => {
+      this.databaseService.cambiosSync(); // dependencia reactiva
       if (this.authService.isSignedIn()) {
         void this.syncService.refrescarConteos();
       }

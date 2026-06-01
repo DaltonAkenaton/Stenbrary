@@ -215,7 +215,19 @@ export class DatabaseService {
   // batch supervisado. No tocamos los timestamps de negocio
   // (fechaRegistro / fechaHora), solo metadata interna.
   private markPending<T extends { _syncStatus?: string; _lastSyncedAt?: Date }>(row: T): T {
+    this.notificarCambioSync();
     return { ...row, _syncStatus: 'pending', _lastSyncedAt: undefined };
+  }
+
+  // ── Notificador de cambios de sync (badge en tiempo real) ─────
+  // Se incrementa en cada mutación que afecta el conteo de pendientes.
+  // AppComponent escucha esta señal con un effect y refresca el badge
+  // del sidebar sin esperar a re-login ni a entrar a /sincronizacion.
+  private readonly cambiosSyncSignal = signal(0);
+  readonly cambiosSync = this.cambiosSyncSignal.asReadonly();
+
+  private notificarCambioSync(): void {
+    this.cambiosSyncSignal.update(n => n + 1);
   }
 
   async crearAlumno(alumno: Omit<Alumno, 'id' | 'fechaRegistro'>): Promise<Alumno> {
@@ -802,6 +814,7 @@ export class DatabaseService {
     }
     await tx.store.put(row);
     await tx.done;
+    this.notificarCambioSync();
   }
 
 
