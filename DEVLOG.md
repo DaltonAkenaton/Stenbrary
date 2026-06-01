@@ -9,6 +9,172 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-05-28 (tarde) — Fase 2.3: roleGuard + permissions + UI condicional
+
+Misma sesión que la Fase 2.2.1 (mañana). Mientras el coordinador prueba
+la bandeja, avancé con el modelo de roles. El schema SQL ya tenía
+`user_role` enum y `user_profiles.rol` desde 2.0; lo que faltaba era el
+front: guard, matriz declarativa, UI condicional, pantalla de denied.
+
+**Hecho:**
+- `core/auth/permissions.ts`: matriz declarativa pura (sin DI). Dos
+  mapas — `PERMISOS_POR_ACCION` (15 acciones granulares) y
+  `PERMISOS_POR_RUTA` (rutas → roles). Funciones puras `puede`,
+  `puedeAccederA`, `rolesPara`, `rolesParaRuta`. Sin Angular adentro
+  para que pueda usarse en guards funcionales y en tests sin TestBed.
+- `core/auth/permissions.service.ts`: capa reactiva. Inyecta
+  AuthService. `can(action)` / `canAccessRoute(ruta)` + computed
+  signals para los checks más usados (`canConfigurar`,
+  `canGestionarMotivos`, `canVerEstadisticas`, etc.).
+- `core/guards/role.guard.ts`: `CanActivateFn` parametrizable. Lee
+  `data.roles` inline; si no hay, cae al mapa central por URL.
+  Comportamiento por estado:
+  - `local-only` → pasa (offline-first innegociable).
+  - `signed-out` + Supabase configurado → redirige a `/login`.
+  - `signed-in` con rol no autorizado → redirige a `/acceso-denegado`
+    con query params `ruta` y `roles` (contexto para el usuario).
+- `features/acceso-denegado/`: pantalla con icono warn, datos del
+  intento (ruta + roles autorizados + rol actual) y acciones "Cerrar
+  sesión" / "Volver al inicio". Usa `toSignal(ActivatedRoute.queryParams)`.
+- `app.routes.ts`: aplicado `canActivate: [roleGuard]` a:
+  `/estadisticas`, `/gestion-motivos`, `/configuracion`,
+  `/importar-alumnos`, `/sincronizacion`, `/inactivos`. Más la nueva
+  ruta `/acceso-denegado` pública.
+- `app.component.ts`: inyecta `PermissionsService`. Nuevo
+  `filtrarPorPermisos(items)` aplicado a las 3 secciones del sidebar
+  y al bottom-nav. Los items que el rol no puede abrir desaparecen
+  del menú (UX > "mostrar y denegar").
+
+**Decisiones arquitectónicas:**
+- **Matriz declarativa centralizada.** Una sola fuente de verdad — si
+  agregamos rol, basta tocar `permissions.ts`. Las acciones son
+  granulares (15) para que la UI pueda esconder botones específicos
+  sin tener que esconder vistas completas.
+- **`permissions.ts` sin DI.** Funciones puras. Permite que el guard
+  funcional las llame directo y que se testeen sin TestBed.
+  `PermissionsService` es el wrapper reactivo para templates.
+- **local-only siempre pasa.** El coordinador debe poder operar sin
+  Internet — sin auth no hay roles que aplicar. Coherente con la
+  filosofía. La protección real vive en RLS (defense in depth).
+- **`/acceso-denegado` con contexto, no 404.** Le dice al usuario qué
+  ruta intentó, qué roles necesita y cuál es el suyo. Si alguien
+  teclea la URL por error, sabe cómo proceder (pedir al coordinador).
+- **`data.roles` inline opcional.** El guard prioriza `data.roles` si
+  está; si no, cae al mapa central. Permite excepciones puntuales
+  (ej. una ruta que necesita restricción aún más fina) sin perder el
+  DRY del mapa.
+
+**Verificación que hice yo:** type-check de `app` y `spec` limpios.
+Build no lo corrí esta tanda — el cambio es ligero y type-check
+cubre lo esencial. UI interactiva pendiente del coordinador.
+
+**Pendientes inmediatos:**
+- Asignar roles reales en Supabase. Hoy `user_profiles.rol` default
+  es `'asistente'`. El coordinador necesita ser `'coordinador'`:
+  `update public.user_profiles set rol = 'coordinador' where id = '<su-uuid>';`
+- Probar el flujo con un usuario `asistente` real para validar que
+  las vistas correctas se esconden y `/acceso-denegado` se ve bien.
+- En `AppComponent` quedó duplicada la función `rolLegible` (existía
+  desde 2.0). Ahora también vive en `PermissionsService`. No molesta
+  pero refactor menor para próxima tanda.
+
+**Lo que NO se hizo (para 2.3.x):**
+- Página `/usuarios` para que el coordinador invite asistentes.
+  Requiere endpoint + dialog + validación de email + manejo de
+  invitaciones pendientes. ~2 días aparte.
+- Tests automatizados de RLS con usuarios de prueba. Critical para
+  defense in depth pero requiere fixtures SQL — separar en su propia
+  tanda con scope claro.
+- Aplicar `permisos.can(action)` en botones individuales dentro de
+  vistas (ej. ocultar "Eliminar" en alumnos para asistente). Solo
+  hice el shell (sidebar + rutas). La granularidad fina sale tanda
+  por tanda según se identifiquen los botones críticos.
+
+---
+
+## 2026-05-28 — Fase 2.2.1: bandeja de sync con acciones (descartar / subir)
+
+Continuación del spike de Fase 2.2. La tanda anterior dejó la vista
+`/sincronizacion` solo en modo lectura (conteos por tipo). Esta tanda la
+convierte en una bandeja operativa: tabla filtrable, selección por fila,
+acciones individuales y bulk, subida ordenada por FKs y panel de errores.
+
+**Hecho:**
+- `core/services/database.service.ts`: extraído helper privado
+  `actualizarEstadoSync(store, id, estado)` que sirve a
+  `marcarComoSincronizado` y al nuevo `marcarComoRechazado`. La fila
+  rechazada se conserva en IndexedDB — solo cambia su `_syncStatus`. Si
+  el coordinador la edita después, `markPending` la regresa a `pending`.
+- `core/services/sync.service.ts`: reescrito como orquestador con
+  signals reactivos (`progreso`, `subiendo`, `ultimosErrores`, `detalle`).
+  Métodos `descartar(store, ids[])`, `subir(seleccion)`, `subirTodo()`.
+  Orden de subida fijo motivos → alumnos → registros para respetar FKs
+  del schema. Errores por fila individuales (un fail no aborta el batch)
+  — la fila con error queda en `pending` para reintento, no en `rejected`.
+  Construye el payload de motivos del registro usando `motivoIds`/
+  `motivoNombres` con fallback al motivo principal.
+- `features/sincronizacion/sincronizacion.component.{ts,html,scss}`:
+  reescrito de cero. 3 secciones colapsables (motivos / alumnos /
+  registros) con tabla nativa estilizada (descartado MatTable: overkill
+  para el spike y ~30kB extra al bundle). Cada fila: checkbox + columnas
+  + 2 botones icon (subir individual / descartar). Toolbar global con
+  filtro de texto, chip de selección, botones "Descartar seleccionados",
+  "Subir seleccionados" y "Subir todo (N)". Progress bar fija durante
+  upload. Panel de errores expandible tras un batch con fallos.
+  Confirmación via `ConfirmDialogComponent` antes de descartar.
+- Validado: `tsc --noEmit -p tsconfig.app.json` y `tsconfig.spec.json`
+  limpios. Build de producción exitoso, chunk lazy
+  `sincronizacion-component` ~74kB.
+
+**Decisiones arquitectónicas:**
+- **Descartar ≠ eliminar.** Marcar `_syncStatus = 'rejected'` no borra
+  la fila local. La bandeja decide *qué se sube*, no *qué se borra* —
+  borrar tiene su propia vista. Beneficio: el coordinador puede
+  arrepentirse editando la fila otra vez (vuelve a `pending`).
+- **Componente nunca habla con RemoteDatabaseService directamente.**
+  Todo pasa por SyncService — manejo de errores, idempotencia y
+  progreso viven en una sola capa. Si después se agrega sync automático
+  o desde otro entry-point (mobile, CLI, scheduled job), comparten la
+  misma lógica.
+- **Errores por fila, no por batch.** Una fila que falla no aborta el
+  resto. Filas exitosas → `synced`; filas con error → siguen `pending`
+  (no `rejected` — `rejected` es decisión humana, no consecuencia de
+  un error técnico).
+- **Tabla nativa sobre MatTable.** MatTable agrega ~30kB de bundle por
+  features (sort, paginación, sticky headers, virtualización) que no
+  necesitamos en un spike. CSS custom con dark theme integrado, ARIA
+  básico vía elementos semánticos. Si volumen real lo justifica
+  después, migramos.
+- **"Subir todo (N)" muestra el total real, ignorando el filtro.** El
+  filtro es solo presentación. Para subir solo lo filtrado: usar
+  checkbox del header de la tabla → "Subir seleccionados". Patrón
+  estándar (Gmail).
+
+**Pendientes inmediatos:**
+- Probar el flujo en navegador con datos reales:
+  - crear/editar un alumno offline → debe aparecer en bandeja
+  - descartar fila individual → no aparece pero alumno sigue en `/alumnos`
+  - subir individual / bulk / todo → verifica conteos en Supabase
+  - simular error de red durante upload → verificar panel de errores
+- Si el patrón convence al coordinador real: convertir el spike en
+  feature de producción (badge en sidebar con conteo, sync automático
+  opcional desde config, conflict resolution para edits concurrentes).
+- Si el patrón NO convence: quitar el item del sidebar (`AppComponent.
+  itemsAdministracion`) — el resto del código queda inerte (los campos
+  `_syncStatus` son opcionales).
+
+**Lo que NO se hizo (para 2.2.2+):**
+- Sync automático en background (interval / al volver online).
+- Conflict resolution: si el coordinador editó local + alguien editó
+  remoto, qué versión gana. Por ahora last-write-wins implícito vía
+  `onConflict: 'id'` del upsert.
+- Vista de `rejected` y "deshacer descarte" — el coordinador puede
+  re-trigger pending al editar, suficiente para v1.
+- Badge en sidebar con conteo de pendientes.
+- Filtros por estado (todo / hoy / errores anteriores).
+
+---
+
 ## 2026-05-22 — Fase 2.1 cerrada: schema espejo + adapter + importador one-shot
 
 Primera tanda de Fase 2.1. Objetivo: subir el IndexedDB local a Postgres

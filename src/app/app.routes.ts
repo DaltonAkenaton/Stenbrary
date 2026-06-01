@@ -11,6 +11,7 @@
 
 import { Routes } from '@angular/router';
 import { registroFlujoGuard } from './core/guards/registro-flujo.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -65,12 +66,14 @@ export const routes: Routes = [
     path: 'estadisticas',
     loadComponent: () =>
       import('./features/dashboard-ejecutivo/dashboard-ejecutivo.component').then(m => m.DashboardEjecutivoComponent),
+    canActivate: [roleGuard],
     title: 'Stenbrary — Estadísticas',
   },
   {
     path: 'gestion-motivos',
     loadComponent: () =>
       import('./features/gestion-motivos/gestion-motivos.component').then(m => m.GestionMotivosComponent),
+    canActivate: [roleGuard],
     title: 'Stenbrary — Gestión de Motivos',
   },
   {
@@ -79,12 +82,14 @@ export const routes: Routes = [
     path: 'configuracion',
     loadComponent: () =>
       import('./features/configuracion/configuracion-v2.component').then(m => m.ConfiguracionV2Component),
+    canActivate: [roleGuard],
     title: 'Stenbrary — Configuración',
   },
   {
     path: 'importar-alumnos',
     loadComponent: () =>
       import('./features/importar-alumnos/importar-alumnos.component').then(m => m.ImportarAlumnosComponent),
+    canActivate: [roleGuard],
     title: 'Stenbrary — Importar Alumnos',
   },
   {
@@ -100,10 +105,24 @@ export const routes: Routes = [
     title: 'Stenbrary — Novedades',
   },
   {
+    path: 'sincronizacion',
+    loadComponent: () =>
+      import('./features/sincronizacion/sincronizacion.component').then(m => m.SincronizacionComponent),
+    canActivate: [roleGuard],
+    title: 'Stenbrary — Sincronización',
+  },
+  {
     path: 'inactivos',
     loadComponent: () =>
       import('./features/inactivos/inactivos.component').then(m => m.InactivosComponent),
+    canActivate: [roleGuard],
     title: 'Stenbrary — Inactivos',
+  },
+  {
+    path: 'acceso-denegado',
+    loadComponent: () =>
+      import('./features/acceso-denegado/acceso-denegado.component').then(m => m.AccesoDenegadoComponent),
+    title: 'Stenbrary — Acceso denegado',
   },
   {
     path: 'detalle-alumno/:matricula',

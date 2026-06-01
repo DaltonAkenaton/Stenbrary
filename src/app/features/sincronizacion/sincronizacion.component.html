@@ -1,0 +1,405 @@
+<div class="sync-page">
+  <!-- ── Header ──────────────────────────────────────────── -->
+  <header class="sync-header">
+    <div class="sync-titulo">
+      <h1>
+        <mat-icon>cloud_sync</mat-icon>
+        Sincronización
+      </h1>
+      <p class="muted">
+        Revisa cada cambio local pendiente, descarta los que no quieras subir y
+        envía el resto a la nube. Tú decides qué se sincroniza.
+      </p>
+    </div>
+    @if (auth.isSignedIn()) {
+      <button mat-stroked-button
+              (click)="refrescar()"
+              [disabled]="cargando() || subiendo()">
+        <mat-icon>refresh</mat-icon>
+        Refrescar
+      </button>
+    }
+  </header>
+
+  <!-- ── Barra de progreso global ────────────────────────── -->
+  @if (subiendo()) {
+    <section class="sync-progress-bar">
+      <div class="sync-progress-info">
+        <mat-icon>cloud_upload</mat-icon>
+        <span>
+          Subiendo {{ progreso().procesadas }} / {{ progreso().total }}
+          @if (progreso().store) {
+            <small class="muted"> · {{ progreso().store }}</small>
+          }
+        </span>
+      </div>
+      <mat-progress-bar mode="determinate" [value]="progresoPct()"></mat-progress-bar>
+    </section>
+  }
+
+  <!-- ── Estados especiales ──────────────────────────────── -->
+  @if (!auth.isSignedIn() && !auth.isLocalOnly()) {
+    <section class="sync-card sync-needs-login">
+      <mat-icon>lock_outline</mat-icon>
+      <div>
+        <h2>Necesitas iniciar sesión</h2>
+        <p class="muted">
+          Para revisar y subir cambios pendientes inicia sesión con tu cuenta.
+        </p>
+      </div>
+      <button mat-flat-button color="primary" (click)="irALogin()">
+        Iniciar sesión
+      </button>
+    </section>
+  } @else if (auth.isLocalOnly()) {
+    <section class="sync-card sync-local-only">
+      <mat-icon>cloud_off</mat-icon>
+      <div>
+        <h2>Modo solo-local</h2>
+        <p class="muted">
+          La sincronización requiere un backend configurado. La aplicación sigue
+          funcionando completamente contra el almacenamiento local.
+        </p>
+      </div>
+    </section>
+  } @else if (cargando()) {
+    <section class="sync-loading">
+      <mat-spinner diameter="32"></mat-spinner>
+      <p>Cargando pendientes…</p>
+    </section>
+  } @else if (noHayPendientes()) {
+    <section class="sync-card sync-empty">
+      <mat-icon class="ok-icon">check_circle</mat-icon>
+      <div>
+        <h2>Todo está al día</h2>
+        <p class="muted">
+          No hay cambios locales pendientes de subir. Cuando registres, edites o
+          crees algo nuevo, aparecerá aquí para que lo revises antes de subirlo
+          a la nube.
+        </p>
+      </div>
+    </section>
+  } @else {
+
+    <!-- ── Toolbar principal ─────────────────────────────── -->
+    <section class="sync-toolbar">
+      <mat-form-field appearance="outline" class="sync-filtro">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput
+               type="search"
+               placeholder="Buscar por matrícula, nombre, carrera, motivo…"
+               [ngModel]="filtro()"
+               (ngModelChange)="filtro.set($event)"
+               [disabled]="subiendo()" />
+      </mat-form-field>
+
+      <div class="sync-toolbar-acciones">
+        @if (totalSeleccionado() > 0) {
+          <span class="sync-chip-sel">
+            {{ totalSeleccionado() }} seleccionado{{ totalSeleccionado() === 1 ? '' : 's' }}
+          </span>
+          <button mat-stroked-button
+                  color="warn"
+                  (click)="descartarSeleccion()"
+                  [disabled]="subiendo()">
+            <mat-icon>block</mat-icon>
+            Descartar
+          </button>
+          <button mat-flat-button
+                  color="primary"
+                  (click)="subirSeleccion()"
+                  [disabled]="subiendo()">
+            <mat-icon>cloud_upload</mat-icon>
+            Subir seleccionados
+          </button>
+        } @else if (filtroActivo() && totalFiltrado() < total()) {
+          <button mat-stroked-button
+                  (click)="subirTodo()"
+                  [disabled]="subiendo()"
+                  matTooltip="Sube los {{ total() }} pendientes sin filtrar">
+            Subir todo
+          </button>
+          <button mat-flat-button
+                  color="primary"
+                  (click)="subirFiltrados()"
+                  [disabled]="subiendo() || totalFiltrado() === 0">
+            <mat-icon>cloud_upload</mat-icon>
+            Subir filtrados ({{ totalFiltrado() }})
+          </button>
+        } @else {
+          <button mat-flat-button
+                  color="primary"
+                  (click)="subirTodo()"
+                  [disabled]="subiendo()">
+            <mat-icon>cloud_upload</mat-icon>
+            Subir todo ({{ total() }})
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- ── Panel de errores (tras un upload con fallos) ──── -->
+    @if (mostrarErrores() && errores().length > 0) {
+      <section class="sync-errores">
+        <header>
+          <mat-icon>error_outline</mat-icon>
+          <h3>
+            {{ errores().length }}
+            {{ errores().length === 1 ? 'fila no se subió' : 'filas no se subieron' }}
+          </h3>
+          <button mat-icon-button
+                  (click)="cerrarPanelErrores()"
+                  matTooltip="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+        <p class="muted">
+          Estas filas se conservaron como pendientes. Revisa los detalles, corrige
+          si aplica e intenta subir de nuevo.
+        </p>
+        <ul>
+          @for (e of errores(); track e.id) {
+            <li>
+              <strong>{{ labelError(e) }}</strong>
+              <span class="muted">{{ e.message }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <!-- ── Sección: Motivos ──────────────────────────────── -->
+    @if (conteos().motivos > 0) {
+      <section class="sync-seccion">
+        <header class="sync-seccion-header"
+                (click)="toggleSeccion('motivos')"
+                [class.collapsed]="!secciones().motivos">
+          <mat-icon class="chevron">{{ secciones().motivos ? 'expand_more' : 'chevron_right' }}</mat-icon>
+          <mat-icon class="tipo-icon">category</mat-icon>
+          <h3>Motivos</h3>
+          <span class="sync-seccion-count">{{ conteos().motivos }}</span>
+        </header>
+
+        @if (secciones().motivos) {
+          @if (motivosFiltrados().length === 0) {
+            <p class="sync-vacio muted">Ningún motivo coincide con el filtro.</p>
+          } @else {
+            <div class="sync-tabla-wrap">
+              <table class="sync-tabla">
+                <thead>
+                  <tr>
+                    <th class="th-sel">
+                      <input type="checkbox"
+                             [checked]="todosVisiblesSeleccionados('motivos')"
+                             [indeterminate]="algunoVisibleSeleccionado('motivos')"
+                             (change)="toggleTodoStore('motivos')"
+                             [disabled]="subiendo()" />
+                    </th>
+                    <th>Nombre</th>
+                    <th>Orden</th>
+                    <th>Estado</th>
+                    <th class="th-acciones"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (m of motivosFiltrados(); track m.id) {
+                    <tr [class.seleccionada]="estaSeleccionada('motivos', m.id!)">
+                      <td class="td-sel">
+                        <input type="checkbox"
+                               [checked]="estaSeleccionada('motivos', m.id!)"
+                               (change)="toggleFila('motivos', m.id!)"
+                               [disabled]="subiendo()" />
+                      </td>
+                      <td>
+                        <div class="celda-icono">
+                          <mat-icon class="motivo-icon">{{ m.icono }}</mat-icon>
+                          <span>{{ m.nombre }}</span>
+                        </div>
+                      </td>
+                      <td class="mono">{{ m.orden }}</td>
+                      <td>
+                        <span class="badge" [class.badge-inactivo]="!m.activo">
+                          {{ m.activo ? 'Activo' : 'Inactivo' }}
+                        </span>
+                      </td>
+                      <td class="td-acciones">
+                        <button mat-icon-button
+                                matTooltip="Subir solo este"
+                                (click)="subirFila('motivos', m.id!)"
+                                [disabled]="subiendo()">
+                          <mat-icon>cloud_upload</mat-icon>
+                        </button>
+                        <button mat-icon-button
+                                matTooltip="Descartar"
+                                (click)="descartarFila('motivos', m.id!, m.nombre)"
+                                [disabled]="subiendo()">
+                          <mat-icon>block</mat-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+      </section>
+    }
+
+    <!-- ── Sección: Alumnos ──────────────────────────────── -->
+    @if (conteos().alumnos > 0) {
+      <section class="sync-seccion">
+        <header class="sync-seccion-header"
+                (click)="toggleSeccion('alumnos')"
+                [class.collapsed]="!secciones().alumnos">
+          <mat-icon class="chevron">{{ secciones().alumnos ? 'expand_more' : 'chevron_right' }}</mat-icon>
+          <mat-icon class="tipo-icon">school</mat-icon>
+          <h3>Alumnos</h3>
+          <span class="sync-seccion-count">{{ conteos().alumnos }}</span>
+        </header>
+
+        @if (secciones().alumnos) {
+          @if (alumnosFiltrados().length === 0) {
+            <p class="sync-vacio muted">Ningún alumno coincide con el filtro.</p>
+          } @else {
+            <div class="sync-tabla-wrap">
+              <table class="sync-tabla">
+                <thead>
+                  <tr>
+                    <th class="th-sel">
+                      <input type="checkbox"
+                             [checked]="todosVisiblesSeleccionados('alumnos')"
+                             [indeterminate]="algunoVisibleSeleccionado('alumnos')"
+                             (change)="toggleTodoStore('alumnos')"
+                             [disabled]="subiendo()" />
+                    </th>
+                    <th>Matrícula</th>
+                    <th>Nombre</th>
+                    <th>Carrera</th>
+                    <th>Grado</th>
+                    <th>Turno</th>
+                    <th class="th-acciones"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (a of alumnosFiltrados(); track a.id) {
+                    <tr [class.seleccionada]="estaSeleccionada('alumnos', a.id!)">
+                      <td class="td-sel">
+                        <input type="checkbox"
+                               [checked]="estaSeleccionada('alumnos', a.id!)"
+                               (change)="toggleFila('alumnos', a.id!)"
+                               [disabled]="subiendo()" />
+                      </td>
+                      <td class="mono">{{ a.matricula }}</td>
+                      <td>{{ nombreAlumno(a) }}</td>
+                      <td class="muted">{{ a.carrera }}</td>
+                      <td class="mono">{{ a.grado }}{{ a.grupo }}</td>
+                      <td class="muted">{{ a.turno }}</td>
+                      <td class="td-acciones">
+                        <button mat-icon-button
+                                matTooltip="Subir solo este"
+                                (click)="subirFila('alumnos', a.id!)"
+                                [disabled]="subiendo()">
+                          <mat-icon>cloud_upload</mat-icon>
+                        </button>
+                        <button mat-icon-button
+                                matTooltip="Descartar"
+                                (click)="descartarFila('alumnos', a.id!, a.matricula + ' — ' + nombreAlumno(a))"
+                                [disabled]="subiendo()">
+                          <mat-icon>block</mat-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+      </section>
+    }
+
+    <!-- ── Sección: Registros ────────────────────────────── -->
+    @if (conteos().registros > 0) {
+      <section class="sync-seccion">
+        <header class="sync-seccion-header"
+                (click)="toggleSeccion('registros')"
+                [class.collapsed]="!secciones().registros">
+          <mat-icon class="chevron">{{ secciones().registros ? 'expand_more' : 'chevron_right' }}</mat-icon>
+          <mat-icon class="tipo-icon">fact_check</mat-icon>
+          <h3>Registros</h3>
+          <span class="sync-seccion-count">{{ conteos().registros }}</span>
+        </header>
+
+        @if (secciones().registros) {
+          @if (registrosFiltrados().length === 0) {
+            <p class="sync-vacio muted">Ningún registro coincide con el filtro.</p>
+          } @else {
+            <div class="sync-tabla-wrap">
+              <table class="sync-tabla">
+                <thead>
+                  <tr>
+                    <th class="th-sel">
+                      <input type="checkbox"
+                             [checked]="todosVisiblesSeleccionados('registros')"
+                             [indeterminate]="algunoVisibleSeleccionado('registros')"
+                             (change)="toggleTodoStore('registros')"
+                             [disabled]="subiendo()" />
+                    </th>
+                    <th>Matrícula</th>
+                    <th>Nombre</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Motivos</th>
+                    <th class="th-acciones"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of registrosFiltrados(); track r.id) {
+                    <tr [class.seleccionada]="estaSeleccionada('registros', r.id)">
+                      <td class="td-sel">
+                        <input type="checkbox"
+                               [checked]="estaSeleccionada('registros', r.id)"
+                               (change)="toggleFila('registros', r.id)"
+                               [disabled]="subiendo()" />
+                      </td>
+                      <td class="mono">{{ r.matricula }}</td>
+                      <td>{{ r.nombreCompleto }}</td>
+                      <td class="mono">{{ fechaCorta(r.fechaHora) }}</td>
+                      <td class="mono">
+                        @if (r.horaSalida) {
+                          {{ fechaCorta(r.horaSalida) }}
+                        } @else {
+                          <span class="muted">—</span>
+                        }
+                      </td>
+                      <td>
+                        <span [matTooltip]="(r.motivoNombres ?? [r.motivoNombre]).join(', ')">
+                          {{ motivosResumen(r) }}
+                        </span>
+                      </td>
+                      <td class="td-acciones">
+                        <button mat-icon-button
+                                matTooltip="Subir solo este"
+                                (click)="subirFila('registros', r.id)"
+                                [disabled]="subiendo()">
+                          <mat-icon>cloud_upload</mat-icon>
+                        </button>
+                        <button mat-icon-button
+                                matTooltip="Descartar"
+                                (click)="descartarFila('registros', r.id, r.matricula + ' — ' + fechaCorta(r.fechaHora))"
+                                [disabled]="subiendo()">
+                          <mat-icon>block</mat-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+      </section>
+    }
+  }
+</div>

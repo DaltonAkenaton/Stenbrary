@@ -33,6 +33,9 @@ interface StenbraryDB extends DBSchema {
     indexes: {
       'by-matricula': string;
       'by-carrera': string;
+      // Fase 2.2 — query rápida de pendientes para la bandeja de sync.
+      // Sparse: filas sin _syncStatus (datos pre-2.2) no aparecen.
+      'by-sync-status': string;
     };
   };
   registros: {
@@ -42,6 +45,7 @@ interface StenbraryDB extends DBSchema {
       'by-fecha': Date;
       'by-alumno': string;
       'by-matricula': string;
+      'by-sync-status': string;
     };
   };
   motivos: {
@@ -49,6 +53,7 @@ interface StenbraryDB extends DBSchema {
     value: Motivo;
     indexes: {
       'by-orden': number;
+      'by-sync-status': string;
     };
   };
 }
@@ -59,7 +64,8 @@ interface StenbraryDB extends DBSchema {
 export class DatabaseService {
   private db: IDBPDatabase<StenbraryDB> | null = null;
   private readonly DB_NAME = 'stenbrary-db';
-  private readonly DB_VERSION = 1;
+  // v2 (Fase 2.2): índice by-sync-status en alumnos, registros, motivos.
+  private readonly DB_VERSION = 2;
   private initializationPromise: Promise<void> | null = null;
 
   // Signal de error de BD: si openDB falla irrecoverablemente, este signal
@@ -94,8 +100,8 @@ export class DatabaseService {
   private async initDatabase(): Promise<void> {
     try {
       this.db = await openDB<StenbraryDB>(this.DB_NAME, this.DB_VERSION, {
-        upgrade(db) {
-          // Store de alumnos
+        upgrade(db, oldVersion, _newVersion, tx) {
+          // ── v1: schema inicial ────────────────────────────────
           if (!db.objectStoreNames.contains('alumnos')) {
             const alumnosStore = db.createObjectStore('alumnos', {
               keyPath: 'id'
@@ -104,7 +110,6 @@ export class DatabaseService {
             alumnosStore.createIndex('by-carrera', 'carrera');
           }
 
-          // Store de registros
           if (!db.objectStoreNames.contains('registros')) {
             const registrosStore = db.createObjectStore('registros', {
               keyPath: 'id'
@@ -114,12 +119,31 @@ export class DatabaseService {
             registrosStore.createIndex('by-matricula', 'matricula');
           }
 
-          // Store de motivos
           if (!db.objectStoreNames.contains('motivos')) {
             const motivosStore = db.createObjectStore('motivos', {
               keyPath: 'id'
             });
             motivosStore.createIndex('by-orden', 'orden');
+          }
+
+          // ── v2 (Fase 2.2): índice by-sync-status ──────────────
+          // Sparse — filas sin `_syncStatus` (datos pre-2.2) NO aparecen
+          // en el índice. Esto es intencional: el coordinador ya las
+          // subió con el importador one-shot, no queremos re-marcarlas
+          // como pendientes. Solo nuevas mutaciones generan entradas.
+          if (oldVersion < 2) {
+            const alumnosStore = tx.objectStore('alumnos');
+            if (!alumnosStore.indexNames.contains('by-sync-status')) {
+              alumnosStore.createIndex('by-sync-status', '_syncStatus');
+            }
+            const registrosStore = tx.objectStore('registros');
+            if (!registrosStore.indexNames.contains('by-sync-status')) {
+              registrosStore.createIndex('by-sync-status', '_syncStatus');
+            }
+            const motivosStore = tx.objectStore('motivos');
+            if (!motivosStore.indexNames.contains('by-sync-status')) {
+              motivosStore.createIndex('by-sync-status', '_syncStatus');
+            }
           }
         },
       });
@@ -185,16 +209,25 @@ export class DatabaseService {
 
   // ==================== ALUMNOS ====================
 
+  // ── Sync helpers (Fase 2.2) ───────────────────────────────────
+  // Cada mutación local pasa por aquí para marcarse como pending —
+  // la bandeja `/sincronizacion` lo consume después para subir el
+  // batch supervisado. No tocamos los timestamps de negocio
+  // (fechaRegistro / fechaHora), solo metadata interna.
+  private markPending<T extends { _syncStatus?: string; _lastSyncedAt?: Date }>(row: T): T {
+    return { ...row, _syncStatus: 'pending', _lastSyncedAt: undefined };
+  }
+
   async crearAlumno(alumno: Omit<Alumno, 'id' | 'fechaRegistro'>): Promise<Alumno> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
-    const nuevoAlumno: Alumno = {
+    const nuevoAlumno: Alumno = this.markPending({
       ...alumno,
       id: uuidv4(),
       activo: true,
       fechaRegistro: new Date()
-    };
+    });
 
     await this.db.add('alumnos', nuevoAlumno);
     log('✅ Alumno creado:', nuevoAlumno.matricula);
@@ -229,12 +262,12 @@ export class DatabaseService {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
-    const nuevoRegistro: Registro = {
+    const nuevoRegistro: Registro = this.markPending({
       ...registro,
       id: uuidv4(),
       fechaHora: new Date(),
       sincronizado: false
-    };
+    });
 
     await this.db.add('registros', nuevoRegistro);
     log('✅ Registro creado para:', nuevoRegistro.matricula);
@@ -472,7 +505,7 @@ export class DatabaseService {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
 
-      const aGuardar: Alumno = { ...alumnoActualizado, id };
+      const aGuardar: Alumno = this.markPending({ ...alumnoActualizado, id });
       await this.db.put('alumnos', aGuardar);
 
       log('✅ Alumno actualizado exitosamente:', aGuardar.matricula);
@@ -613,11 +646,11 @@ export class DatabaseService {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
-    const nuevoMotivo: Motivo = {
+    const nuevoMotivo: Motivo = this.markPending({
       ...motivo,
       id: uuidv4(),
       fechaCreacion: new Date()
-    };
+    });
 
     await this.db.add('motivos', nuevoMotivo);
     log('✅ Motivo creado:', nuevoMotivo.nombre);
@@ -632,7 +665,7 @@ export class DatabaseService {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
-    const aGuardar: Motivo = { ...motivo, id };
+    const aGuardar: Motivo = this.markPending({ ...motivo, id });
     await this.db.put('motivos', aGuardar);
     log('✅ Motivo actualizado:', aGuardar.nombre);
   }
@@ -646,6 +679,97 @@ export class DatabaseService {
 
     await this.db.delete('motivos', id);
     log('✅ Motivo eliminado:', id);
+  }
+
+  // ==================== SYNC METADATA (Fase 2.2) ====================
+  //
+  // Acceso a las filas según su `_syncStatus`. Usa el índice
+  // `by-sync-status` creado en DB_VERSION = 2. Las filas pre-2.2 sin el
+  // campo NO aparecen en el índice (intencional: el coordinador ya las
+  // subió con el importador one-shot).
+
+  /** Cuenta filas con cada estado de sync por store. */
+  async obtenerConteoPendientes(): Promise<{
+    alumnos: number;
+    registros: number;
+    motivos: number;
+  }> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const range = IDBKeyRange.only('pending');
+    const [alumnos, registros, motivos] = await Promise.all([
+      this.db.countFromIndex('alumnos', 'by-sync-status', range),
+      this.db.countFromIndex('registros', 'by-sync-status', range),
+      this.db.countFromIndex('motivos', 'by-sync-status', range),
+    ]);
+    return { alumnos, registros, motivos };
+  }
+
+  /** Lee todas las filas pendientes de un store. */
+  async obtenerAlumnosPendientes(): Promise<Alumno[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    return this.db.getAllFromIndex('alumnos', 'by-sync-status', IDBKeyRange.only('pending'));
+  }
+
+  async obtenerRegistrosPendientes(): Promise<Registro[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    return this.db.getAllFromIndex('registros', 'by-sync-status', IDBKeyRange.only('pending'));
+  }
+
+  async obtenerMotivosPendientes(): Promise<Motivo[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    return this.db.getAllFromIndex('motivos', 'by-sync-status', IDBKeyRange.only('pending'));
+  }
+
+  /**
+   * Marca una fila como `synced` tras subirla correctamente al backend.
+   * El SyncService llama esto en batch después de cada upload exitoso.
+   */
+  async marcarComoSincronizado(
+    store: 'alumnos' | 'registros' | 'motivos',
+    id: string,
+  ): Promise<void> {
+    await this.actualizarEstadoSync(store, id, 'synced');
+  }
+
+  /**
+   * Marca una fila como `rejected` — el coordinador la excluye del próximo
+   * batch de subida. No elimina la fila local (la bandeja decide qué subir,
+   * no qué borrar). Si después se vuelve a editar, `markPending` la regresa
+   * al estado pendiente.
+   */
+  async marcarComoRechazado(
+    store: 'alumnos' | 'registros' | 'motivos',
+    id: string,
+  ): Promise<void> {
+    await this.actualizarEstadoSync(store, id, 'rejected');
+  }
+
+  /** Helper interno: actualiza `_syncStatus` (+ timestamp si aplica) atómicamente. */
+  private async actualizarEstadoSync(
+    store: 'alumnos' | 'registros' | 'motivos',
+    id: string,
+    estado: 'synced' | 'rejected',
+  ): Promise<void> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const tx = this.db.transaction(store, 'readwrite');
+    const row = await tx.store.get(id);
+    if (!row) {
+      await tx.done;
+      return;
+    }
+    row._syncStatus = estado;
+    if (estado === 'synced') {
+      row._lastSyncedAt = new Date();
+    }
+    await tx.store.put(row);
+    await tx.done;
   }
 
 
@@ -828,9 +952,11 @@ export class DatabaseService {
       const duracionMs = ahora.getTime() - entrada.getTime();
       const duracionMinutos = Math.round(duracionMs / (1000 * 60));
 
-      // Actualizar registro
+      // Actualizar registro + marcar como pending para sync (Fase 2.2)
       registro.horaSalida = ahora;
       registro.duracionMinutos = duracionMinutos;
+      registro._syncStatus = 'pending';
+      registro._lastSyncedAt = undefined;
 
       await store.put(registro);
       await tx.done;

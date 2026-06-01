@@ -1,0 +1,49 @@
+<div class="denied-page">
+  <div class="denied-card">
+    <div class="denied-icon">
+      <mat-icon>lock</mat-icon>
+    </div>
+
+    <h1>Acceso restringido</h1>
+    <p class="muted">
+      Tu rol actual no tiene permiso para abrir esta vista.
+    </p>
+
+    <dl class="denied-info">
+      @if (rutaIntentada()) {
+        <div>
+          <dt>Vista solicitada</dt>
+          <dd class="mono">{{ rutaIntentada() }}</dd>
+        </div>
+      }
+      @if (rolesLegibles()) {
+        <div>
+          <dt>Roles autorizados</dt>
+          <dd>{{ rolesLegibles() }}</dd>
+        </div>
+      }
+      @if (permisos.rolLegible()) {
+        <div>
+          <dt>Tu rol</dt>
+          <dd>{{ permisos.rolLegible() }}</dd>
+        </div>
+      }
+    </dl>
+
+    <p class="muted hint">
+      Si crees que deberías tener acceso, contacta al coordinador para
+      ajustar tu rol.
+    </p>
+
+    <div class="denied-actions">
+      <button mat-stroked-button (click)="cerrarSesion()">
+        <mat-icon>logout</mat-icon>
+        Cerrar sesión
+      </button>
+      <button mat-flat-button color="primary" (click)="volverAlInicio()">
+        <mat-icon>home</mat-icon>
+        Volver al inicio
+      </button>
+    </div>
+  </div>
+</div>

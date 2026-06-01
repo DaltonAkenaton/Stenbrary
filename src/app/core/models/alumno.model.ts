@@ -29,6 +29,12 @@ export interface Alumno {
   // Campos dinámicos que la coordinadora puede agregar
   // Ej: { "CURP": "XXXX", "NSS": "1234" }
   datosExtra?: Record<string, string>;
+
+  // ── Sync metadata (Fase 2.2 — opcional, retrocompat con datos viejos) ──
+  // Sin _syncStatus se asume `synced` (datos pre-2.2 ya subidos por el
+  // importador one-shot o nunca subidos pero no nos importa hasta editarlos).
+  _syncStatus?: 'pending' | 'synced' | 'rejected';
+  _lastSyncedAt?: Date;
 }
 
 export interface AlumnoCompleto extends Alumno {

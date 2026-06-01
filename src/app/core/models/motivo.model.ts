@@ -7,4 +7,8 @@ export interface Motivo {
   orden: number;
   activo: boolean;
   fechaCreacion?: Date;
+
+  // ── Sync metadata (Fase 2.2 — opcional, retrocompat) ──
+  _syncStatus?: 'pending' | 'synced' | 'rejected';
+  _lastSyncedAt?: Date;
 }

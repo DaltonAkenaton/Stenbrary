@@ -65,6 +65,12 @@
               @if (item.route === '/novedades' && changelogService.hayNovedades()) {
                 <span class="nav-news-dot" matTooltip="Hay novedades en esta versión"></span>
               }
+              @if (item.route === '/sincronizacion' && syncService.totalPendientes() > 0) {
+                <span class="nav-count-badge"
+                      [matTooltip]="syncService.totalPendientes() + ' cambio(s) pendiente(s) de subir'">
+                  {{ syncService.totalPendientes() > 99 ? '99+' : syncService.totalPendientes() }}
+                </span>
+              }
             </div>
             @if (isSidebarExpanded()) {
               <span class="nav-label">{{ item.label }}</span>

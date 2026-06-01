@@ -43,4 +43,10 @@ export interface Registro {
   // sin tener que hacer join en cada query. Para registros viejos sin
   // este campo, los componentes hacen fallback a Alumno.
   turno?: 'Matutino' | 'Vespertino' | 'Mixto';
+
+  // ── Sync metadata (Fase 2.2 — opcional, retrocompat) ──
+  // `sincronizado: boolean` arriba queda como flag legacy; `_syncStatus`
+  // es la fuente nueva (3 estados). Sin _syncStatus se asume `synced`.
+  _syncStatus?: 'pending' | 'synced' | 'rejected';
+  _lastSyncedAt?: Date;
 }

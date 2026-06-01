@@ -25,7 +25,9 @@ import { Subscription } from 'rxjs';
 import { ConfigService } from './core/services/config.service';
 import { ChangelogService } from './core/services/changelog.service';
 import { DatabaseService } from './core/services/database.service';
+import { SyncService } from './core/services/sync.service';
 import { AuthService } from './core/auth/auth.service';
+import { PermissionsService } from './core/auth/permissions.service';
 import { computed } from '@angular/core';
 import { GlobalSearchDialogComponent } from './shared/components/global-search/global-search-dialog.component';
 import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-shortcuts/keyboard-shortcuts-dialog.component';
@@ -117,12 +119,14 @@ export class AppComponent implements OnInit, OnDestroy {
     public configService: ConfigService,
     public changelogService: ChangelogService,
     public databaseService: DatabaseService,
+    public syncService: SyncService,
     private toastService: ToastService,
     // Bootstrap del AuthService: al inyectarlo aquí se inicializa al
     // arrancar la app y empieza a escuchar onAuthStateChange (necesario
     // para capturar el callback del magic link aunque el usuario no esté
     // en /login). Si Supabase no está configurado, queda en local-only.
     public authService: AuthService,
+    public permisos: PermissionsService,
   ) {
     // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
     effect(() => {
@@ -131,6 +135,15 @@ export class AppComponent implements OnInit, OnDestroy {
         if (!this.rutasPermitidasEnQuiosco().some(r => url.startsWith(r))) {
           this.router.navigate(['/scanner']);
         }
+      }
+    });
+
+    // Refrescar conteo de pendientes cuando el usuario se loguea
+    // (alimenta el badge del sidebar). Se vuelve a refrescar cada vez
+    // que el componente de /sincronizacion termina un upload / descarte.
+    effect(() => {
+      if (this.authService.isSignedIn()) {
+        void this.syncService.refrescarConteos();
       }
     });
   }
@@ -364,27 +377,47 @@ export class AppComponent implements OnInit, OnDestroy {
       operacion.push({ icon: 'sensor_door', label: 'En Biblioteca', route: '/presencia' });
     }
 
-    return [
-      { title: 'Operación', items: operacion },
-      {
-        title: 'Consulta',
-        items: [
-          { icon: 'dashboard',             label: 'Resumen',      route: '/dashboard'    },
-          { icon: 'groups',                label: 'Alumnos',      route: '/alumnos'      },
-          { icon: 'history',               label: 'Registros',    route: '/registros'    },
-          { icon: 'bar_chart',             label: 'Estadísticas', route: '/estadisticas' },
-          { icon: 'notifications_paused', label: 'Inactivos',    route: '/inactivos'    },
-        ],
-      },
-      {
-        title: 'Administración',
-        items: [
-          { icon: 'category', label: 'Gestión de Motivos', route: '/gestion-motivos' },
-          { icon: 'campaign', label: 'Novedades',          route: '/novedades'       },
-          { icon: 'settings', label: 'Configuración',      route: '/configuracion'   },
-        ],
-      },
+    const consulta: NavItem[] = [
+      { icon: 'dashboard',             label: 'Resumen',      route: '/dashboard'    },
+      { icon: 'groups',                label: 'Alumnos',      route: '/alumnos'      },
+      { icon: 'history',               label: 'Registros',    route: '/registros'    },
+      { icon: 'bar_chart',             label: 'Estadísticas', route: '/estadisticas' },
+      { icon: 'notifications_paused', label: 'Inactivos',    route: '/inactivos'    },
     ];
+
+    return [
+      { title: 'Operación',      items: this.filtrarPorPermisos(operacion) },
+      { title: 'Consulta',       items: this.filtrarPorPermisos(consulta) },
+      { title: 'Administración', items: this.itemsAdministracion() },
+    ];
+  }
+
+  /**
+   * Items de la sección Administración. `Sincronización` solo aparece si
+   * el usuario tiene sesión activa con backend (Fase 2.2 spike).
+   * Cada item se filtra por permisos antes de devolver.
+   */
+  private itemsAdministracion(): NavItem[] {
+    const items: NavItem[] = [
+      { icon: 'category', label: 'Gestión de Motivos', route: '/gestion-motivos' },
+      { icon: 'campaign', label: 'Novedades',          route: '/novedades'       },
+    ];
+
+    if (this.authService.isSignedIn()) {
+      items.push({ icon: 'cloud_sync', label: 'Sincronización', route: '/sincronizacion' });
+    }
+
+    items.push({ icon: 'settings', label: 'Configuración', route: '/configuracion' });
+    return this.filtrarPorPermisos(items);
+  }
+
+  /**
+   * Filtra una lista de items dejando solo los que el rol actual puede
+   * abrir. En modo local-only o sin sesión pasa todo (PermissionsService
+   * respeta la filosofía offline-first).
+   */
+  private filtrarPorPermisos(items: NavItem[]): NavItem[] {
+    return items.filter(it => this.permisos.canAccessRoute(it.route));
   }
 
   // Flat list para compatibilidad
@@ -406,7 +439,7 @@ export class AppComponent implements OnInit, OnDestroy {
       items.push({ icon: 'history', label: 'Registros', route: '/registros' });
     }
 
-    return items;
+    return this.filtrarPorPermisos(items);
   }
 
   // ─── TOPBAR ──────────────────────────────────────────────
