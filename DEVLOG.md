@@ -9,6 +9,54 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-06-01 — Fase 2.3.x: fixes de verificación (auth offline + UX sync)
+
+Tanda de correcciones tras la primera verificación visual del coordinador
+(roles + bandeja de sync). El core funcionaba (roles filtran, denegación
+correcta, datos suben), pero salieron bugs de auth/offline y fricción de UX.
+
+**Bugs de auth / offline-first (alta prioridad):**
+- **Sesión perdida al refrescar offline.** `loadProfile()` consultaba
+  `user_profiles` por red; sin internet fallaba y marcaba `signed-out`.
+  Violaba offline-first. Fix: cacheo del perfil en localStorage
+  (`stenbrary-profile-cache`); si la consulta falla por red reconstruyo
+  el `AuthUser` desde el caché. Solo cierro sesión si el perfil
+  **realmente** no existe (`error.code === 'PGRST116'`). Caché se limpia
+  en `signOut`.
+- **Logout no redirigía.** Cerrar sesión desde el avatar del topbar hacía
+  `signOut()` sin navegar → te quedabas varado en `/acceso-denegado`. Fix:
+  `cerrarSesion()` ahora navega a `/scanner` (la app sigue operativa sin
+  sesión, offline-first).
+
+**UX de la bandeja de sincronización:**
+- **Vista de descartados con deshacer (E).** Antes descartar marcaba
+  `rejected` pero no había forma de verlos ni recuperarlos → "irreversible"
+  percibido. Ahora: `DatabaseService.obtenerXRechazados()` +
+  `restaurarPendiente()`; `SyncService.descartados`/`totalDescartados` +
+  `restaurar()`; sección colapsable "Descartados" con restaurar individual
+  y "Restaurar todos". Sale **fuera** del bloque de pendientes (se ve aun
+  con 0 pendientes).
+- **Confirmación al subir individual (D).** `subirFila` subía directo;
+  junto al botón "descartar" era trampa de clic. Ahora confirma (el modelo
+  es sync supervisado, subir debe ser deliberado). Descartar ya confirmaba.
+- **Seleccionar clicando toda la fila (F).** `(click)` en `<tr class="fila-clic">`
+  togglea selección; `stopPropagation` en las celdas de checkbox y acciones.
+  Checkbox 16→18px. Cursor pointer.
+
+**Permisos:**
+- `/inactivos` restringido a `super_admin`/`coordinador` (era visible para
+  asistente). Es vista analítica, alineada con `/estadisticas`.
+
+**Pendiente (cosmético, próxima tanda):** mostrar email completo cuando el
+nombre es autogenerado (`split_part(email,'@',1)` del trigger); quitar el
+flash de "inicia sesión" 1 s en F5 (estado `loading` sin splash); chequeo
+activo de conectividad (el ícono verde miente porque `navigator.onLine`
+solo ve el adaptador, no internet real).
+
+**Verificación:** type-check app/spec + `ng build` (AOT) en verde.
+
+---
+
 ## 2026-05-28 (tarde) — Fase 2.3: roleGuard + permissions + UI condicional
 
 Misma sesión que la Fase 2.2.1 (mañana). Mientras el coordinador prueba

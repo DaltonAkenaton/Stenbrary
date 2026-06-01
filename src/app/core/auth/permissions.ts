@@ -99,7 +99,8 @@ const PERMISOS_POR_RUTA: Record<string, readonly UserRole[]> = {
   '/alumnos':           ['super_admin', 'coordinador', 'asistente'],
   '/registros':         ['super_admin', 'coordinador', 'asistente'],
   '/presencia':         ['super_admin', 'coordinador', 'asistente'],
-  '/inactivos':         ['super_admin', 'coordinador', 'asistente'],
+  // Inactivos es una vista analítica (como estadísticas) — solo coordinación.
+  '/inactivos':         ['super_admin', 'coordinador'],
   // Admin — solo coordinador y super_admin
   '/estadisticas':      ['super_admin', 'coordinador'],
   '/gestion-motivos':   ['super_admin', 'coordinador'],

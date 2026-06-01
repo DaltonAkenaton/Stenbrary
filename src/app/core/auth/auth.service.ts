@@ -31,6 +31,21 @@ import { getSupabaseClient, isSupabaseConfigured } from './supabase.client';
 
 const REDIRECT_PATH = '/login';
 
+/**
+ * Caché local del perfil (rol, nombre, org, matrícula) por usuario.
+ * Permite seguir autenticado offline: si `loadProfile` no puede llegar
+ * a la BD (sin red), reconstruimos el `AuthUser` desde aquí en vez de
+ * tirar la sesión. Offline-first innegociable.
+ */
+const PROFILE_CACHE_KEY = 'stenbrary-profile-cache';
+
+interface CachedProfile {
+  rol: string;
+  nombre: string;
+  organization_id: string | null;
+  matricula: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly supabase: SupabaseClient | null = getSupabaseClient();
@@ -109,6 +124,7 @@ export class AuthService {
 
   async signOut(): Promise<void> {
     if (!this.supabase) return;
+    this.limpiarCacheProfile();
     await this.supabase.auth.signOut();
     // onAuthStateChange se encarga de actualizar el signal.
   }
@@ -175,11 +191,24 @@ export class AuthService {
       .single();
 
     if (error || !profile) {
-      // Sesión existe pero el perfil no — trigger debe crearlo automáticamente.
-      // Si llegamos aquí es bug de schema, fallo del trigger handle_new_user
-      // o policy RLS mal configurada (caso real visto: recursión infinita en
-      // profiles_select devolvía 500). Por eso logueamos a consola para que
-      // el próximo fallo no pase silencioso como "sesión cerrada misteriosa".
+      // `PGRST116` = la query .single() no encontró filas → el perfil
+      // genuinamente no existe (trigger handle_new_user falló o RLS lo
+      // oculta). Eso sí es signed-out real.
+      // Cualquier otro error (red caída offline, 5xx, recursión RLS que
+      // devolvía 500) NO debe tirar una sesión que ya funcionaba: si hay
+      // perfil cacheado, seguimos autenticados en modo degradado.
+      const perfilRealmenteAusente = error?.code === 'PGRST116';
+      const cache = this.leerCacheProfile(authUser.id);
+
+      if (!perfilRealmenteAusente && cache) {
+        this.stateSignal.set({
+          status: 'signed-in',
+          user: this.construirUser(authUser, cache),
+          error: null,
+        });
+        return;
+      }
+
       console.error('[AuthService] No se pudo cargar user_profiles:', error);
       this.stateSignal.set({
         status: 'signed-out',
@@ -190,7 +219,27 @@ export class AuthService {
       return;
     }
 
-    const user: AuthUser = {
+    const cacheable: CachedProfile = {
+      rol: profile.rol,
+      nombre: profile.nombre ?? '',
+      organization_id: profile.organization_id ?? null,
+      matricula: profile.matricula ?? null,
+    };
+    this.guardarCacheProfile(authUser.id, cacheable);
+
+    this.stateSignal.set({
+      status: 'signed-in',
+      user: this.construirUser(authUser, cacheable),
+      error: null,
+    });
+  }
+
+  /** Arma el `AuthUser` a partir de la sesión (email) y el perfil. */
+  private construirUser(
+    authUser: Session['user'],
+    profile: CachedProfile,
+  ): AuthUser {
+    return {
       id: authUser.id,
       email: authUser.email ?? '',
       rol: profile.rol as UserRole,
@@ -198,7 +247,32 @@ export class AuthService {
       organizationId: profile.organization_id ?? null,
       matricula: profile.matricula ?? null,
     };
+  }
 
-    this.stateSignal.set({ status: 'signed-in', user, error: null });
+  private guardarCacheProfile(userId: string, profile: CachedProfile): void {
+    try {
+      localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({ userId, profile }));
+    } catch {
+      /* localStorage lleno o bloqueado — degradar silenciosamente. */
+    }
+  }
+
+  private leerCacheProfile(userId: string): CachedProfile | null {
+    try {
+      const raw = localStorage.getItem(PROFILE_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { userId: string; profile: CachedProfile };
+      return parsed.userId === userId ? parsed.profile : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private limpiarCacheProfile(): void {
+    try {
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+    } catch {
+      /* no-op */
+    }
   }
 }

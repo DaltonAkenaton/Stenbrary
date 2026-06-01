@@ -82,11 +82,18 @@ export class SyncService {
     registros: [],
     motivos: [],
   });
+  /** Filas descartadas (`rejected`) — bandeja de descartados con deshacer. */
+  private readonly descartadosSignal = signal<PendientesDetallados>({
+    alumnos: [],
+    registros: [],
+    motivos: [],
+  });
   private readonly progresoSignal = signal<SyncProgreso>(PROGRESO_INICIAL);
   private readonly ultimosErroresSignal = signal<SyncError[]>([]);
 
   readonly conteos = this.conteosSignal.asReadonly();
   readonly detalle = this.detalleSignal.asReadonly();
+  readonly descartados = this.descartadosSignal.asReadonly();
   readonly progreso = this.progresoSignal.asReadonly();
   readonly ultimosErrores = this.ultimosErroresSignal.asReadonly();
 
@@ -95,17 +102,24 @@ export class SyncService {
     return c.alumnos + c.registros + c.motivos;
   });
 
+  readonly totalDescartados = computed(() => {
+    const d = this.descartadosSignal();
+    return d.alumnos.length + d.registros.length + d.motivos.length;
+  });
+
   readonly subiendo = computed(() => this.progresoSignal().activo);
 
   // ─── Lectura ────────────────────────────────────────────────
 
   async refrescar(): Promise<void> {
-    const [conteos, detalle] = await Promise.all([
+    const [conteos, detalle, descartados] = await Promise.all([
       this.databaseService.obtenerConteoPendientes(),
       this.obtenerDetalle(),
+      this.obtenerDescartados(),
     ]);
     this.conteosSignal.set(conteos);
     this.detalleSignal.set(detalle);
+    this.descartadosSignal.set(descartados);
   }
 
   async refrescarConteos(): Promise<void> {
@@ -122,6 +136,15 @@ export class SyncService {
     return { alumnos, registros, motivos };
   }
 
+  private async obtenerDescartados(): Promise<PendientesDetallados> {
+    const [alumnos, registros, motivos] = await Promise.all([
+      this.databaseService.obtenerAlumnosRechazados(),
+      this.databaseService.obtenerRegistrosRechazados(),
+      this.databaseService.obtenerMotivosRechazados(),
+    ]);
+    return { alumnos, registros, motivos };
+  }
+
   // ─── Acciones del coordinador ───────────────────────────────
 
   /**
@@ -133,6 +156,19 @@ export class SyncService {
     if (ids.length === 0) return;
     for (const id of ids) {
       await this.databaseService.marcarComoRechazado(store, id);
+    }
+    await this.refrescar();
+  }
+
+  /**
+   * Deshace el descarte de filas: las regresa a `pending` para que vuelvan
+   * a la bandeja de subida. Operación inversa de `descartar` — recupera de
+   * un clic equivocado.
+   */
+  async restaurar(store: SyncStore, ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    for (const id of ids) {
+      await this.databaseService.restaurarPendiente(store, id);
     }
     await this.refrescar();
   }

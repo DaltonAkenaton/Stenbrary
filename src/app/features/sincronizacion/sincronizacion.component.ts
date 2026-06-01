@@ -82,6 +82,8 @@ export class SincronizacionComponent implements OnInit {
     alumnos: true,
     registros: true,
   });
+  /** Sección de descartados — colapsada por defecto (es la "papelera"). */
+  protected readonly seccionDescartados = signal(false);
   /** Panel de errores visible tras un upload con fallos. */
   protected readonly mostrarErrores = signal(false);
 
@@ -125,6 +127,10 @@ export class SincronizacionComponent implements OnInit {
 
   protected readonly noHayPendientes = computed(() => this.total() === 0);
 
+  // ─── Descartados (papelera con deshacer) ────────────────
+  protected readonly totalDescartados = this.sync.totalDescartados;
+  protected readonly descartados = this.sync.descartados;
+
   async ngOnInit(): Promise<void> {
     if (this.auth.isSignedIn()) {
       await this.sync.refrescar();
@@ -151,6 +157,38 @@ export class SincronizacionComponent implements OnInit {
 
   protected toggleSeccion(store: SyncStore): void {
     this.secciones.update(s => ({ ...s, [store]: !s[store] }));
+  }
+
+  protected toggleSeccionDescartados(): void {
+    this.seccionDescartados.update(v => !v);
+  }
+
+  // ─── Restaurar descartados (deshacer descarte) ──────────
+
+  protected async restaurarFila(store: SyncStore, id: string, label: string): Promise<void> {
+    await this.sync.restaurar(store, [id]);
+    this.toast.info(`"${label}" volvió a la bandeja de subida.`);
+  }
+
+  protected async restaurarTodos(): Promise<void> {
+    const d = this.descartados();
+    const total = this.totalDescartados();
+    if (total === 0) return;
+
+    const ok = await this.confirmar({
+      titulo: `¿Restaurar ${total} descartado${total === 1 ? '' : 's'}?`,
+      mensaje: 'Volverán a la bandeja de subida como pendientes.',
+      variante: 'info',
+      textoConfirmar: 'Restaurar todos',
+    });
+    if (!ok) return;
+
+    await Promise.all([
+      this.sync.restaurar('motivos', d.motivos.map(m => m.id!).filter(Boolean)),
+      this.sync.restaurar('alumnos', d.alumnos.map(a => a.id!).filter(Boolean)),
+      this.sync.restaurar('registros', d.registros.map(r => r.id)),
+    ]);
+    this.toast.info(`${total} cambio${total === 1 ? '' : 's'} restaurado${total === 1 ? '' : 's'}.`);
   }
 
   // ─── Selección ──────────────────────────────────────────
@@ -273,7 +311,16 @@ export class SincronizacionComponent implements OnInit {
 
   // ─── Subir ──────────────────────────────────────────────
 
-  protected async subirFila(store: SyncStore, id: string): Promise<void> {
+  protected async subirFila(store: SyncStore, id: string, label: string): Promise<void> {
+    // Confirmación: subir es deliberado (el modelo es sync supervisado) y
+    // el botón vive junto a "descartar" — evita el clic equivocado.
+    const ok = await this.confirmar({
+      titulo: '¿Subir este cambio a la nube?',
+      mensaje: `"${label}" se enviará al servidor ahora.`,
+      variante: 'info',
+      textoConfirmar: 'Subir',
+    });
+    if (!ok) return;
     await this.ejecutarSubida({ [store]: [id] } as { motivos?: string[]; alumnos?: string[]; registros?: string[] });
   }
 

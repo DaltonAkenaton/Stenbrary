@@ -725,6 +725,26 @@ export class DatabaseService {
     return this.db.getAllFromIndex('motivos', 'by-sync-status', IDBKeyRange.only('pending'));
   }
 
+  /** Lee las filas descartadas (`rejected`) de un store — para la bandeja
+   *  de "descartados" donde el coordinador puede deshacer el descarte. */
+  async obtenerAlumnosRechazados(): Promise<Alumno[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    return this.db.getAllFromIndex('alumnos', 'by-sync-status', IDBKeyRange.only('rejected'));
+  }
+
+  async obtenerRegistrosRechazados(): Promise<Registro[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    return this.db.getAllFromIndex('registros', 'by-sync-status', IDBKeyRange.only('rejected'));
+  }
+
+  async obtenerMotivosRechazados(): Promise<Motivo[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    return this.db.getAllFromIndex('motivos', 'by-sync-status', IDBKeyRange.only('rejected'));
+  }
+
   /**
    * Marca una fila como `synced` tras subirla correctamente al backend.
    * El SyncService llama esto en batch después de cada upload exitoso.
@@ -749,11 +769,23 @@ export class DatabaseService {
     await this.actualizarEstadoSync(store, id, 'rejected');
   }
 
+  /**
+   * Deshace un descarte: regresa la fila a `pending` para que vuelva a la
+   * bandeja de subida. Es la operación inversa de `marcarComoRechazado` —
+   * permite al coordinador recuperarse de un clic equivocado.
+   */
+  async restaurarPendiente(
+    store: 'alumnos' | 'registros' | 'motivos',
+    id: string,
+  ): Promise<void> {
+    await this.actualizarEstadoSync(store, id, 'pending');
+  }
+
   /** Helper interno: actualiza `_syncStatus` (+ timestamp si aplica) atómicamente. */
   private async actualizarEstadoSync(
     store: 'alumnos' | 'registros' | 'motivos',
     id: string,
-    estado: 'synced' | 'rejected',
+    estado: 'synced' | 'rejected' | 'pending',
   ): Promise<void> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');

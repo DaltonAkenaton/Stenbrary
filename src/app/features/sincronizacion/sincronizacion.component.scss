@@ -334,6 +334,12 @@
       border-bottom: 1px solid rgba($border-subtle, 0.5);
       transition: background 120ms ease;
 
+      // Toda la fila es clicable para seleccionar (UX > checkbox diminuto).
+      &.fila-clic {
+        cursor: pointer;
+        user-select: none;
+      }
+
       &:hover {
         background: rgba($cyan-500, 0.03);
       }
@@ -380,12 +386,44 @@
   }
 
   input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     accent-color: $cyan-500;
     cursor: pointer;
 
     &:disabled { cursor: not-allowed; opacity: 0.5; }
+  }
+
+  // Celda del checkbox: área de clic generosa (toda la celda).
+  .td-sel {
+    cursor: pointer;
+  }
+}
+
+// ── Sección de descartados (papelera con deshacer) ─────────
+.sync-descartados {
+  .sync-seccion-header .tipo-icon {
+    color: $warn-color;
+  }
+
+  .restaurar-todos {
+    margin-left: auto;
+    font-size: 12px;
+  }
+
+  .td-tipo {
+    width: 1%;
+  }
+
+  .tipo-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba($warn-color, 0.12);
+    color: $warn-color;
+    white-space: nowrap;
   }
 }
 

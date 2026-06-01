@@ -284,6 +284,10 @@ export class AppComponent implements OnInit, OnDestroy {
   async cerrarSesion(): Promise<void> {
     await this.authService.signOut();
     this.toastService.info('Sesión cerrada');
+    // Volver al scanner: la app sigue 100% operativa offline-first sin
+    // sesión. Evita quedarse varado en una vista protegida (p.ej. tras
+    // cerrar sesión estando en /acceso-denegado).
+    this.router.navigate(['/scanner']);
   }
 
   // ─── BÚSQUEDA GLOBAL (Ctrl+K / icono topbar) ────────────

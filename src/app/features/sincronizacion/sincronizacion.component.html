@@ -203,8 +203,10 @@
                 </thead>
                 <tbody>
                   @for (m of motivosFiltrados(); track m.id) {
-                    <tr [class.seleccionada]="estaSeleccionada('motivos', m.id!)">
-                      <td class="td-sel">
+                    <tr class="fila-clic"
+                        [class.seleccionada]="estaSeleccionada('motivos', m.id!)"
+                        (click)="toggleFila('motivos', m.id!)">
+                      <td class="td-sel" (click)="$event.stopPropagation()">
                         <input type="checkbox"
                                [checked]="estaSeleccionada('motivos', m.id!)"
                                (change)="toggleFila('motivos', m.id!)"
@@ -222,10 +224,10 @@
                           {{ m.activo ? 'Activo' : 'Inactivo' }}
                         </span>
                       </td>
-                      <td class="td-acciones">
+                      <td class="td-acciones" (click)="$event.stopPropagation()">
                         <button mat-icon-button
                                 matTooltip="Subir solo este"
-                                (click)="subirFila('motivos', m.id!)"
+                                (click)="subirFila('motivos', m.id!, m.nombre)"
                                 [disabled]="subiendo()">
                           <mat-icon>cloud_upload</mat-icon>
                         </button>
@@ -283,8 +285,10 @@
                 </thead>
                 <tbody>
                   @for (a of alumnosFiltrados(); track a.id) {
-                    <tr [class.seleccionada]="estaSeleccionada('alumnos', a.id!)">
-                      <td class="td-sel">
+                    <tr class="fila-clic"
+                        [class.seleccionada]="estaSeleccionada('alumnos', a.id!)"
+                        (click)="toggleFila('alumnos', a.id!)">
+                      <td class="td-sel" (click)="$event.stopPropagation()">
                         <input type="checkbox"
                                [checked]="estaSeleccionada('alumnos', a.id!)"
                                (change)="toggleFila('alumnos', a.id!)"
@@ -295,10 +299,10 @@
                       <td class="muted">{{ a.carrera }}</td>
                       <td class="mono">{{ a.grado }}{{ a.grupo }}</td>
                       <td class="muted">{{ a.turno }}</td>
-                      <td class="td-acciones">
+                      <td class="td-acciones" (click)="$event.stopPropagation()">
                         <button mat-icon-button
                                 matTooltip="Subir solo este"
-                                (click)="subirFila('alumnos', a.id!)"
+                                (click)="subirFila('alumnos', a.id!, a.matricula + ' — ' + nombreAlumno(a))"
                                 [disabled]="subiendo()">
                           <mat-icon>cloud_upload</mat-icon>
                         </button>
@@ -356,8 +360,10 @@
                 </thead>
                 <tbody>
                   @for (r of registrosFiltrados(); track r.id) {
-                    <tr [class.seleccionada]="estaSeleccionada('registros', r.id)">
-                      <td class="td-sel">
+                    <tr class="fila-clic"
+                        [class.seleccionada]="estaSeleccionada('registros', r.id)"
+                        (click)="toggleFila('registros', r.id)">
+                      <td class="td-sel" (click)="$event.stopPropagation()">
                         <input type="checkbox"
                                [checked]="estaSeleccionada('registros', r.id)"
                                (change)="toggleFila('registros', r.id)"
@@ -378,10 +384,10 @@
                           {{ motivosResumen(r) }}
                         </span>
                       </td>
-                      <td class="td-acciones">
+                      <td class="td-acciones" (click)="$event.stopPropagation()">
                         <button mat-icon-button
                                 matTooltip="Subir solo este"
-                                (click)="subirFila('registros', r.id)"
+                                (click)="subirFila('registros', r.id, r.matricula + ' — ' + fechaCorta(r.fechaHora))"
                                 [disabled]="subiendo()">
                           <mat-icon>cloud_upload</mat-icon>
                         </button>
@@ -401,5 +407,83 @@
         }
       </section>
     }
+  }
+
+  <!-- ── Sección: Descartados (papelera con deshacer) ────── -->
+  @if (auth.isSignedIn() && !cargando() && totalDescartados() > 0) {
+    <section class="sync-seccion sync-descartados">
+      <header class="sync-seccion-header"
+              (click)="toggleSeccionDescartados()"
+              [class.collapsed]="!seccionDescartados()">
+        <mat-icon class="chevron">{{ seccionDescartados() ? 'expand_more' : 'chevron_right' }}</mat-icon>
+        <mat-icon class="tipo-icon">delete_outline</mat-icon>
+        <h3>Descartados</h3>
+        <span class="sync-seccion-count">{{ totalDescartados() }}</span>
+        @if (seccionDescartados()) {
+          <button mat-stroked-button
+                  class="restaurar-todos"
+                  (click)="$event.stopPropagation(); restaurarTodos()"
+                  [disabled]="subiendo()">
+            <mat-icon>restore</mat-icon>
+            Restaurar todos
+          </button>
+        }
+      </header>
+
+      @if (seccionDescartados()) {
+        <p class="sync-vacio muted">
+          Estos cambios no se subirán. Restáuralos para devolverlos a la bandeja
+          de subida.
+        </p>
+        <div class="sync-tabla-wrap">
+          <table class="sync-tabla">
+            <tbody>
+              @for (m of descartados().motivos; track m.id) {
+                <tr>
+                  <td class="td-tipo"><span class="tipo-tag">Motivo</span></td>
+                  <td>{{ m.nombre }}</td>
+                  <td class="td-acciones">
+                    <button mat-icon-button
+                            matTooltip="Restaurar"
+                            (click)="restaurarFila('motivos', m.id!, m.nombre)"
+                            [disabled]="subiendo()">
+                      <mat-icon>restore</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @for (a of descartados().alumnos; track a.id) {
+                <tr>
+                  <td class="td-tipo"><span class="tipo-tag">Alumno</span></td>
+                  <td><span class="mono">{{ a.matricula }}</span> — {{ nombreAlumno(a) }}</td>
+                  <td class="td-acciones">
+                    <button mat-icon-button
+                            matTooltip="Restaurar"
+                            (click)="restaurarFila('alumnos', a.id!, a.matricula + ' — ' + nombreAlumno(a))"
+                            [disabled]="subiendo()">
+                      <mat-icon>restore</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @for (r of descartados().registros; track r.id) {
+                <tr>
+                  <td class="td-tipo"><span class="tipo-tag">Registro</span></td>
+                  <td><span class="mono">{{ r.matricula }}</span> — {{ fechaCorta(r.fechaHora) }}</td>
+                  <td class="td-acciones">
+                    <button mat-icon-button
+                            matTooltip="Restaurar"
+                            (click)="restaurarFila('registros', r.id, r.matricula + ' — ' + fechaCorta(r.fechaHora))"
+                            [disabled]="subiendo()">
+                      <mat-icon>restore</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
   }
 </div>
