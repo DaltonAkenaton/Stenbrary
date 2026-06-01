@@ -1,0 +1,46 @@
+# ╔══════════════════════════════════════════════════════╗
+# ║  supabase-keepalive.yml                               ║
+# ║  Stenbrary — Fase 2                                   ║
+# ║                                                      ║
+# ║  El free tier de Supabase pausa el proyecto tras ~7  ║
+# ║  días sin requests. Durante desarrollo eso obliga a  ║
+# ║  reanudarlo a mano. Este job hace 1 ping diario a la ║
+# ║  base de datos (GET a /rest/v1/motivos) para que     ║
+# ║  Supabase nunca lo vea inactivo → nunca lo pausa.    ║
+# ║                                                      ║
+# ║  La anon key es pública por diseño (ya vive en       ║
+# ║  src/environments/environment.ts y respeta RLS), por ║
+# ║  eso va inline y no requiere configurar Secrets.     ║
+# ║                                                      ║
+# ║  Nota: GitHub desactiva los cron de un repo tras 60  ║
+# ║  días SIN commits. Si dejas el repo quieto 2 meses,  ║
+# ║  vuelve a habilitarlo desde la pestaña Actions.      ║
+# ╚══════════════════════════════════════════════════════╝
+
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Diario 09:17 UTC. Minuto != 0 a propósito: los cron en hora
+    # en punto sufren más retraso por la cola global de GitHub.
+    - cron: '17 9 * * *'
+  workflow_dispatch: {} # permite dispararlo a mano desde la pestaña Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST (toca Postgres = cuenta como actividad)
+        run: |
+          CODE=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "https://yhibkewgxhmwoemlvruy.supabase.co/rest/v1/motivos?select=id&limit=1" \
+            -H "apikey: sb_publishable_pLIblkALe_5TbYyNJZQTTg_jnihv3sd" \
+            -H "Authorization: Bearer sb_publishable_pLIblkALe_5TbYyNJZQTTg_jnihv3sd")
+          echo "Supabase respondió HTTP $CODE"
+          # 200 = ok (array, vacío o no, da igual: ya tocó la BD).
+          # Cualquier 2xx/4xx significa que el proyecto está despierto.
+          # Solo fallamos si no hubo respuesta (000 = pausado/caído).
+          if [ "$CODE" = "000" ]; then
+            echo "::error::Sin respuesta de Supabase. ¿Proyecto pausado o URL/key inválida?"
+            exit 1
+          fi
