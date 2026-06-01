@@ -17,8 +17,26 @@ import { Injectable } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { Alumno, Motivo, Registro } from '../models';
+import { UserRole } from '../auth/auth.types';
 import { getSupabaseClient } from '../auth/supabase.client';
 import { log, logError } from '../utils/logger';
+
+/** Perfil de usuario tal como lo consume la página /usuarios. */
+export interface UsuarioPerfil {
+  id: string;
+  rol: UserRole;
+  nombre: string;
+  email: string | null;
+  matricula: string | null;
+}
+
+interface UserProfileRow {
+  id: string;
+  rol: UserRole;
+  nombre: string;
+  email: string | null;
+  matricula: string | null;
+}
 
 /**
  * Filas tal como viajan por la API REST de Supabase (snake_case).
@@ -394,6 +412,52 @@ export class RemoteDatabaseService {
     }
     log('[remote] crearRegistroCompleto OK:', registro.matricula);
     return data as string;
+  }
+
+  // ─── USUARIOS (gestión de roles, Fase 2.3.x) ───────────
+
+  /**
+   * Lista los perfiles visibles para el usuario actual. RLS (`profiles_select`)
+   * limita lo que devuelve: coordinador ve su organización, super_admin ve todo.
+   */
+  async listarUsuarios(): Promise<UsuarioPerfil[]> {
+    const sb = this.requireClient();
+    const { data, error } = await sb
+      .from('user_profiles')
+      .select('id, rol, nombre, email, matricula')
+      .order('email', { ascending: true });
+
+    if (error) {
+      logError('[remote] listarUsuarios:', error);
+      throw error;
+    }
+    return (data ?? []).map((r: UserProfileRow) => ({
+      id: r.id,
+      rol: r.rol,
+      nombre: r.nombre,
+      email: r.email,
+      matricula: r.matricula,
+    }));
+  }
+
+  /**
+   * Cambia el rol de un usuario vía la RPC `set_user_role` (security definer).
+   * La RPC aplica las salvaguardas: el coordinador no puede tocar super_admins,
+   * ni asignar super_admin, ni cambiar su propio rol. Si la regla se viola,
+   * Postgres lanza excepción y aquí se propaga como error.
+   */
+  async cambiarRolUsuario(targetId: string, nuevoRol: UserRole): Promise<void> {
+    const sb = this.requireClient();
+    const { error } = await sb.rpc('set_user_role', {
+      target_id: targetId,
+      nuevo_rol: nuevoRol,
+    });
+
+    if (error) {
+      logError('[remote] cambiarRolUsuario:', error);
+      throw error;
+    }
+    log('[remote] cambiarRolUsuario OK:', targetId, '→', nuevoRol);
   }
 
   // ─── DIAGNÓSTICO ────────────────────────────────────────

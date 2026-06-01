@@ -1,0 +1,118 @@
+<div class="usuarios-page">
+  <header class="usuarios-header">
+    <div class="usuarios-titulo">
+      <h1>
+        <mat-icon>group</mat-icon>
+        Usuarios
+      </h1>
+      <p class="muted">
+        Asigna el rol de cada persona del equipo. No necesitas tocar la base de datos.
+      </p>
+    </div>
+    @if (auth.isSignedIn()) {
+      <button mat-stroked-button (click)="cargar()" [disabled]="cargando()">
+        <mat-icon>refresh</mat-icon>
+        Refrescar
+      </button>
+    }
+  </header>
+
+  @if (!auth.isSignedIn() && !auth.isLocalOnly()) {
+    <section class="usuarios-card needs-login">
+      <mat-icon>lock_outline</mat-icon>
+      <div>
+        <h2>Necesitas iniciar sesión</h2>
+        <p class="muted">Inicia sesión con tu cuenta de coordinador para gestionar usuarios.</p>
+      </div>
+      <button mat-flat-button color="primary" (click)="irALogin()">Iniciar sesión</button>
+    </section>
+  } @else if (auth.isLocalOnly()) {
+    <section class="usuarios-card">
+      <mat-icon>cloud_off</mat-icon>
+      <div>
+        <h2>Modo solo-local</h2>
+        <p class="muted">
+          La gestión de usuarios requiere backend configurado. La app sigue
+          funcionando contra el almacenamiento local.
+        </p>
+      </div>
+    </section>
+  } @else if (cargando()) {
+    <section class="usuarios-loading">
+      <mat-spinner diameter="32"></mat-spinner>
+      <p>Cargando usuarios…</p>
+    </section>
+  } @else {
+
+    <!-- Cómo agregar gente nueva -->
+    <section class="usuarios-info">
+      <mat-icon>info_outline</mat-icon>
+      <p>
+        ¿Falta alguien? Pídele que <strong>inicie sesión una vez</strong> con su
+        correo. Aparecerá aquí como <strong>Asistente</strong> y entonces podrás
+        ajustar su rol.
+      </p>
+    </section>
+
+    <div class="usuarios-tabla-wrap">
+      <table class="usuarios-tabla">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Matrícula</th>
+            <th class="th-rol">Rol</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of usuarios(); track u.id) {
+            <tr>
+              <td>
+                <div class="celda-usuario">
+                  <span class="avatar">{{ (nombreMostrado(u) || '?').charAt(0).toUpperCase() }}</span>
+                  <div class="datos">
+                    <span class="nombre">
+                      {{ nombreMostrado(u) }}
+                      @if (u.id === miId()) { <span class="tu-tag">tú</span> }
+                    </span>
+                    @if (u.email) { <span class="email muted">{{ u.email }}</span> }
+                  </div>
+                </div>
+              </td>
+              <td class="mono muted">{{ u.matricula || '—' }}</td>
+              <td class="td-rol">
+                @if (editable(u)) {
+                  <div class="rol-control">
+                    <select
+                      [value]="u.rol"
+                      (change)="onRolChange(u, $event)"
+                      [disabled]="guardandoId() === u.id">
+                      @for (r of rolesAsignables; track r.valor) {
+                        <option [value]="r.valor">{{ r.etiqueta }}</option>
+                      }
+                    </select>
+                    @if (guardandoId() === u.id) {
+                      <mat-spinner diameter="16"></mat-spinner>
+                    }
+                  </div>
+                } @else {
+                  <span class="rol-fijo"
+                        [matTooltip]="u.id === miId() ? 'No puedes cambiar tu propio rol' : 'Rol protegido'">
+                    {{ rolLegible(u.rol) }}
+                    <mat-icon>lock</mat-icon>
+                  </span>
+                }
+              </td>
+            </tr>
+          }
+          @if (usuarios().length === 0) {
+            <tr>
+              <td colspan="3" class="usuarios-vacio muted">
+                No hay otros usuarios todavía.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

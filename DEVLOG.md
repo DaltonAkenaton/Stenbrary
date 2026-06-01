@@ -9,6 +9,48 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-06-01 (tarde) — Fase 2.3.x: página /usuarios + badge en tiempo real
+
+Tras dejar verde el CI, seguimos avanzando hacia el cierre de Fase 2.
+
+**Badge de pendientes en tiempo real:**
+- `DatabaseService.cambiosSync` (signal) se incrementa en `markPending` y
+  `actualizarEstadoSync`. `AppComponent` lo lee en un effect → el badge del
+  sidebar se actualiza al registrar/editar/subir sin re-login ni navegar.
+
+**Página `/usuarios` (asignar roles sin SQL):**
+- **Modelo de invitación sin backend extra:** el asistente inicia sesión una
+  vez (trigger lo crea como `asistente`), aparece en /usuarios y el
+  coordinador ajusta su rol. Sin Edge Functions ni `service_role` en el
+  cliente.
+- **Migración `0006_user_management.sql`:**
+  - Columna `email` en `user_profiles` (+ backfill desde auth.users + trigger
+    actualizado) — auth.users no es legible por el cliente.
+  - **RPC `set_user_role` (security definer)** con salvaguardas: coordinador
+    no puede tocar super_admins, ni asignar super_admin, ni cambiar su propio
+    rol; valida misma organización (`is distinct from`, tolerante a NULL).
+  - **Cierre de auto-escalación:** `revoke update (rol, organization_id) ...
+    from authenticated` — antes `profiles_update_self` permitía que cualquiera
+    se promoviera a super_admin editando su propio perfil. Ahora el rol solo
+    cambia vía la RPC.
+  - `profiles_select` con `is not distinct from` para que coordinador vea a
+    sus pares en single-tenant (org NULL).
+- **Front:** `RemoteDatabaseService.listarUsuarios()` + `cambiarRolUsuario()`;
+  `UsuariosComponent` (lista, selector de rol por fila con confirmación,
+  banner explicativo, fila propia y super_admins bloqueados); ruta
+  `/usuarios` con roleGuard; item en sidebar (Administración, solo signed-in);
+  entrada en permissions.ts.
+
+**⚠️ Pendiente de aplicar y PROBAR en Supabase:** la migración 0006 toca
+seguridad. Plan de pruebas: (1) como coordinador, cambiar rol de un asistente
+✓; (2) intentar promover a super_admin → debe fallar; (3) intentar cambiar el
+propio rol → debe fallar; (4) intentar auto-promoverse vía REST directo a
+user_profiles → debe fallar por el revoke.
+
+**Verificación local:** type-check raíz + 69/69 tests + build producción en verde.
+
+---
+
 ## 2026-06-01 — Fase 2.3.x: fixes de verificación (auth offline + UX sync)
 
 Tanda de correcciones tras la primera verificación visual del coordinador

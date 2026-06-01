@@ -119,6 +119,13 @@ export const routes: Routes = [
     title: 'Stenbrary — Inactivos',
   },
   {
+    path: 'usuarios',
+    loadComponent: () =>
+      import('./features/usuarios/usuarios.component').then(m => m.UsuariosComponent),
+    canActivate: [roleGuard],
+    title: 'Stenbrary — Usuarios',
+  },
+  {
     path: 'acceso-denegado',
     loadComponent: () =>
       import('./features/acceso-denegado/acceso-denegado.component').then(m => m.AccesoDenegadoComponent),

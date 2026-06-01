@@ -425,6 +425,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     if (this.authService.isSignedIn()) {
       items.push({ icon: 'cloud_sync', label: 'Sincronización', route: '/sincronizacion' });
+      items.push({ icon: 'group', label: 'Usuarios', route: '/usuarios' });
     }
 
     items.push({ icon: 'settings', label: 'Configuración', route: '/configuracion' });
@@ -478,6 +479,8 @@ export class AppComponent implements OnInit, OnDestroy {
       '/presencia':         'En Biblioteca Ahora',
       '/novedades':         'Novedades',
       '/inactivos':         'Alumnos Inactivos',
+      '/sincronizacion':    'Sincronización',
+      '/usuarios':          'Usuarios',
     };
     const url = this.router.url.split('?')[0];
     if (url.startsWith('/detalle-alumno')) return 'Detalle del Alumno';

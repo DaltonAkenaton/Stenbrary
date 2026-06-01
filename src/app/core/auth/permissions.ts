@@ -107,6 +107,7 @@ const PERMISOS_POR_RUTA: Record<string, readonly UserRole[]> = {
   '/configuracion':     ['super_admin', 'coordinador'],
   '/importar-alumnos':  ['super_admin', 'coordinador'],
   '/sincronizacion':    ['super_admin', 'coordinador'],
+  '/usuarios':          ['super_admin', 'coordinador'],
   // Públicas (no listadas): /login, /novedades, /acceso-denegado,
   // /detalle-alumno/:matricula
 };
