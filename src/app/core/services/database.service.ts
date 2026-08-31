@@ -286,6 +286,73 @@ export class DatabaseService {
     return nuevoRegistro;
   }
 
+  // ═══════════════════════════════════════════════
+  // RESTAURACIÓN DESDE BACKUP
+  // ═══════════════════════════════════════════════
+  // `crearAlumno` / `crearRegistro` son para el flujo OPERATIVO: asignan un
+  // id nuevo y estampan la fecha actual. Usarlos para restaurar un backup
+  // reescribe el historial completo con la fecha de la importación.
+  //
+  // Estos dos métodos preservan `id` y las fechas originales. Usan `put`
+  // (no `add`) a propósito: reimportar el mismo backup sobrescribe en lugar
+  // de duplicar. Esa idempotencia es además lo que el sync de Fase 2
+  // necesitará de cualquier ruta de escritura.
+
+  /**
+   * Convierte a Date lo que venga del JSON de un backup.
+   *
+   * `JSON.parse` devuelve las fechas como string ISO. Si se guardaran así,
+   * se estarían fabricando justo los registros con `fechaHora` string que
+   * obligan a `obtenerRegistrosDeHoy()` a mantener el fallback
+   * `getAll() + filter` (ver nota en ese método).
+   */
+  private aFecha(valor: unknown): Date | undefined {
+    if (valor == null) return undefined;
+    if (valor instanceof Date) return isNaN(valor.getTime()) ? undefined : valor;
+    const d = new Date(valor as string);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+
+  /**
+   * Restaura un alumno conservando su `id` y su `fechaRegistro`.
+   * Devuelve `null` si la matrícula ya pertenece a OTRO alumno — el índice
+   * `by-matricula` es único y sobrescribirlo mezclaría dos personas.
+   */
+  async restaurarAlumno(alumno: Alumno): Promise<Alumno | null> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const existente = await this.obtenerAlumnoPorMatricula(alumno.matricula);
+    if (existente && existente.id !== alumno.id) return null;
+
+    const restaurado: Alumno = this.markPending({
+      ...alumno,
+      fechaRegistro: this.aFecha(alumno.fechaRegistro) ?? new Date(),
+    });
+
+    await this.db.put('alumnos', restaurado);
+    return restaurado;
+  }
+
+  /** Restaura un registro conservando `id`, `fechaHora`, salida y motivos. */
+  async restaurarRegistro(registro: Registro): Promise<Registro> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const fechaHora = this.aFecha(registro.fechaHora);
+    if (!fechaHora) throw new Error('Registro sin fechaHora válida');
+
+    const horaSalida = this.aFecha(registro.horaSalida);
+    const restaurado: Registro = this.markPending({
+      ...registro,
+      fechaHora,
+      ...(horaSalida ? { horaSalida } : {}),
+    });
+
+    await this.db.put('registros', restaurado);
+    return restaurado;
+  }
+
   /**
    * Obtener registros de hoy.
    *
@@ -1243,12 +1310,19 @@ export class DatabaseService {
         return fecha >= inicio && fecha <= fin;
       });
 
-      // Eliminar uno por uno (IndexedDB no tiene DELETE WHERE)
+      // Eliminar uno por uno (IndexedDB no tiene DELETE WHERE).
+      //
+      // Los deletes se lanzan TODOS y se esperan juntos, no en serie. Con
+      // `await` dentro del for, cada iteración cede el hilo y la transacción
+      // puede auto-cerrarse entre requests (IndexedDB commitea cuando no
+      // quedan peticiones pendientes) — además de tardar una eternidad con
+      // miles de filas. Encolarlos primero mantiene la transacción viva y
+      // convierte N viajes secuenciales en uno solo.
       const tx = this.db.transaction('registros', 'readwrite');
-      for (const registro of registrosAEliminar) {
-        await tx.store.delete(registro.id);
-      }
-      await tx.done;
+      await Promise.all([
+        ...registrosAEliminar.map(registro => tx.store.delete(registro.id)),
+        tx.done,
+      ]);
 
       log(`🗑️ ${registrosAEliminar.length} registros eliminados (${inicio.toLocaleDateString()} — ${fin.toLocaleDateString()})`);
 
@@ -1263,6 +1337,19 @@ export class DatabaseService {
    * Cuenta registros dentro de un rango de fechas (sin eliminar).
    * Útil para preview antes de eliminar.
    */
+  /**
+   * Total de registros en la base, sin filtrar.
+   *
+   * Usa `count()` nativo: no materializa las filas en memoria como
+   * `getAll().length`. Sirve para contrastar contra un conteo por rango y
+   * explicar la diferencia ("hay 54 en la base, 0 en este rango").
+   */
+  async contarRegistros(): Promise<number> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    return this.db.count('registros');
+  }
+
   async contarRegistrosPorRango(fechaInicio: Date, fechaFin: Date): Promise<number> {
     try {
       await this.inicializar();

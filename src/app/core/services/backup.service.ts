@@ -203,43 +203,36 @@ export class BackupService {
       }
 
       // ── Importar Alumnos (deduplicar por matrícula) ──
+      // Se restauran TAL CUAL: conservan su `id` original, y con él los
+      // `alumnoId` de los registros que los referencian. Reconstruirlos con
+      // `crearAlumno()` generaba ids nuevos y rompía esa relación.
       for (const alumno of datos.alumnos) {
         try {
-          await this.databaseService.crearAlumno({
-            matricula: alumno.matricula,
-            nombre: alumno.nombre,
-            apellidoPaterno: alumno.apellidoPaterno,
-            apellidoMaterno: alumno.apellidoMaterno,
-            carrera: alumno.carrera,
-            grado: alumno.grado,
-            grupo: alumno.grupo,
-            turno: alumno.turno,
-            activo: alumno.activo,
-            email: alumno.email,
-            telefono: alumno.telefono,
-            notas: alumno.notas,
-            datosExtra: alumno.datosExtra,
-          });
-          resultado.alumnosImportados++;
+          const restaurado = await this.databaseService.restaurarAlumno(alumno);
+          if (restaurado) {
+            resultado.alumnosImportados++;
+          } else {
+            resultado.alumnosOmitidos++; // matrícula ya usada por otro alumno
+          }
         } catch {
           resultado.alumnosOmitidos++;
         }
       }
 
       // ── Importar Registros ──
+      // Un backup es la única red de seguridad del coordinador: tiene que
+      // devolver el historial EXACTO. Antes se recreaban con `crearRegistro()`,
+      // que estampa `fechaHora: new Date()` — cada restauración aplastaba
+      // meses de historial contra el día de la importación, y descartaba
+      // horaSalida, duracionMinutos, motivoIds/motivoNombres y turno.
       for (const registro of datos.registros) {
         try {
-          await this.databaseService.crearRegistro({
-            alumnoId: registro.alumnoId,
-            matricula: registro.matricula,
-            nombreCompleto: registro.nombreCompleto,
-            carrera: registro.carrera,
-            motivoId: registro.motivoId,
-            motivoNombre: registro.motivoNombre,
-          });
+          await this.databaseService.restaurarRegistro(registro);
           resultado.registrosImportados++;
         } catch (err: any) {
-          resultado.errores.push(`Registro omitido: ${registro.matricula}`);
+          resultado.errores.push(
+            `Registro omitido: ${registro.matricula} (${err?.message ?? 'error'})`,
+          );
         }
       }
 
