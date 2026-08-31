@@ -1,0 +1,95 @@
+<!--
+  diagnostico.component.html
+  Stenbrary — Reporte de incidencias
+
+  Orden: primero qué hacer (descargar y mandar), después el detalle.
+  Quien abre esta pantalla necesita una acción, no un informe.
+-->
+
+<div class="diag-container">
+
+  <header class="page-header">
+    <div class="header-icon">
+      <mat-icon>health_and_safety</mat-icon>
+    </div>
+    <div class="header-text">
+      <h1>Reporte del sistema</h1>
+      <p>
+        El sistema anota por su cuenta cuando algo no sale como se espera,
+        aunque a simple vista todo parezca normal.
+      </p>
+    </div>
+  </header>
+
+  @if (!hayIncidencias()) {
+    <section class="panel estado-ok">
+      <mat-icon>check_circle</mat-icon>
+      <div>
+        <strong>Todo funcionando con normalidad.</strong>
+        <p>No hay nada que reportar. Puedes cerrar esta pantalla.</p>
+      </div>
+    </section>
+  } @else {
+
+    <!-- ══════════ QUÉ HACER ══════════ -->
+    <section class="panel accion">
+      <div class="accion-texto">
+        <span class="accion-titulo">{{ resumen() }}</span>
+        <p class="accion-sub">
+          Esto no significa que el sistema esté dañado — casi siempre son
+          detalles que conviene revisar. Descarga el archivo y envíaselo a
+          quien da soporte técnico; con él se puede ver qué pasó.
+        </p>
+      </div>
+      <button class="btn-primario" (click)="descargar()">
+        <mat-icon>download</mat-icon>
+        Descargar reporte
+      </button>
+    </section>
+
+    <!-- ══════════ DETALLE ══════════ -->
+    <section class="panel">
+      <h2 class="seccion-titulo">Detalle</h2>
+
+      <ul class="lista">
+        @for (inc of incidencias(); track inc.id) {
+          <li class="item" [class.es-error]="inc.nivel === 'error'">
+            <button class="item-cab" (click)="alternar(inc.id)">
+              <mat-icon class="item-icon">
+                {{ abierta() === inc.id ? 'expand_more' : 'chevron_right' }}
+              </mat-icon>
+              <span class="item-area">{{ nombreArea(inc.area) }}</span>
+              <span class="item-msg">{{ inc.mensaje }}</span>
+              @if (inc.veces > 1) {
+                <span class="item-veces">{{ inc.veces }}×</span>
+              }
+              <span class="item-fecha">{{ fechaLegible(inc.timestamp) }}</span>
+            </button>
+
+            @if (abierta() === inc.id) {
+              <!-- Detalle técnico plegado: existe para quien lo entiende, y
+                   no estorba a quien no. -->
+              <div class="item-detalle">
+                @if (inc.contexto) {
+                  <span class="detalle-label">Datos</span>
+                  <pre class="detalle-pre">{{ contextoLegible(inc) }}</pre>
+                }
+                @if (inc.stack) {
+                  <span class="detalle-label">Detalle técnico</span>
+                  <pre class="detalle-pre">{{ inc.stack }}</pre>
+                }
+                <span class="detalle-meta">Pantalla: {{ inc.url || '—' }}</span>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+
+      <button class="btn-secundario" (click)="limpiar()">
+        <mat-icon>delete_sweep</mat-icon>
+        Borrar historial
+      </button>
+    </section>
+  }
+
+</div>

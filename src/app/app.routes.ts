@@ -119,6 +119,14 @@ export const routes: Routes = [
     title: 'Stenbrary — Bajar de la nube',
   },
   {
+    // Sin roleGuard a propósito: si el sistema falla de un modo que impide
+    // autenticar, esta es justo la pantalla que hace falta poder abrir.
+    path: 'diagnostico',
+    loadComponent: () =>
+      import('./features/diagnostico/diagnostico.component').then(m => m.DiagnosticoComponent),
+    title: 'Stenbrary — Reporte del sistema',
+  },
+  {
     path: 'inactivos',
     loadComponent: () =>
       import('./features/inactivos/inactivos.component').then(m => m.InactivosComponent),

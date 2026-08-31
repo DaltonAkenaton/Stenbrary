@@ -1,0 +1,285 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  diagnostico.component.scss                          ║
+// ║  Stenbrary — Reporte de incidencias                  ║
+// ║                                                      ║
+// ║  Paleta a propósito sobria: ámbar y no rojo. Esta    ║
+// ║  pantalla la ve gente que no distingue un aviso de   ║
+// ║  una falla grave, y una pantalla roja hace que dejen ║
+// ║  de usar el sistema "no vaya a ser que lo rompa".    ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.diag-container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg $spacing-xxl;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+// ─── CABECERA ────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.header-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: $border-radius-md;
+  background: linear-gradient(135deg, rgba(0, 200, 215, 0.15), rgba(0, 169, 158, 0.10));
+  border: 1px solid $border-glow;
+  @include flex-center;
+
+  mat-icon { color: $cyan-400; }
+}
+
+.header-text {
+  h1 {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 22px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: -0.4px;
+  }
+  p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: $text-secondary;
+    max-width: 68ch;
+  }
+}
+
+// ─── PANELES ─────────────────────────────────────────────
+.panel {
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  padding: $spacing-md $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.estado-ok {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: $spacing-md;
+
+  mat-icon { color: $success-color; flex-shrink: 0; }
+  strong { color: $text-primary; font-size: 14px; }
+  p { margin: 2px 0 0; font-size: 13px; color: $text-secondary; }
+}
+
+.accion {
+  flex-direction: row;
+  align-items: center;
+  gap: $spacing-lg;
+  flex-wrap: wrap;
+  border-color: rgba(245, 166, 35, 0.28);
+  background-image: linear-gradient(160deg, rgba(245, 166, 35, 0.04) 0%, transparent 60%);
+
+  > .btn-primario { margin-left: auto; }
+}
+
+.accion-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 66ch;
+}
+
+.accion-titulo {
+  font-family: $font-display;
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-primary;
+}
+
+.accion-sub {
+  margin: 0;
+  font-size: 13px;
+  color: $text-secondary;
+  line-height: 1.6;
+}
+
+.seccion-titulo {
+  margin: 0;
+  font-family: $font-body;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $text-muted;
+}
+
+// ─── BOTONES ─────────────────────────────────────────────
+.btn-primario {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, $cyan-500, $teal-500);
+  color: $navy-950;
+  border: none;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all $transition-fast;
+  box-shadow: $shadow-glow-sm;
+
+  mat-icon { font-size: 19px; width: 19px; height: 19px; }
+
+  &:hover { transform: translateY(-1px); box-shadow: $shadow-glow-md; }
+}
+
+.btn-secundario {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-sm;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { color: $warn-color; border-color: rgba(240, 82, 82, 0.35); }
+}
+
+// ─── LISTA ───────────────────────────────────────────────
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(0, 200, 215, 0.06);
+
+  &:last-child { border-bottom: none; }
+  &.es-error .item-area { color: $warn-color; }
+}
+
+.item-cab {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: 10px $spacing-md;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: $font-body;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { background: rgba(0, 200, 215, 0.04); }
+}
+
+.item-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: $amber-color;
+}
+
+.item-area {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: $cyan-300;
+}
+
+.item-msg {
+  font-size: 13px;
+  color: $text-secondary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.item-veces {
+  flex-shrink: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $amber-color;
+}
+
+.item-fecha {
+  flex-shrink: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+}
+
+// ─── DETALLE TÉCNICO ─────────────────────────────────────
+.item-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 $spacing-md $spacing-md;
+}
+
+.detalle-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $text-muted;
+}
+
+// Scroll propio: un stack largo no debe ensanchar la página.
+.detalle-pre {
+  margin: 0;
+  padding: $spacing-sm;
+  background: $navy-900;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-sm;
+  font-family: $font-mono;
+  font-size: 11px;
+  line-height: 1.5;
+  color: $text-secondary;
+  overflow-x: auto;
+  max-height: 220px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.detalle-meta {
+  font-size: 11px;
+  color: $text-muted;
+}
+
+@media (max-width: $breakpoint-xs) {
+  .diag-container { padding: $spacing-md $spacing-sm $spacing-xxl; }
+  .panel { padding: $spacing-md; }
+  .btn-primario { width: 100%; justify-content: center; }
+  .item-fecha { display: none; }
+}

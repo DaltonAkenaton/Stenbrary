@@ -22,6 +22,7 @@ import {
   DescargaStore,
   construirDiff,
 } from '../utils/descarga.utils';
+import { coincide, reportarAnomalia } from '../utils/invariante.utils';
 
 export interface ProgresoDescarga {
   activo: boolean;
@@ -207,9 +208,25 @@ export class DescargaService {
       this.progresoSignal.set(PROGRESO_INICIAL);
     }
 
+    // Invariante: lo aceptado es lo que se guardó. Un desajuste aquí
+    // significa que el coordinador cree tener datos que no bajaron — el peor
+    // caso posible en una herramienta de respaldo, y hoy sería invisible.
+    coincide(
+      traidos, total,
+      'descarga',
+      'Se trajeron menos elementos de los seleccionados',
+      { fallidos: errores.length, primerError: errores[0]?.message },
+    );
+
     // El diff quedó obsoleto en cuanto se escribió: recalcularlo evita que la
     // pantalla siga ofreciendo traer algo que ya está.
-    await this.comparar().catch(() => { /* la UI ya muestra el resultado */ });
+    await this.comparar().catch(err => {
+      // Antes esto era un catch vacío. Fallar aquí deja la pantalla mostrando
+      // un diff viejo, y el coordinador vuelve a "traer" lo que ya trajo.
+      reportarAnomalia('descarga', 'No se pudo recalcular tras traer datos', {
+        detalle: (err as Error)?.message,
+      });
+    });
 
     return { traidos, fallidos: errores.length, errores };
   }

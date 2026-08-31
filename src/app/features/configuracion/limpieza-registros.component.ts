@@ -15,7 +15,7 @@
 // ║             limpieza-registros.component.ts            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -31,6 +31,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { coincide } from '../../core/utils/invariante.utils';
 
 type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6meses' | 'todo';
 
@@ -94,24 +95,24 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
       }
 
       <!-- Preview de conteo -->
-      @if (conteoCalculado) {
-        <div class="preview-box" [class.tiene-datos]="conteoRegistros > 0">
-          <mat-icon>{{ conteoRegistros > 0 ? 'inventory_2' : 'check_circle' }}</mat-icon>
+      @if (conteoCalculado()) {
+        <div class="preview-box" [class.tiene-datos]="conteoRegistros() > 0">
+          <mat-icon>{{ conteoRegistros() > 0 ? 'inventory_2' : 'check_circle' }}</mat-icon>
           <div class="preview-info">
-            @if (conteoRegistros > 0) {
-              <span class="preview-count">{{ conteoRegistros }}</span>
+            @if (conteoRegistros() > 0) {
+              <span class="preview-count">{{ conteoRegistros() }}</span>
               <span class="preview-label">
                 registros encontrados en este rango
-                @if (totalEnBase > conteoRegistros) {
-                  · {{ totalEnBase }} en total en la base
+                @if (totalEnBase() > conteoRegistros()) {
+                  · {{ totalEnBase() }} en total en la base
                 }
               </span>
-            } @else if (totalEnBase > 0) {
+            } @else if (totalEnBase() > 0) {
               <!-- Distinguir "rango vacío" de "base vacía": sin esto, ver 0
                    habiendo registros parece un error del sistema. -->
               <span class="preview-label">
                 No hay registros en este rango.
-                Quedan <strong>{{ totalEnBase }}</strong> fuera de él.
+                Quedan <strong>{{ totalEnBase() }}</strong> fuera de él.
               </span>
             } @else {
               <span class="preview-label">No queda ningún registro en la base</span>
@@ -120,7 +121,7 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
         </div>
       }
 
-      @if (consultando) {
+      @if (consultando()) {
         <div class="preview-box">
           <mat-icon class="spinning">sync</mat-icon>
           <span class="preview-label">Calculando...</span>
@@ -130,10 +131,10 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
       <!-- Botón de acción -->
       <button
         class="btn-danger-action"
-        [disabled]="!conteoCalculado || conteoRegistros === 0 || consultando"
+        [disabled]="!conteoCalculado() || conteoRegistros() === 0 || consultando()"
         (click)="confirmarEliminacion()">
         <mat-icon>delete_forever</mat-icon>
-        Eliminar {{ conteoRegistros }} registro{{ conteoRegistros !== 1 ? 's' : '' }}
+        Eliminar {{ conteoRegistros() }} registro{{ conteoRegistros() !== 1 ? 's' : '' }}
       </button>
 
       <!-- Nota de seguridad -->
@@ -344,11 +345,18 @@ export class LimpiezaRegistrosComponent {
   fechaDesde = '';
   fechaHasta = '';
 
-  conteoRegistros = 0;
-  conteoCalculado = false;
-  consultando = false;
+  // Signals y no campos planos: este componente vive dentro de
+  // `configuracion-v2`, que es OnPush. Con campos planos, el clic en
+  // "Eliminar" marcaba el subárbol sucio, pero esa marca se consumía antes
+  // de que terminaran los `await` — así que el conteo se actualizaba en
+  // memoria y la pantalla seguía mostrando el número viejo hasta tocar el
+  // input o cambiar de vista. Un signal leído en la plantilla vuelve a
+  // marcar el componente por su cuenta cuando cambia.
+  readonly conteoRegistros = signal(0);
+  readonly conteoCalculado = signal(false);
+  readonly consultando = signal(false);
   /** Total en la base, sin filtrar. Explica por qué el rango puede dar 0. */
-  totalEnBase = 0;
+  readonly totalEnBase = signal(0);
 
   constructor(
     private databaseService: DatabaseService,
@@ -365,8 +373,8 @@ export class LimpiezaRegistrosComponent {
   async onRangoChange(): Promise<void> {
     if (this.rangoSeleccionado === 'personalizado') {
       // Esperar a que el usuario llene las fechas
-      this.conteoCalculado = false;
-      this.conteoRegistros = 0;
+      this.conteoCalculado.set(false);
+      this.conteoRegistros.set(0);
       return;
     }
     await this.actualizarConteo();
@@ -379,12 +387,12 @@ export class LimpiezaRegistrosComponent {
   async actualizarConteo(): Promise<void> {
     const rango = this.calcularRango();
     if (!rango) {
-      this.conteoCalculado = false;
+      this.conteoCalculado.set(false);
       return;
     }
 
     try {
-      this.consultando = true;
+      this.consultando.set(true);
       // Los dos conteos van juntos: el del rango dice qué se va a borrar, el
       // total dice cuántos quedan fuera. Sin el segundo, un rango que devuelve
       // 0 es indistinguible de una base vacía.
@@ -392,13 +400,13 @@ export class LimpiezaRegistrosComponent {
         this.databaseService.contarRegistrosPorRango(rango.inicio, rango.fin),
         this.databaseService.contarRegistros(),
       ]);
-      this.conteoRegistros = enRango;
-      this.totalEnBase = total;
-      this.conteoCalculado = true;
-      this.consultando = false;
+      this.conteoRegistros.set(enRango);
+      this.totalEnBase.set(total);
+      this.conteoCalculado.set(true);
+      this.consultando.set(false);
     } catch (error) {
       console.error('Error al contar registros:', error);
-      this.consultando = false;
+      this.consultando.set(false);
       this.toastService.error('Error al consultar registros');
     }
   }
@@ -409,14 +417,14 @@ export class LimpiezaRegistrosComponent {
 
   async confirmarEliminacion(): Promise<void> {
     const rango = this.calcularRango();
-    if (!rango || this.conteoRegistros === 0) return;
+    if (!rango || this.conteoRegistros() === 0) return;
 
     const rangoTexto = this.obtenerTextoRango();
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
-        titulo: `¿Eliminar ${this.conteoRegistros} registro${this.conteoRegistros !== 1 ? 's' : ''}?`,
+        titulo: `¿Eliminar ${this.conteoRegistros()} registro${this.conteoRegistros() !== 1 ? 's' : ''}?`,
         mensaje: `Se eliminarán permanentemente todos los registros de acceso del periodo: ${rangoTexto}. Los datos de alumnos NO se verán afectados.`,
         variante: 'danger',
         textoConfirmar: 'Eliminar registros',
@@ -427,7 +435,7 @@ export class LimpiezaRegistrosComponent {
     const confirmado = await dialogRef.afterClosed().toPromise();
     if (!confirmado) return;
 
-    const esperados = this.conteoRegistros;
+    const esperados = this.conteoRegistros();
 
     try {
       this.loadingService.show(`Eliminando ${esperados} registros...`);
@@ -447,11 +455,21 @@ export class LimpiezaRegistrosComponent {
       // Cambió el universo de registros: el aforo puede haber quedado obsoleto.
       this.aforoService.refrescar();
 
-      if (this.conteoRegistros > 0) {
+      // Invariante: se borró justo lo que se prometió borrar. Si no coincide,
+      // el coordinador ve un número y la base tiene otro — exactamente el
+      // síntoma que se reportó y que nadie habría podido explicar después.
+      coincide(
+        eliminados, esperados,
+        'limpieza-registros',
+        'Se eliminaron menos registros de los contados',
+        { rango: this.rangoSeleccionado, restantesEnRango: this.conteoRegistros() },
+      );
+
+      if (this.conteoRegistros() > 0) {
         // Sobrevivieron registros dentro del mismo rango: algo los excluyó
         // (p. ej. `fechaHora` no parseable). Decirlo, no ocultarlo.
         this.toastService.warning(
-          `Se eliminaron ${eliminados}, pero quedan ${this.conteoRegistros} en este rango. ` +
+          `Se eliminaron ${eliminados}, pero quedan ${this.conteoRegistros()} en este rango. ` +
           `Puede que tengan una fecha inválida.`,
         );
       } else {

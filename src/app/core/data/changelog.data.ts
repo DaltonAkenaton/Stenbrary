@@ -49,6 +49,35 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.29.0',
+    fecha: '2026-08-31',
+    titulo: 'Reporte del sistema — los problemas ya no se pierden',
+    destacado: true,
+    resumen: 'El sistema ahora anota por su cuenta cuando algo no sale como se espera, aunque a simple vista todo parezca normal. En "Reporte del sistema" puedes descargar un archivo y enviarlo a soporte para que revisen qué pasó.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva pantalla "Reporte del sistema". Si algo falla mientras usas Stenbrary, queda anotado ahí automáticamente. Un botón descarga un archivo que puedes mandar por correo o WhatsApp a quien da soporte.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'El sistema se vigila a sí mismo en las operaciones delicadas: si dice que va a eliminar 54 registros y elimina 51, o si traes 100 elementos de la nube y llegan 98, lo detecta y lo anota aunque no aparezca ningún error en pantalla.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Antes los errores solo se enviaban a un servidor externo, y como no hay ninguno configurado, se perdían por completo. Ahora siempre quedan guardados en el propio equipo.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Al eliminar registros, el botón y el conteo ya se actualizan solos. Antes había que tocar algún campo o cambiar de pantalla para que reflejaran el número real.',
+      },
+    ],
+  },
+  {
     version: '3.28.3',
     fecha: '2026-08-31',
     titulo: 'Bajar datos de la nube',

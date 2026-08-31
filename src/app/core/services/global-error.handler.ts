@@ -14,6 +14,7 @@
 import { ErrorHandler, Injectable, inject, NgZone } from '@angular/core';
 import { ToastService } from './toast.service';
 import { ErrorReporterService } from './error-reporter.service';
+import { DiagnosticoService } from './diagnostico.service';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
@@ -21,9 +22,20 @@ export class GlobalErrorHandler implements ErrorHandler {
   private toastService = inject(ToastService);
   private ngZone = inject(NgZone);
   private reporter = inject(ErrorReporterService);
+  private diagnostico = inject(DiagnosticoService);
 
   /** Errores recientes para evitar spam de toasts */
   private erroresRecientes = new Set<string>();
+
+  /**
+   * Ruta actual como "área". No es perfecto —el error pudo originarse en un
+   * servicio compartido— pero saber en qué pantalla estaba el usuario es el
+   * primer dato útil para reproducir, y es gratis.
+   */
+  private areaDesdeUrl(): string {
+    if (typeof location === 'undefined') return 'desconocida';
+    return location.pathname.split('/').filter(Boolean)[0] ?? 'inicio';
+  }
 
   handleError(error: any): void {
     // Extraer mensaje legible
@@ -31,6 +43,17 @@ export class GlobalErrorHandler implements ErrorHandler {
 
     // Log completo en consola (para debug)
     console.error('🔴 Error no manejado:', error);
+
+    // Bitácora LOCAL — siempre, sin configuración. Es lo primero porque
+    // `reporter.report()` hace no-op cuando el endpoint está vacío, que es
+    // el caso en producción: sin esto, todo error en manos del coordinador
+    // se perdía sin dejar rastro. Se lee y se exporta desde /diagnostico.
+    this.diagnostico.error(
+      this.areaDesdeUrl(),
+      mensaje,
+      { tipo: error?.name ?? typeof error },
+      error?.stack,
+    );
 
     // Reporte remoto (no-op si no hay endpoint configurado).
     // Se dispara incluso para errores repetidos — el dedupe de abajo

@@ -34,6 +34,8 @@ import { GlobalSearchDialogComponent } from './shared/components/global-search/g
 import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-shortcuts/keyboard-shortcuts-dialog.component';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
 import { ToastService } from './core/services/toast.service';
+import { DiagnosticoService } from './core/services/diagnostico.service';
+import { registrarDiagnostico } from './core/utils/invariante.utils';
 
 interface NavItem {
   icon: string;
@@ -137,6 +139,7 @@ export class AppComponent implements OnInit, OnDestroy {
     public databaseService: DatabaseService,
     public syncService: SyncService,
     private toastService: ToastService,
+    private diagnosticoService: DiagnosticoService,
     // Bootstrap del AuthService: al inyectarlo aquí se inicializa al
     // arrancar la app y empieza a escuchar onAuthStateChange (necesario
     // para capturar el callback del magic link aunque el usuario no esté
@@ -177,6 +180,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Publica el servicio de diagnóstico para las funciones sueltas de
+    // `invariante.utils`. Se hace aquí, en el arranque, porque esos helpers
+    // se llaman desde código sin contexto de inyección de Angular.
+    registrarDiagnostico(this.diagnosticoService);
+
     // El estado de conexión lo maneja ConnectivityService (listeners +
     // sondeo activo) — ya no registramos online/offline aquí.
 
@@ -430,6 +438,9 @@ export class AppComponent implements OnInit, OnDestroy {
       items.push({ icon: 'group', label: 'Usuarios', route: '/usuarios' });
     }
 
+    items.push({ icon: 'health_and_safety', label: 'Reporte del sistema', route: '/diagnostico' });
+
+
     items.push({ icon: 'settings', label: 'Configuración', route: '/configuracion' });
     return this.filtrarPorPermisos(items);
   }
@@ -483,6 +494,7 @@ export class AppComponent implements OnInit, OnDestroy {
       '/inactivos':         'Alumnos Inactivos',
       '/sincronizacion':    'Sincronización',
       '/descarga':          'Bajar de la nube',
+      '/diagnostico':       'Reporte del sistema',
       '/usuarios':          'Usuarios',
     };
     const url = this.router.url.split('?')[0];
