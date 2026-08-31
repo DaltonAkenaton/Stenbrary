@@ -49,6 +49,65 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.27.0',
+    fecha: '2026-08-31',
+    titulo: 'Lector de credenciales + respaldos que sí devuelven tu historial',
+    destacado: true,
+    resumen: 'El escáner físico ya es la forma principal de registrar entradas: pasas la credencial y listo, sin confirmar nada. Y se corrigió un problema serio en los respaldos: al restaurar uno, todos los registros quedaban con la fecha del día de la restauración en vez de su fecha real.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'La pantalla principal ahora está pensada para el lector de credenciales: muestra "Lector listo" en espera y una barra de progreso al leer. Ya no pide confirmar la matrícula — el lector no se equivoca, así que el registro es inmediato.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'La cámara pasó a ser una opción de respaldo, disponible desde un enlace al pie de la pantalla. Sigue funcionando igual, con su confirmación de matrícula, para cuando no haya lector a la mano.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Restaurar un respaldo ya NO borra el historial. Antes, todos los registros restaurados tomaban la fecha y hora del momento de la importación, y se perdían la hora de salida, la duración de la estancia, los motivos adicionales y el turno. Ahora el respaldo devuelve los datos exactamente como estaban.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Restaurar el mismo respaldo dos veces ya no duplica alumnos ni registros.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El lector dejaba de responder si un alumno registraba entrada y luego salida sin salir de la pantalla: su credencial quedaba bloqueada hasta recargar. Ya se puede escanear cuantas veces haga falta.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El lector en modo Bluetooth ya no descarta lecturas lentas. Antes, si la transmisión tardaba un poco más de lo normal, el escaneo se ignoraba sin mostrar ningún aviso.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Al importar alumnos ahora aparece una barra de progreso con el conteo ("120 / 500") en lugar de una pantalla que parecía congelada. Si la importación se interrumpe, puedes volver a cargar el mismo archivo: los alumnos ya guardados se detectan como duplicados y no se repiten.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'La eliminación de registros ya no muestra cifras desactualizadas. Antes, al terminar de borrar, la pantalla asumía que había quedado en cero sin volver a consultar; ahora relee la base y, si algún registro sobrevivió, lo dice en vez de ocultarlo.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          '"Todos los registros" ahora abarca de verdad todos. Antes solo cubría de 2020 hasta hoy, así que los registros con fecha anterior o futura (por ejemplo, con el reloj del equipo mal ajustado) no se contaban ni se eliminaban, y la pantalla parecía equivocarse.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Eliminar muchos registros es notablemente más rápido, y la pantalla ahora muestra también cuántos registros hay en total en la base, para distinguir "no hay nada en este rango" de "no hay nada".',
+      },
+    ],
+  },
+  {
     version: '3.26.0',
     fecha: '2026-05-18',
     titulo: 'Resumen enriquecido — insight del día, flujo por hora y comparativa semanal',

@@ -158,9 +158,25 @@ Schema de Postgres + adapter + subida idempotente de IndexedDB a Supabase.
 
 **Granularidad pendiente** (sólo hoy / sólo nuevos / etc.): es Fase 2.2. Decidir si extender el one-shot con filtros simples o saltar a la bandeja de sincronización completa.
 
+### 2.0.3 Auditoría de Fase 1 (2026-08-31)
+
+Barrido de datos, analítica y responsive antes de cerrar Fase 1. Método:
+medir, no leer. Resultados:
+
+- [x] **Analítica verificada**: 36 tests nuevos sobre `EstadisticasAvanzadasService` (`estadisticas-avanzadas.service.spec.ts`) con dataset sintético de distribución conocida sobre fechas fijas. Cubre filtrado y bordes de rango, bucketing día/semana/mes, tendencias (incluida división por cero), distribución de motivos, top alumnos, carreras, heatmap con auto-expansión horaria, hora pico, caché y estado vacío. **Cero defectos aritméticos encontrados** — el motor de estadísticas es correcto.
+- [x] **Responsive verificado**: `e2e/responsive.spec.ts` recorre 12 rutas × 3 viewports (390 / 820 / 1440). **Cero desbordamientos.** `/estadisticas` es la vista mejor atendida del proyecto (17 media queries); las de menos cobertura son `/alumnos` (1) y `/presencia` (0), pero miden limpio.
+  - ⚠️ **Nota sobre el instrumento**: la medición ingenua (`documentElement.scrollWidth`) da falso verde en esta app, porque `styles.scss` fija `html, body { overflow: hidden }` y `.content-area` añade `overflow-x: hidden` — el contenido que se pasa se recorta en silencio en vez de volverse scrollable. El spec mide el `scrollWidth` del contenedor de scroll real y **se auto-verifica** inyectando un desborde deliberado. No sustituir por la versión ingenua.
+- [x] **🔴 BUG CRÍTICO CORREGIDO — restaurar un backup destruía el historial** (v3.27.0). `importarBackup()` reconstruía los registros con `crearRegistro()`, cuya firma es `Omit<Registro, 'id' | 'fechaHora' | 'sincronizado'>` y estampa `fechaHora: new Date()`. Efecto: **cada restauración colapsaba todo el historial contra el día de la importación**, y descartaba `horaSalida`, `duracionMinutos`, `motivoIds`/`motivoNombres`, `turno`, `dispositivo` y `cierreAutomatico`. Los alumnos además recibían `id` nuevo, rompiendo el `alumnoId` de sus registros. La importación reportaba `exitoso: true` con el conteo correcto — fallo totalmente silencioso.
+  - Fix: `DatabaseService.restaurarAlumno()` / `restaurarRegistro()` preservan `id` y fechas, revivien strings ISO → `Date`, y usan `put` (idempotente: reimportar no duplica).
+  - Cubierto por `backup.service.spec.ts` (8 tests de round-trip que comparan contenido, no conteo).
+- [x] **Keep-alive de Supabase**: se agregó trigger `push` además del cron. El modo de fallo real es que GitHub desactiva los cron tras 60 días sin commits — justo cuando el repo se queda quieto, que es cuando el ping más falta hace.
+- [ ] **Pendiente de verificar en datos reales**: cuántos registros de la BD del coordinador tienen `fechaHora` como string ISO. Requiere ejecutar en su navegador; determina la urgencia de `DB_VERSION = 2` (abajo).
+
+Suite tras la auditoría: **113 tests unitarios + 9 E2E**.
+
 ### 2.1 Infra de datos 🔴
 
-- [ ] **`DB_VERSION = 2`**: migración que normaliza `fechaHora` string → Date + crea store `audit`. Al bump, implementar `onupgradeneeded`. _(Ahora el código usa fallback `getAll() + filter` para compensar.)_
+- [ ] **`DB_VERSION = 2`**: migración que normaliza `fechaHora` string → Date + crea store `audit`. Al bump, implementar `onupgradeneeded`. _(Ahora el código usa fallback `getAll() + filter` para compensar.)_ _(2026-08-31: la ruta de importación ya no fabrica fechas string — `restaurarRegistro()` las revive a `Date`. Falta migrar las que ya existan.)_
 - [ ] **Activity Log / Audit Trail** (`/actividad`): registrar mutaciones (alumno creado/editado/desactivado, registro editado/eliminado, cambios de config) con usuario + timestamp. Requiere store `audit`. Inspirado en Fishbowl.
 - [ ] **`crearRegistrosBatch()`** en `DatabaseService`: transacción única para N registros, reduce tiempo de generación Histórico 30m de ~20 min a ~2–3 min.
 
@@ -234,7 +250,7 @@ Anotadas en sesión v3.17.x para después de la entrega; el coordinador pidió e
 
 ### 2.6 Hardening pre-producción 🟡
 
-- [ ] **Migración completa `*ngIf` → `@if`** en los 7 componentes grandes pendientes (~97 ocurrencias). Se abordará 1 por PR con validación visual manual.
+- [x] ~~**Migración completa `*ngIf` → `@if`**~~ — **completada** (verificado 2026-08-31): 0 ocurrencias en `.html` y 0 en templates inline. El único hit de grep es una línea de comentario en `toast-container.component.ts`. Este item llevaba tiempo desactualizado declarando "~97 ocurrencias pendientes".
 - [ ] **Lighthouse audit completo** (performance, a11y, best practices, SEO). Objetivo: 90+ en todas.
 - [ ] **E2E expansion**: flujo completo (escaneo → motivo → salida → export), modo quiosco con PIN, aforo bloqueado.
 - [ ] **ADRs** (`docs/adr/`): documentar decisiones arquitectónicas clave (por qué IndexedDB directo, por qué no NgRx, por qué sessionStorage entre rutas, etc.).

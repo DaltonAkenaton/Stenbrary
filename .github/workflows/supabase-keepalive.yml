@@ -24,6 +24,12 @@ on:
     # Diario 09:17 UTC. Minuto != 0 a propósito: los cron en hora
     # en punto sufren más retraso por la cola global de GitHub.
     - cron: '17 9 * * *'
+  push:
+    branches: [main]
+    # Red de seguridad para el modo de fallo real: GitHub desactiva los cron
+    # tras 60 días sin commits, así que justo cuando el repo se queda quieto
+    # —que es cuando más falta hace— el ping deja de correr. Con esto, cada
+    # push despierta el proyecto aunque el schedule esté desactivado.
   workflow_dispatch: {} # permite dispararlo a mano desde la pestaña Actions
 
 jobs:
