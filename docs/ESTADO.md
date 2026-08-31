@@ -170,13 +170,16 @@ medir, no leer. Resultados:
   - Fix: `DatabaseService.restaurarAlumno()` / `restaurarRegistro()` preservan `id` y fechas, revivien strings ISO → `Date`, y usan `put` (idempotente: reimportar no duplica).
   - Cubierto por `backup.service.spec.ts` (8 tests de round-trip que comparan contenido, no conteo).
 - [x] **Keep-alive de Supabase**: se agregó trigger `push` además del cron. El modo de fallo real es que GitHub desactiva los cron tras 60 días sin commits — justo cuando el repo se queda quieto, que es cuando el ping más falta hace.
-- [ ] **Pendiente de verificar en datos reales**: cuántos registros de la BD del coordinador tienen `fechaHora` como string ISO. Requiere ejecutar en su navegador; determina la urgencia de `DB_VERSION = 2` (abajo).
+- [x] **MEDIDO — el problema de `fechaHora` string NO existe** (2026-08-31). Conteo sobre la base real del desarrollador: **3186 registros, 3186 como `Date`, 0 como texto, 0 inválidos**. `DB_VERSION = 2` deja de ser 🔴: la migración de fechas no tiene nada que migrar. Ver §2.1.
+- [x] **🟡 Ruido de red contra Supabase corregido**. `ConnectivityService` sondeaba `/auth/v1/health` cada **30 s**, sin `apikey` (imposible mandarla como header con `mode: 'no-cors'`, que solo admite cabeceras de la lista segura). Cada sondeo devolvía **401**. Con ~120 peticiones/hora **por pestaña abierta**, el dashboard de Supabase mostraba *411 requests / 11.2% success rate / 363 warnings en 60 min*: el ruido tapaba cualquier fallo real y consumía cuota del plan gratuito. El sondeo funcionaba igual —una respuesta opaca no distingue 200 de 401— así que nunca se notó desde la app.
+  - Fix: `apikey` como query param (200 en vez de 401), intervalo 30 s → 180 s, y no sondear con la pestaña oculta. Los cambios reales de conexión ya llegan al instante por `online`/`offline` y `visibilitychange`; el intervalo solo cubre el portal cautivo.
 
 Suite tras la auditoría: **113 tests unitarios + 9 E2E**.
 
-### 2.1 Infra de datos 🔴
+### 2.1 Infra de datos 🟡 _(bajado de 🔴 el 2026-08-31)_
 
-- [ ] **`DB_VERSION = 2`**: migración que normaliza `fechaHora` string → Date + crea store `audit`. Al bump, implementar `onupgradeneeded`. _(Ahora el código usa fallback `getAll() + filter` para compensar.)_ _(2026-08-31: la ruta de importación ya no fabrica fechas string — `restaurarRegistro()` las revive a `Date`. Falta migrar las que ya existan.)_
+- [ ] **`DB_VERSION = 2`** — 🟡, ya no bloquea nada. Se necesitaría solo para crear el store `audit` (Activity Log), **no** para migrar fechas: medido el 2026-08-31, 3186/3186 registros ya tienen `fechaHora` como `Date` y 0 como string. La ruta de importación tampoco puede fabricar strings desde v3.27.0 (`restaurarRegistro()` los revive a `Date`).
+- [ ] **Quitar el fallback `getAll() + filter`** de las consultas por fecha 🟡. Existe para tolerar `fechaHora` string, caso que no se da en datos reales — pero hoy carga los 3186 registros a memoria en **cada** consulta por fecha. Al quitarlo, dejar una verificación de arranque (o un guard en la importación) por si algún día entran datos de otra instalación con fechas serializadas: eliminarlo a ciegas reintroduce el riesgo silencioso que el fallback previene.
 - [ ] **Activity Log / Audit Trail** (`/actividad`): registrar mutaciones (alumno creado/editado/desactivado, registro editado/eliminado, cambios de config) con usuario + timestamp. Requiere store `audit`. Inspirado en Fishbowl.
 - [ ] **`crearRegistrosBatch()`** en `DatabaseService`: transacción única para N registros, reduce tiempo de generación Histórico 30m de ~20 min a ~2–3 min.
 
