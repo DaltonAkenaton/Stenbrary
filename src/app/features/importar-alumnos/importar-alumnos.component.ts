@@ -24,6 +24,7 @@ import * as XLSX from 'xlsx';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
+import { coincide } from '../../core/utils/invariante.utils';
 import { CARRERAS, TURNOS } from '../../core/constants/catalogos.constants';
 
 /** Una fila parseada del Excel con estado de validación */

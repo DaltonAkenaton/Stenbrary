@@ -49,6 +49,28 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.29.1',
+    fecha: '2026-08-31',
+    titulo: 'Revisión de datos en el Reporte del sistema',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nuevo botón "Revisar datos" en Reporte del sistema. Busca información que no puede ser correcta: visitas con fecha futura (pasa cuando el reloj del equipo está mal ajustado), salidas anteriores a la entrada, estancias de más de 14 horas, alumnos con matrícula repetida y visitas de matrículas que ya no existen.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Nada de eso da error en pantalla, pero desvía los promedios de las estadísticas. Ahora se puede revisar cuando quieras y el resultado queda incluido en el archivo del reporte.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El sistema también avisa si al registrar una salida la duración sale negativa, o si al importar alumnos las cuentas no cuadran con el archivo.',
+      },
+    ],
+  },
+  {
     version: '3.29.0',
     fecha: '2026-08-31',
     titulo: 'Reporte del sistema — los problemas ya no se pierden',

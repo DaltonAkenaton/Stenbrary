@@ -24,6 +24,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { v4 as uuidv4 } from 'uuid';
 import { Alumno, Registro, Motivo } from '../models';
 import { log, logError } from '../utils/logger';
+import { invariante } from '../utils/invariante.utils';
 
 // Definir esquema de la base de datos
 interface StenbraryDB extends DBSchema {
@@ -1125,6 +1126,18 @@ export class DatabaseService {
       const entrada = new Date(registro.fechaHora);
       const duracionMs = ahora.getTime() - entrada.getTime();
       const duracionMinutos = Math.round(duracionMs / (1000 * 60));
+
+      // Una duración negativa significa que la entrada quedó en el futuro
+      // (reloj del equipo mal ajustado, o dato importado de otra máquina).
+      // No lanza ni corrige: el registro se guarda tal cual para no perder
+      // el dato, pero queda anotado — sin esto, el promedio de permanencia
+      // de /estadisticas sale mal y nadie tiene forma de notarlo.
+      invariante(
+        duracionMinutos >= 0,
+        'registros',
+        'Duración de visita negativa: la entrada quedó en el futuro',
+        { matricula: registro.matricula, duracionMinutos },
+      );
 
       // Actualizar registro + marcar como pending para sync (Fase 2.2)
       registro.horaSalida = ahora;

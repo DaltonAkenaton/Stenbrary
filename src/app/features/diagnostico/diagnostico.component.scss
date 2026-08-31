@@ -110,6 +110,41 @@
   line-height: 1.6;
 }
 
+// La revisión es una herramienta, no una alerta: cyan y no ámbar, para que
+// no se lea como "hay un problema" antes de haber revisado nada.
+.revision {
+  border-color: $border-subtle;
+  background-image: none;
+}
+
+.problema {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px $spacing-md;
+}
+
+.problema-cab {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.problema-desc {
+  font-size: 13px;
+  color: $text-secondary;
+  flex: 1;
+  min-width: 0;
+}
+
+.problema-ejemplos {
+  padding-left: 24px;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+  word-break: break-word;
+}
+
 .seccion-titulo {
   margin: 0;
   font-family: $font-body;

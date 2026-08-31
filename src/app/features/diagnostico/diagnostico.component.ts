@@ -24,6 +24,8 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { DiagnosticoService, Incidencia } from '../../core/services/diagnostico.service';
 import { ToastService } from '../../core/services/toast.service';
+import { DatabaseService } from '../../core/services/database.service';
+import { revisarIntegridad, ProblemaIntegridad } from '../../core/utils/integridad.utils';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -47,6 +49,54 @@ export class DiagnosticoComponent {
   protected readonly totalErrores = this.diagnostico.totalErrores;
 
   protected readonly abierta = signal<string | null>(null);
+
+  // ─── Revisión de datos ──────────────────────────────────
+  // A diferencia de la bitácora (que se llena sola cuando algo falla), esto
+  // se ejecuta a petición: recorre los datos buscando valores que no pueden
+  // ser correctos. Es lo que detecta los defectos que no lanzan error.
+  private readonly db = inject(DatabaseService);
+  protected readonly revisando = signal(false);
+  protected readonly problemas = signal<ProblemaIntegridad[] | null>(null);
+
+  protected async revisarDatos(): Promise<void> {
+    if (this.revisando()) return;
+    this.revisando.set(true);
+    try {
+      const [alumnos, registros] = await Promise.all([
+        this.db.obtenerTodosLosAlumnos(),
+        this.db.obtenerTodosLosRegistros(),
+      ]);
+      const hallazgos = revisarIntegridad(alumnos, registros);
+      this.problemas.set(hallazgos);
+
+      // Se anotan en la bitácora para que viajen en el archivo exportado:
+      // de nada sirve detectarlos si no llegan a quien puede arreglarlos.
+      hallazgos.forEach(p =>
+        this.diagnostico.anomalia('datos', p.descripcion, {
+          tipo: p.tipo,
+          afectados: p.afectados,
+          ejemplos: p.ejemplos,
+        }),
+      );
+
+      if (hallazgos.length === 0) {
+        this.toast.success(
+          `Revisados ${registros.length} registros y ${alumnos.length} alumnos. Todo correcto.`,
+        );
+      } else {
+        this.toast.warning(
+          `Se encontraron ${hallazgos.length} ${hallazgos.length === 1 ? 'situación' : 'situaciones'} que conviene revisar.`,
+        );
+      }
+    } catch (err) {
+      this.toast.error('No se pudieron revisar los datos.');
+      this.diagnostico.error('datos', 'Falló la revisión de integridad', {
+        detalle: (err as Error)?.message,
+      });
+    } finally {
+      this.revisando.set(false);
+    }
+  }
 
   protected readonly resumen = computed(() => {
     const n = this.incidencias().length;

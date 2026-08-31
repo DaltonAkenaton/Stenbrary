@@ -21,6 +21,61 @@
     </div>
   </header>
 
+  <!-- ══════════ REVISIÓN DE DATOS ══════════ -->
+  <!-- La bitácora se llena sola cuando algo falla. Esto es distinto: busca
+       datos que no pueden ser correctos aunque nunca haya saltado un error. -->
+  <section class="panel accion revision">
+    <div class="accion-texto">
+      <span class="accion-titulo">Revisar los datos</span>
+      <p class="accion-sub">
+        Busca información imposible: visitas con fecha del futuro, salidas
+        anteriores a la entrada, estancias de más de 14 horas o alumnos
+        repetidos. Nada de esto da error en pantalla, pero desvía las
+        estadísticas.
+      </p>
+    </div>
+    <button class="btn-primario" (click)="revisarDatos()" [disabled]="revisando()">
+      <mat-icon>fact_check</mat-icon>
+      {{ revisando() ? 'Revisando…' : 'Revisar datos' }}
+    </button>
+  </section>
+
+  @if (problemas(); as lista) {
+    @if (lista.length === 0) {
+      <section class="panel estado-ok">
+        <mat-icon>verified</mat-icon>
+        <div>
+          <strong>Los datos están consistentes.</strong>
+          <p>No se encontró nada fuera de lugar.</p>
+        </div>
+      </section>
+    } @else {
+      <section class="panel">
+        <h2 class="seccion-titulo">Situaciones en los datos</h2>
+        <ul class="lista">
+          @for (p of lista; track p.tipo) {
+            <li class="item" [class.es-error]="p.gravedad === 'alta'">
+              <div class="problema">
+                <div class="problema-cab">
+                  <mat-icon class="item-icon">
+                    {{ p.gravedad === 'alta' ? 'error_outline' : 'info_outline' }}
+                  </mat-icon>
+                  <span class="problema-desc">{{ p.descripcion }}</span>
+                  <span class="item-veces">{{ p.afectados }}</span>
+                </div>
+                @if (p.ejemplos.length) {
+                  <span class="problema-ejemplos">
+                    Ejemplos: {{ p.ejemplos.join(' · ') }}
+                  </span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
   @if (!hayIncidencias()) {
     <section class="panel estado-ok">
       <mat-icon>check_circle</mat-icon>
