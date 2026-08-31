@@ -598,6 +598,21 @@ export class ConfigService {
   // PERSISTENCIA
   // ═══════════════════════════════════════════════════════
 
+  /**
+   * Devuelve toda la configuración a sus valores de fábrica.
+   *
+   * Usado por `RestablecerService`. Reasigna el objeto en memoria y refresca
+   * los signals: sin esto, la app seguiría operando con los ajustes viejos
+   * (modo quiosco, PIN, aforo) hasta que alguien recargara la página.
+   */
+  restablecerTodo(): void {
+    this.config = { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS } };
+    this.guardar();
+    this._modoQuiosco.set(this.config.modoQuiosco);
+    this._ultimoRespaldoTs.set(this.config.ultimoRespaldoTs);
+    this._hayAutoClose.set(false);
+  }
+
   private cargar(): AppConfig {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);

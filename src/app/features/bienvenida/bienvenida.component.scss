@@ -1,0 +1,361 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  bienvenida.component.scss                           ║
+// ║  Stenbrary — Asistente inicial                       ║
+// ║                                                      ║
+// ║  Tarjeta centrada y una sola columna: es la primera  ║
+// ║  pantalla que ve alguien que no conoce el sistema,   ║
+// ║  y no debe haber ninguna duda sobre dónde mirar ni   ║
+// ║  qué botón toca.                                     ║
+// ║                                                      ║
+// ║  Áreas de toque grandes — se configura desde tablet. ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.wiz {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-lg;
+  padding: $spacing-xl $spacing-md $spacing-xxl;
+  width: 100%;
+}
+
+// ─── PROGRESO ────────────────────────────────────────────
+.wiz-progreso {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wiz-riel {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(0, 200, 215, 0.12);
+  overflow: hidden;
+}
+
+.wiz-barra {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, $cyan-500, $teal-500);
+  transition: width $transition-normal;
+}
+
+.wiz-cuenta {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+  text-align: right;
+}
+
+// ─── TARJETA ─────────────────────────────────────────────
+.wiz-card {
+  width: 100%;
+  max-width: 620px;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  padding: $spacing-xl $spacing-lg $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-md;
+  box-shadow: $shadow-float;
+}
+
+.wiz-icono {
+  width: 68px;
+  height: 68px;
+  border-radius: $border-radius-lg;
+  background: linear-gradient(135deg, rgba(0, 200, 215, 0.15), rgba(0, 169, 158, 0.10));
+  border: 1px solid $border-glow;
+  @include flex-center;
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: $cyan-400;
+  }
+}
+
+.wiz-titulo {
+  margin: 0;
+  font-family: $font-display;
+  font-size: 22px;
+  font-weight: 700;
+  color: $text-primary;
+  text-align: center;
+  letter-spacing: -0.4px;
+}
+
+.wiz-desc {
+  margin: 0;
+  font-size: 13px;
+  color: $text-secondary;
+  text-align: center;
+  max-width: 46ch;
+}
+
+.wiz-cuerpo {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.wiz-parrafo {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: $text-secondary;
+
+  strong { color: $text-primary; }
+}
+
+.wiz-lista {
+  margin: 0;
+  padding-left: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $text-secondary;
+
+  strong { color: $cyan-300; }
+}
+
+// ─── CAMPOS ──────────────────────────────────────────────
+.wiz-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-secondary;
+  margin-top: $spacing-sm;
+}
+
+.wiz-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: $navy-900;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  color: $text-primary;
+  font-family: $font-body;
+  font-size: 15px;
+  transition: border-color $transition-fast;
+
+  &.corto { max-width: 140px; }
+
+  &:focus {
+    outline: none;
+    border-color: $border-glow;
+  }
+
+  &::placeholder { color: $text-muted; }
+}
+
+.wiz-inline {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.wiz-sufijo {
+  font-size: 13px;
+  color: $text-secondary;
+}
+
+.wiz-horas {
+  display: flex;
+  gap: $spacing-lg;
+  flex-wrap: wrap;
+
+  > div { display: flex; flex-direction: column; gap: 4px; }
+}
+
+.wiz-ayuda {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: $text-muted;
+  line-height: 1.5;
+}
+
+.wiz-error {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: $warn-color;
+}
+
+.wiz-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  margin: $spacing-sm 0 0;
+  padding: $spacing-sm $spacing-md;
+  background: rgba(245, 166, 35, 0.06);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  border-radius: $border-radius-sm;
+  font-size: 12px;
+  line-height: 1.5;
+  color: $text-secondary;
+
+  mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+    color: $amber-color;
+    flex-shrink: 0;
+  }
+}
+
+// ─── OPCIONES GRANDES ────────────────────────────────────
+// Tarjetas y no radios: en tablet un radio de 16px es difícil de acertar, y
+// aquí cada opción necesita además su propia explicación.
+.wiz-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.wiz-opcion {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 2px $spacing-md;
+  padding: $spacing-md;
+  background: $navy-900;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  text-align: left;
+  transition: all $transition-fast;
+
+  mat-icon {
+    grid-row: 1 / 3;
+    align-self: center;
+    color: $text-muted;
+    transition: color $transition-fast;
+  }
+
+  .op-titulo {
+    font-family: $font-body;
+    font-size: 14px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  .op-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    color: $text-muted;
+  }
+
+  &:hover { border-color: rgba(0, 200, 215, 0.28); }
+
+  &.sel {
+    border-color: $cyan-500;
+    background: rgba(0, 200, 215, 0.06);
+    mat-icon { color: $cyan-400; }
+  }
+}
+
+// ─── CHIPS ───────────────────────────────────────────────
+.wiz-chips,
+.wiz-toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.wiz-chip {
+  padding: 10px 16px;
+  background: $navy-900;
+  border: 1px solid $border-subtle;
+  border-radius: 999px;
+  color: $text-secondary;
+  font-family: $font-body;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &.corto { padding: 10px 12px; min-width: 52px; }
+
+  &:hover { border-color: rgba(0, 200, 215, 0.28); }
+
+  &.sel {
+    border-color: $cyan-500;
+    background: rgba(0, 200, 215, 0.10);
+    color: $cyan-300;
+    font-weight: 700;
+  }
+}
+
+// ─── NAVEGACIÓN ──────────────────────────────────────────
+.wiz-nav {
+  display: flex;
+  gap: $spacing-sm;
+  width: 100%;
+  margin-top: $spacing-md;
+}
+
+.wiz-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: 14px 22px;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &.principal {
+    flex: 1;
+    background: linear-gradient(135deg, $cyan-500, $teal-500);
+    color: $navy-950;
+    border: none;
+    box-shadow: $shadow-glow-sm;
+
+    &:hover { transform: translateY(-1px); box-shadow: $shadow-glow-md; }
+  }
+
+  &.secundario {
+    background: transparent;
+    border: 1px solid $border-subtle;
+    color: $text-secondary;
+
+    &:hover { border-color: $border-glow; color: $text-primary; }
+  }
+}
+
+.wiz-saltar {
+  background: none;
+  border: none;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: $spacing-sm;
+
+  &:hover { color: $text-secondary; }
+}
+
+@media (max-width: $breakpoint-xs) {
+  .wiz { padding: $spacing-md $spacing-sm $spacing-xxl; }
+  .wiz-card { padding: $spacing-lg $spacing-md $spacing-md; }
+  .wiz-titulo { font-size: 19px; }
+  .wiz-nav { flex-direction: column-reverse; }
+  .wiz-btn { width: 100%; }
+}

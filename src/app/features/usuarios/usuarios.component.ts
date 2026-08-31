@@ -24,6 +24,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.types';
 import { ToastService } from '../../core/services/toast.service';
+import { mensajeParaUsuario } from '../../core/utils/mensaje-error.utils';
 import {
   RemoteDatabaseService,
   UsuarioPerfil,
@@ -83,7 +84,7 @@ export class UsuariosComponent implements OnInit {
     try {
       this.usuarios.set(await this.remote.listarUsuarios());
     } catch (err) {
-      this.toast.error((err as Error)?.message ?? 'No se pudieron cargar los usuarios.');
+      this.toast.error(mensajeParaUsuario(err, 'usuarios', 'No se pudieron cargar los usuarios.'));
     } finally {
       this.cargando.set(false);
     }
@@ -134,7 +135,7 @@ export class UsuariosComponent implements OnInit {
       this.toast.success(`Rol actualizado: ${this.rolLegible(nuevoRol)}.`);
     } catch (err) {
       (event.target as HTMLSelectElement).value = u.rol;
-      this.toast.error((err as Error)?.message ?? 'No se pudo cambiar el rol.');
+      this.toast.error(mensajeParaUsuario(err, 'usuarios', 'No se pudo cambiar el rol.'));
     } finally {
       this.guardandoId.set(null);
     }

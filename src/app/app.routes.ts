@@ -119,6 +119,14 @@ export const routes: Routes = [
     title: 'Stenbrary — Bajar de la nube',
   },
   {
+    // Asistente de configuración inicial. Sin guard: se llega aquí tras un
+    // restablecimiento, cuando puede que no haya ni sesión ni datos.
+    path: 'bienvenida',
+    loadComponent: () =>
+      import('./features/bienvenida/bienvenida.component').then(m => m.BienvenidaComponent),
+    title: 'Stenbrary — Configuración inicial',
+  },
+  {
     // Sin roleGuard a propósito: si el sistema falla de un modo que impide
     // autenticar, esta es justo la pantalla que hace falta poder abrir.
     path: 'diagnostico',

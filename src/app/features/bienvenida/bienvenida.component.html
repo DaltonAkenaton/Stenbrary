@@ -1,0 +1,247 @@
+<!--
+  bienvenida.component.html
+  Stenbrary — Asistente de configuración inicial
+
+  Una pregunta por pantalla, con un valor razonable ya puesto. Todos los
+  pasos se pueden saltar: obligar a decidir doce cosas antes de ver el
+  sistema es la mejor forma de que lo abandonen.
+-->
+
+<div class="wiz">
+
+  <!-- Progreso -->
+  <div class="wiz-progreso">
+    <div class="wiz-riel">
+      <span class="wiz-barra" [style.width.%]="progresoPct()"></span>
+    </div>
+    <span class="wiz-cuenta">Paso {{ indice() + 1 }} de {{ pasos.length }}</span>
+  </div>
+
+  <div class="wiz-card">
+
+    <div class="wiz-icono">
+      <mat-icon>{{ pasoActual().icono }}</mat-icon>
+    </div>
+
+    <h1 class="wiz-titulo">{{ pasoActual().titulo }}</h1>
+    <p class="wiz-desc">{{ pasoActual().descripcion }}</p>
+
+    <div class="wiz-cuerpo">
+
+      @switch (pasoActual().id) {
+
+        <!-- ════════ INICIO ════════ -->
+        @case ('inicio') {
+          <p class="wiz-parrafo">
+            Stenbrary controla el acceso a la biblioteca: registra quién entra,
+            para qué, y cuánto tiempo se queda.
+          </p>
+          <p class="wiz-parrafo">
+            Vamos a preguntarte unas pocas cosas. <strong>Todo lo que elijas aquí
+            se puede cambiar después</strong>, así que no te preocupes por
+            acertar a la primera.
+          </p>
+        }
+
+        <!-- ════════ INSTITUCIÓN ════════ -->
+        @case ('institucion') {
+          <label class="wiz-label" for="inst">Nombre</label>
+          <input id="inst" class="wiz-input" type="text" maxlength="80"
+                 placeholder="Ej. Biblioteca de la Facultad de Comercio"
+                 [(ngModel)]="nombreInstitucion">
+          <p class="wiz-ayuda">Si lo dejas vacío, se usará solo "Stenbrary".</p>
+        }
+
+        <!-- ════════ SALIDA ════════ -->
+        @case ('salida') {
+          <div class="wiz-opciones">
+            <button class="wiz-opcion" [class.sel]="registroSalidaActivo"
+                    (click)="registroSalidaActivo = true">
+              <mat-icon>check_circle</mat-icon>
+              <span class="op-titulo">Sí, entrada y salida</span>
+              <span class="op-desc">
+                Sabrás cuánta gente hay dentro en cada momento y el tiempo
+                promedio de permanencia.
+              </span>
+            </button>
+            <button class="wiz-opcion" [class.sel]="!registroSalidaActivo"
+                    (click)="registroSalidaActivo = false">
+              <mat-icon>login</mat-icon>
+              <span class="op-titulo">Solo la entrada</span>
+              <span class="op-desc">
+                Más rápido para el alumno. No podrás medir aforo ni permanencia.
+              </span>
+            </button>
+          </div>
+
+          @if (registroSalidaActivo) {
+            <label class="wiz-label" for="autoSalida">
+              Cerrar automáticamente las entradas después de
+            </label>
+            <div class="wiz-inline">
+              <input id="autoSalida" class="wiz-input corto" type="number"
+                     min="0" max="24" [(ngModel)]="horasAutoSalida">
+              <span class="wiz-sufijo">horas</span>
+            </div>
+            <p class="wiz-ayuda">
+              Para quien se va sin escanear la salida. Usa 0 para desactivarlo.
+            </p>
+          }
+        }
+
+        <!-- ════════ AFORO ════════ -->
+        @case ('aforo') {
+          <label class="wiz-label" for="aforo">Personas como máximo</label>
+          <div class="wiz-inline">
+            <input id="aforo" class="wiz-input corto" type="number"
+                   min="0" [(ngModel)]="aforoMaximo">
+            <span class="wiz-sufijo">personas</span>
+          </div>
+          <p class="wiz-ayuda">Deja 0 si no quieres controlar el aforo.</p>
+
+          @if (aforoMaximo > 0) {
+            @if (!registroSalidaActivo) {
+              <p class="wiz-aviso">
+                <mat-icon>info</mat-icon>
+                El aforo necesita el registro de salidas para saber quién sigue
+                dentro. Vuelve al paso anterior y actívalo.
+              </p>
+            }
+            <label class="wiz-label">Al llegar al límite</label>
+            <div class="wiz-chips">
+              <button class="wiz-chip" [class.sel]="aforoModo === 'permitir'"
+                      (click)="aforoModo = 'permitir'">Solo avisar</button>
+              <button class="wiz-chip" [class.sel]="aforoModo === 'confirmar'"
+                      (click)="aforoModo = 'confirmar'">Pedir confirmación</button>
+              <button class="wiz-chip" [class.sel]="aforoModo === 'bloquear'"
+                      (click)="aforoModo = 'bloquear'">No dejar entrar</button>
+            </div>
+          }
+        }
+
+        <!-- ════════ HORARIO ════════ -->
+        @case ('horario') {
+          <div class="wiz-toggle-row">
+            <button class="wiz-chip" [class.sel]="!horarioActivo"
+                    (click)="horarioActivo = false">Sin horario fijo</button>
+            <button class="wiz-chip" [class.sel]="horarioActivo"
+                    (click)="horarioActivo = true">Definir horario</button>
+          </div>
+
+          @if (horarioActivo) {
+            <label class="wiz-label">Días que abre</label>
+            <div class="wiz-chips">
+              @for (dia of diasSemana; track $index) {
+                <button class="wiz-chip corto" [class.sel]="esDiaAbierto($index)"
+                        (click)="alternarDia($index)">{{ dia.slice(0, 3) }}</button>
+              }
+            </div>
+
+            <div class="wiz-horas">
+              <div>
+                <label class="wiz-label" for="ap">Abre</label>
+                <input id="ap" class="wiz-input corto" type="time" [(ngModel)]="apertura">
+              </div>
+              <div>
+                <label class="wiz-label" for="ci">Cierra</label>
+                <input id="ci" class="wiz-input corto" type="time" [(ngModel)]="cierre">
+              </div>
+            </div>
+            <p class="wiz-ayuda">
+              El mismo horario para todos los días marcados. Si alguno es
+              distinto, lo afinas después en Configuración.
+            </p>
+          }
+        }
+
+        <!-- ════════ QUIOSCO ════════ -->
+        @case ('quiosco') {
+          <div class="wiz-opciones">
+            <button class="wiz-opcion" [class.sel]="!modoQuiosco"
+                    (click)="modoQuiosco = false">
+              <mat-icon>desktop_windows</mat-icon>
+              <span class="op-titulo">Hay alguien atendiendo</span>
+              <span class="op-desc">Todos los menús visibles. Es lo normal.</span>
+            </button>
+            <button class="wiz-opcion" [class.sel]="modoQuiosco"
+                    (click)="modoQuiosco = true">
+              <mat-icon>tablet_android</mat-icon>
+              <span class="op-titulo">La tablet queda sola</span>
+              <span class="op-desc">
+                Solo se ve la pantalla de escaneo. Para salir se mantiene
+                pulsado 3 segundos y se pide el PIN.
+              </span>
+            </button>
+          </div>
+
+          <label class="wiz-label" for="pin">PIN para salir del modo quiosco</label>
+          <input id="pin" class="wiz-input corto" type="text" inputmode="numeric"
+                 maxlength="8" [(ngModel)]="quioscoPin">
+          @if (!pinValido) {
+            <p class="wiz-error">Deben ser entre 4 y 8 dígitos.</p>
+          } @else {
+            <p class="wiz-ayuda">
+              Guárdalo bien. Sin él no se puede salir del modo quiosco desde la tablet.
+            </p>
+          }
+        }
+
+        <!-- ════════ AVISOS ════════ -->
+        @case ('avisos') {
+          <label class="wiz-label" for="inact">
+            Considerar "inactivo" a un alumno que no viene desde hace
+          </label>
+          <div class="wiz-inline">
+            <input id="inact" class="wiz-input corto" type="number" min="1"
+                   [(ngModel)]="umbralInactividadDias">
+            <span class="wiz-sufijo">días</span>
+          </div>
+
+          <label class="wiz-label" for="resp">Recordarme hacer un respaldo cada</label>
+          <div class="wiz-inline">
+            <input id="resp" class="wiz-input corto" type="number" min="0"
+                   [(ngModel)]="umbralRespaldoDias">
+            <span class="wiz-sufijo">días</span>
+          </div>
+          <p class="wiz-ayuda">
+            El respaldo es tu única copia de seguridad. Usa 0 para no recibir avisos.
+          </p>
+        }
+
+        <!-- ════════ FIN ════════ -->
+        @case ('fin') {
+          <p class="wiz-parrafo">
+            Ya puedes empezar a registrar accesos. Lo siguiente que
+            probablemente quieras hacer:
+          </p>
+          <ul class="wiz-lista">
+            <li><strong>Importar alumnos</strong> desde un Excel, en Configuración → Datos.</li>
+            <li><strong>Revisar los motivos</strong> de visita en Gestión de Motivos.</li>
+            <li><strong>Probar el lector</strong> escaneando una credencial en la pantalla principal.</li>
+          </ul>
+        }
+      }
+
+    </div>
+
+    <!-- Navegación -->
+    <div class="wiz-nav">
+      @if (!esPrimero()) {
+        <button class="wiz-btn secundario" (click)="atras()">
+          <mat-icon>arrow_back</mat-icon> Atrás
+        </button>
+      }
+      <button class="wiz-btn principal" (click)="siguiente()">
+        {{ esUltimo() ? 'Empezar a usar Stenbrary' : 'Siguiente' }}
+        @if (!esUltimo()) { <mat-icon>arrow_forward</mat-icon> }
+      </button>
+    </div>
+
+    @if (!esUltimo()) {
+      <button class="wiz-saltar" (click)="saltarTodo()">
+        Saltar y usar los valores por defecto
+      </button>
+    }
+
+  </div>
+</div>

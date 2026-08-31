@@ -150,6 +150,27 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════
+       AJUSTES DE CÁMARA (solo respaldo)
+
+       Desde v3.27 el lector físico es el camino principal y la cámara es la
+       salida de emergencia. Estos ajustes se pliegan en vez de eliminarse:
+       si el lector falla en hora pico y la cámara no enfoca, el zoom es
+       justo lo que lo arregla — borrarlos quitaría la recuperación del
+       único escenario para el que la cámara existe.
+  ══════════════════════════════════════════════════════ -->
+  <details class="camara-respaldo">
+    <summary>
+      <mat-icon>photo_camera</mat-icon>
+      <span class="cr-titulo">Ajustes de cámara</span>
+      <span class="cr-etiqueta">solo respaldo</span>
+    </summary>
+
+    <p class="cr-nota">
+      La cámara solo se usa cuando no hay lector a la mano. Normalmente no
+      hace falta tocar nada de aquí.
+    </p>
+
   <!-- Preferencia de cámara -->
   <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
     <strong style="font-size: .9rem; color:#E8F4F8;">Cámara preferida</strong>
@@ -209,4 +230,5 @@
       </div>
     </div>
   </div>
+  </details>
 </div>

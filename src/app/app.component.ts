@@ -35,6 +35,7 @@ import { KeyboardShortcutsDialogComponent } from './shared/components/keyboard-s
 import { ToastContainerComponent } from './shared/components/toast-container.component';
 import { ToastService } from './core/services/toast.service';
 import { DiagnosticoService } from './core/services/diagnostico.service';
+import { RestablecerService } from './core/services/restablecer.service';
 import { registrarDiagnostico } from './core/utils/invariante.utils';
 
 interface NavItem {
@@ -140,6 +141,7 @@ export class AppComponent implements OnInit, OnDestroy {
     public syncService: SyncService,
     private toastService: ToastService,
     private diagnosticoService: DiagnosticoService,
+    private restablecerService: RestablecerService,
     // Bootstrap del AuthService: al inyectarlo aquí se inicializa al
     // arrancar la app y empieza a escuchar onAuthStateChange (necesario
     // para capturar el callback del magic link aunque el usuario no esté
@@ -170,6 +172,37 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Lleva al asistente inicial, pero SOLO en una instalación realmente nueva.
+   *
+   * La condición es doble a propósito: falta la marca de setup **y** la base
+   * está vacía. Con solo la marca, cualquiera que ya venía usando el sistema
+   * —que nunca la tuvo— se encontraría el asistente de golpe y con riesgo de
+   * pisar su configuración. La base vacía es lo que distingue "nunca lo he
+   * usado" de "actualicé la app".
+   */
+  private async ofrecerAsistenteInicial(): Promise<void> {
+    try {
+      if (this.restablecerService.setupCompletado()) return;
+      if (this.configService.modoQuioscoSignal()) return; // no en la tablet pública
+
+      const conteo = await this.databaseService.obtenerConteoTotal();
+      if ((conteo.alumnos ?? 0) > 0 || (conteo.registros ?? 0) > 0) {
+        // Ya hay datos: no es una instalación nueva. Se marca como hecho para
+        // no volver a preguntar en cada arranque.
+        this.restablecerService.marcarSetupCompletado();
+        return;
+      }
+
+      const url = this.router.url.split('?')[0];
+      if (url.startsWith('/bienvenida')) return;
+      void this.router.navigate(['/bienvenida']);
+    } catch {
+      // Si algo falla aquí, lo peor que puede pasar es no mostrar el
+      // asistente. Nunca debe impedir que la app arranque.
+    }
+  }
+
   /** Rutas accesibles mientras el modo quiosco está activo.
    *  Solo el flujo de registro del alumno. Para consultar /presencia u otras
    *  vistas admin, el coordinador debe desactivar el modo (PIN) primero —
@@ -184,6 +217,8 @@ export class AppComponent implements OnInit, OnDestroy {
     // `invariante.utils`. Se hace aquí, en el arranque, porque esos helpers
     // se llaman desde código sin contexto de inyección de Angular.
     registrarDiagnostico(this.diagnosticoService);
+
+    void this.ofrecerAsistenteInicial();
 
     // El estado de conexión lo maneja ConnectivityService (listeners +
     // sondeo activo) — ya no registramos online/offline aquí.

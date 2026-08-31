@@ -49,6 +49,45 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.30.0',
+    fecha: '2026-08-31',
+    titulo: 'Asistente de configuración y restablecer el sistema',
+    destacado: true,
+    resumen: 'Nuevo asistente que te guía paso a paso por los ajustes importantes la primera vez que abres Stenbrary. Y para empezar de cero, un botón que deja el sistema como recién instalado — con un respaldo obligatorio antes.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Asistente de configuración inicial. Al abrir Stenbrary por primera vez te pregunta lo justo —nombre de la biblioteca, si registras salidas, aforo, horario, modo quiosco y avisos— una cosa por pantalla y con un valor razonable ya puesto. Se puede saltar entero: los valores por defecto funcionan.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nuevo "Restablecer el sistema" en Configuración → Avanzado. Borra alumnos, visitas y toda la configuración, y abre el asistente para empezar de nuevo. Solo está disponible para el rol de super administrador.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Antes de restablecer, el sistema OBLIGA a descargar un respaldo y a escribir la frase "BORRAR TODO". Además te muestra cuántos alumnos y visitas se van a perder, en números.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'La pantalla de Usuarios ya no falla al cargar. Mostraba un mensaje técnico y no listaba a nadie porque faltaba guardar el correo de cada cuenta.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Los errores técnicos ya no llegan al usuario tal cual. En vez de mensajes como "column user_profiles.email does not exist" ahora se explica en lenguaje claro qué pasó y qué hacer; el detalle técnico va al Reporte del sistema.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Los ajustes de cámara (cámara preferida y zoom) se agruparon en un bloque plegable marcado como "solo respaldo", ya que el lector físico es ahora la forma principal de escanear. Siguen disponibles por si el lector falla.',
+      },
+    ],
+  },
+  {
     version: '3.29.1',
     fecha: '2026-08-31',
     titulo: 'Revisión de datos en el Reporte del sistema',

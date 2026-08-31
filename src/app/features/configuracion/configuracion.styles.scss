@@ -706,3 +706,61 @@
   .stat-value { font-size: 1.5rem; }
   .section-card { padding: 16px; }
 }
+
+// ─── CÁMARA COMO RESPALDO (v3.30) ────────────────────────
+// Plegado y no eliminado: la cámara sigue siendo la salida de emergencia
+// cuando no hay lector, y con ella el zoom. Ver comentario en
+// escaner.component.html.
+.camara-respaldo {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(200, 230, 240, 0.08);
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+    padding: 6px 0;
+    user-select: none;
+
+    &::-webkit-details-marker { display: none; }
+
+    mat-icon {
+      font-size: 19px;
+      width: 19px;
+      height: 19px;
+      color: rgba(160, 200, 215, 0.52);
+    }
+
+    &:hover .cr-titulo { color: #E8F4F8; }
+  }
+
+  .cr-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(200, 230, 240, 0.68);
+    transition: color 150ms;
+  }
+
+  .cr-etiqueta {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(160, 200, 215, 0.52);
+    border: 1px solid rgba(0, 200, 215, 0.10);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  .cr-nota {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: rgba(160, 200, 215, 0.52);
+  }
+
+  &[open] summary .cr-titulo { color: #E8F4F8; }
+}

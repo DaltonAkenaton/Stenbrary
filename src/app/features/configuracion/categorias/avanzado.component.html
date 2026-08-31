@@ -75,6 +75,29 @@
     Si tienes dudas, contacta al administrador del sistema.
   </p>
   <div class="danger-actions">
+
+    <!-- Restablecer de fábrica: borra datos Y configuración, y lleva al
+         asistente inicial. Protegido por rol + respaldo + frase escrita. -->
+    @if (puedeRestablecer) {
+      <button class="btn-action btn-danger"
+              (click)="restablecerSistema()"
+              [disabled]="procesando">
+        <mat-icon>restart_alt</mat-icon>
+        <span>Restablecer el sistema (dejarlo como nuevo)</span>
+      </button>
+      <p class="danger-note">
+        <mat-icon>info</mat-icon>
+        Borra alumnos, visitas y TODA la configuración, y abre el asistente
+        inicial. Pide descargar un respaldo antes y escribir una frase de
+        confirmación.
+      </p>
+    } @else {
+      <p class="danger-note">
+        <mat-icon>lock</mat-icon>
+        Restablecer el sistema requiere el rol de super administrador.
+      </p>
+    }
+
     <button class="btn-action btn-danger"
             (click)="limpiarTodosDatos()"
             [disabled]="procesando || !DESTRUCCION_HABILITADA"

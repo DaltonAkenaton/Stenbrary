@@ -15,6 +15,16 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Smoke: shell y componentes globales', () => {
+  // Un navegador limpio + base vacía = instalación nueva, y desde v3.30 eso
+  // lleva al asistente inicial. Estos tests son sobre el shell, así que se
+  // marca el setup como hecho antes de cargar. El comportamiento del
+  // asistente se prueba aparte, abajo.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+    });
+  });
+
   test('la app redirige a /scanner y monta el shell', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/scanner$/);
@@ -40,5 +50,55 @@ test.describe('Smoke: shell y componentes globales', () => {
     await page.goto('/novedades');
     // Versión actual (del CHANGELOG) debe estar visible.
     await expect(page.getByText(/v?3\.\d+\.\d+/).first()).toBeVisible();
+  });
+});
+
+test.describe('Asistente de configuración inicial', () => {
+  test('una instalación nueva aterriza en /bienvenida', async ({ page }) => {
+    // Sin marca de setup y sin datos: es la primera vez que alguien abre
+    // el sistema. Debe encontrarse el asistente, no el escáner en blanco.
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/bienvenida$/);
+    await expect(page.getByText(/Bienvenido a Stenbrary/i)).toBeVisible();
+  });
+
+  test('se puede saltar y deja de aparecer', async ({ page }) => {
+    // El asistente no puede volverse una trampa: quien lo salta debe poder
+    // usar el sistema y no encontrárselo otra vez en cada recarga.
+    await page.goto('/bienvenida');
+    await page.getByText(/Saltar y usar los valores por defecto/i).click();
+    await expect(page).toHaveURL(/\/scanner$/);
+
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/scanner$/);
+  });
+
+  test('quien ya tiene datos NO ve el asistente', async ({ page }) => {
+    // Regresión: sin la comprobación de base vacía, cada usuario existente
+    // se habría encontrado el asistente al actualizar, con riesgo de pisar
+    // su configuración.
+    await page.goto('/');
+    await page.waitForSelector('app-root');
+    await page.evaluate(async () => {
+      localStorage.removeItem('stenbrary-setup-completado');
+      const db: IDBDatabase = await new Promise((ok, no) => {
+        const r = indexedDB.open('stenbrary-db');
+        r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
+      });
+      await new Promise<void>((ok, no) => {
+        const tx = db.transaction('alumnos', 'readwrite');
+        tx.objectStore('alumnos').put({
+          id: 'a-existente', matricula: '2241419999', nombre: 'Previo',
+          apellidoPaterno: 'Usuario', apellidoMaterno: 'Antiguo',
+          carrera: 'ISC', grado: 1, grupo: 'A', turno: 'Matutino',
+          activo: true, fechaRegistro: new Date(), datosExtra: {},
+        });
+        tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error);
+      });
+      db.close();
+    });
+
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/scanner$/);
   });
 });

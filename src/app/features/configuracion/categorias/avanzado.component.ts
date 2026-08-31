@@ -20,6 +20,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { LoadingService } from '../../../core/services/loading.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { AuthService } from '../../../core/auth/auth.service';
+import { RestablecerDialogComponent } from '../restablecer-dialog.component';
 import { RemoteDatabaseService } from '../../../core/services/remote-database.service';
 import { SubirSupabaseDialogComponent } from '../dialogs/subir-supabase-dialog.component';
 
@@ -60,6 +61,45 @@ export class AvanzadoCategoriaComponent {
 
   navegar(ruta: string): void {
     void this.router.navigate([ruta]);
+  }
+
+  // ─── Restablecer de fábrica ─────────────────────────────
+  // Sustituye al viejo "Eliminar todos los datos", que estaba apagado con
+  // una constante de código: eso no es una salvaguarda, es una función que
+  // no existe. Aquí la protección es real y en tiempo de ejecución —
+  // rol máximo + respaldo obligatorio + frase escrita a mano.
+
+  /**
+   * Solo el rol máximo. En modo solo-local (sin backend) no hay sesión ni
+   * roles, así que se permite: quien tiene la laptop en la mano ya puede
+   * borrar la base desde el navegador, y bloquearlo solo estorbaría.
+   */
+  get puedeRestablecer(): boolean {
+    const rol = this.auth.currentRole();
+    return !this.backendDisponible || rol === 'super_admin';
+  }
+
+  async restablecerSistema(): Promise<void> {
+    if (!this.puedeRestablecer) return;
+
+    const ref = this.dialog.open(RestablecerDialogComponent, {
+      width: '520px',
+      maxWidth: '94vw',
+      disableClose: true,   // salir por accidente a media confirmación, no
+      autoFocus: false,
+    });
+
+    const resultado = await ref.afterClosed().toPromise();
+    if (!resultado) return;
+
+    this.toastService.success(
+      `Sistema restablecido. Se borraron ${resultado.registrosBorrados} visitas ` +
+      `y ${resultado.alumnosBorrados} alumnos.`,
+    );
+    // Al asistente y no al scanner: acaba de quedar sin configuración, y
+    // dejarlo ahí con todo en valores por defecto y sin explicar nada es
+    // como entregarle un sistema distinto sin avisar.
+    void this.router.navigate(['/bienvenida']);
   }
 
   abrirSubidaSupabase(): void {
