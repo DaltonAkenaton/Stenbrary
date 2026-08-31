@@ -49,7 +49,7 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
-    version: '3.28.2',
+    version: '3.28.3',
     fecha: '2026-08-31',
     titulo: 'Bajar datos de la nube',
     destacado: true,
@@ -69,6 +69,11 @@ export const CHANGELOG: VersionChangelog[] = [
         tipo: 'feat',
         texto:
           'Los elementos que existen en los dos lados con contenido distinto se marcan como "en conflicto" y se pueden abrir para ver campo por campo qué dice cada versión. Por seguridad NO se modifican: elegir cuál versión gana puede borrar trabajo, y esa decisión todavía es tuya.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Los datos que traes de la nube ya no vuelven a aparecer como pendientes de subir. Antes, al bajar información quedaba marcada para subirla otra vez al mismo lugar del que venía, llenando la bandeja de sincronización de elementos innecesarios.',
       },
       {
         tipo: 'fix',

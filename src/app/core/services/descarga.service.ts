@@ -168,7 +168,7 @@ export class DescargaService {
     try {
       for (const fila of motivos) {
         try {
-          await this.databaseService.restaurarMotivo(fila.remoto as Motivo);
+          await this.databaseService.restaurarMotivo(fila.remoto as Motivo, 'nube');
           traidos += 1;
         } catch (err) {
           errores.push({ store: 'motivos', label: fila.label, message: mensajeError(err) });
@@ -178,7 +178,7 @@ export class DescargaService {
 
       for (const fila of alumnos) {
         try {
-          const guardado = await this.databaseService.restaurarAlumno(fila.remoto as Alumno);
+          const guardado = await this.databaseService.restaurarAlumno(fila.remoto as Alumno, 'nube');
           if (guardado) {
             traidos += 1;
           } else {
@@ -196,7 +196,7 @@ export class DescargaService {
 
       for (const fila of registros) {
         try {
-          await this.databaseService.restaurarRegistro(fila.remoto as Registro);
+          await this.databaseService.restaurarRegistro(fila.remoto as Registro, 'nube');
           traidos += 1;
         } catch (err) {
           errores.push({ store: 'registros', label: fila.label, message: mensajeError(err) });

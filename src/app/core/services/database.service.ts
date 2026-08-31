@@ -219,6 +219,22 @@ export class DatabaseService {
     return { ...row, _syncStatus: 'pending', _lastSyncedAt: undefined };
   }
 
+  /**
+   * Marca una fila como ya sincronizada al escribirla.
+   *
+   * Solo tiene sentido para filas que ACABAN de llegar de la nube: si se
+   * guardaran como `pending`, la bandeja de subida las ofrecería de vuelta al
+   * servidor de donde vinieron. Con volumen real eso son miles de filas de
+   * ruido, y una bandeja ruidosa se deja de leer.
+   *
+   * No confundir con `marcarComoSincronizado()`, que actualiza una fila ya
+   * guardada tras subirla. Esta versión evita la segunda escritura.
+   */
+  private markSynced<T extends { _syncStatus?: string; _lastSyncedAt?: Date }>(row: T): T {
+    this.notificarCambioSync();
+    return { ...row, _syncStatus: 'synced', _lastSyncedAt: new Date() };
+  }
+
   // ── Notificador de cambios de sync (badge en tiempo real) ─────
   // Se incrementa en cada mutación que afecta el conteo de pendientes.
   // AppComponent escucha esta señal con un effect y refresca el badge
@@ -314,21 +330,40 @@ export class DatabaseService {
   }
 
   /**
+   * Estado de sync con el que se guarda una fila restaurada.
+   *
+   * El origen determina el estado correcto y NO es un detalle:
+   * - `'backup'` (JSON local) → `pending`: ese dato nunca estuvo en la nube.
+   * - `'nube'` (descarga) → `synced`: ya está allá arriba; marcarlo pendiente
+   *   haría que la bandeja de subida lo ofreciera de vuelta al servidor del
+   *   que acaba de venir.
+   */
+  private marcarSegunOrigen<T extends { _syncStatus?: string; _lastSyncedAt?: Date }>(
+    row: T,
+    origen: 'backup' | 'nube',
+  ): T {
+    return origen === 'nube' ? this.markSynced(row) : this.markPending(row);
+  }
+
+  /**
    * Restaura un alumno conservando su `id` y su `fechaRegistro`.
    * Devuelve `null` si la matrícula ya pertenece a OTRO alumno — el índice
    * `by-matricula` es único y sobrescribirlo mezclaría dos personas.
    */
-  async restaurarAlumno(alumno: Alumno): Promise<Alumno | null> {
+  async restaurarAlumno(
+    alumno: Alumno,
+    origen: 'backup' | 'nube' = 'backup',
+  ): Promise<Alumno | null> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     const existente = await this.obtenerAlumnoPorMatricula(alumno.matricula);
     if (existente && existente.id !== alumno.id) return null;
 
-    const restaurado: Alumno = this.markPending({
+    const restaurado: Alumno = this.marcarSegunOrigen({
       ...alumno,
       fechaRegistro: this.aFecha(alumno.fechaRegistro) ?? new Date(),
-    });
+    }, origen);
 
     await this.db.put('alumnos', restaurado);
     return restaurado;
@@ -341,22 +376,28 @@ export class DatabaseService {
    * `motivoId`, así que reasignarlo dejaría huérfano el motivo de cada
    * registro que lo usaba.
    */
-  async restaurarMotivo(motivo: Motivo): Promise<Motivo> {
+  async restaurarMotivo(
+    motivo: Motivo,
+    origen: 'backup' | 'nube' = 'backup',
+  ): Promise<Motivo> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
     if (!motivo.id) throw new Error('Motivo sin id: no se puede restaurar');
 
-    const restaurado: Motivo = this.markPending({
+    const restaurado: Motivo = this.marcarSegunOrigen({
       ...motivo,
       fechaCreacion: this.aFecha(motivo.fechaCreacion) ?? new Date(),
-    });
+    }, origen);
 
     await this.db.put('motivos', restaurado);
     return restaurado;
   }
 
   /** Restaura un registro conservando `id`, `fechaHora`, salida y motivos. */
-  async restaurarRegistro(registro: Registro): Promise<Registro> {
+  async restaurarRegistro(
+    registro: Registro,
+    origen: 'backup' | 'nube' = 'backup',
+  ): Promise<Registro> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
@@ -364,11 +405,11 @@ export class DatabaseService {
     if (!fechaHora) throw new Error('Registro sin fechaHora válida');
 
     const horaSalida = this.aFecha(registro.horaSalida);
-    const restaurado: Registro = this.markPending({
+    const restaurado: Registro = this.marcarSegunOrigen({
       ...registro,
       fechaHora,
       ...(horaSalida ? { horaSalida } : {}),
-    });
+    }, origen);
 
     await this.db.put('registros', restaurado);
     return restaurado;
