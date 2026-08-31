@@ -1,0 +1,393 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  descarga.component.scss                             ║
+// ║  Stenbrary — Bajar de la nube                        ║
+// ║                                                      ║
+// ║  Jerarquía de color deliberada: verde/cyan para lo   ║
+// ║  seguro (traer solo agrega), ámbar para conflictos.  ║
+// ║  Los conflictos NO llevan botón de acción — no es un ║
+// ║  descuido, es que resolverlos puede borrar trabajo.  ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.descarga-container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-lg $spacing-md $spacing-xxl;
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+// ─── CABECERA ────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.header-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: $border-radius-md;
+  background: linear-gradient(135deg, rgba(0, 200, 215, 0.15), rgba(0, 169, 158, 0.10));
+  border: 1px solid $border-glow;
+  @include flex-center;
+
+  mat-icon { color: $cyan-400; }
+}
+
+.header-text {
+  h1 {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 22px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: -0.4px;
+  }
+  p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: $text-secondary;
+  }
+}
+
+// ─── PANELES ─────────────────────────────────────────────
+.panel {
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.panel-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.panel-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-family: $font-display;
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-primary;
+}
+
+.panel-sub {
+  font-size: 13px;
+  color: $text-secondary;
+  line-height: 1.55;
+}
+
+.inline-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+
+  &.ok   { color: $success-color; }
+  &.warn { color: $amber-color; }
+}
+
+.nota {
+  margin: 0;
+  font-size: 12px;
+  color: $text-muted;
+}
+
+// ─── BOTONES ─────────────────────────────────────────────
+.btn-primario {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 11px 18px;
+  background: linear-gradient(135deg, $cyan-500, $teal-500);
+  color: $navy-950;
+  border: none;
+  border-radius: $border-radius-md;
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all $transition-fast;
+  box-shadow: $shadow-glow-sm;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: $shadow-glow-md;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 7px 12px;
+  background: rgba(0, 200, 215, 0.07);
+  border: 1px solid $border-subtle;
+  border-radius: 999px;
+  color: $text-secondary;
+  font-family: $font-body;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $border-glow;
+    color: $text-primary;
+  }
+
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.chip-n {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $cyan-400;
+}
+
+// ─── LISTAS ──────────────────────────────────────────────
+.grupo { display: flex; flex-direction: column; gap: $spacing-sm; }
+
+.grupo-titulo {
+  margin: 0;
+  font-family: $font-body;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $text-muted;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+}
+
+.fila {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(0, 200, 215, 0.06);
+
+  &:last-child { border-bottom: none; }
+}
+
+.fila > .fila-icon,
+.fila > .fila-label { padding: 9px 0; }
+
+.fila:not(.fila-conflicto) {
+  flex-direction: row;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 0 $spacing-md;
+}
+
+.fila-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+
+  &.ok   { color: $success-color; }
+  &.warn { color: $amber-color; }
+}
+
+.fila-label {
+  font-size: 13px;
+  color: $text-secondary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.fila-toggle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: 9px $spacing-md;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: $font-body;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { background: rgba(0, 200, 215, 0.04); }
+}
+
+.fila-campos {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $amber-color;
+}
+
+// ─── DETALLE DE CONFLICTO ────────────────────────────────
+// Tres columnas: campo / aquí / nube. Con scroll propio para que un valor
+// largo no empuje el ancho de la página.
+.detalle {
+  padding: 0 $spacing-md $spacing-md;
+  overflow-x: auto;
+}
+
+.detalle-head,
+.detalle-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(120px, 1.4fr) minmax(120px, 1.4fr);
+  gap: $spacing-sm;
+  padding: 6px 0;
+  min-width: 380px;
+}
+
+.detalle-head {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $text-muted;
+  border-bottom: 1px solid $border-subtle;
+}
+
+.detalle-row {
+  border-bottom: 1px solid rgba(0, 200, 215, 0.05);
+  &:last-child { border-bottom: none; }
+}
+
+.campo {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-secondary;
+}
+
+.valor {
+  font-size: 12px;
+  color: $text-secondary;
+  word-break: break-word;
+
+  &.remoto { color: $cyan-300; }
+}
+
+.mas {
+  margin: 0;
+  font-size: 12px;
+  color: $text-muted;
+}
+
+// ─── ESTADOS ─────────────────────────────────────────────
+.aviso,
+.al-dia {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: $spacing-md;
+
+  mat-icon { flex-shrink: 0; }
+  p { margin: 2px 0 0; font-size: 13px; color: $text-secondary; }
+  strong { color: $text-primary; font-size: 14px; }
+}
+
+.aviso {
+  background: rgba(245, 166, 35, 0.05);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  border-radius: $border-radius-lg;
+  padding: $spacing-lg;
+  display: flex;
+
+  mat-icon { color: $amber-color; }
+}
+
+.al-dia mat-icon { color: $success-color; }
+
+.conflictos { border-color: rgba(245, 166, 35, 0.28); }
+
+// ─── PROGRESO ────────────────────────────────────────────
+.progreso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progreso-etapa {
+  font-size: 12px;
+  color: $cyan-300;
+}
+
+.progreso-cuenta {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+}
+
+.progreso-riel {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(0, 200, 215, 0.12);
+  overflow: hidden;
+}
+
+// Indeterminada: no se sabe cuántas filas hay hasta terminar de paginar.
+.progreso-barra {
+  display: block;
+  height: 100%;
+  width: 35%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, $cyan-400, transparent);
+  animation: barrido 1.1s ease-in-out infinite;
+}
+
+@keyframes barrido {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progreso-barra { animation: none; width: 100%; }
+}
+
+@media (max-width: $breakpoint-xs) {
+  .descarga-container { padding: $spacing-md $spacing-sm $spacing-xxl; }
+  .panel { padding: $spacing-md; }
+  .btn-primario { width: 100%; justify-content: center; }
+}

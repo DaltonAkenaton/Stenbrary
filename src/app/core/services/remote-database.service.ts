@@ -364,6 +364,73 @@ export class RemoteDatabaseService {
   }
 
   /**
+   * TODOS los registros de la nube, con sus motivos.
+   *
+   * Pagina a mano porque PostgREST corta en 1000 filas por defecto: pedir
+   * `select('*')` a secas devolvería las primeras 1000 sin error ni aviso, y
+   * una descarga silenciosamente incompleta es peor que una que falla.
+   *
+   * `onLote` permite reportar avance — con miles de registros esto tarda.
+   */
+  async obtenerTodosLosRegistros(
+    onLote?: (acumulados: number) => void,
+  ): Promise<Registro[]> {
+    const sb = this.requireClient();
+    const TAMANO_LOTE = 1000;
+    const todos: Registro[] = [];
+
+    for (let desde = 0; ; desde += TAMANO_LOTE) {
+      const { data, error } = await sb
+        .from('registros')
+        .select('*, registro_motivos(*)')
+        .order('fecha_hora', { ascending: false })
+        .range(desde, desde + TAMANO_LOTE - 1);
+
+      if (error) {
+        logError('[remote] obtenerTodosLosRegistros:', error);
+        throw error;
+      }
+
+      const lote = (data ?? []).map(row => {
+        const { registro_motivos: motivos = [], ...base } = row as RegistroRow & {
+          registro_motivos: RegistroMotivoRow[];
+        };
+        return registroFromRow(base as RegistroRow, motivos);
+      });
+
+      todos.push(...lote);
+      onLote?.(todos.length);
+
+      // Un lote incompleto significa que ya no hay más páginas.
+      if (lote.length < TAMANO_LOTE) break;
+    }
+
+    log('[remote] obtenerTodosLosRegistros:', todos.length);
+    return todos;
+  }
+
+  /**
+   * TODOS los motivos, incluidos los inactivos.
+   *
+   * `obtenerMotivosActivos()` filtra por `activo = true`, que es correcto
+   * para operar pero no para comparar: un motivo desactivado en la nube
+   * seguiría apareciendo como "falta localmente" en cada comparación.
+   */
+  async obtenerTodosLosMotivos(): Promise<Motivo[]> {
+    const sb = this.requireClient();
+    const { data, error } = await sb
+      .from('motivos')
+      .select('*')
+      .order('orden', { ascending: true });
+
+    if (error) {
+      logError('[remote] obtenerTodosLosMotivos:', error);
+      throw error;
+    }
+    return (data ?? []).map(motivoFromRow as (row: MotivoRow) => Motivo);
+  }
+
+  /**
    * Crea un registro + sus motivos atómicamente via función SQL
    * `crear_registro_completo(payload jsonb) returns uuid`.
    *

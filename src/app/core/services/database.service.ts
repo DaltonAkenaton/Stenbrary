@@ -334,6 +334,27 @@ export class DatabaseService {
     return restaurado;
   }
 
+  /**
+   * Restaura un motivo conservando su `id` y su `fechaCreacion`.
+   *
+   * El `id` importa más aquí que en los otros stores: los registros guardan
+   * `motivoId`, así que reasignarlo dejaría huérfano el motivo de cada
+   * registro que lo usaba.
+   */
+  async restaurarMotivo(motivo: Motivo): Promise<Motivo> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    if (!motivo.id) throw new Error('Motivo sin id: no se puede restaurar');
+
+    const restaurado: Motivo = this.markPending({
+      ...motivo,
+      fechaCreacion: this.aFecha(motivo.fechaCreacion) ?? new Date(),
+    });
+
+    await this.db.put('motivos', restaurado);
+    return restaurado;
+  }
+
   /** Restaura un registro conservando `id`, `fechaHora`, salida y motivos. */
   async restaurarRegistro(registro: Registro): Promise<Registro> {
     await this.inicializar();

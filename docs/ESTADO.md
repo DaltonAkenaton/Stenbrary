@@ -176,6 +176,25 @@ medir, no leer. Resultados:
 
 Suite tras la auditoría: **113 tests unitarios + 9 E2E**.
 
+### 2.0.4 Fase 2.2 — Descarga desde la nube ✅ (v3.28.0, 2026-08-31)
+
+Primera versión de la bajada. Espejo del modelo de subida: supervisada.
+
+- [x] `RemoteDatabaseService.obtenerTodosLosRegistros()` **con paginación** (`range()` de 1000 en 1000). PostgREST corta en 1000 filas por defecto sin error ni aviso — pedir `select('*')` a secas devolvería una descarga silenciosamente incompleta.
+- [x] `obtenerTodosLosMotivos()` (incluye inactivos; `obtenerMotivosActivos()` filtra por `activo`, correcto para operar pero no para comparar).
+- [x] `core/utils/descarga.utils.ts` — motor de comparación en **funciones puras**. Clasifica cada fila remota como `nueva` (falta local) o `conflicto` (mismo id, contenido distinto). Las idénticas no aparecen. Lo que solo existe local no es asunto de la descarga.
+  - Compara fechas por instante, no por identidad: la fecha remota se reconstruye desde ISO y con `===` **toda** la tabla saldría como conflicto.
+  - Ignora `sincronizado`, `_syncStatus`, `_lastSyncedAt` (siempre difieren por construcción) y `datosExtra` (la nube no lo guarda).
+- [x] `DescargaService` — orquesta lectura, diff y escritura. **`traer()` solo acepta ids que el último diff marcó como `nueva`**; un id fuera de esa lista se ignora, así que la ruta no puede sobrescribir ni por un bug de UI ni por un diff obsoleto.
+- [x] `DatabaseService.restaurarMotivo()` (completa el trío con `restaurarAlumno` / `restaurarRegistro` de v3.27.0).
+- [x] Ruta `/descarga` + enlace en Administración (solo con sesión iniciada).
+- [x] 22 tests sobre el motor de comparación. Suite: **135 unitarios + 9 E2E**.
+
+**Pendiente de esta sub-fase:**
+- [ ] **Resolución de conflictos** 🟡 — hoy se muestran campo por campo pero no se aplican. Requiere decidir con el coordinador la política (¿gana la nube? ¿el local? ¿por campo?) y probablemente un respaldo automático previo.
+- [ ] **Probar contra volumen real** — validado en local; falta con miles de filas remotas.
+- [ ] Nota: en producción (Netlify) `environment.prod.ts` tiene Supabase vacío, así que esta pantalla solo es alcanzable en desarrollo hasta que se decida activar la nube en el sitio publicado.
+
 ### 2.1 Infra de datos 🟡 _(bajado de 🔴 el 2026-08-31)_
 
 - [ ] **`DB_VERSION = 2`** — 🟡, ya no bloquea nada. Se necesitaría solo para crear el store `audit` (Activity Log), **no** para migrar fechas: medido el 2026-08-31, 3186/3186 registros ya tienen `fechaHora` como `Date` y 0 como string. La ruta de importación tampoco puede fabricar strings desde v3.27.0 (`restaurarRegistro()` los revive a `Date`).

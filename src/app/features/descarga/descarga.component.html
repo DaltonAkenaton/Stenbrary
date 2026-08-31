@@ -1,0 +1,211 @@
+<!--
+  descarga.component.html
+  Stenbrary — Bajar datos de la nube
+
+  Orden deliberado: primero qué se puede traer sin riesgo, después los
+  conflictos. Lo seguro arriba porque es lo que el coordinador hará el 99%
+  de las veces; lo delicado abajo y sin botón que lo aplique.
+-->
+
+<div class="descarga-container">
+
+  <!-- ══════════════ CABECERA ══════════════ -->
+  <header class="page-header">
+    <div class="header-icon">
+      <mat-icon>cloud_download</mat-icon>
+    </div>
+    <div class="header-text">
+      <h1>Bajar de la nube</h1>
+      <p>
+        Compara lo que hay en la nube con lo de este dispositivo y trae lo que falte.
+      </p>
+    </div>
+  </header>
+
+  @if (!disponible) {
+    <!-- Modo solo-local: decirlo claro en vez de mostrar botones muertos. -->
+    <div class="aviso">
+      <mat-icon>cloud_off</mat-icon>
+      <div>
+        <strong>Sin conexión a la nube configurada.</strong>
+        <p>
+          Esta pantalla necesita una sesión iniciada contra Supabase.
+          En la versión publicada la nube está desactivada a propósito.
+        </p>
+      </div>
+    </div>
+  } @else {
+
+    <!-- ══════════════ ACCIÓN PRINCIPAL ══════════════ -->
+    <section class="panel">
+      <div class="panel-row">
+        <div class="panel-info">
+          <span class="panel-title">Estado de la comparación</span>
+          @if (ultimaComparacion(); as fecha) {
+            <span class="panel-sub">Última: {{ fecha | date:'d MMM, HH:mm' }}</span>
+          } @else {
+            <span class="panel-sub">Todavía no has comparado.</span>
+          }
+        </div>
+        <button class="btn-primario" (click)="comparar()" [disabled]="ocupado()">
+          <mat-icon>sync</mat-icon>
+          {{ comparando() ? 'Comparando…' : 'Comparar con la nube' }}
+        </button>
+      </div>
+
+      @if (progreso().activo) {
+        <div class="progreso">
+          <span class="progreso-etapa">{{ progreso().etapa }}</span>
+          @if (progreso().procesadas > 0) {
+            <span class="progreso-cuenta">
+              {{ progreso().procesadas }}@if (progreso().total > 0) {<span> / {{ progreso().total }}</span>}
+            </span>
+          }
+          <div class="progreso-riel"><span class="progreso-barra"></span></div>
+        </div>
+      }
+
+      <p class="nota">
+        Comparar solo lee. No cambia nada en este dispositivo ni en la nube.
+      </p>
+    </section>
+
+    @if (diff(); as d) {
+
+      <!-- ══════════════ AL DÍA ══════════════ -->
+      @if (d.totalNuevas === 0 && d.totalConflictos === 0) {
+        <section class="panel al-dia">
+          <mat-icon>check_circle</mat-icon>
+          <div>
+            <strong>Tu copia local está al día.</strong>
+            <p>No hay nada en la nube que falte aquí.</p>
+          </div>
+        </section>
+      }
+
+      <!-- ══════════════ POR TRAER ══════════════ -->
+      @if (d.totalNuevas > 0) {
+        <section class="panel">
+          <div class="panel-row">
+            <div class="panel-info">
+              <span class="panel-title">
+                <mat-icon class="inline-icon ok">add_circle</mat-icon>
+                {{ d.totalNuevas }} por traer
+              </span>
+              <span class="panel-sub">
+                Están en la nube y no en este dispositivo. Traerlos solo agrega.
+              </span>
+            </div>
+            <button class="btn-primario" (click)="traerTodo()" [disabled]="ocupado()">
+              <mat-icon>cloud_download</mat-icon>
+              {{ trayendo() ? 'Trayendo…' : 'Traer todo' }}
+            </button>
+          </div>
+
+          <div class="chips">
+            @for (r of resumenNuevas(); track r.store) {
+              <button
+                class="chip"
+                (click)="traerStore(r.store, r.label)"
+                [disabled]="ocupado()">
+                {{ r.label }}
+                <span class="chip-n">{{ r.n }}</span>
+              </button>
+            }
+          </div>
+
+          <!-- Muestra de lo que llegaría, para que "traer todo" no sea a ciegas -->
+          @for (grupo of [
+            { label: 'Motivos',   filas: d.motivos.nuevas },
+            { label: 'Alumnos',   filas: d.alumnos.nuevas },
+            { label: 'Registros', filas: d.registros.nuevas }
+          ]; track grupo.label) {
+            @if (grupo.filas.length > 0) {
+              <div class="grupo">
+                <h3 class="grupo-titulo">{{ grupo.label }} ({{ grupo.filas.length }})</h3>
+                <ul class="lista">
+                  @for (fila of grupo.filas.slice(0, tope); track fila.id) {
+                    <li class="fila">
+                      <mat-icon class="fila-icon ok">add</mat-icon>
+                      <span class="fila-label">{{ fila.label }}</span>
+                    </li>
+                  }
+                </ul>
+                @if (grupo.filas.length > tope) {
+                  <p class="mas">
+                    …y {{ grupo.filas.length - tope }} más. Se traen todos aunque no se listen.
+                  </p>
+                }
+              </div>
+            }
+          }
+        </section>
+      }
+
+      <!-- ══════════════ CONFLICTOS ══════════════ -->
+      @if (d.totalConflictos > 0) {
+        <section class="panel conflictos">
+          <div class="panel-info">
+            <span class="panel-title">
+              <mat-icon class="inline-icon warn">warning</mat-icon>
+              {{ d.totalConflictos }} en conflicto
+            </span>
+            <span class="panel-sub">
+              Existen en los dos lados con contenido distinto.
+              <strong>No se tocan.</strong> Decidir cuál versión gana puede borrar
+              trabajo, así que esa parte todavía no está automatizada — revísalos
+              y dime qué encontraste.
+            </span>
+          </div>
+
+          @for (grupo of [
+            { label: 'Motivos',   filas: d.motivos.conflictos },
+            { label: 'Alumnos',   filas: d.alumnos.conflictos },
+            { label: 'Registros', filas: d.registros.conflictos }
+          ]; track grupo.label) {
+            @if (grupo.filas.length > 0) {
+              <div class="grupo">
+                <h3 class="grupo-titulo">{{ grupo.label }} ({{ grupo.filas.length }})</h3>
+                <ul class="lista">
+                  @for (fila of grupo.filas.slice(0, tope); track fila.id) {
+                    <li class="fila fila-conflicto">
+                      <button class="fila-toggle" (click)="alternarConflicto(fila.id)">
+                        <mat-icon class="fila-icon warn">
+                          {{ conflictoAbierto() === fila.id ? 'expand_more' : 'chevron_right' }}
+                        </mat-icon>
+                        <span class="fila-label">{{ fila.label }}</span>
+                        <span class="fila-campos">
+                          {{ fila.camposDistintos?.length }}
+                          {{ fila.camposDistintos?.length === 1 ? 'campo' : 'campos' }}
+                        </span>
+                      </button>
+
+                      @if (conflictoAbierto() === fila.id) {
+                        <div class="detalle">
+                          <div class="detalle-head">
+                            <span>Campo</span><span>Aquí</span><span>En la nube</span>
+                          </div>
+                          @for (campo of fila.camposDistintos; track campo) {
+                            <div class="detalle-row">
+                              <span class="campo">{{ campo }}</span>
+                              <span class="valor">{{ valorDe(fila, 'local', campo) }}</span>
+                              <span class="valor remoto">{{ valorDe(fila, 'remoto', campo) }}</span>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </li>
+                  }
+                </ul>
+                @if (grupo.filas.length > tope) {
+                  <p class="mas">…y {{ grupo.filas.length - tope }} más.</p>
+                }
+              </div>
+            }
+          }
+        </section>
+      }
+    }
+  }
+
+</div>

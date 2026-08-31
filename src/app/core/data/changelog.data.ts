@@ -49,6 +49,35 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.28.0',
+    fecha: '2026-08-31',
+    titulo: 'Bajar datos de la nube',
+    destacado: true,
+    resumen: 'Hasta ahora los datos solo podían subir. Ya se pueden traer de vuelta: la nueva pantalla "Bajar de la nube" compara lo que hay allá arriba con lo de este dispositivo y te deja traer lo que falte, sin tocar nada de lo que ya tienes.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva pantalla "Bajar de la nube". Compara los dos lados y te muestra qué falta en este dispositivo. Comparar solo lee: no cambia nada ni aquí ni en la nube, así que puedes hacerlo cuantas veces quieras.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Puedes traer todo de una vez o por tipo (solo motivos, solo alumnos, solo registros). Antes de traer se muestra la lista de lo que llegaría, para que no sea a ciegas.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Los elementos que existen en los dos lados con contenido distinto se marcan como "en conflicto" y se pueden abrir para ver campo por campo qué dice cada versión. Por seguridad NO se modifican: elegir cuál versión gana puede borrar trabajo, y esa decisión todavía es tuya.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Traer datos nunca sobrescribe: solo agrega lo que no existe en este dispositivo. Es imposible que la descarga pise algo que hayas capturado y aún no subido.',
+      },
+    ],
+  },
+  {
     version: '3.27.0',
     fecha: '2026-08-31',
     titulo: 'Lector de credenciales + respaldos que sí devuelven tu historial',

@@ -112,6 +112,13 @@ export const routes: Routes = [
     title: 'Stenbrary — Sincronización',
   },
   {
+    path: 'descarga',
+    loadComponent: () =>
+      import('./features/descarga/descarga.component').then(m => m.DescargaComponent),
+    canActivate: [roleGuard],
+    title: 'Stenbrary — Bajar de la nube',
+  },
+  {
     path: 'inactivos',
     loadComponent: () =>
       import('./features/inactivos/inactivos.component').then(m => m.InactivosComponent),
