@@ -245,6 +245,104 @@ describe('descarga.utils — construirDiff', () => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════
+// REGRESIÓN: los 3024 conflictos falsos de la primera prueba real
+// ═══════════════════════════════════════════════════════════
+// La primera versión comparaba la forma cruda de cada campo y marcó como
+// conflicto casi toda la base. Ninguno era una diferencia de datos: eran
+// artefactos del viaje a Postgres y de vuelta. Cada caso queda fijado aquí.
+describe('descarga.utils — normalización del round-trip', () => {
+  const vacio = { motivos: [], alumnos: [], registros: [] };
+
+  it('cierreAutomatico: undefined local == false remoto', () => {
+    // La columna es `not null default false`; local deja el campo ausente.
+    const local  = { ...vacio, registros: [registro('r1')] };
+    const remoto = { ...vacio, registros: [registro('r1', { cierreAutomatico: false })] };
+    expect(construirDiff(local, remoto).totalConflictos).toBe(0);
+  });
+
+  it('cierreAutomatico true SÍ es un conflicto real', () => {
+    // El caso opuesto tiene que seguir detectándose: normalizar no puede
+    // volverse una excusa para dejar de ver diferencias de verdad.
+    const local  = { ...vacio, registros: [registro('r1')] };
+    const remoto = { ...vacio, registros: [registro('r1', { cierreAutomatico: true })] };
+    expect(construirDiff(local, remoto).totalConflictos).toBe(1);
+  });
+
+  it('motivoIds: un solo motivo local == array de uno en la nube', () => {
+    // Al subir, construirMotivosPayload() deriva [motivoId]; la nube lo
+    // reconstruye desde registro_motivos y lo devuelve siempre.
+    const local = {
+      ...vacio,
+      registros: [registro('r1', { motivoId: 'm-1', motivoNombre: 'Pedir libro' })],
+    };
+    const remoto = {
+      ...vacio,
+      registros: [registro('r1', {
+        motivoId: 'm-1',
+        motivoNombre: 'Pedir libro',
+        motivoIds: ['m-1'],
+        motivoNombres: ['Pedir libro'],
+      })],
+    };
+    expect(construirDiff(local, remoto).totalConflictos).toBe(0);
+  });
+
+  it('un motivo extra en la nube SÍ es conflicto', () => {
+    const local = {
+      ...vacio,
+      registros: [registro('r1', { motivoId: 'm-1', motivoNombre: 'Pedir libro' })],
+    };
+    const remoto = {
+      ...vacio,
+      registros: [registro('r1', {
+        motivoId: 'm-1',
+        motivoNombre: 'Pedir libro',
+        motivoIds: ['m-1', 'm-2'],
+        motivoNombres: ['Pedir libro', 'Investigación'],
+      })],
+    };
+    expect(construirDiff(local, remoto).totalConflictos).toBe(1);
+  });
+
+  it('fechaActualizacion del servidor no genera conflicto', () => {
+    // Es el `updated_at` de Postgres: el modelo local no lo mantiene, así
+    // que comparándolo TODOS los alumnos salían en conflicto para siempre.
+    const local  = { ...vacio, alumnos: [alumno('a1')] };
+    const remoto = {
+      ...vacio,
+      alumnos: [alumno('a1', { fechaActualizacion: new Date(2026, 4, 22) } as Partial<Alumno>)],
+    };
+    expect(construirDiff(local, remoto).totalConflictos).toBe(0);
+  });
+
+  it('una base completa que solo difiere en artefactos da diff vacío', () => {
+    // La prueba de humo del caso real: 3 registros y 2 alumnos que llegaron
+    // de la nube tras subirlos. Nada que decidir.
+    const locales = {
+      motivos:   [motivo('m1')],
+      alumnos:   [alumno('a1'), alumno('a2', { matricula: '2299990006' })],
+      registros: [registro('r1'), registro('r2'), registro('r3')],
+    };
+    const remotos = {
+      motivos:   [motivo('m1', { activo: true })],
+      alumnos:   [
+        alumno('a1', { fechaActualizacion: new Date() } as Partial<Alumno>),
+        alumno('a2', { matricula: '2299990006', fechaActualizacion: new Date() } as Partial<Alumno>),
+      ],
+      registros: ['r1', 'r2', 'r3'].map(id => registro(id, {
+        cierreAutomatico: false,
+        motivoIds: ['motivo-1'],
+        motivoNombres: ['Estudiar'],
+        sincronizado: true,
+      })),
+    };
+    const diff = construirDiff(locales, remotos);
+    expect(diff.totalConflictos).toBe(0);
+    expect(diff.totalNuevas).toBe(0);
+  });
+});
+
 describe('descarga.utils — etiquetas', () => {
   it('el alumno se identifica por matrícula y nombre', () => {
     expect(labelAlumno(alumno('a1'))).toContain('2299990002');

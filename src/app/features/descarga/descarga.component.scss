@@ -14,9 +14,12 @@
 .descarga-container {
   display: flex;
   flex-direction: column;
-  gap: $spacing-lg;
-  padding: $spacing-lg $spacing-md $spacing-xxl;
-  max-width: 880px;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg $spacing-xxl;
+  // 880px dejaba media pantalla vacía en laptop. Estas listas son de una
+  // sola columna con etiquetas largas (matrícula + nombre + fecha): el
+  // ancho extra se aprovecha, no se desperdicia.
+  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
 }
@@ -61,7 +64,7 @@
   background: $navy-800;
   border: 1px solid $border-subtle;
   border-radius: $border-radius-lg;
-  padding: $spacing-lg;
+  padding: $spacing-md $spacing-lg;
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
@@ -69,18 +72,25 @@
 
 .panel-row {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: $spacing-md;
+  align-items: center;
+  gap: $spacing-lg;
   flex-wrap: wrap;
+
+  // El botón se va al final del renglón sin que el texto tenga que estirarse
+  // para empujarlo.
+  > .btn-primario { margin-left: auto; }
 }
 
+// `flex: 1 1 260px` la hacía crecer hasta empujar el botón al extremo
+// opuesto, dejando una franja muerta entre texto y acción. Ahora ocupa lo
+// que necesita y el botón queda a su lado.
 .panel-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  flex: 1 1 260px;
+  flex: 0 1 auto;
+  max-width: 72ch;
 }
 
 .panel-title {

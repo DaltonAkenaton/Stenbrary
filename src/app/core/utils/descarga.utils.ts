@@ -127,6 +127,47 @@ export function camposQueDifieren<T extends object>(
 }
 
 // ═══════════════════════════════════════════════════════════
+// NORMALIZACIÓN
+// ═══════════════════════════════════════════════════════════
+// El viaje a Postgres y de vuelta cambia la FORMA de algunos campos sin
+// cambiar su SIGNIFICADO. Comparar la forma cruda marcaba como conflicto
+// prácticamente cada fila: en la primera prueba real salieron 3024, todos
+// falsos. Un conflicto falso es peor que inútil — entierra a los de verdad
+// y entrena al coordinador a aceptar sin leer.
+//
+// Por eso se normalizan AMBOS lados antes de comparar. La versión que se
+// escribe sigue siendo la remota original: normalizar es para decidir, no
+// para guardar.
+
+/**
+ * `cierreAutomatico`: la columna es `not null default false`, así que la
+ * nube devuelve `false` donde el modelo local simplemente no tiene el campo.
+ *
+ * `motivoIds` / `motivoNombres`: al subir, `construirMotivosPayload()` deriva
+ * `[motivoId]` cuando no hay array. La nube reconstruye ese array desde la
+ * tabla `registro_motivos` y lo devuelve siempre; local lo deja en
+ * `undefined` cuando el registro tiene un solo motivo. Un motivo expresado
+ * de dos maneras, no dos datos distintos.
+ */
+export function normalizarRegistro(r: Registro): Registro {
+  return {
+    ...r,
+    cierreAutomatico: !!r.cierreAutomatico,
+    motivoIds: r.motivoIds ?? (r.motivoId ? [r.motivoId] : undefined),
+    motivoNombres: r.motivoNombres ?? (r.motivoNombre ? [r.motivoNombre] : undefined),
+  };
+}
+
+/** El alumno no necesita transformación; sus diferencias se filtran por campo. */
+export function normalizarAlumno(a: Alumno): Alumno {
+  return a;
+}
+
+export function normalizarMotivo(m: Motivo): Motivo {
+  return { ...m, activo: !!m.activo };
+}
+
+// ═══════════════════════════════════════════════════════════
 // DIFF POR STORE
 // ═══════════════════════════════════════════════════════════
 
@@ -145,6 +186,8 @@ export function compararStore<T extends object>(
   idDe: (fila: T) => string | undefined,
   labelDe: (fila: T) => string,
   camposIgnorados: string[] = [],
+  /** Se aplica a ambos lados SOLO para comparar; se guarda la fila original. */
+  normalizar: (fila: T) => T = f => f,
 ): DiffStore<T> {
   const porId = new Map<string, T>();
   locales.forEach(fila => {
@@ -165,7 +208,9 @@ export function compararStore<T extends object>(
       return;
     }
 
-    const camposDistintos = camposQueDifieren(local, remoto, camposIgnorados);
+    const camposDistintos = camposQueDifieren(
+      normalizar(local), normalizar(remoto), camposIgnorados,
+    );
     if (camposDistintos.length > 0) {
       conflictos.push({
         id,
@@ -215,15 +260,24 @@ export function construirDiff(
 ): DiffCompleto {
   const motivos = compararStore<Motivo>(
     local.motivos, remoto.motivos, m => m.id, labelMotivo,
+    [], normalizarMotivo,
   );
   const alumnos = compararStore<Alumno>(
     local.alumnos, remoto.alumnos, a => a.id, labelAlumno,
-    // La nube no guarda `datosExtra` (campos personalizados del coordinador),
-    // así que compararlo marcaría como conflicto a todo alumno que los use.
-    ['datosExtra'],
+    [
+      // La nube no guarda `datosExtra` (campos personalizados del
+      // coordinador): compararlo marcaría a todo alumno que los use.
+      'datosExtra',
+      // `fechaActualizacion` es el `updated_at` del servidor. El modelo local
+      // no lo mantiene, así que NUNCA puede coincidir: comparándolo, los 503
+      // alumnos salían en conflicto por un campo que no es dato de usuario.
+      'fechaActualizacion',
+    ],
+    normalizarAlumno,
   );
   const registros = compararStore<Registro>(
     local.registros, remoto.registros, r => r.id, labelRegistro,
+    [], normalizarRegistro,
   );
 
   return {
