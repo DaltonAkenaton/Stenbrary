@@ -943,7 +943,6 @@ export class ImportarAlumnosComponent {
 
     try {
       this.importando = true;
-      this.loadingService.show(`Importando ${validas.length} alumnos...`);
 
       const resultado: ResultadoImportacion = {
         total: validas.length,
@@ -953,6 +952,23 @@ export class ImportarAlumnosComponent {
         errores: [],
       };
 
+      // Progreso real. Antes era un spinner con texto fijo: con 500+ alumnos
+      // la pantalla se veía congelada varios segundos y no había forma de
+      // distinguirla de una app colgada.
+      //
+      // Sobre interrumpir a media importación (cerrar pestaña, navegar, que
+      // se apague el equipo): cada alumno se escribe en su propia transacción
+      // de IndexedDB, así que NO hay corrupción — quedan los ya escritos y
+      // faltan los demás. Y volver a correr el mismo archivo es seguro: el
+      // índice `by-matricula` es único, los ya existentes caen en el catch y
+      // se cuentan como duplicados. La importación es reanudable por diseño.
+      this.loadingService.progress(
+        0, validas.length,
+        'Importando alumnos...',
+        'Si se interrumpe, puedes volver a cargar el mismo archivo sin duplicar.',
+      );
+
+      let procesados = 0;
       for (const fila of validas) {
         try {
           await this.databaseService.crearAlumno({
@@ -970,6 +986,20 @@ export class ImportarAlumnosComponent {
         } catch (error: any) {
           // Matrícula duplicada en la base de datos
           resultado.duplicados++;
+        }
+
+        procesados++;
+        // Refrescar cada 10 filas (y siempre en la última): pintar 500 veces
+        // cuesta más que la propia escritura y hace la barra más lenta que
+        // el trabajo que reporta.
+        if (procesados % 10 === 0 || procesados === validas.length) {
+          this.loadingService.progress(
+            procesados, validas.length,
+            'Importando alumnos...',
+            'Si se interrumpe, puedes volver a cargar el mismo archivo sin duplicar.',
+          );
+          // Ceder el hilo para que el navegador pinte el avance.
+          await new Promise(r => setTimeout(r, 0));
         }
       }
 

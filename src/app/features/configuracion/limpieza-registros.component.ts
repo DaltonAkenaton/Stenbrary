@@ -29,6 +29,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
+import { AforoService } from '../../core/services/aforo.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6meses' | 'todo';
@@ -99,9 +100,21 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
           <div class="preview-info">
             @if (conteoRegistros > 0) {
               <span class="preview-count">{{ conteoRegistros }}</span>
-              <span class="preview-label">registros encontrados en este rango</span>
+              <span class="preview-label">
+                registros encontrados en este rango
+                @if (totalEnBase > conteoRegistros) {
+                  · {{ totalEnBase }} en total en la base
+                }
+              </span>
+            } @else if (totalEnBase > 0) {
+              <!-- Distinguir "rango vacío" de "base vacía": sin esto, ver 0
+                   habiendo registros parece un error del sistema. -->
+              <span class="preview-label">
+                No hay registros en este rango.
+                Quedan <strong>{{ totalEnBase }}</strong> fuera de él.
+              </span>
             } @else {
-              <span class="preview-label">No hay registros en este rango</span>
+              <span class="preview-label">No queda ningún registro en la base</span>
             }
           </div>
         </div>
@@ -334,11 +347,14 @@ export class LimpiezaRegistrosComponent {
   conteoRegistros = 0;
   conteoCalculado = false;
   consultando = false;
+  /** Total en la base, sin filtrar. Explica por qué el rango puede dar 0. */
+  totalEnBase = 0;
 
   constructor(
     private databaseService: DatabaseService,
     private toastService: ToastService,
     private loadingService: LoadingService,
+    private aforoService: AforoService,
     private dialog: MatDialog,
   ) {}
 
@@ -369,10 +385,15 @@ export class LimpiezaRegistrosComponent {
 
     try {
       this.consultando = true;
-      this.conteoRegistros = await this.databaseService.contarRegistrosPorRango(
-        rango.inicio,
-        rango.fin
-      );
+      // Los dos conteos van juntos: el del rango dice qué se va a borrar, el
+      // total dice cuántos quedan fuera. Sin el segundo, un rango que devuelve
+      // 0 es indistinguible de una base vacía.
+      const [enRango, total] = await Promise.all([
+        this.databaseService.contarRegistrosPorRango(rango.inicio, rango.fin),
+        this.databaseService.contarRegistros(),
+      ]);
+      this.conteoRegistros = enRango;
+      this.totalEnBase = total;
       this.conteoCalculado = true;
       this.consultando = false;
     } catch (error) {
@@ -406,20 +427,36 @@ export class LimpiezaRegistrosComponent {
     const confirmado = await dialogRef.afterClosed().toPromise();
     if (!confirmado) return;
 
+    const esperados = this.conteoRegistros;
+
     try {
-      this.loadingService.show('Eliminando registros...');
+      this.loadingService.show(`Eliminando ${esperados} registros...`);
 
       const eliminados = await this.databaseService.eliminarRegistrosPorRango(
         rango.inicio,
         rango.fin
       );
 
+      // Releer de la BD en vez de asumir que quedó en cero. Poner el contador
+      // a 0 "porque acabamos de borrar" es exactamente lo que hacía que la
+      // pantalla afirmara algo distinto a la realidad cuando el borrado no
+      // cubría todo. Ahora la cifra que se muestra siempre viene de la base.
+      await this.actualizarConteo();
       this.loadingService.hide();
-      this.toastService.success(`${eliminados} registros eliminados exitosamente`);
 
-      // Resetear estado
-      this.conteoRegistros = 0;
-      this.conteoCalculado = false;
+      // Cambió el universo de registros: el aforo puede haber quedado obsoleto.
+      this.aforoService.refrescar();
+
+      if (this.conteoRegistros > 0) {
+        // Sobrevivieron registros dentro del mismo rango: algo los excluyó
+        // (p. ej. `fechaHora` no parseable). Decirlo, no ocultarlo.
+        this.toastService.warning(
+          `Se eliminaron ${eliminados}, pero quedan ${this.conteoRegistros} en este rango. ` +
+          `Puede que tengan una fecha inválida.`,
+        );
+      } else {
+        this.toastService.success(`${eliminados} registros eliminados exitosamente`);
+      }
     } catch (error) {
       console.error('Error al eliminar registros:', error);
       this.loadingService.hide();
@@ -457,8 +494,12 @@ export class LimpiezaRegistrosComponent {
         inicio.setMonth(inicio.getMonth() - 6);
         break;
       case 'todo':
-        inicio = new Date(2020, 0, 1); // Fecha muy atrás para cubrir todo
-        break;
+        // "Todos" tiene que significar todos. Con 2020-01-01 como piso y
+        // `hoy` como techo, cualquier registro anterior a 2020 o con fecha
+        // futura (reloj mal puesto, dato importado) quedaba invisible: no se
+        // contaba ni se borraba, y la pantalla parecía mentir.
+        inicio = new Date(1970, 0, 1);
+        return { inicio, fin: new Date(2100, 0, 1) };
       case 'personalizado':
         if (!this.fechaDesde || !this.fechaHasta) return null;
         inicio = new Date(this.fechaDesde);
