@@ -316,6 +316,34 @@ describe('descarga.utils — normalización del round-trip', () => {
     expect(construirDiff(local, remoto).totalConflictos).toBe(0);
   });
 
+  it('invitados: alumnoId sintético local == null en la nube', () => {
+    // El acceso de invitado genera `invitado-<timestamp>`, que no es UUID.
+    // La columna `alumno_id` es de tipo uuid, así que asUuidOrNull() lo sube
+    // como null. Eran los 7 conflictos que quedaban tras la primera pasada.
+    const local = {
+      ...vacio,
+      registros: [registro('r1', {
+        alumnoId: 'invitado-1776488035771',
+        matricula: 'INVITADO',
+      })],
+    };
+    const remoto = {
+      ...vacio,
+      registros: [registro('r1', { alumnoId: null as any, matricula: 'INVITADO' })],
+    };
+    expect(construirDiff(local, remoto).totalConflictos).toBe(0);
+  });
+
+  it('entre dos alumnos REALES un alumnoId distinto sigue siendo conflicto', () => {
+    // El campo no se ignora: que un registro apunte a otra persona es
+    // justo el tipo de diferencia que hay que ver.
+    const uuidA = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    const uuidB = '9c858901-8a57-4791-81fe-4c455b099bc9';
+    const local  = { ...vacio, registros: [registro('r1', { alumnoId: uuidA })] };
+    const remoto = { ...vacio, registros: [registro('r1', { alumnoId: uuidB })] };
+    expect(construirDiff(local, remoto).totalConflictos).toBe(1);
+  });
+
   it('una base completa que solo difiere en artefactos da diff vacío', () => {
     // La prueba de humo del caso real: 3 registros y 2 alumnos que llegaron
     // de la nube tras subirlos. Nada que decidir.

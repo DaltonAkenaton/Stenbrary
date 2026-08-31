@@ -155,7 +155,33 @@ export function normalizarRegistro(r: Registro): Registro {
     cierreAutomatico: !!r.cierreAutomatico,
     motivoIds: r.motivoIds ?? (r.motivoId ? [r.motivoId] : undefined),
     motivoNombres: r.motivoNombres ?? (r.motivoNombre ? [r.motivoNombre] : undefined),
-  };
+    // Un `alumnoId` sintético equivale a "sin alumno", que es exactamente lo
+    // que la nube guarda. Ver `asUuidOrNull` en remote-database.service: el
+    // acceso de invitado genera `invitado-<timestamp>`, que no es UUID y la
+    // columna `alumno_id` (tipo uuid) recibe null. No es pérdida de dato: en
+    // los invitados lo que identifica al registro es `matricula: 'INVITADO'`.
+    //
+    // Deliberadamente NO se ignora el campo entero: entre dos alumnos reales
+    // un `alumnoId` distinto significa que el registro apunta a otra persona,
+    // y eso sí es un conflicto que hay que ver.
+    alumnoId: esIdSintetico(r.alumnoId) ? undefined : r.alumnoId,
+  } as Registro;
+}
+
+/**
+ * Regex de UUID v1–v5, el formato que produce `uuidv4()`.
+ *
+ * Se duplica a propósito en vez de importarla de `remote-database.service`:
+ * este módulo es de funciones puras y no debe arrastrar el cliente de
+ * Supabase solo para validar una cadena.
+ */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** `true` para ids que el local acepta pero Postgres no (p. ej. invitados). */
+export function esIdSintetico(id: string | null | undefined): boolean {
+  if (!id) return false;
+  return !UUID_RE.test(id);
 }
 
 /** El alumno no necesita transformación; sus diferencias se filtran por campo. */

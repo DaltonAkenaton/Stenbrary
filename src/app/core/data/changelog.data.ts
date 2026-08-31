@@ -49,7 +49,7 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
-    version: '3.28.1',
+    version: '3.28.2',
     fecha: '2026-08-31',
     titulo: 'Bajar datos de la nube',
     destacado: true,
@@ -69,12 +69,17 @@ export const CHANGELOG: VersionChangelog[] = [
         tipo: 'feat',
         texto:
           'Los elementos que existen en los dos lados con contenido distinto se marcan como "en conflicto" y se pueden abrir para ver campo por campo qué dice cada versión. Por seguridad NO se modifican: elegir cuál versión gana puede borrar trabajo, y esa decisión todavía es tuya.',
-      },      {
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Los accesos de invitado ya no aparecen como conflicto. Un invitado no tiene alumno asociado, y la nube y el dispositivo lo anotan de forma distinta — misma información, distinto formato.',
+      },
+      {
         tipo: 'fix',
         texto:
           'Corregido: en la primera prueba con datos reales aparecían más de 3,000 conflictos falsos. No eran diferencias de datos, sino la misma información guardada de forma distinta en la nube (un motivo suelto contra una lista de un motivo, por ejemplo). Ahora se comparan por significado y solo se marcan las diferencias de verdad.',
       },
-
       {
         tipo: 'mejora',
         texto:
