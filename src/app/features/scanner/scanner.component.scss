@@ -1,11 +1,14 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  scanner.component.scss                              ║
-// ║  Stenbrary v3.2 — Scanner + Guest Access             ║
+// ║  Stenbrary — Scanner con lector físico como primario ║
 // ║                                                      ║
-// ║  CAMBIOS vs v2.0:                                    ║
-// ║  - .scanner-controls: contenedor de botones flotantes║
-// ║  - .btn-torch: botón de linterna con estado active   ║
-// ║  - Ajustes responsive para controles                 ║
+// ║  CAMBIOS RECIENTES:                                  ║
+// ║  - .reader-card / .reader-icon: tarjeta en reposo    ║
+// ║    del lector USB/BT (camino principal)              ║
+// ║  - .reader-progress: barra de escaneo (reemplaza al  ║
+// ║    overlay global en el flujo del lector)            ║
+// ║  - .btn-camera-link: cámara degradada a respaldo     ║
+// ║  - Guard de prefers-reduced-motion                   ║
 // ╚══════════════════════════════════════════════════════╝
 
 @import '../../../styles/variables';
@@ -138,6 +141,180 @@
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TARJETA DEL LECTOR FÍSICO (camino principal)
+// ═══════════════════════════════════════════════════════════
+// Es una tarjeta en reposo, no un botón: el alumno no la toca, solo
+// pasa la credencial. Todo el peso visual va al estado, no a una acción.
+.reader-card {
+  border-color: rgba(0, 200, 215, 0.22);
+  background-image: linear-gradient(160deg, rgba(0, 200, 215, 0.05) 0%, transparent 62%);
+
+  &.reading {
+    border-color: $border-glow;
+    box-shadow: $shadow-glow-sm;
+  }
+}
+
+.reader-icon {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: $border-radius-lg;
+  background: linear-gradient(135deg,
+    rgba(0, 200, 215, 0.15),
+    rgba(0, 169, 158, 0.10)
+  );
+  border: 1px solid $border-glow;
+  @include flex-center;
+  box-shadow: 0 0 24px rgba(0, 200, 215, 0.12);
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: $cyan-400;
+    position: relative;
+    z-index: 1;
+  }
+
+  // Halo que respira — señal ambiental de "estoy escuchando".
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: $border-radius-lg + 4px;
+    border: 1px solid rgba(0, 200, 215, 0.28);
+    animation: reader-breathe 2.6s ease-in-out infinite;
+  }
+
+  &.reading {
+    mat-icon { color: $cyan-200; }
+    &::after { animation-duration: 0.7s; }
+  }
+}
+
+@keyframes reader-breathe {
+  0%, 100% { opacity: 0.25; transform: scale(0.97); }
+  50%      { opacity: 0.75; transform: scale(1.02); }
+}
+
+// ─── BARRA DE PROGRESO DEL LECTOR ────────────────────────
+// Riel siempre presente para que la aparición de la barra no empuje el
+// layout (un salto de 3px por escaneo se nota más que la barra misma).
+.reader-progress {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(0, 200, 215, 0.10);
+  overflow: hidden;
+
+  .reader-progress-bar {
+    display: block;
+    height: 100%;
+    width: 40%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, $cyan-400, transparent);
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  &.active .reader-progress-bar {
+    opacity: 1;
+    animation: reader-sweep 0.75s ease-in-out infinite;
+  }
+}
+
+@keyframes reader-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+// ─── ESTADO DEL LECTOR ───────────────────────────────────
+.reader-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  min-height: 18px;
+}
+
+.reader-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: $success-color;
+  box-shadow: 0 0 8px rgba(14, 176, 123, 0.7);
+  animation: reader-pulse 2s ease-in-out infinite;
+}
+
+@keyframes reader-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+.reader-status-label {
+  font-family: $font-mono;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: $text-muted;
+
+  &.reading { color: $cyan-300; }
+}
+
+// ─── RESPALDO: CÁMARA ────────────────────────────────────
+// Deliberadamente discreto: es la salida de emergencia, no una opción.
+.fallback-row {
+  display: flex;
+  justify-content: center;
+  padding-top: $spacing-xs;
+}
+
+.btn-camera-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: transparent;
+  border: none;
+  border-radius: $border-radius-sm;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color $transition-fast, background $transition-fast;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    color: $cyan-300;
+    background: rgba(0, 200, 215, 0.06);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// Tres animaciones infinitas en una pantalla que vive encendida todo el día:
+// respetar la preferencia del sistema no es opcional aquí.
+@media (prefers-reduced-motion: reduce) {
+  .reader-icon::after,
+  .reader-dot,
+  .reader-progress.active .reader-progress-bar {
+    animation: none;
+  }
+  .reader-progress.active .reader-progress-bar {
+    width: 100%;
+    transform: none;
   }
 }
 

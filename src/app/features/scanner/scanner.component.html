@@ -1,9 +1,11 @@
 <!--
   scanner.component.html
-  Stenbrary v3.2 — Scanner con acceso de invitados
+  Stenbrary — Scanner con lector físico como camino principal
 
-  NUEVO: Sección "Acceso sin credencial" al final,
-  para que visitantes externos puedan registrar su entrada.
+  El orden de la pantalla refleja el uso real: lector (99%) →
+  matrícula manual → invitado → cámara (respaldo discreto al pie).
+  El lector no abre dialog de confirmación; su feedback es la barra
+  de progreso inline + beep.
 -->
 
 <div class="scanner-container"
@@ -46,29 +48,36 @@
   @if (!escaneando) {
     <div class="scanner-section fade-in">
 
-      <!-- Tarjeta: Escanear cámara -->
-      <div class="action-card">
+      <!-- Tarjeta: Lector físico en espera (camino principal) -->
+      <div class="action-card reader-card" [class.reading]="lectorProcesando()">
 
         <div class="card-icon-area">
-          <div class="card-icon">
-            <mat-icon>photo_camera</mat-icon>
+          <div class="reader-icon" [class.reading]="lectorProcesando()">
+            <mat-icon>barcode_reader</mat-icon>
           </div>
         </div>
 
         <div class="card-body">
-          <h2 class="card-title">Escanear Credencial</h2>
+          <h2 class="card-title">Pasa tu credencial por el lector</h2>
           <p class="card-desc">
-            Coloca el código de barras de tu credencial
-            frente a la cámara de forma horizontal
+            Apunta el lector al código de barras de tu credencial.
+            El registro es automático, no tienes que tocar nada.
           </p>
 
-          <button
-            class="btn-scan"
-            (click)="iniciarScanner()"
-            [disabled]="cargando">
-            <mat-icon>barcode_reader</mat-icon>
-            Abrir Cámara y Leer Código
-          </button>
+          <!-- Barra de progreso: única señal visual del escaneo, ya que el
+               lector no abre dialog de confirmación. -->
+          <div class="reader-progress" [class.active]="lectorProcesando()">
+            <span class="reader-progress-bar"></span>
+          </div>
+
+          <div class="reader-status" role="status" aria-live="polite">
+            @if (lectorProcesando()) {
+              <span class="reader-status-label reading">Leyendo credencial…</span>
+            } @else {
+              <span class="reader-dot"></span>
+              <span class="reader-status-label">Lector listo</span>
+            }
+          </div>
         </div>
 
       </div>
@@ -155,6 +164,18 @@
 
       </div>
 
+      <!-- Respaldo: cámara. Fuera del flujo principal — solo cuando no hay
+           lector disponible. Deliberadamente discreto. -->
+      <div class="fallback-row">
+        <button
+          class="btn-camera-link"
+          (click)="iniciarScanner()"
+          [disabled]="cargando">
+          <mat-icon>photo_camera</mat-icon>
+          ¿Sin lector? Usar la cámara
+        </button>
+      </div>
+
     </div>
   }
 
@@ -233,7 +254,10 @@
   <!-- ══════════════════════════════════════════════════
        ESTADOS: Loading y Error
   ══════════════════════════════════════════════════ -->
-  @if (cargando) {
+  <!-- Overlay pesado solo para cámara/manual. El lector usa su barra inline:
+       tapar la pantalla completa por una búsqueda de milisegundos se siente
+       más lento de lo que realmente es. -->
+  @if (cargando && !origenEsLector) {
     <div class="state-overlay fade-in">
       <div class="spinner"></div>
       <p class="state-text">Procesando...</p>

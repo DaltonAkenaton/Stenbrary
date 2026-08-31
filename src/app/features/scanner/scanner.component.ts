@@ -308,8 +308,24 @@ export class ScannerComponent implements OnInit, OnDestroy {
   cargando           = false;
   error: string | null = null;
   ultimoQrEscaneado  = '';
+  /** Timestamp de la última detección aceptada (guard temporal del lector). */
+  private ultimaDeteccionTs = 0;
+  /**
+   * Ventana en la que el lector ignora una relectura idéntica. Solo protege
+   * contra el doble disparo del gatillo (<200ms); pasada la ventana, la misma
+   * credencial vuelve a ser válida — es lo que permite entrada y salida.
+   */
+  private static readonly LECTOR_REPETICION_MS = 1200;
   linternaActiva     = false;
   linternaDisponible = false;
+
+  // ── Progreso del lector físico ─────────────────────────────────────────
+  // El lector es el camino primario y no abre dialog de confirmación, así que
+  // esta barra es la única señal visual de "te leí". Se auto-oculta.
+  readonly lectorProcesando = signal(false);
+  private lectorProgTimer: number | null = null;
+  /** true mientras la matrícula en curso vino del lector físico. */
+  origenEsLector = false;
 
   // ── Flash visual post-salida (refuerzo cuando el dispositivo está en silencio) ──
   readonly salidaFlash = signal<{ nombre: string; duracion: string } | null>(null);
@@ -367,9 +383,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private hidStartTs = 0;
   private hidListener: ((e: KeyboardEvent) => void) | null = null;
   /** Umbral máximo de tiempo entre teclas para considerarlas parte del mismo escaneo. */
-  private static readonly HID_MAX_GAP_MS = 50;
-  /** Duración máxima total de un escaneo HID (protege contra buffers viejos). */
-  private static readonly HID_MAX_TOTAL_MS = 1500;
+  private static readonly HID_MAX_GAP_MS = 150;
+  /**
+   * Duración máxima total de un escaneo HID (protege contra buffers viejos).
+   * 3000ms cubre el modo Bluetooth del lector: con gap de 150ms y matrículas
+   * de 10 dígitos, un tope de 1500ms descartaba escaneos válidos en silencio.
+   */
+  private static readonly HID_MAX_TOTAL_MS = 3000;
 
   // ── Timers tracked para limpieza en ngOnDestroy ────────────────────────
   // Si el componente se destruye antes de que disparen, evitamos ejecutar
@@ -417,6 +437,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (this.salidaFlashTimer !== null) {
       clearTimeout(this.salidaFlashTimer);
       this.salidaFlashTimer = null;
+    }
+    if (this.lectorProgTimer !== null) {
+      clearTimeout(this.lectorProgTimer);
+      this.lectorProgTimer = null;
     }
     if (this.startTimer !== null) {
       clearTimeout(this.startTimer);
@@ -1314,15 +1338,46 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   private procesarDeteccion(texto: string, fuente: string): void {
-    if (texto === this.ultimoQrEscaneado || this.enCooldown) return;
+    if (this.enCooldown) return;
+
+    const desdeLector = fuente === 'usb-hid';
+    const ahora = Date.now();
+
+    // Guard anti-repetición. La cámara necesita uno POR VALOR: decodifica el
+    // mismo frame decenas de veces por segundo y solo se limpia al reiniciarla.
+    // El lector físico no: cada escaneo es un disparo discreto, así que ahí el
+    // guard debe ser TEMPORAL. Con el guard por valor, un alumno que registra
+    // entrada y salida quedaba bloqueado para siempre en su propia credencial
+    // (nada volvía a pasar hasta recargar la pantalla).
+    if (desdeLector) {
+      if (texto === this.ultimoQrEscaneado &&
+          ahora - this.ultimaDeteccionTs < ScannerComponent.LECTOR_REPETICION_MS) {
+        return;
+      }
+    } else if (texto === this.ultimoQrEscaneado) {
+      return;
+    }
+
     this.ultimoQrEscaneado = texto;
+    this.ultimaDeteccionTs = ahora;
     this.enCooldown = true;
     console.log(`✅ Detectado [${fuente}]: ${texto}`);
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     this.soundService.beepScan();
     const habiaCamara = this.scannerActivo;
     if (habiaCamara) this.detenerScanner();
+
+    // El lector físico (Code 128 con checksum) no lee mal: o decodifica o no
+    // decodifica. El dialog de confirmación existe para el error de lectura de
+    // la cámara, así que en el camino del lector es fricción pura — dos taps
+    // por alumno que no aportan nada. Feedback pasivo (barra + beep) en su lugar.
     this.ngZone.run(() => {
+      if (desdeLector) {
+        this.mostrarProgresoLector();
+        this.procesarMatricula(texto, 'lector');
+        return;
+      }
+
       this.toastService.success(`Código detectado: ${texto}`);
       // v3.21: si el coordinador activó "saltar confirmación" desde
       // /configuracion, procesar directo sin dialog (acelera flujos quiosco).
@@ -1332,6 +1387,20 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.mostrarConfirmacionMatricula(texto, habiaCamara);
       }
     });
+  }
+
+  /**
+   * Enciende la barra de progreso del lector. Se auto-oculta a los 450ms:
+   * la búsqueda en IndexedDB tarda milisegundos, y una barra que aparece y
+   * desaparece en 3ms se lee como un glitch, no como confirmación.
+   */
+  private mostrarProgresoLector(): void {
+    if (this.lectorProgTimer !== null) clearTimeout(this.lectorProgTimer);
+    this.lectorProcesando.set(true);
+    this.lectorProgTimer = window.setTimeout(() => {
+      this.ngZone.run(() => this.lectorProcesando.set(false));
+      this.lectorProgTimer = null;
+    }, 450);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1412,8 +1481,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   private async procesarMatricula(
     matricula: string,
-    origen: 'camara' | 'manual' = 'camara',
+    origen: 'camara' | 'manual' | 'lector' = 'camara',
   ): Promise<void> {
+    this.origenEsLector = origen === 'lector';
     try {
       // ── Verificar horario operativo antes de cualquier consulta a BD ──
       if (!this.verificarHorarioOperativo()) {
@@ -1423,7 +1493,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
       this.cargando = true;
       this.error = null;
-      this.loadingService.show('Buscando alumno...');
+      // El lector ya muestra su propia barra en la tarjeta; el overlay global
+      // taparía la pantalla completa por una búsqueda de milisegundos.
+      if (!this.origenEsLector) this.loadingService.show('Buscando alumno...');
 
       const alumno = await this.databaseService.obtenerAlumnoPorMatricula(matricula);
       this.loadingService.hide();
@@ -1668,6 +1740,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private resetEstado(): void {
     this.cargando = false;
     this.enCooldown = false;
+    this.origenEsLector = false;
   }
 
   limpiarError(): void { this.error = null; }
