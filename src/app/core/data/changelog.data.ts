@@ -49,6 +49,33 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.35.0',
+    fecha: '2026-08-31',
+    titulo: 'Paso de página suave y el libro que se cierra',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Cambiar de paso ya no se siente brusco. Antes la página nueva entraba volando desde el otro lado y se notaba un tirón; ahora se revela por debajo, como pasa de verdad al levantar una hoja.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'La animación final ya no abre un libro: lo cierra. Acabas de recorrer sus páginas configurando, así que al terminar el libro se cierra y el nombre queda grabado en la portada, junto al de tu biblioteca.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La secuencia final dura ahora 6 segundos, con un barrido de luz sobre la portada. Se sigue pudiendo saltar con un toque.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'En pantallas pequeñas, si un paso del asistente era muy largo (por ejemplo al definir horarios día por día), el botón de continuar quedaba fuera de alcance y no se podía avanzar.',
+      },
+    ],
+  },
+  {
     version: '3.34.0',
     fecha: '2026-08-31',
     titulo: 'El asistente ahora es un libro',

@@ -27,7 +27,13 @@
   padding: $spacing-xl $spacing-md;
   width: 100%;
   min-height: 100%;
-  overflow: hidden;
+  // `overflow: hidden` en ambos ejes dejaba el botón "Siguiente" inalcanzable
+  // cuando el contenido de un paso superaba el alto de la pantalla — en el
+  // paso de horarios personalizados, con siete días desplegados, pasa en
+  // cualquier portátil. En horizontal sí hay que recortar: las formas del
+  // fondo están diseñadas para salirse.
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 // Dos halos lentos y desfasados. Se mueven lo justo para que la pantalla
@@ -1124,23 +1130,42 @@
 // El giro va sobre el borde IZQUIERDO, donde está el lomo. Es la diferencia
 // entre "pasar una página" y "retirar una carta".
 .wiz-libro[data-fase='saliendo'] .wiz-card {
-  animation: pagina-pasa 300ms cubic-bezier(0.5, 0, 0.9, 0.4) forwards;
+  animation: pagina-pasa 380ms cubic-bezier(0.32, 0, 0.5, 1) forwards;
 }
 
 .wiz-libro[data-fase='entrando'] .wiz-card {
-  animation: pagina-cae 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: pagina-revela 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes pagina-pasa {
-  from { transform-origin: left center; transform: rotateY(0deg);   opacity: 1; }
-  to   { transform-origin: left center; transform: rotateY(-76deg); opacity: 0; }
+  from {
+    transform-origin: left center;
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  to {
+    transform-origin: left center;
+    // 62° y no 76°: pasado cierto ángulo la página queda tan de canto que
+    // desaparece de golpe, y ese corte es lo que se sentía como un golpe.
+    transform: rotateY(-62deg);
+    opacity: 0;
+  }
 }
 
-// La nueva cae desde la derecha y se asienta sobre el bloque.
-@keyframes pagina-cae {
-  0%   { transform-origin: left center; transform: rotateY(52deg); opacity: 0; }
-  55%  { opacity: 1; }
-  100% { transform-origin: left center; transform: rotateY(0deg);  opacity: 1; }
+/**
+ * La página nueva NO entra volando desde la derecha.
+ *
+ * Ese era el origen real de la brusquedad: la saliente terminaba en -62° y la
+ * entrante empezaba en +52°, así que había un salto a través del cero que el
+ * ojo lee como un tirón, por suave que sea cada curva por separado.
+ *
+ * En un libro de verdad la siguiente página ya está ahí, plana, y se revela
+ * cuando la anterior se levanta. Así que solo aparece: sube dos píxeles y
+ * recupera opacidad. Además de ser más suave, es lo físicamente correcto.
+ */
+@keyframes pagina-revela {
+  0%   { transform: translateY(6px) scale(0.988); opacity: 0; }
+  100% { transform: translateY(0)   scale(1);     opacity: 1; }
 }
 
 // Las hojas se recolocan: el bloque avanza al pasar página.
@@ -1180,97 +1205,167 @@
 .forma:nth-child(12) { font-size: 36px; }
 
 // ═══════════════════════════════════════════════════════════
-// ARRANQUE: EL LIBRO SE ABRE
+// ARRANQUE v2: EL LIBRO SE CIERRA
 // ═══════════════════════════════════════════════════════════
-// De 2.6 s a 4.4 s. La versión corta funcionaba, pero pasaba demasiado
-// rápido para el momento que representa. Con más aire cada fase se
-// distingue: abrir, nombrar, cargar.
+// Reemplaza a las dos tapas que se abrían. Aquello no funcionaba por tres
+// razones y ninguna se arreglaba retocando tiempos:
+//   1. Dos rectángulos girando contra un fondo oscuro, sin lomo, grosor ni
+//      páginas entre ellos, no leen como un libro: no hay nada que revelar.
+//   2. Terminaban abiertos, así que quedaba geometría suelta detrás del
+//      nombre durante el resto de la secuencia.
+//   3. Narrativamente iba al revés. El asistente ES un libro que se va
+//      leyendo página a página; al acabar, lo natural es cerrarlo.
+//
+// Ahora la última página gira hasta quedar plana —se cierra— y el título
+// queda grabado en la portada. Duración total 6 s.
 
-.arranque { animation-duration: 4400ms; }
+.arranque { animation-duration: 6000ms; }
 
 @keyframes arranque-todo {
   0%   { opacity: 0; }
-  7%   { opacity: 1; }
-  93%  { opacity: 1; }
+  5%   { opacity: 1; }
+  94%  { opacity: 1; }
   100% { opacity: 0; }
 }
 
-.libro-abre {
+// ─── LA PORTADA ──────────────────────────────────────────
+// Formato vertical, como un libro de verdad. `clamp` para que en la tablet
+// de la entrada no se salga de pantalla.
+.portada {
   position: relative;
-  width: 190px;
-  height: 118px;
-  perspective: 900px;
-  margin-bottom: $spacing-lg;
-}
+  width: clamp(260px, 74vw, 340px);
+  height: clamp(340px, 62vh, 450px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+  border-radius: 4px 12px 12px 4px;
+  background:
+    linear-gradient(145deg, rgba(20, 32, 51, 0.97), rgba(8, 14, 26, 0.99));
+  border: 1px solid rgba(0, 200, 215, 0.20);
+  box-shadow:
+    0 36px 90px rgba(0, 0, 0, 0.72),
+    0 0 70px rgba(0, 200, 215, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
 
-// Dos tapas girando sobre el eje central. Al abrirse dejan salir la luz.
-.tapa {
-  position: absolute;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(160deg, $navy-600, $navy-800);
-  border: 1px solid rgba(0, 200, 215, 0.28);
-  backface-visibility: hidden;
-}
-
-.tapa.izq {
-  left: 0;
-  transform-origin: right center;
-  border-radius: 5px 2px 2px 5px;
-  animation: abrir-izq 1500ms cubic-bezier(0.34, 1.2, 0.5, 1) 350ms both;
-}
-
-.tapa.der {
-  right: 0;
+  // Se cierra girando sobre el lomo. `perspective()` va dentro del transform
+  // porque el padre es un flex centrado y no conviene darle contexto 3D.
   transform-origin: left center;
-  border-radius: 2px 5px 5px 2px;
-  animation: abrir-der 1500ms cubic-bezier(0.34, 1.2, 0.5, 1) 350ms both;
+  animation: cerrar-libro 1700ms cubic-bezier(0.25, 0.9, 0.3, 1) 250ms both;
 }
 
-@keyframes abrir-izq {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(-72deg); }
+@keyframes cerrar-libro {
+  0% {
+    transform: perspective(1400px) rotateY(-72deg) translateZ(30px);
+    opacity: 0;
+  }
+  30% { opacity: 1; }
+  // Rebasa un pelo y se asienta: es como cae una tapa con peso.
+  86% { transform: perspective(1400px) rotateY(3deg) translateZ(0); }
+  100% {
+    transform: perspective(1400px) rotateY(0deg) translateZ(0);
+    opacity: 1;
+  }
 }
 
-@keyframes abrir-der {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(72deg); }
-}
-
-// Resplandor que emerge del pliegue: la marca nace del libro, no aparece
-// encima de un fondo cualquiera.
-.luz {
+// Lomo: la banda encuadernada del borde izquierdo.
+.portada-lomo {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 200, 215, 0.95), transparent 70%);
-  opacity: 0;
-  animation: brotar-luz 2200ms ease-out 900ms both;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 26px;
+  background:
+    linear-gradient(90deg,
+      rgba(0, 200, 215, 0.22) 0%,
+      rgba(0, 200, 215, 0.06) 40%,
+      rgba(0, 0, 0, 0.42) 88%,
+      rgba(0, 0, 0, 0.18) 100%);
+  border-right: 1px solid rgba(0, 200, 215, 0.18);
 }
 
-@keyframes brotar-luz {
-  0%   { opacity: 0;    width: 6px;   height: 6px;   filter: blur(2px); }
-  40%  { opacity: 0.95; width: 190px; height: 118px; filter: blur(26px); }
-  100% { opacity: 0;    width: 340px; height: 200px; filter: blur(52px); }
+.portada-centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 0 $spacing-lg 0 ($spacing-lg + 12px);
+  text-align: center;
 }
 
-// El resto de la secuencia se recoloca en el nuevo tiempo.
-.arranque-linea  { animation-delay: 1150ms; }
-.arranque-sub    { animation-delay: 2650ms; }
-.arranque-barra  { animation: cargar 1500ms ease-in-out 2800ms forwards; }
-.arranque-saltar { animation-delay: 3200ms; }
-.letra           { animation-duration: 720ms; }
+// Barrido de luz sobre la portada, como cuando se inclina un libro con el
+// título estampado. Entra después de que la tapa se asienta.
+.portada-brillo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.13) 50%,
+    transparent 62%
+  );
+  transform: translateX(-130%);
+  animation: barrer-portada 1500ms ease-in-out 2900ms both;
+  pointer-events: none;
+}
+
+@keyframes barrer-portada {
+  to { transform: translateX(130%); }
+}
+
+// ─── TIPOGRAFÍA DE PORTADA ───────────────────────────────
+.arranque-marca {
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: clamp(24px, 6.5vw, 34px);
+  letter-spacing: 5px;
+}
+
+.letra {
+  animation-duration: 820ms;
+  text-shadow:
+    0 0 24px rgba(0, 200, 215, 0.5),
+    0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.arranque-linea {
+  animation-delay: 1850ms;
+  animation-duration: 900ms;
+}
+
+@keyframes abrir-linea {
+  to { width: 150px; }
+}
+
+.arranque-sub {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  max-width: 26ch;
+  line-height: 1.6;
+  animation-delay: 3350ms;
+  animation-duration: 900ms;
+}
+
+// La barra de carga vive al pie de la portada, no suelta en la pantalla.
+.arranque-barra {
+  position: absolute;
+  bottom: 26px;
+  margin-top: 0;
+  animation: cargar 1900ms ease-in-out 3600ms forwards;
+}
+
+@keyframes cargar {
+  to { width: 120px; }
+}
+
+.arranque-saltar { animation-delay: 4200ms; }
 
 @media (prefers-reduced-motion: reduce) {
-  .wiz-libro[data-fase='saliendo'] .wiz-card,
-  .wiz-libro[data-fase='entrando'] .wiz-card { animation: fundido 200ms ease both; }
-  .hoja { transition: none; }
-  .tapa.izq { transform: rotateY(-72deg); animation: none; }
-  .tapa.der { transform: rotateY(72deg);  animation: none; }
-  .luz { animation: none; opacity: 0; }
+  .portada {
+    animation: fundido 400ms ease both;
+    transform: none;
+  }
+  .portada-brillo { animation: none; opacity: 0; }
 }

@@ -107,9 +107,7 @@ test('al terminar el asistente se ve el arranque y se entra al sistema', async (
   test.setTimeout(60_000);
   await page.goto('/bienvenida');
 
-  await recorrerAsistente(page);
-
-  await page.getByRole('button', { name: /Empezar a usar Stenbrary/ }).click();
+  await terminarAsistente(page);
 
   // El arranque debe verse antes de entrar.
   await expect(page.locator('.arranque')).toBeVisible();
@@ -126,8 +124,7 @@ test('el arranque se puede saltar con un clic', async ({ page }) => {
   });
   await page.goto('/bienvenida');
 
-  await recorrerAsistente(page);
-  await page.getByRole('button', { name: /Empezar a usar Stenbrary/ }).click();
+  await terminarAsistente(page);
   await page.locator('.arranque').click();
   await expect(page).toHaveURL(/\/scanner$/, { timeout: 3000 });
 });
@@ -141,10 +138,20 @@ test('el arranque se puede saltar con un clic', async ({ page }) => {
  */
 async function recorrerAsistente(page: import('@playwright/test').Page): Promise<void> {
   const final = page.getByRole('button', { name: /Empezar a usar Stenbrary/ });
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 25; i++) {
     if (await final.count() > 0) return;
     await page.getByRole('button', { name: /Siguiente/ }).click();
-    await page.waitForTimeout(320);
+    // Mayor que MS_SALIDA (380ms): por debajo de ese umbral el componente
+    // descarta el clic a propósito, y el test contaría avances que no
+    // ocurrieron.
+    await page.waitForTimeout(500);
   }
-  throw new Error('El asistente no llegó al último paso en 20 avances');
+  throw new Error('El asistente no llegó al último paso');
+}
+
+/** Pulsa el botón final y espera a que aparezca el arranque. */
+async function terminarAsistente(page: import('@playwright/test').Page): Promise<void> {
+  await recorrerAsistente(page);
+  await page.getByRole('button', { name: /Empezar a usar Stenbrary/ }).click();
+  await page.locator('.arranque').waitFor({ state: 'visible' });
 }

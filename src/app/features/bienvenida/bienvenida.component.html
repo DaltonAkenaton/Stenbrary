@@ -360,29 +360,30 @@
     <div class="arranque" (click)="saltarArranque()"
          (keydown)="saltarArranque()" tabindex="0" role="status">
 
-      <div class="arranque-centro">
+      <!-- El libro se CIERRA, no se abre.
+           Acabas de recorrer sus páginas configurando; lo natural al terminar
+           es cerrarlo y ver el título en la portada. La versión anterior
+           abría dos tapas contra un fondo oscuro: sin lomo, grosor ni páginas
+           entre ellas no leía como libro, y se quedaban abiertas detrás del
+           nombre el resto de la secuencia. -->
+      <div class="portada" aria-hidden="false">
+        <span class="portada-lomo"></span>
 
-        <!-- Libro que se abre: dos tapas girando sobre el eje central.
-             La luz sale de entre ellas — la marca nace del libro, no
-             aparece encima de un fondo cualquiera. -->
-        <div class="libro-abre" aria-hidden="true">
-          <span class="tapa izq"></span>
-          <span class="tapa der"></span>
-          <span class="luz"></span>
+        <div class="portada-centro">
+          <h1 class="arranque-marca">
+            @for (letra of letrasMarca; track $index) {
+              <span class="letra" [style.animation-delay.ms]="2050 + $index * 110">{{ letra }}</span>
+            }
+          </h1>
+
+          <span class="arranque-linea"></span>
+
+          @if (nombreInstitucion.trim()) {
+            <p class="arranque-sub">{{ nombreInstitucion }}</p>
+          }
         </div>
 
-        <span class="arranque-linea"></span>
-
-        <h1 class="arranque-marca">
-          @for (letra of letrasMarca; track $index) {
-            <span class="letra" [style.animation-delay.ms]="1500 + $index * 95">{{ letra }}</span>
-          }
-        </h1>
-
-        @if (nombreInstitucion.trim()) {
-          <p class="arranque-sub">{{ nombreInstitucion }}</p>
-        }
-
+        <span class="portada-brillo" aria-hidden="true"></span>
         <span class="arranque-barra"></span>
       </div>
 

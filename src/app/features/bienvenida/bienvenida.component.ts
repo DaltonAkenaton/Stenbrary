@@ -175,8 +175,12 @@ export class BienvenidaComponent implements OnDestroy {
    */
   protected readonly fase = signal<'reposo' | 'saliendo' | 'entrando'>('reposo');
 
-  /** Duración del retroceso. Coincide con la del keyframe `carta-sale`. */
-  private static readonly MS_SALIDA = 260;
+  /**
+   * Duración del levantamiento de la página. Debe coincidir con el keyframe
+   * `pagina-pasa`: si el contenido cambia antes de que termine, se ve el texto
+   * nuevo dentro de la página que todavía se está yendo.
+   */
+  private static readonly MS_SALIDA = 380;
 
   /** Overlay de arranque al terminar el asistente. */
   protected readonly arrancando = signal(false);
@@ -214,7 +218,7 @@ export class BienvenidaComponent implements OnDestroy {
       this.reanimar();
       // Volver a reposo cuando la carta ya está al frente, para no dejar
       // transformaciones activas que compliquen los estados de hover.
-      this.programar(() => this.fase.set('reposo'), 420);
+      this.programar(() => this.fase.set('reposo'), 470);
     }, BienvenidaComponent.MS_SALIDA);
   }
 
