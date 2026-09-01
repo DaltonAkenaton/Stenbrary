@@ -9,15 +9,35 @@
 
 <div class="wiz">
 
-  <!-- Progreso -->
+  <!-- ══════════ FONDO ══════════
+       Capa de formas a la deriva. Doce elementos vacíos: no aportan
+       significado, así que quedan ocultos para lectores de pantalla.
+       Se generan en el template y no por CSS porque los pseudo-elementos
+       solo dan dos por nodo. -->
+  <div class="wiz-fondo" aria-hidden="true">
+    @for (n of formas; track n) {
+      <span class="forma"></span>
+    }
+  </div>
+
+  <!-- Progreso: puntos + barra. Los puntos dan la sensación de recorrido
+       que una barra sola no transmite — se ve de dónde vienes y cuánto
+       falta, no solo un porcentaje. -->
   <div class="wiz-progreso">
+    <div class="wiz-puntos">
+      @for (p of pasos; track p.id; let i = $index) {
+        <span class="punto"
+              [class.hecho]="i < indice()"
+              [class.actual]="i === indice()"></span>
+      }
+    </div>
     <div class="wiz-riel">
       <span class="wiz-barra" [style.width.%]="progresoPct()"></span>
     </div>
     <span class="wiz-cuenta">Paso {{ indice() + 1 }} de {{ pasos.length }}</span>
   </div>
 
-  <div class="wiz-card">
+  <div class="wiz-card" [class.hacia-atras]="haciaAtras()">
 
     <div class="wiz-icono" [class.aparece]="animar()">
       <mat-icon>{{ pasoActual().icono }}</mat-icon>

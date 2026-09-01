@@ -49,6 +49,33 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.32.1',
+    fecha: '2026-08-31',
+    titulo: 'El asistente, con mucho más movimiento',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'El fondo del asistente ahora tiene figuras que flotan lentamente hacia arriba, muy tenues, para que la pantalla no se sienta estática mientras lees.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Al avanzar, el contenido entra deslizándose desde la derecha; al retroceder, desde la izquierda. Se percibe un recorrido con dirección en lugar de pantallas sueltas.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Nueva fila de puntos arriba que muestra en qué paso estás y cuántos faltan. El punto actual se alarga y late.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El icono de cada paso tiene ahora una corona de luz girando detrás, y los resplandores del fondo son más visibles.',
+      },
+    ],
+  },
+  {
     version: '3.32.0',
     fecha: '2026-08-31',
     titulo: 'Asistente con horarios por día, sonido y más vida',

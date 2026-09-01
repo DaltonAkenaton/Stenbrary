@@ -136,6 +136,19 @@ export class BienvenidaComponent {
    */
   protected readonly animar = signal(true);
 
+  /**
+   * Dirección del último movimiento.
+   *
+   * El contenido entra desde la derecha al avanzar y desde la izquierda al
+   * retroceder. Es lo que convierte una sucesión de formularios en un
+   * recorrido con sentido espacial: se percibe que hay un "antes" y un
+   * "después", no pantallas sueltas.
+   */
+  protected readonly haciaAtras = signal(false);
+
+  /** Doce formas de fondo. El array solo existe para que `@for` las repita. */
+  protected readonly formas = Array.from({ length: 12 }, (_, i) => i);
+
   private reanimar(): void {
     this.animar.set(false);
     requestAnimationFrame(() => this.animar.set(true));
@@ -147,12 +160,14 @@ export class BienvenidaComponent {
       this.finalizar();
       return;
     }
+    this.haciaAtras.set(false);
     this.indice.update(i => i + 1);
     this.reanimar();
   }
 
   protected atras(): void {
     if (this.esPrimero()) return;
+    this.haciaAtras.set(true);
     this.indice.update(i => i - 1);
     this.reanimar();
   }

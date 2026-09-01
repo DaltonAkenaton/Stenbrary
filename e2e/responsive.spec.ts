@@ -187,6 +187,14 @@ async function medirOverflow(page: Page, anchoViewport: number) {
       const pos = getComputedStyle(el).position;
       if (pos === 'fixed') return;
 
+      // Decoración marcada como aria-hidden dentro de una capa recortada.
+      // El criterio general de este detector es que "recortado = defecto",
+      // porque el contenido cortado se pierde sin aviso. Pero una capa
+      // decorativa no tiene contenido que perder: las formas de fondo del
+      // asistente están DISEÑADAS para salir del encuadre. Contarlas
+      // convertiría la auditoría en ruido.
+      if (el.closest('[aria-hidden="true"]')) return;
+
       const id = el.id ? `#${el.id}` : '';
       const cls = el.className && typeof el.className === 'string'
         ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.')
@@ -216,6 +224,11 @@ async function medirOverflow(page: Page, anchoViewport: number) {
 // y no en silencio.
 test('el detector de overflow realmente detecta overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  // Sin la marca de setup, una base vacía redirige al asistente y este test
+  // acabaría midiendo /bienvenida en lugar de /scanner.
+  await page.addInitScript(() => {
+    localStorage.setItem('stenbrary-setup-completado', '1');
+  });
   await page.goto('/scanner');
   await page.waitForSelector('.content-area');
 

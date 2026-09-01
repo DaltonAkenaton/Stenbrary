@@ -736,3 +736,168 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+// ═══════════════════════════════════════════════════════════
+// FONDO CON FORMAS A LA DERIVA
+// ═══════════════════════════════════════════════════════════
+// Doce cuadrados girando y ascendiendo muy despacio. Tres reglas para que
+// esto se lea como producto y no como protector de pantalla:
+//   1. Opacidad muy baja (0.05–0.14): se perciben, no se miran.
+//   2. Lentitud (28–56 s por vuelta): nada compite con el texto.
+//   3. Tamaños y retardos dispares: si todas van igual, el ojo lo detecta
+//      como patrón y el efecto se vuelve barato.
+// Solo se animan `transform` y `opacity`, que la GPU compone sin repintar —
+// esto tiene que ir fluido también en la tablet de la entrada.
+
+.wiz-fondo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.forma {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(0, 200, 215, 0.55);
+  border-radius: 6px;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: flotar linear infinite;
+}
+
+// Cada forma con su tamaño, posición, duración y retardo. Escrito a mano y
+// no con un bucle de Sass: los valores están elegidos para que no se agrupen
+// ni coincidan en fase, y un `random()` en tiempo de compilación daría un
+// resultado distinto en cada build.
+.forma:nth-child(1)  { width: 26px; height: 26px; left:  6%; animation-duration: 34s; animation-delay:  -2s; }
+.forma:nth-child(2)  { width: 54px; height: 54px; left: 18%; animation-duration: 48s; animation-delay:  -9s; border-radius: 50%; }
+.forma:nth-child(3)  { width: 16px; height: 16px; left: 27%; animation-duration: 29s; animation-delay: -18s; }
+.forma:nth-child(4)  { width: 72px; height: 72px; left: 38%; animation-duration: 56s; animation-delay:  -4s; }
+.forma:nth-child(5)  { width: 22px; height: 22px; left: 47%; animation-duration: 33s; animation-delay: -25s; border-radius: 50%; }
+.forma:nth-child(6)  { width: 40px; height: 40px; left: 57%; animation-duration: 41s; animation-delay: -12s; }
+.forma:nth-child(7)  { width: 18px; height: 18px; left: 66%; animation-duration: 28s; animation-delay: -31s; }
+.forma:nth-child(8)  { width: 62px; height: 62px; left: 74%; animation-duration: 52s; animation-delay:  -7s; border-radius: 50%; }
+.forma:nth-child(9)  { width: 30px; height: 30px; left: 83%; animation-duration: 37s; animation-delay: -21s; }
+.forma:nth-child(10) { width: 46px; height: 46px; left: 92%; animation-duration: 45s; animation-delay: -15s; }
+.forma:nth-child(11) { width: 14px; height: 14px; left: 12%; animation-duration: 31s; animation-delay: -38s; }
+.forma:nth-child(12) { width: 36px; height: 36px; left: 62%; animation-duration: 44s; animation-delay: -28s; border-radius: 50%; }
+
+// Entran desde abajo y salen por arriba, girando. El fundido en los extremos
+// evita que aparezcan y desaparezcan de golpe en los bordes.
+@keyframes flotar {
+  0%   { transform: translate3d(0, 110vh, 0) rotate(0deg);      opacity: 0; }
+  8%   {                                                        opacity: 0.10; }
+  50%  { transform: translate3d(28px, 50vh, 0) rotate(180deg);  opacity: 0.14; }
+  92%  {                                                        opacity: 0.08; }
+  100% { transform: translate3d(-14px, -18vh, 0) rotate(360deg); opacity: 0; }
+}
+
+// Los halos suben de presencia: a blur(90px) y 22s eran casi invisibles.
+.wiz::before { filter: blur(70px); animation-duration: 16s; }
+.wiz::after  { filter: blur(70px); animation-duration: 19s; }
+
+// ═══════════════════════════════════════════════════════════
+// PUNTOS DE PROGRESO
+// ═══════════════════════════════════════════════════════════
+.wiz-puntos {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 2px;
+}
+
+.punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(0, 200, 215, 0.18);
+  transition: all $transition-normal;
+
+  &.hecho {
+    background: $teal-500;
+    transform: scale(0.85);
+  }
+
+  // El punto actual se alarga en cápsula y late: señala "estás aquí" sin
+  // necesidad de leer el contador.
+  &.actual {
+    width: 24px;
+    border-radius: 999px;
+    background: $cyan-400;
+    box-shadow: 0 0 10px rgba(0, 200, 215, 0.55);
+    animation: punto-vivo 2s ease-in-out infinite;
+  }
+}
+
+@keyframes punto-vivo {
+  0%, 100% { box-shadow: 0 0 8px rgba(0, 200, 215, 0.40); }
+  50%      { box-shadow: 0 0 16px rgba(0, 200, 215, 0.85); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRANSICIÓN DIRECCIONAL ENTRE PASOS
+// ═══════════════════════════════════════════════════════════
+// Sustituye al desplazamiento vertical: entrar desde el lado del que vienes
+// da continuidad espacial. Al retroceder, la dirección se invierte.
+.aparece {
+  animation: entrar-der 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hacia-atras .aparece {
+  animation-name: entrar-izq;
+}
+
+@keyframes entrar-der {
+  from { opacity: 0; transform: translateX(34px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes entrar-izq {
+  from { opacity: 0; transform: translateX(-34px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+// Escalonado más marcado: 40/100/160ms apenas se percibía como secuencia.
+.aparece-1 { animation-delay: 70ms; }
+.aparece-2 { animation-delay: 140ms; }
+.aparece-3 { animation-delay: 210ms; }
+
+// ═══════════════════════════════════════════════════════════
+// ICONO CON ANILLO GIRATORIO
+// ═══════════════════════════════════════════════════════════
+// El anillo latente seguía siendo estático en su forma. Un degradado cónico
+// girando detrás da movimiento continuo sin llamar la atención.
+.wiz-icono::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(0, 200, 215, 0.30) 60deg,
+    transparent 140deg,
+    transparent 220deg,
+    rgba(11, 196, 183, 0.22) 290deg,
+    transparent 360deg
+  );
+  animation: girar 9s linear infinite;
+  // Detrás del propio icono: la corona debe verse alrededor, no teñir el
+  // fondo del cuadro. El z-index negativo queda contenido por la tarjeta,
+  // que ya crea su propio contexto de apilamiento.
+  z-index: -1;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forma,
+  .wiz-icono::before,
+  .punto.actual { animation: none; }
+  .forma { opacity: 0.07; }
+  .hacia-atras .aparece { animation-name: fundido; }
+}
