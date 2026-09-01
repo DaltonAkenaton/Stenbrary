@@ -892,7 +892,14 @@
 
   // Dejar espacio para la bottom nav
   .content-area {
-    padding-bottom: calc(#{$bottom-nav-height} + env(safe-area-inset-bottom, 0px));
+    // Alto del nav + holgura. Antes reservaba EXACTAMENTE el alto del nav, y
+    // eso deja el último control a milímetros de quedar tapado: en un
+    // teléfono real la barra de direcciones aparece y desaparece al hacer
+    // scroll, y el viewport cambia de alto sobre la marcha. Con margen justo,
+    // el botón de guardar acaba debajo del nav justo cuando hace falta.
+    padding-bottom: calc(
+      #{$bottom-nav-height} + #{$spacing-lg} + env(safe-area-inset-bottom, 0px)
+    );
   }
 }
 

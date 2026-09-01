@@ -49,6 +49,33 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.38.0',
+    fecha: '2026-08-31',
+    titulo: 'Recorrido a pantalla completa y botones alcanzables en el celular',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'En el celular, los botones de guardar de algunos formularios (como Registrar Alumno) quedaban prácticamente pegados a la barra de navegación inferior, y al aparecer y desaparecer la barra de direcciones del navegador acababan tapados. Ahora se reserva espacio de sobra.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El recorrido guiado ya no deja media pantalla vacía: ocupa todo el alto, con la ilustración más grande, un resplandor de fondo y un número gigante detrás del título.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El recuadro de cada ilustración tiene ahora un marco de luz que gira, y las animaciones internas son más visibles.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'En el celular, los puntos del recorrido se sustituyen por una barra de avance: quince puntos no caben, y aunque cupieran nadie acierta a tocar uno.',
+      },
+    ],
+  },
+  {
     version: '3.37.0',
     fecha: '2026-08-31',
     titulo: 'Más funciones en el recorrido y explicación de la constancia',

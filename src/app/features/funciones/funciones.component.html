@@ -114,6 +114,13 @@
 
           <!-- ── Texto ── -->
           <div class="tour-texto">
+            <!-- Numeral grande y muy tenue detrás del título. Recurso
+                 editorial: da peso y ancla la mirada sin añadir nada que
+                 leer, y llena el vacío que dejaba la columna de texto. -->
+            <span class="tour-numeral" aria-hidden="true">
+              {{ (slide() + 1) < 10 ? '0' : '' }}{{ slide() + 1 }}
+            </span>
+
             <span class="tour-area">{{ f.donde }}</span>
             <h2 class="tour-titulo">{{ f.titulo }}</h2>
             <p class="tour-desc">{{ f.descripcion }}</p>

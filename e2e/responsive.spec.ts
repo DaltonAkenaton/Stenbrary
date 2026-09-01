@@ -349,3 +349,48 @@ test('el recorrido guiado de /funciones avanza y no se desborda', async ({ page 
   const { exceso, culpables } = await medirOverflow(page, 390);
   expect(exceso, `Desborde: ${culpables.join(', ')}`).toBeLessThanOrEqual(TOLERANCIA_PX);
 });
+
+test('en móvil, los botones de guardar no quedan bajo el nav inferior', async ({ page }) => {
+  // Un formulario cuyo botón de guardar queda debajo de la barra de
+  // navegación es imposible de completar desde el teléfono. Se mide el
+  // solape real en vez de confiar en que el padding "debería" bastar.
+  test.setTimeout(90_000);
+  await page.addInitScript(() => {
+    localStorage.setItem('stenbrary-setup-completado', '1');
+    sessionStorage.setItem('matriculaTemp', '2299990004');
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  const fallos: string[] = [];
+  for (const ruta of ['/registro-alumno', '/gestion-motivos', '/configuracion']) {
+    await page.goto(ruta);
+    await page.waitForTimeout(900);
+
+    // Bajar del todo: es donde suelen vivir los botones de acción.
+    await page.evaluate(() => {
+      const c = document.querySelector('.content-area');
+      if (c) c.scrollTop = c.scrollHeight;
+    });
+    await page.waitForTimeout(400);
+
+    const solape = await page.evaluate(() => {
+      const nav = document.querySelector('.bottom-nav') as HTMLElement | null;
+      if (!nav || getComputedStyle(nav).display === 'none') return null;
+      const navTop = nav.getBoundingClientRect().top;
+
+      const botones = [...document.querySelectorAll('button')] as HTMLElement[];
+      const tapados = botones.filter(b => {
+        const r = b.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) return false;
+        if (b.closest('.bottom-nav')) return false;
+        // Visible en pantalla y con su parte baja por debajo del nav.
+        return r.top < navTop && r.bottom > navTop;
+      });
+      return tapados.map(b => b.innerText.trim().replace(/\s+/g, ' ').slice(0, 26));
+    });
+
+    if (solape && solape.length) fallos.push(`${ruta} → ${solape.join(' | ')}`);
+  }
+
+  expect(fallos, `Botones tapados por el nav:\n  - ${fallos.join('\n  - ')}`).toEqual([]);
+});
