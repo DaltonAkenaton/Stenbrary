@@ -21,7 +21,7 @@
 // ║  abandonen.                                          ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -66,7 +66,7 @@ interface DiaHorario {
   templateUrl: './bienvenida.component.html',
   styleUrl: './bienvenida.component.scss',
 })
-export class BienvenidaComponent {
+export class BienvenidaComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly restablecer = inject(RestablecerService);
@@ -146,12 +146,66 @@ export class BienvenidaComponent {
    */
   protected readonly haciaAtras = signal(false);
 
+  /** Letras de la marca, para animarlas una a una en el arranque. */
+  protected readonly letrasMarca = 'STENBRARY'.split('');
+
   /** Doce formas de fondo. El array solo existe para que `@for` las repita. */
   protected readonly formas = Array.from({ length: 12 }, (_, i) => i);
+
+  /**
+   * Fase de la transición tipo baraja.
+   *
+   * `saliendo`: la tarjeta actual retrocede en el mazo.
+   * `entrando`: la nueva viene desde atrás hacia el frente.
+   *
+   * Se hace en dos tiempos y no con una sola animación porque el contenido
+   * se sustituye a mitad: la tarjeta debe estar en su punto más alejado y
+   * más translúcida justo cuando cambia, o se vería el texto mutar en pleno
+   * primer plano.
+   */
+  protected readonly fase = signal<'reposo' | 'saliendo' | 'entrando'>('reposo');
+
+  /** Duración del retroceso. Coincide con la del keyframe `carta-sale`. */
+  private static readonly MS_SALIDA = 260;
+
+  /** Overlay de arranque al terminar el asistente. */
+  protected readonly arrancando = signal(false);
+
+  private timers: number[] = [];
+
+  ngOnDestroy(): void {
+    this.timers.forEach(t => clearTimeout(t));
+  }
+
+  private programar(fn: () => void, ms: number): void {
+    this.timers.push(window.setTimeout(fn, ms));
+  }
 
   private reanimar(): void {
     this.animar.set(false);
     requestAnimationFrame(() => this.animar.set(true));
+  }
+
+  /** Cambia de paso con el gesto de baraja. `delta` es +1 o -1. */
+  private moverA(delta: number): void {
+    // Solo se ignora durante el retroceso (260ms), no durante toda la
+    // animación (680ms). Bloquear el paso entero se sentía como que la
+    // interfaz no responde: quien pulsa dos veces seguidas perdía el segundo
+    // clic sin ningún aviso. Encadenar desde 'entrando' se ve bien porque la
+    // carta nueva simplemente vuelve a irse hacia atrás.
+    if (this.fase() === 'saliendo') return;
+
+    this.haciaAtras.set(delta < 0);
+    this.fase.set('saliendo');
+
+    this.programar(() => {
+      this.indice.update(i => i + delta);
+      this.fase.set('entrando');
+      this.reanimar();
+      // Volver a reposo cuando la carta ya está al frente, para no dejar
+      // transformaciones activas que compliquen los estados de hover.
+      this.programar(() => this.fase.set('reposo'), 420);
+    }, BienvenidaComponent.MS_SALIDA);
   }
 
   protected siguiente(): void {
@@ -160,16 +214,12 @@ export class BienvenidaComponent {
       this.finalizar();
       return;
     }
-    this.haciaAtras.set(false);
-    this.indice.update(i => i + 1);
-    this.reanimar();
+    this.moverA(1);
   }
 
   protected atras(): void {
     if (this.esPrimero()) return;
-    this.haciaAtras.set(true);
-    this.indice.update(i => i - 1);
-    this.reanimar();
+    this.moverA(-1);
   }
 
   /** Saltar el asistente entero: los defaults ya son utilizables. */
@@ -302,10 +352,33 @@ export class BienvenidaComponent {
     }
   }
 
+  /**
+   * Secuencia de arranque: fundido a negro, marca, y entrada al sistema.
+   *
+   * Marca el momento en que la configuración termina y el sistema empieza a
+   * existir. Dura 2.6 s en total — lo bastante para que se sienta un umbral,
+   * lo bastante poco para no estorbar. No se repite nunca: solo ocurre al
+   * completar el asistente.
+   *
+   * La configuración se guarda ANTES de la animación. Si alguien cierra la
+   * pestaña a media secuencia, sus ajustes ya están a salvo; lo único que se
+   * pierde es el efecto.
+   */
   private finalizar(): void {
     this.restablecer.marcarSetupCompletado();
-    this.toast.success('Configuración guardada. ¡A trabajar!');
-    this.router.navigate(['/scanner']);
+    this.arrancando.set(true);
+    this.programar(() => {
+      this.toast.success('Todo listo. ¡A trabajar!');
+      void this.router.navigate(['/scanner']);
+    }, 2600);
+  }
+
+  /** Permite saltarse el arranque con un clic o una tecla. */
+  protected saltarArranque(): void {
+    if (!this.arrancando()) return;
+    this.timers.forEach(t => clearTimeout(t));
+    this.timers = [];
+    void this.router.navigate(['/scanner']);
   }
 
   /** Validación mínima del PIN, mostrada en vivo. */

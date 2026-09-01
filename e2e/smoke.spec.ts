@@ -102,3 +102,49 @@ test.describe('Asistente de configuración inicial', () => {
     await expect(page).toHaveURL(/\/scanner$/);
   });
 });
+
+test('al terminar el asistente se ve el arranque y se entra al sistema', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/bienvenida');
+
+  await recorrerAsistente(page);
+
+  await page.getByRole('button', { name: /Empezar a usar Stenbrary/ }).click();
+
+  // El arranque debe verse antes de entrar.
+  await expect(page.locator('.arranque')).toBeVisible();
+  await expect(page.getByText('Toca para continuar')).toBeVisible({ timeout: 5000 });
+
+  // Y no puede ser una trampa: termina solo en el sistema.
+  await expect(page).toHaveURL(/\/scanner$/, { timeout: 8000 });
+});
+
+test('el arranque se puede saltar con un clic', async ({ page }) => {
+  // Nadie debe quedar atrapado mirando una animación.
+  await page.addInitScript(() => {
+    localStorage.setItem('stenbrary-setup-completado', '1');
+  });
+  await page.goto('/bienvenida');
+
+  await recorrerAsistente(page);
+  await page.getByRole('button', { name: /Empezar a usar Stenbrary/ }).click();
+  await page.locator('.arranque').click();
+  await expect(page).toHaveURL(/\/scanner$/, { timeout: 3000 });
+});
+
+/**
+ * Avanza el asistente hasta el último paso.
+ *
+ * Espera a que aparezca el botón final en lugar de contar pasos con un
+ * tiempo fijo: así el test no se rompe si cambia el número de pasos ni la
+ * duración de la animación del mazo.
+ */
+async function recorrerAsistente(page: import('@playwright/test').Page): Promise<void> {
+  const final = page.getByRole('button', { name: /Empezar a usar Stenbrary/ });
+  for (let i = 0; i < 20; i++) {
+    if (await final.count() > 0) return;
+    await page.getByRole('button', { name: /Siguiente/ }).click();
+    await page.waitForTimeout(320);
+  }
+  throw new Error('El asistente no llegó al último paso en 20 avances');
+}

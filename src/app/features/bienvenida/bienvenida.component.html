@@ -37,7 +37,16 @@
     <span class="wiz-cuenta">Paso {{ indice() + 1 }} de {{ pasos.length }}</span>
   </div>
 
-  <div class="wiz-card" [class.hacia-atras]="haciaAtras()">
+  <!-- ══════════ MAZO ══════════
+       Dos cartas fantasma detrás dan volumen permanente: la tarjeta activa
+       se lee como la primera de un mazo, no como un cuadro suelto. Son
+       decorativas y por eso quedan fuera del árbol de accesibilidad. -->
+  <div class="wiz-mazo" [attr.data-fase]="fase()">
+
+    <span class="carta-fantasma f2" aria-hidden="true"></span>
+    <span class="carta-fantasma f1" aria-hidden="true"></span>
+
+    <div class="wiz-card" [class.hacia-atras]="haciaAtras()">
 
     <div class="wiz-icono" [class.aparece]="animar()">
       <mat-icon>{{ pasoActual().icono }}</mat-icon>
@@ -336,5 +345,37 @@
       </button>
     }
 
+    </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       ARRANQUE DEL SISTEMA
+       Marca el umbral entre "configurando" y "operando". Se ve una sola vez
+       en la vida de la instalación. Un clic o una tecla lo salta: nadie
+       debería quedar atrapado mirando una animación.
+  ══════════════════════════════════════════════════════ -->
+  @if (arrancando()) {
+    <div class="arranque" (click)="saltarArranque()"
+         (keydown)="saltarArranque()" tabindex="0" role="status">
+
+      <div class="arranque-centro">
+        <span class="arranque-linea"></span>
+
+        <h1 class="arranque-marca">
+          @for (letra of letrasMarca; track $index) {
+            <span class="letra" [style.animation-delay.ms]="420 + $index * 65">{{ letra }}</span>
+          }
+        </h1>
+
+        @if (nombreInstitucion.trim()) {
+          <p class="arranque-sub">{{ nombreInstitucion }}</p>
+        }
+
+        <span class="arranque-barra"></span>
+      </div>
+
+      <span class="arranque-saltar">Toca para continuar</span>
+    </div>
+  }
+
 </div>

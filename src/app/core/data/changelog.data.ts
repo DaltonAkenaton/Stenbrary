@@ -49,6 +49,30 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.33.0',
+    fecha: '2026-08-31',
+    titulo: 'El asistente, como un mazo de cartas — y arranque del sistema',
+    destacado: true,
+    resumen: 'Cada paso del asistente es ahora una carta: al avanzar, la actual se hunde hacia atrás y la siguiente sube al frente. Y al terminar, una secuencia de arranque marca el momento en que el sistema entra en funcionamiento.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Los pasos del asistente se pasan como cartas de un mazo, con profundidad real: la que sale se hunde y la que entra viene desde el fondo. Detrás se ven dos cartas más, para que se sienta que hay un recorrido completo.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Al terminar la configuración aparece una secuencia de arranque: la pantalla se oscurece, el nombre Stenbrary se dibuja letra por letra junto al de tu biblioteca, y el sistema entra en funcionamiento. Se puede saltar con un toque.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Si avanzabas rápido por el asistente, el segundo clic se perdía sin ningún aviso. Ahora se puede encadenar un paso tras otro sin esperar a que termine la animación.',
+      },
+    ],
+  },
+  {
     version: '3.32.1',
     fecha: '2026-08-31',
     titulo: 'El asistente, con mucho más movimiento',

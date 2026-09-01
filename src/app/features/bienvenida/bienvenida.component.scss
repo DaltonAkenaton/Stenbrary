@@ -901,3 +901,224 @@
   .forma { opacity: 0.07; }
   .hacia-atras .aparece { animation-name: fundido; }
 }
+
+// ═══════════════════════════════════════════════════════════
+// MAZO DE CARTAS
+// ═══════════════════════════════════════════════════════════
+// La tarjeta activa es la primera de un mazo. Al avanzar retrocede al fondo
+// y la siguiente sube al frente, como al pasar una carta.
+//
+// `perspective` en el contenedor y no en cada carta: así todas comparten el
+// mismo punto de fuga y el movimiento se lee como profundidad real. Con
+// perspectivas independientes cada una se deformaría por su cuenta.
+
+.wiz-mazo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 620px;
+  perspective: 1500px;
+  perspective-origin: 50% 40%;
+}
+
+// Cartas de atrás: solo el borde y el fondo, sin contenido. Escalonadas
+// hacia arriba para que asomen por el borde superior.
+.carta-fantasma {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  display: block;
+  height: 100%;
+  border-radius: $border-radius-xl;
+  background: rgba(13, 22, 38, 0.55);
+  border: 1px solid rgba(0, 200, 215, 0.08);
+  transition: transform $transition-normal, opacity $transition-normal;
+  pointer-events: none;
+
+  &.f1 {
+    width: 94%;
+    transform: translate(-50%, -12px) scale(0.985);
+  }
+
+  &.f2 {
+    width: 88%;
+    transform: translate(-50%, -23px) scale(0.97);
+    opacity: 0.65;
+  }
+}
+
+// La tarjeta activa deja de tener su animación de entrada propia: ahora la
+// gobierna la fase del mazo.
+.wiz-mazo .wiz-card {
+  position: relative;
+  transform-style: preserve-3d;
+  animation: none;
+}
+
+// ─── FASES ───────────────────────────────────────────────
+.wiz-mazo[data-fase='saliendo'] .wiz-card {
+  animation: carta-sale 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.wiz-mazo[data-fase='entrando'] .wiz-card {
+  animation: carta-entra 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+// Retrocede hundiéndose y perdiendo opacidad. El giro mínimo en X es lo que
+// vende la profundidad: sin él parece un simple zoom.
+@keyframes carta-sale {
+  from { transform: translateZ(0) translateY(0) rotateX(0deg);          opacity: 1; }
+  to   { transform: translateZ(-260px) translateY(-26px) rotateX(7deg); opacity: 0; }
+}
+
+// La nueva llega desde más atrás todavía y se sobrepasa un pelo al llegar,
+// como una carta que se asienta sobre el mazo.
+@keyframes carta-entra {
+  0%   { transform: translateZ(-340px) translateY(34px) rotateX(-8deg); opacity: 0; }
+  60%  {                                                                opacity: 1; }
+  100% { transform: translateZ(0) translateY(0) rotateX(0deg);          opacity: 1; }
+}
+
+// Las fantasma acompañan el gesto: al salir se adelantan un paso, como si
+// el mazo entero avanzara.
+.wiz-mazo[data-fase='saliendo'] .carta-fantasma.f1 {
+  transform: translate(-50%, -4px) scale(0.995);
+}
+
+.wiz-mazo[data-fase='saliendo'] .carta-fantasma.f2 {
+  transform: translate(-50%, -14px) scale(0.98);
+  opacity: 0.85;
+}
+
+// Con el mazo mandando, el desplazamiento lateral del contenido se suaviza
+// para no competir con la profundidad.
+.wiz-mazo .aparece {
+  animation-duration: 380ms;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ARRANQUE DEL SISTEMA
+// ═══════════════════════════════════════════════════════════
+// Fundido a negro, la marca se dibuja letra a letra, un barrido de luz la
+// recorre y todo se disuelve hacia el sistema. 2.6 s.
+
+.arranque {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xl;
+  background: radial-gradient(ellipse at center, #071019 0%, #02060A 70%);
+  cursor: pointer;
+  animation: arranque-todo 2600ms ease forwards;
+}
+
+// El propio overlay entra y sale: sin el fundido final se cortaría de golpe
+// contra el scanner.
+@keyframes arranque-todo {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.arranque-centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+// Línea que se abre desde el centro antes de la marca. Da el "algo va a
+// pasar" que hace que la aparición del nombre se sienta preparada.
+.arranque-linea {
+  display: block;
+  height: 1px;
+  width: 0;
+  background: linear-gradient(90deg, transparent, $cyan-400, transparent);
+  animation: abrir-linea 700ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
+}
+
+@keyframes abrir-linea {
+  to { width: 300px; }
+}
+
+.arranque-marca {
+  display: flex;
+  gap: 3px;
+  margin: 0;
+  font-family: $font-display;
+  font-size: clamp(30px, 8vw, 54px);
+  font-weight: 700;
+  letter-spacing: 6px;
+  color: $text-primary;
+}
+
+// Cada letra sube y se enfoca por separado; el retardo se calcula en el
+// template para que sea proporcional a su posición.
+.letra {
+  display: inline-block;
+  opacity: 0;
+  animation: letra-entra 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  text-shadow: 0 0 26px rgba(0, 200, 215, 0.55);
+}
+
+@keyframes letra-entra {
+  0%   { opacity: 0; transform: translateY(18px); filter: blur(9px); }
+  100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+.arranque-sub {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $text-muted;
+  opacity: 0;
+  animation: fundido 700ms ease 1250ms both;
+}
+
+// Barra de carga simbólica: no mide nada real, marca que el sistema termina
+// de prepararse. Se llena en el tiempo que dura el resto de la secuencia.
+.arranque-barra {
+  display: block;
+  height: 2px;
+  width: 0;
+  margin-top: $spacing-md;
+  border-radius: 999px;
+  background: linear-gradient(90deg, $cyan-500, $teal-500);
+  box-shadow: 0 0 12px rgba(0, 200, 215, 0.6);
+  animation: cargar 1100ms ease-in-out 1350ms forwards;
+}
+
+@keyframes cargar {
+  to { width: 200px; }
+}
+
+.arranque-saltar {
+  position: absolute;
+  bottom: $spacing-xl;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: rgba(200, 230, 240, 0.28);
+  opacity: 0;
+  animation: fundido 600ms ease 1800ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wiz-mazo[data-fase='saliendo'] .wiz-card,
+  .wiz-mazo[data-fase='entrando'] .wiz-card {
+    animation: fundido 200ms ease both;
+  }
+  .carta-fantasma { transition: none; }
+  .letra, .arranque-linea, .arranque-barra {
+    animation: fundido 400ms ease both;
+    width: auto;
+    filter: none;
+  }
+  .arranque-linea { width: 300px; }
+  .arranque-barra { width: 200px; }
+}
