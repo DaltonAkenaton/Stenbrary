@@ -49,6 +49,33 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.37.0',
+    fecha: '2026-08-31',
+    titulo: 'Más funciones en el recorrido y explicación de la constancia',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'El botón de Constancia ya no aparece apagado sin explicación cuando un alumno no tiene visitas. Ahora se puede pulsar y el sistema dice por qué todavía no está disponible: la constancia certifica visitas, así que aparecerá en cuanto el alumno entre por primera vez.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'El recorrido guiado suma el historial completo con filtros, el historial por alumno y los respaldos, cada uno con su propia ilustración animada.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'El asistente de configuración sale del recorrido guiado: al presentar el sistema ya se ha visto en vivo, y repetirlo resta. Sigue disponible en el catálogo completo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El catálogo de funciones tiene mucha más vida: las tarjetas entran en cascada, un destello las recorre al pasar el cursor, el icono reacciona, y el título tiene un reflejo que se mueve solo.',
+      },
+    ],
+  },
+  {
     version: '3.36.0',
     fecha: '2026-08-31',
     titulo: 'Recorrido guiado en "Qué puede hacer"',

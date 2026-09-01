@@ -673,3 +673,11 @@
     .motivo-item .motivo-bar { height: 14px; }
   }
 }
+// Constancia sin visitas: se atenúa para que se lea como "todavía no", pero
+// sigue siendo pulsable. Un botón deshabilitado no muestra su tooltip —no
+// recibe eventos de ratón— así que el usuario se quedaría sin explicación.
+.sin-datos {
+  opacity: 0.55;
+
+  &:hover { opacity: 0.8; }
+}

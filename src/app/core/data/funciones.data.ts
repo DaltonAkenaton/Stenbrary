@@ -34,7 +34,10 @@ export type DemoVisual =
   | 'archivo'    // documento que sale
   | 'offline'    // sin red, todo sigue
   | 'tablet'     // pantalla sola en la entrada
-  | 'roles';     // personas con distintos permisos
+  | 'roles'      // personas con distintos permisos
+  | 'listado'    // filas apareciendo bajo un filtro
+  | 'perfil'     // ficha de una persona con su historial
+  | 'respaldo';  // escudo que guarda una copa
 
 export interface Funcion {
   titulo: string;
@@ -254,6 +257,8 @@ export const FUNCIONES: Funcion[] = [
     area: 'consulta',
     donde: 'Alumnos → seleccionar uno',
     ruta: '/alumnos',
+    destacada: true,
+    demo: 'perfil',
   },
   {
     titulo: 'Historial completo con filtros',
@@ -263,6 +268,8 @@ export const FUNCIONES: Funcion[] = [
     area: 'consulta',
     donde: 'Registros',
     ruta: '/registros',
+    destacada: true,
+    demo: 'listado',
   },
   {
     titulo: 'Búsqueda rápida',
@@ -302,8 +309,9 @@ export const FUNCIONES: Funcion[] = [
     area: 'administracion',
     donde: 'Al instalar, o tras restablecer',
     ruta: '/bienvenida',
-    destacada: true,
-    demo: 'archivo',
+    // Fuera del recorrido a propósito: al presentar el sistema el asistente
+    // ya se acaba de ver en vivo, así que dedicarle una diapositiva es
+    // contar dos veces lo mismo. Sigue en el catálogo.
   },
   {
     titulo: 'Configuración detallada',
@@ -361,6 +369,8 @@ export const FUNCIONES: Funcion[] = [
     icono: 'backup',
     area: 'datos',
     donde: 'Configuración → Datos',
+    destacada: true,
+    demo: 'respaldo',
   },
   {
     titulo: 'Recordatorio de respaldo',

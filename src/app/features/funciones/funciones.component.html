@@ -89,6 +89,23 @@
                 <span class="d-persona p2"><mat-icon>person</mat-icon></span>
                 <span class="d-persona p3"><mat-icon>school</mat-icon></span>
               }
+              @case ('listado') {
+                <span class="d-filtro"><mat-icon>filter_alt</mat-icon></span>
+                <div class="d-filas">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              }
+              @case ('perfil') {
+                <span class="d-avatar"><mat-icon>person</mat-icon></span>
+                <div class="d-hitos">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+              }
+              @case ('respaldo') {
+                <span class="d-escudo"><mat-icon>shield</mat-icon></span>
+                <span class="d-copia"></span>
+                <span class="d-copia c2"></span>
+              }
               @default {
                 <span class="d-generico"><mat-icon>{{ f.icono }}</mat-icon></span>
               }

@@ -60,9 +60,17 @@
               <mat-icon>edit</mat-icon>
               Editar
             </button>
+            <!-- Deliberadamente SIN [disabled] cuando no hay visitas.
+                 Un botón deshabilitado no emite eventos de ratón, así que su
+                 tooltip nunca llega a verse: el usuario solo encuentra un
+                 botón apagado, sin saber si le falta un permiso, si hay un
+                 fallo o si no cumple algún requisito. Se deja activo y, al
+                 pulsarlo, explica por qué todavía no se puede. -->
             <button mat-stroked-button (click)="descargarConstancia()"
-                    [disabled]="!registros.length"
-                    title="Descargar constancia PDF de visitas">
+                    [class.sin-datos]="!registros.length"
+                    [matTooltip]="registros.length
+                      ? 'Descargar constancia PDF de visitas'
+                      : 'Este alumno aún no tiene visitas registradas'">
               <mat-icon>picture_as_pdf</mat-icon>
               Constancia
             </button>

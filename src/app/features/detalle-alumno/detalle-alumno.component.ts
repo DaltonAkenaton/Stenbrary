@@ -294,6 +294,20 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
 
   async descargarConstancia(): Promise<void> {
     if (!this.alumno) return;
+
+    // La constancia certifica visitas: sin visitas no hay nada que certificar.
+    // Se explica en lugar de dejar el botón apagado sin decir nada — un
+    // control deshabilitado deja al usuario adivinando si le falta un
+    // permiso, si el sistema falló o si tiene que hacer algo antes.
+    if (!this.registros.length) {
+      this.toastService.info(
+        `${this.alumno.nombre} todavía no tiene visitas registradas. ` +
+        `La constancia certifica sus visitas a la biblioteca, así que estará ` +
+        `disponible en cuanto entre por primera vez.`,
+      );
+      return;
+    }
+
     try {
       this.loadingService.show('Generando constancia...');
       await this.reportService.generarConstanciaAlumno(this.alumno, this.registros, {
