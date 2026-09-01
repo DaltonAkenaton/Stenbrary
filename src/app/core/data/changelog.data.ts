@@ -49,6 +49,35 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.39.0',
+    fecha: '2026-08-31',
+    titulo: 'El recorrido, rediseñado',
+    destacado: true,
+    resumen: 'El modo presentación se rehizo de cero como composición: sin título de página ni número de versión compitiendo, con las ilustraciones ocupando de verdad su marco y las dos columnas relacionadas entre sí.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Las ilustraciones ahora llenan su recuadro. Antes eran iconos pequeños flotando en un panel casi vacío, y eso se lee como algo sin terminar.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'En modo presentación desaparecen el título de la página y el número de versión: en una presentación son ruido que compite con lo que se quiere mostrar. Queda una barra mínima con la posición y el botón de salir.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El número de diapositiva se movió arriba, donde tiene aire. Antes chocaba con la etiqueta de sección y lo cortaba el borde del panel.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La ilustración se inclina levemente hacia el texto, de modo que las dos columnas se leen como una composición y no como dos bloques puestos al lado.',
+      },
+    ],
+  },
+  {
     version: '3.38.0',
     fecha: '2026-08-31',
     titulo: 'Recorrido a pantalla completa y botones alcanzables en el celular',

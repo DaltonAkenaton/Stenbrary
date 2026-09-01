@@ -1090,25 +1090,6 @@
   to { transform: rotate(360deg); }
 }
 
-// ─── NUMERAL EDITORIAL ───────────────────────────────────
-.tour-texto { position: relative; }
-
-.tour-numeral {
-  position: absolute;
-  top: -46px;
-  left: -14px;
-  font-family: $font-display;
-  font-size: clamp(90px, 13vw, 160px);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -6px;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(0, 200, 215, 0.16);
-  pointer-events: none;
-  user-select: none;
-  z-index: -1;
-}
-
 // ─── ESCALA MAYOR DEL TEXTO ──────────────────────────────
 // Se presenta en una laptop o proyectado: lo que se lee cómodo a 40 cm no se
 // lee a dos metros.
@@ -1198,11 +1179,235 @@
 
   .tour-nav { width: 100%; gap: $spacing-md; }
   .tour-flecha { width: 44px; height: 44px; flex-shrink: 0; }
-  .tour-numeral { top: -34px; left: 50%; transform: translateX(-50%); font-size: 92px; }
   .tour-area { align-self: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tour::before,
   .demo::before { animation: none; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// REDISEÑO DEL ESCENARIO
+// ═══════════════════════════════════════════════════════════
+// Seis problemas concretos de la versión anterior, y cómo se resuelven:
+//
+//  1. Dos títulos compitiendo (topbar + cabecera de página con la versión).
+//     → En presentación solo queda una barra con la posición y la salida.
+//  2. La ilustración estaba vacía al 90%: un panel de 420px con un icono de
+//     58px. → Los motivos se escalan para ocupar el marco.
+//  3. El numeral chocaba con el chip de sección y lo cortaba el panel.
+//     → Se muda a la barra superior, donde tiene aire.
+//  4. Banda muerta entre cabecera y escenario. → La barra es compacta y el
+//     escenario arranca justo debajo.
+//  5. Las dos columnas eran islas. → Comparten línea base y el panel se
+//     inclina levemente hacia el texto, creando relación espacial.
+//  6. La navegación estaba desterrada 120px abajo. → Sube y se integra.
+
+// ─── BARRA MÍNIMA ────────────────────────────────────────
+.fx-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid rgba(0, 200, 215, 0.08);
+}
+
+.fx-contador {
+  font-family: $font-mono;
+  font-size: 13px;
+  color: $text-muted;
+  letter-spacing: 1px;
+
+  strong {
+    font-size: 20px;
+    color: $cyan-300;
+    font-weight: 700;
+  }
+}
+
+.fx-contador-sep { margin: 0 4px; opacity: 0.5; }
+
+.fx-salir {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid $border-subtle;
+  border-radius: 999px;
+  color: $text-muted;
+  font-family: $font-body;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { color: $text-primary; border-color: $border-glow; }
+}
+
+// ─── ESCENARIO SIN BANDA MUERTA ──────────────────────────
+.fx.presentando {
+  gap: $spacing-md;
+  padding-top: $spacing-md;
+}
+
+.tour {
+  padding: 0;
+  min-height: min(620px, calc(100vh - 190px));
+}
+
+// ─── COLUMNAS RELACIONADAS ───────────────────────────────
+// El panel se inclina levemente hacia el texto. Es lo que convierte dos
+// bloques sueltos en una composición: hay un eje y una jerarquía espacial.
+.tour-escena {
+  gap: clamp(#{$spacing-lg}, 5vw, 88px);
+  perspective: 1600px;
+}
+
+.demo {
+  transform: rotateY(7deg) rotateX(-2deg);
+  transition: transform $transition-normal;
+}
+
+.tour-escena:hover .demo { transform: rotateY(3deg) rotateX(-1deg); }
+
+// ─── NAVEGACIÓN INTEGRADA ────────────────────────────────
+.tour-nav { margin-top: $spacing-md; }
+.tour-pie { margin-top: -2px; opacity: 0.55; }
+
+// ═══════════════════════════════════════════════════════════
+// LOS MOTIVOS LLENAN SU MARCO
+// ═══════════════════════════════════════════════════════════
+// Era el defecto más visible: iconos de 58px flotando en un panel de 420.
+// Una ilustración que no ocupa su marco se lee como un placeholder, no como
+// arte. Todo sube de escala hasta rondar el 55-70% del panel.
+
+.demo mat-icon {
+  font-size: 96px;
+  width: 96px;
+  height: 96px;
+}
+
+// ── escaneo ──
+.d-lector { top: 18%; mat-icon { font-size: 104px; width: 104px; height: 104px; } }
+.d-credencial { width: 150px; height: 94px; top: 54%; border-radius: 8px; }
+.d-check { bottom: 13%; mat-icon { font-size: 62px; width: 62px; height: 62px; } }
+
+@keyframes pasar-credencial {
+  0%       { left: -160px; opacity: 0; }
+  18%      { opacity: 1; }
+  45%, 58% { left: 50%; margin-left: -75px; opacity: 1; }
+  85%      { left: 108%; opacity: 0; }
+  100%     { left: 108%; opacity: 0; }
+}
+
+// ── salida ──
+.d-puerta.entra { left: 10%; }
+.d-puerta.sale  { right: 10%; }
+.d-puerta mat-icon { font-size: 80px; width: 80px; height: 80px; }
+.d-reloj mat-icon  { font-size: 62px; width: 62px; height: 62px; }
+
+// ── aforo ──
+.d-medidor { width: 76%; height: 22px; bottom: 24%; }
+.d-gente { top: 26%; mat-icon { font-size: 104px; width: 104px; height: 104px; } }
+
+// ── grafica ──
+.d-barras {
+  height: 56%;
+  gap: 18px;
+  bottom: 22%;
+  span { width: 34px; border-radius: 6px 6px 0 0; }
+}
+
+// ── alerta ──
+.d-campana mat-icon { font-size: 104px; width: 104px; height: 104px; }
+.d-onda { width: 140px; height: 140px; border-width: 3px; }
+
+// ── nube ──
+.d-nube   { top: 15%; mat-icon { font-size: 110px; width: 110px; height: 110px; } }
+.d-equipo { bottom: 15%; mat-icon { font-size: 86px; width: 86px; height: 86px; } }
+.d-flecha mat-icon { font-size: 52px; width: 52px; height: 52px; }
+.d-flecha.sube { left: 26%; top: 46%; }
+.d-flecha.baja { right: 26%; top: 46%; }
+
+// ── archivo ──
+.d-doc mat-icon { font-size: 96px; width: 96px; height: 96px; }
+.d-hoja { width: 88px; height: 112px; border-radius: 6px; }
+
+@keyframes salir-hoja {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.85); }
+  25%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(118px, -104px) rotate(16deg) scale(1); }
+}
+
+// ── offline ──
+.d-sinred { top: 17%; mat-icon { font-size: 76px; width: 76px; height: 76px; } }
+.d-engrane mat-icon { font-size: 120px; width: 120px; height: 120px; }
+.d-ok { bottom: 16%; mat-icon { font-size: 62px; width: 62px; height: 62px; } }
+
+// ── tablet ──
+.d-tablet mat-icon { font-size: 168px; width: 168px; height: 168px; }
+.d-candado { bottom: 20%; right: 20%; mat-icon { font-size: 52px; width: 52px; height: 52px; } }
+
+// ── roles ──
+.d-persona.p1 { left: 13%; mat-icon { font-size: 76px; width: 76px; height: 76px; } }
+.d-persona.p2 mat-icon { font-size: 96px; width: 96px; height: 96px; }
+.d-persona.p3 { right: 13%; mat-icon { font-size: 64px; width: 64px; height: 64px; } }
+
+// ── listado ──
+.d-filtro { top: 16%; mat-icon { font-size: 62px; width: 62px; height: 62px; } }
+.d-filas {
+  width: 74%;
+  bottom: 20%;
+  gap: 13px;
+  span { height: 18px; }
+}
+
+// ── perfil ──
+.d-avatar {
+  top: 18%;
+  width: 104px;
+  height: 104px;
+  mat-icon { font-size: 58px; width: 58px; height: 58px; }
+}
+.d-hitos {
+  bottom: 24%;
+  gap: 11px;
+  span { width: 16px; height: 16px; }
+}
+
+// ── respaldo ──
+.d-escudo mat-icon { font-size: 148px; width: 148px; height: 148px; }
+.d-copia { width: 62px; height: 78px; border-radius: 6px; }
+
+@keyframes guardar-copia {
+  0%        { opacity: 0; transform: translate(0, -96px) scale(0.7); }
+  35%       { opacity: 1; }
+  70%, 100% { opacity: 0; transform: translate(0, 10px) scale(1); }
+}
+
+// ─── MÓVIL ───────────────────────────────────────────────
+@media (max-width: $breakpoint-sm) {
+  .demo { transform: none; max-width: 240px; }
+  .tour-escena:hover .demo { transform: none; }
+  .fx-barra { padding-bottom: 6px; }
+  .fx-contador strong { font-size: 17px; }
+
+  // A 240px de panel, la escala de escritorio se sale del marco.
+  .demo mat-icon { font-size: 62px; width: 62px; height: 62px; }
+  .d-tablet mat-icon { font-size: 104px; width: 104px; height: 104px; }
+  .d-engrane mat-icon { font-size: 78px; width: 78px; height: 78px; }
+  .d-escudo mat-icon { font-size: 92px; width: 92px; height: 92px; }
+  .d-credencial { width: 94px; height: 58px; }
+  .d-hoja { width: 54px; height: 68px; }
+  .d-avatar { width: 66px; height: 66px; mat-icon { font-size: 36px; width: 36px; height: 36px; } }
+  .d-barras span { width: 20px; }
+  .d-onda { width: 88px; height: 88px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo { transform: none; transition: none; }
 }
