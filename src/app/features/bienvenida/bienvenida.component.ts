@@ -149,8 +149,18 @@ export class BienvenidaComponent implements OnDestroy {
   /** Letras de la marca, para animarlas una a una en el arranque. */
   protected readonly letrasMarca = 'STENBRARY'.split('');
 
-  /** Doce formas de fondo. El array solo existe para que `@for` las repita. */
-  protected readonly formas = Array.from({ length: 12 }, (_, i) => i);
+  /**
+   * Iconos del fondo.
+   *
+   * Antes eran cuadrados abstractos: bonitos y anónimos, podían pertenecer a
+   * cualquier producto. Libros a la deriva dicen de qué va esto sin una sola
+   * palabra, y es lo primero que ve alguien que no conoce el sistema.
+   */
+  protected readonly formas = [
+    'menu_book', 'auto_stories', 'local_library', 'import_contacts',
+    'book', 'menu_book', 'auto_stories', 'bookmark',
+    'import_contacts', 'local_library', 'book', 'auto_stories',
+  ];
 
   /**
    * Fase de la transición tipo baraja.
@@ -364,13 +374,16 @@ export class BienvenidaComponent implements OnDestroy {
    * pestaña a media secuencia, sus ajustes ya están a salvo; lo único que se
    * pierde es el efecto.
    */
+  /** Duración total del arranque. Ver `arranque-todo` en el SCSS. */
+  private static readonly MS_ARRANQUE = 4400;
+
   private finalizar(): void {
     this.restablecer.marcarSetupCompletado();
     this.arrancando.set(true);
     this.programar(() => {
       this.toast.success('Todo listo. ¡A trabajar!');
       void this.router.navigate(['/scanner']);
-    }, 2600);
+    }, BienvenidaComponent.MS_ARRANQUE);
   }
 
   /** Permite saltarse el arranque con un clic o una tecla. */

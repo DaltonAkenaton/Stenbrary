@@ -49,6 +49,30 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.34.0',
+    fecha: '2026-08-31',
+    titulo: 'El asistente ahora es un libro',
+    destacado: true,
+    resumen: 'Stenbrary es un sistema de biblioteca, y el asistente ya lo parece: cada paso es una página encuadernada, avanzar es pasar página, y el arranque abre un libro del que sale la luz.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto:
+          'Cada paso del asistente es ahora una página de libro, con lomo a la izquierda y el canto de las hojas a la derecha. Al avanzar, la página gira sobre el lomo como se pasa una hoja de verdad.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El fondo ya no son figuras abstractas: son libros flotando lentamente.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La secuencia de arranque empieza con un libro que se abre y deja salir la luz, de la que nace el nombre Stenbrary. Y va más pausada — de 2.6 a 4.4 segundos — para que cada momento se distinga.',
+      },
+    ],
+  },
+  {
     version: '3.33.0',
     fecha: '2026-08-31',
     titulo: 'El asistente, como un mazo de cartas — y arranque del sistema',

@@ -15,8 +15,8 @@
        Se generan en el template y no por CSS porque los pseudo-elementos
        solo dan dos por nodo. -->
   <div class="wiz-fondo" aria-hidden="true">
-    @for (n of formas; track n) {
-      <span class="forma"></span>
+    @for (icono of formas; track $index) {
+      <span class="forma"><mat-icon>{{ icono }}</mat-icon></span>
     }
   </div>
 
@@ -37,16 +37,18 @@
     <span class="wiz-cuenta">Paso {{ indice() + 1 }} de {{ pasos.length }}</span>
   </div>
 
-  <!-- ══════════ MAZO ══════════
-       Dos cartas fantasma detrás dan volumen permanente: la tarjeta activa
-       se lee como la primera de un mazo, no como un cuadro suelto. Son
-       decorativas y por eso quedan fuera del árbol de accesibilidad. -->
-  <div class="wiz-mazo" [attr.data-fase]="fase()">
+  <!-- ══════════ LIBRO ══════════
+       La tarjeta es una página encuadernada, no un cuadro suelto: lomo a la
+       izquierda, canto de hojas a la derecha, y avanzar es pasar página.
+       Las hojas de debajo son decorativas. -->
+  <div class="wiz-libro" [attr.data-fase]="fase()">
 
-    <span class="carta-fantasma f2" aria-hidden="true"></span>
-    <span class="carta-fantasma f1" aria-hidden="true"></span>
+    <span class="hoja h2" aria-hidden="true"></span>
+    <span class="hoja h1" aria-hidden="true"></span>
 
     <div class="wiz-card" [class.hacia-atras]="haciaAtras()">
+      <span class="lomo" aria-hidden="true"></span>
+      <span class="canto" aria-hidden="true"></span>
 
     <div class="wiz-icono" [class.aparece]="animar()">
       <mat-icon>{{ pasoActual().icono }}</mat-icon>
@@ -359,11 +361,21 @@
          (keydown)="saltarArranque()" tabindex="0" role="status">
 
       <div class="arranque-centro">
+
+        <!-- Libro que se abre: dos tapas girando sobre el eje central.
+             La luz sale de entre ellas — la marca nace del libro, no
+             aparece encima de un fondo cualquiera. -->
+        <div class="libro-abre" aria-hidden="true">
+          <span class="tapa izq"></span>
+          <span class="tapa der"></span>
+          <span class="luz"></span>
+        </div>
+
         <span class="arranque-linea"></span>
 
         <h1 class="arranque-marca">
           @for (letra of letrasMarca; track $index) {
-            <span class="letra" [style.animation-delay.ms]="420 + $index * 65">{{ letra }}</span>
+            <span class="letra" [style.animation-delay.ms]="1500 + $index * 95">{{ letra }}</span>
           }
         </h1>
 

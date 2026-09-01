@@ -901,100 +901,12 @@
   .forma { opacity: 0.07; }
   .hacia-atras .aparece { animation-name: fundido; }
 }
-
 // ═══════════════════════════════════════════════════════════
-// MAZO DE CARTAS
+// (El bloque del mazo de cartas vivía aquí. Se retiró al cambiar la
+//  metáfora a la de un libro — ver "IDENTIDAD DE LIBRO" más abajo.
+//  Un mazo es genérico; un libro dice qué es este producto.)
 // ═══════════════════════════════════════════════════════════
-// La tarjeta activa es la primera de un mazo. Al avanzar retrocede al fondo
-// y la siguiente sube al frente, como al pasar una carta.
-//
-// `perspective` en el contenedor y no en cada carta: así todas comparten el
-// mismo punto de fuga y el movimiento se lee como profundidad real. Con
-// perspectivas independientes cada una se deformaría por su cuenta.
 
-.wiz-mazo {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 620px;
-  perspective: 1500px;
-  perspective-origin: 50% 40%;
-}
-
-// Cartas de atrás: solo el borde y el fondo, sin contenido. Escalonadas
-// hacia arriba para que asomen por el borde superior.
-.carta-fantasma {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  display: block;
-  height: 100%;
-  border-radius: $border-radius-xl;
-  background: rgba(13, 22, 38, 0.55);
-  border: 1px solid rgba(0, 200, 215, 0.08);
-  transition: transform $transition-normal, opacity $transition-normal;
-  pointer-events: none;
-
-  &.f1 {
-    width: 94%;
-    transform: translate(-50%, -12px) scale(0.985);
-  }
-
-  &.f2 {
-    width: 88%;
-    transform: translate(-50%, -23px) scale(0.97);
-    opacity: 0.65;
-  }
-}
-
-// La tarjeta activa deja de tener su animación de entrada propia: ahora la
-// gobierna la fase del mazo.
-.wiz-mazo .wiz-card {
-  position: relative;
-  transform-style: preserve-3d;
-  animation: none;
-}
-
-// ─── FASES ───────────────────────────────────────────────
-.wiz-mazo[data-fase='saliendo'] .wiz-card {
-  animation: carta-sale 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
-}
-
-.wiz-mazo[data-fase='entrando'] .wiz-card {
-  animation: carta-entra 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-// Retrocede hundiéndose y perdiendo opacidad. El giro mínimo en X es lo que
-// vende la profundidad: sin él parece un simple zoom.
-@keyframes carta-sale {
-  from { transform: translateZ(0) translateY(0) rotateX(0deg);          opacity: 1; }
-  to   { transform: translateZ(-260px) translateY(-26px) rotateX(7deg); opacity: 0; }
-}
-
-// La nueva llega desde más atrás todavía y se sobrepasa un pelo al llegar,
-// como una carta que se asienta sobre el mazo.
-@keyframes carta-entra {
-  0%   { transform: translateZ(-340px) translateY(34px) rotateX(-8deg); opacity: 0; }
-  60%  {                                                                opacity: 1; }
-  100% { transform: translateZ(0) translateY(0) rotateX(0deg);          opacity: 1; }
-}
-
-// Las fantasma acompañan el gesto: al salir se adelantan un paso, como si
-// el mazo entero avanzara.
-.wiz-mazo[data-fase='saliendo'] .carta-fantasma.f1 {
-  transform: translate(-50%, -4px) scale(0.995);
-}
-
-.wiz-mazo[data-fase='saliendo'] .carta-fantasma.f2 {
-  transform: translate(-50%, -14px) scale(0.98);
-  opacity: 0.85;
-}
-
-// Con el mazo mandando, el desplazamiento lateral del contenido se suaviza
-// para no competir con la profundidad.
-.wiz-mazo .aparece {
-  animation-duration: 380ms;
-}
 
 // ═══════════════════════════════════════════════════════════
 // ARRANQUE DEL SISTEMA
@@ -1109,11 +1021,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wiz-mazo[data-fase='saliendo'] .wiz-card,
-  .wiz-mazo[data-fase='entrando'] .wiz-card {
-    animation: fundido 200ms ease both;
-  }
-  .carta-fantasma { transition: none; }
+  // El equivalente para el libro está al final del archivo, junto al resto
+  // de sus reglas.
   .letra, .arranque-linea, .arranque-barra {
     animation: fundido 400ms ease both;
     width: auto;
@@ -1121,4 +1030,247 @@
   }
   .arranque-linea { width: 300px; }
   .arranque-barra { width: 200px; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// IDENTIDAD DE LIBRO
+// ═══════════════════════════════════════════════════════════
+// Sustituye a la metáfora del mazo. Un mazo de cartas es genérico: podría ser
+// cualquier producto. Un libro dice qué es esto antes de leer una palabra, y
+// esta es la primera pantalla que ve quien no conoce el sistema.
+//
+// Tres piezas: lomo a la izquierda, canto de hojas a la derecha, y el paso de
+// página girando sobre el borde izquierdo — no hacia atrás como una carta.
+
+.wiz-libro {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 620px;
+  // Perspectiva más cerrada que la del mazo: una página que gira sobre su
+  // borde necesita un punto de fuga cercano para que el giro se lea como
+  // volumen y no como un aplastamiento.
+  perspective: 1700px;
+  perspective-origin: 15% 50%;
+}
+
+// ─── LOMO ────────────────────────────────────────────────
+// Sombra hacia dentro y un filo claro: así se ve el pliegue de una página
+// pegada a la encuadernación.
+.lomo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 22px;
+  border-radius: $border-radius-xl 0 0 $border-radius-xl;
+  background:
+    linear-gradient(90deg,
+      rgba(0, 200, 215, 0.16) 0%,
+      rgba(0, 200, 215, 0.05) 42%,
+      rgba(0, 0, 0, 0.30) 84%,
+      rgba(0, 0, 0, 0.14) 100%);
+  border-right: 1px solid rgba(0, 200, 215, 0.16);
+  pointer-events: none;
+}
+
+// ─── CANTO DE HOJAS ──────────────────────────────────────
+// Líneas finas repetidas: el bloque de páginas visto de canto.
+.canto {
+  position: absolute;
+  right: -7px;
+  top: 12px;
+  bottom: 12px;
+  width: 7px;
+  border-radius: 0 4px 4px 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(200, 230, 240, 0.16) 0px,
+    rgba(200, 230, 240, 0.16) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+}
+
+// El contenido se aparta del lomo para no montarse encima.
+.wiz-libro .wiz-card {
+  position: relative;
+  padding-left: $spacing-lg + 14px;
+  transform-style: preserve-3d;
+  animation: none;
+}
+
+// ─── HOJAS DE DEBAJO ─────────────────────────────────────
+// Asoman por la derecha y por abajo: las páginas que faltan por leer.
+.hoja {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: $border-radius-xl;
+  background: rgba(13, 22, 38, 0.6);
+  border: 1px solid rgba(0, 200, 215, 0.07);
+  transition: transform $transition-normal, opacity $transition-normal;
+  pointer-events: none;
+
+  &.h1 { transform: translate(7px, 6px); }
+  &.h2 { transform: translate(14px, 12px); opacity: 0.6; }
+}
+
+// ─── PASAR PÁGINA ────────────────────────────────────────
+// El giro va sobre el borde IZQUIERDO, donde está el lomo. Es la diferencia
+// entre "pasar una página" y "retirar una carta".
+.wiz-libro[data-fase='saliendo'] .wiz-card {
+  animation: pagina-pasa 300ms cubic-bezier(0.5, 0, 0.9, 0.4) forwards;
+}
+
+.wiz-libro[data-fase='entrando'] .wiz-card {
+  animation: pagina-cae 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pagina-pasa {
+  from { transform-origin: left center; transform: rotateY(0deg);   opacity: 1; }
+  to   { transform-origin: left center; transform: rotateY(-76deg); opacity: 0; }
+}
+
+// La nueva cae desde la derecha y se asienta sobre el bloque.
+@keyframes pagina-cae {
+  0%   { transform-origin: left center; transform: rotateY(52deg); opacity: 0; }
+  55%  { opacity: 1; }
+  100% { transform-origin: left center; transform: rotateY(0deg);  opacity: 1; }
+}
+
+// Las hojas se recolocan: el bloque avanza al pasar página.
+.wiz-libro[data-fase='saliendo'] .hoja.h1 { transform: translate(3px, 3px); }
+.wiz-libro[data-fase='saliendo'] .hoja.h2 { transform: translate(9px, 8px); opacity: 0.8; }
+
+// ─── FONDO: LIBROS A LA DERIVA ───────────────────────────
+// Antes eran cuadrados abstractos: bonitos y anónimos. Unos libros dicen de
+// qué va el sistema sin una sola palabra.
+.forma {
+  border: none;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  color: rgba(0, 200, 215, 0.9);
+
+  mat-icon {
+    font-size: inherit;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+  }
+}
+
+// El tamaño pasa a controlarse con font-size, porque el contenido es un icono.
+.forma:nth-child(1)  { font-size: 26px; }
+.forma:nth-child(2)  { font-size: 54px; }
+.forma:nth-child(3)  { font-size: 20px; }
+.forma:nth-child(4)  { font-size: 66px; }
+.forma:nth-child(5)  { font-size: 24px; }
+.forma:nth-child(6)  { font-size: 40px; }
+.forma:nth-child(7)  { font-size: 22px; }
+.forma:nth-child(8)  { font-size: 58px; }
+.forma:nth-child(9)  { font-size: 30px; }
+.forma:nth-child(10) { font-size: 46px; }
+.forma:nth-child(11) { font-size: 18px; }
+.forma:nth-child(12) { font-size: 36px; }
+
+// ═══════════════════════════════════════════════════════════
+// ARRANQUE: EL LIBRO SE ABRE
+// ═══════════════════════════════════════════════════════════
+// De 2.6 s a 4.4 s. La versión corta funcionaba, pero pasaba demasiado
+// rápido para el momento que representa. Con más aire cada fase se
+// distingue: abrir, nombrar, cargar.
+
+.arranque { animation-duration: 4400ms; }
+
+@keyframes arranque-todo {
+  0%   { opacity: 0; }
+  7%   { opacity: 1; }
+  93%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.libro-abre {
+  position: relative;
+  width: 190px;
+  height: 118px;
+  perspective: 900px;
+  margin-bottom: $spacing-lg;
+}
+
+// Dos tapas girando sobre el eje central. Al abrirse dejan salir la luz.
+.tapa {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(160deg, $navy-600, $navy-800);
+  border: 1px solid rgba(0, 200, 215, 0.28);
+  backface-visibility: hidden;
+}
+
+.tapa.izq {
+  left: 0;
+  transform-origin: right center;
+  border-radius: 5px 2px 2px 5px;
+  animation: abrir-izq 1500ms cubic-bezier(0.34, 1.2, 0.5, 1) 350ms both;
+}
+
+.tapa.der {
+  right: 0;
+  transform-origin: left center;
+  border-radius: 2px 5px 5px 2px;
+  animation: abrir-der 1500ms cubic-bezier(0.34, 1.2, 0.5, 1) 350ms both;
+}
+
+@keyframes abrir-izq {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-72deg); }
+}
+
+@keyframes abrir-der {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(72deg); }
+}
+
+// Resplandor que emerge del pliegue: la marca nace del libro, no aparece
+// encima de un fondo cualquiera.
+.luz {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 200, 215, 0.95), transparent 70%);
+  opacity: 0;
+  animation: brotar-luz 2200ms ease-out 900ms both;
+}
+
+@keyframes brotar-luz {
+  0%   { opacity: 0;    width: 6px;   height: 6px;   filter: blur(2px); }
+  40%  { opacity: 0.95; width: 190px; height: 118px; filter: blur(26px); }
+  100% { opacity: 0;    width: 340px; height: 200px; filter: blur(52px); }
+}
+
+// El resto de la secuencia se recoloca en el nuevo tiempo.
+.arranque-linea  { animation-delay: 1150ms; }
+.arranque-sub    { animation-delay: 2650ms; }
+.arranque-barra  { animation: cargar 1500ms ease-in-out 2800ms forwards; }
+.arranque-saltar { animation-delay: 3200ms; }
+.letra           { animation-duration: 720ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wiz-libro[data-fase='saliendo'] .wiz-card,
+  .wiz-libro[data-fase='entrando'] .wiz-card { animation: fundido 200ms ease both; }
+  .hoja { transition: none; }
+  .tapa.izq { transform: rotateY(-72deg); animation: none; }
+  .tapa.der { transform: rotateY(72deg);  animation: none; }
+  .luz { animation: none; opacity: 0; }
 }
