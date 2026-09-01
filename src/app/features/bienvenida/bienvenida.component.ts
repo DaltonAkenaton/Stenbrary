@@ -94,6 +94,21 @@ export class BienvenidaComponent {
 
   // ── Navegación ────────────────────────────────────────
 
+  /**
+   * Controla la animación de entrada.
+   *
+   * Una animación CSS solo se dispara al AÑADIRSE la clase. Como el contenido
+   * del paso se reemplaza pero los elementos son los mismos, hay que quitarla
+   * y volver a ponerla en el siguiente frame; si no, solo se animaría el
+   * primer paso y el resto aparecería de golpe.
+   */
+  protected readonly animar = signal(true);
+
+  private reanimar(): void {
+    this.animar.set(false);
+    requestAnimationFrame(() => this.animar.set(true));
+  }
+
   protected siguiente(): void {
     this.guardarPasoActual();
     if (this.esUltimo()) {
@@ -101,11 +116,13 @@ export class BienvenidaComponent {
       return;
     }
     this.indice.update(i => i + 1);
+    this.reanimar();
   }
 
   protected atras(): void {
     if (this.esPrimero()) return;
     this.indice.update(i => i - 1);
+    this.reanimar();
   }
 
   /** Saltar el asistente entero: los defaults ya son utilizables. */

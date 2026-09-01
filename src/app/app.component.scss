@@ -1119,7 +1119,12 @@
 // Oculta toda la navegación y deja solo el contenido (scanner).
 // El usuario solo puede salir vía gesto secreto + PIN.
 // ═══════════════════════════════════════════════════════════
-.app-shell.kiosk-mode {
+// Rutas que se presentan sin shell (asistente inicial). Reutiliza el mismo
+// mecanismo que el quiosco: el sidebar visible durante la configuración de
+// bienvenida delata la app antes de haberla presentado, y rompe la sensación
+// de "primer arranque" que es justo lo que esa pantalla vende.
+.app-shell.kiosk-mode,
+.app-shell.pantalla-completa {
   .sidebar,
   .topbar,
   .topbar-separator,

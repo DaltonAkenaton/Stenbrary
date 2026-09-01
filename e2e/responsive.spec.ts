@@ -285,3 +285,26 @@ test('las rutas principales montan contenido con datos sembrados', async ({ page
   }
   expect(vacias, `Rutas que renderizaron casi vacías: ${vacias.join(', ')}`).toEqual([]);
 });
+
+// Las dos pantallas nuevas de v3.31 no estaban en RUTAS: /funciones es una
+// rejilla de tarjetas y /bienvenida va a pantalla completa. Ambas son
+// candidatas naturales a desbordarse en móvil.
+test('las pantallas de presentación no se desbordan en móvil', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem('stenbrary-setup-completado', '1');
+  });
+
+  const fallos: string[] = [];
+  for (const ruta of ['/funciones', '/bienvenida']) {
+    await page.goto(ruta);
+    await page.waitForSelector('.content-area');
+    await page.waitForTimeout(700);
+    const { exceso, culpables } = await medirOverflow(page, 390);
+    if (exceso > TOLERANCIA_PX) {
+      fallos.push(`${ruta} → ${exceso}px · ${culpables.join(', ')}`);
+    }
+  }
+  expect(fallos, `Desbordamiento:\n  - ${fallos.join('\n  - ')}`).toEqual([]);
+});

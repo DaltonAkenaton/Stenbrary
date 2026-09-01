@@ -172,6 +172,19 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Rutas que se muestran a pantalla completa, sin sidebar ni topbar. */
+  private static readonly RUTAS_SIN_SHELL = ['/bienvenida'];
+
+  /** Signal para que el shell reaccione al navegar sin depender del template. */
+  readonly pantallaCompleta = signal(false);
+
+  private actualizarPantallaCompleta(url: string): void {
+    const ruta = url.split('?')[0];
+    this.pantallaCompleta.set(
+      AppComponent.RUTAS_SIN_SHELL.some(r => ruta.startsWith(r)),
+    );
+  }
+
   /**
    * Lleva al asistente inicial, pero SOLO en una instalación realmente nueva.
    *
@@ -218,6 +231,10 @@ export class AppComponent implements OnInit, OnDestroy {
     // se llaman desde código sin contexto de inyección de Angular.
     registrarDiagnostico(this.diagnosticoService);
 
+    // Evaluar de entrada: si se llega directo a /bienvenida por URL, el
+    // NavigationEnd de abajo puede haber ocurrido ya.
+    this.actualizarPantallaCompleta(this.router.url);
+
     void this.ofrecerAsistenteInicial();
 
     // El estado de conexión lo maneja ConnectivityService (listeners +
@@ -240,6 +257,8 @@ export class AppComponent implements OnInit, OnDestroy {
     this.routerSub = this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((evt) => {
+        this.actualizarPantallaCompleta((evt as NavigationEnd).urlAfterRedirects);
+
         if (window.innerWidth < 768) {
           this.isSidebarExpanded.set(false);
         }
@@ -463,6 +482,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private itemsAdministracion(): NavItem[] {
     const items: NavItem[] = [
       { icon: 'category', label: 'Gestión de Motivos', route: '/gestion-motivos' },
+      { icon: 'auto_awesome', label: 'Qué puede hacer', route: '/funciones'     },
       { icon: 'campaign', label: 'Novedades',          route: '/novedades'       },
     ];
 
@@ -530,6 +550,8 @@ export class AppComponent implements OnInit, OnDestroy {
       '/sincronizacion':    'Sincronización',
       '/descarga':          'Bajar de la nube',
       '/diagnostico':       'Reporte del sistema',
+      '/funciones':         'Qué puede hacer',
+      '/bienvenida':        'Configuración inicial',
       '/usuarios':          'Usuarios',
     };
     const url = this.router.url.split('?')[0];

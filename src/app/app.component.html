@@ -12,7 +12,8 @@
 
 <div class="app-shell"
      [class.sidebar-expanded]="isSidebarExpanded()"
-     [class.kiosk-mode]="configService.modoQuioscoSignal()">
+     [class.kiosk-mode]="configService.modoQuioscoSignal()"
+     [class.pantalla-completa]="pantallaCompleta()">
 
   <!-- ══════════════════════════════════════════════════════
        SIDEBAR — Navegación lateral persistente

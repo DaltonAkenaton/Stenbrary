@@ -49,6 +49,35 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.31.0',
+    fecha: '2026-08-31',
+    titulo: 'Catálogo de funciones y asistente a pantalla completa',
+    destacado: true,
+    resumen: 'Nueva pantalla "Qué puede hacer" con las 38 funciones del sistema explicadas en lenguaje claro, con un modo presentación para enseñarlo. Y el asistente inicial ahora ocupa toda la pantalla, sin menús alrededor.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva pantalla "Qué puede hacer": el catálogo completo de funciones del sistema, agrupadas por área y con buscador. Sirve para conocer el sistema, para enseñárselo a alguien y para que el personal nuevo sepa qué existe y dónde está.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Modo presentación dentro de esa pantalla: muestra solo lo esencial en tarjetas grandes, pensado para enseñar el sistema en una reunión sin abrumar con la lista completa.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El asistente de configuración inicial ahora ocupa toda la pantalla, sin el menú lateral ni la barra superior. Se presenta como el primer arranque de un equipo nuevo.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El asistente tiene animaciones de entrada en cada paso y un fondo con movimiento suave. Respeta la preferencia del sistema de reducir animaciones.',
+      },
+    ],
+  },
+  {
     version: '3.30.0',
     fecha: '2026-08-31',
     titulo: 'Asistente de configuración y restablecer el sistema',

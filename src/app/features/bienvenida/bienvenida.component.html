@@ -19,14 +19,14 @@
 
   <div class="wiz-card">
 
-    <div class="wiz-icono">
+    <div class="wiz-icono" [class.aparece]="animar()">
       <mat-icon>{{ pasoActual().icono }}</mat-icon>
     </div>
 
-    <h1 class="wiz-titulo">{{ pasoActual().titulo }}</h1>
-    <p class="wiz-desc">{{ pasoActual().descripcion }}</p>
+    <h1 class="wiz-titulo" [class.aparece]="animar()" [class.aparece-1]="animar()">{{ pasoActual().titulo }}</h1>
+    <p class="wiz-desc" [class.aparece]="animar()" [class.aparece-2]="animar()">{{ pasoActual().descripcion }}</p>
 
-    <div class="wiz-cuerpo">
+    <div class="wiz-cuerpo" [class.aparece]="animar()" [class.aparece-3]="animar()">
 
       @switch (pasoActual().id) {
 

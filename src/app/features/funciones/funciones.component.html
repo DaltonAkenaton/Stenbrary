@@ -1,0 +1,122 @@
+<!--
+  funciones.component.html
+  Stenbrary — Qué puede hacer el sistema
+
+  Dos modos en una sola pantalla: presentación (pocas tarjetas grandes, para
+  enseñar) y catálogo (todo, con buscador, para consultar).
+-->
+
+<div class="fx" [class.presentando]="modoPresentacion()">
+
+  <!-- ══════════ CABECERA ══════════ -->
+  <header class="fx-header">
+    <div class="fx-header-texto">
+      <h1>¿Qué puede hacer Stenbrary?</h1>
+      <p>
+        {{ totalFunciones }} funciones disponibles hoy · versión {{ version }}
+      </p>
+    </div>
+    <button class="fx-modo" (click)="alternarPresentacion()">
+      <mat-icon>{{ modoPresentacion() ? 'view_list' : 'slideshow' }}</mat-icon>
+      {{ modoPresentacion() ? 'Ver todas' : 'Modo presentación' }}
+    </button>
+  </header>
+
+  @if (modoPresentacion()) {
+
+    <!-- ══════════ MODO PRESENTACIÓN ══════════ -->
+    <!-- Solo lo destacado y en grande: enseñar 38 funciones de golpe no
+         convence a nadie, abruma. -->
+    <p class="fx-intro">
+      Lo esencial, en {{ destacadas.length }} puntos.
+    </p>
+
+    <div class="fx-destacadas">
+      @for (f of destacadas; track f.titulo) {
+        <article class="fx-tarjeta grande" [class.clicable]="!!f.ruta"
+                 (click)="abrir(f)">
+          <div class="fx-icono grande">
+            <mat-icon>{{ f.icono }}</mat-icon>
+          </div>
+          <h2>{{ f.titulo }}</h2>
+          <p>{{ f.descripcion }}</p>
+          <span class="fx-donde">
+            <mat-icon>place</mat-icon>{{ f.donde }}
+          </span>
+        </article>
+      }
+    </div>
+
+  } @else {
+
+    <!-- ══════════ CATÁLOGO ══════════ -->
+    <div class="fx-controles">
+      <div class="fx-buscador">
+        <mat-icon>search</mat-icon>
+        <input type="text" placeholder="Buscar una función…"
+               [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)"
+               autocomplete="off" spellcheck="false">
+        @if (busqueda()) {
+          <button class="fx-limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+
+      <div class="fx-chips">
+        <button class="fx-chip" [class.sel]="areaActiva() === 'todas'"
+                (click)="filtrarArea('todas')">
+          Todas <span class="fx-n">{{ totalFunciones }}</span>
+        </button>
+        @for (g of grupos; track g.area) {
+          <button class="fx-chip" [class.sel]="areaActiva() === g.area"
+                  (click)="filtrarArea(g.area)">
+            {{ g.titulo }} <span class="fx-n">{{ contarEnArea(g.area) }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (sinResultados()) {
+      <div class="fx-vacio">
+        <mat-icon>search_off</mat-icon>
+        <p>No hay ninguna función que coincida con «{{ busqueda() }}».</p>
+        <button class="fx-modo" (click)="limpiarBusqueda()">Ver todas</button>
+      </div>
+    }
+
+    @for (bloque of porGrupo(); track bloque.grupo.area) {
+      <section class="fx-seccion">
+        <div class="fx-seccion-head">
+          <mat-icon>{{ bloque.grupo.icono }}</mat-icon>
+          <div>
+            <h2>{{ bloque.grupo.titulo }}</h2>
+            <p>{{ bloque.grupo.descripcion }}</p>
+          </div>
+        </div>
+
+        <div class="fx-grid">
+          @for (f of bloque.funciones; track f.titulo) {
+            <article class="fx-tarjeta" [class.clicable]="!!f.ruta"
+                     (click)="abrir(f)">
+              <div class="fx-tarjeta-head">
+                <div class="fx-icono">
+                  <mat-icon>{{ f.icono }}</mat-icon>
+                </div>
+                <h3>{{ f.titulo }}</h3>
+                @if (f.ruta) {
+                  <mat-icon class="fx-ir">arrow_forward</mat-icon>
+                }
+              </div>
+              <p>{{ f.descripcion }}</p>
+              <span class="fx-donde">
+                <mat-icon>place</mat-icon>{{ f.donde }}
+              </span>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+
+</div>

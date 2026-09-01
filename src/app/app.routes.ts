@@ -119,6 +119,14 @@ export const routes: Routes = [
     title: 'Stenbrary — Bajar de la nube',
   },
   {
+    // Catálogo de capacidades. Sin guard a propósito: sirve para presentar el
+    // sistema a quien todavía no tiene cuenta.
+    path: 'funciones',
+    loadComponent: () =>
+      import('./features/funciones/funciones.component').then(m => m.FuncionesComponent),
+    title: 'Stenbrary — Qué puede hacer',
+  },
+  {
     // Asistente de configuración inicial. Sin guard: se llega aquí tras un
     // restablecimiento, cuando puede que no haya ni sesión ni datos.
     path: 'bienvenida',

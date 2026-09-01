@@ -1,0 +1,354 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  funciones.component.scss                            ║
+// ║  Stenbrary — Catálogo de funciones                   ║
+// ║                                                      ║
+// ║  Esta pantalla se proyecta o se enseña en una        ║
+// ║  laptop frente a alguien. Por eso el modo            ║
+// ║  presentación sube tipografías y espaciados: lo que  ║
+// ║  se lee cómodo a 40 cm no se lee a dos metros.       ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.fx {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-md $spacing-lg $spacing-xxl;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+// ─── CABECERA ────────────────────────────────────────────
+.fx-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+  flex-wrap: wrap;
+}
+
+.fx-header-texto {
+  flex: 1;
+  min-width: 240px;
+
+  h1 {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 26px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: -0.5px;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: $text-secondary;
+  }
+}
+
+.fx-modo {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 10px 18px;
+  background: transparent;
+  border: 1px solid $border-glow;
+  border-radius: $border-radius-md;
+  color: $cyan-300;
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all $transition-fast;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover {
+    background: rgba(0, 200, 215, 0.08);
+    color: $cyan-200;
+  }
+}
+
+.fx-intro {
+  margin: 0;
+  font-size: 15px;
+  color: $text-secondary;
+}
+
+// ─── CONTROLES ───────────────────────────────────────────
+.fx-controles {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.fx-buscador {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 0 $spacing-md;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-md;
+  transition: border-color $transition-fast;
+
+  &:focus-within { border-color: $border-glow; }
+
+  > mat-icon { color: $text-muted; flex-shrink: 0; }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+    color: $text-primary;
+    font-family: $font-body;
+    font-size: 14px;
+
+    &:focus { outline: none; }
+    &::placeholder { color: $text-muted; }
+  }
+}
+
+.fx-limpiar {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  display: flex;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { color: $text-primary; }
+}
+
+.fx-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.fx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 8px 14px;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: 999px;
+  color: $text-secondary;
+  font-family: $font-body;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover { border-color: rgba(0, 200, 215, 0.28); }
+
+  &.sel {
+    border-color: $cyan-500;
+    background: rgba(0, 200, 215, 0.10);
+    color: $cyan-300;
+    font-weight: 700;
+  }
+}
+
+.fx-n {
+  font-family: $font-mono;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+// ─── SECCIONES ───────────────────────────────────────────
+.fx-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.fx-seccion-head {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $border-subtle;
+
+  > mat-icon {
+    color: $cyan-400;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  h2 {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 17px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: $text-muted;
+  }
+}
+
+// ─── TARJETAS ────────────────────────────────────────────
+.fx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: $spacing-md;
+}
+
+.fx-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-lg;
+  transition: all $transition-fast;
+
+  h3 {
+    margin: 0;
+    font-family: $font-body;
+    font-size: 14px;
+    font-weight: 700;
+    color: $text-primary;
+    flex: 1;
+    min-width: 0;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: $text-secondary;
+    flex: 1;
+  }
+
+  &.clicable {
+    cursor: pointer;
+
+    &:hover {
+      border-color: rgba(0, 200, 215, 0.30);
+      transform: translateY(-2px);
+      box-shadow: $shadow-glow-sm;
+
+      .fx-ir { opacity: 1; transform: translateX(2px); }
+    }
+  }
+}
+
+.fx-tarjeta-head {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.fx-icono {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: $border-radius-sm;
+  background: linear-gradient(135deg, rgba(0, 200, 215, 0.14), rgba(0, 169, 158, 0.09));
+  border: 1px solid rgba(0, 200, 215, 0.18);
+  @include flex-center;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+    color: $cyan-400;
+  }
+
+  &.grande {
+    width: 52px;
+    height: 52px;
+    border-radius: $border-radius-md;
+
+    mat-icon { font-size: 26px; width: 26px; height: 26px; }
+  }
+}
+
+.fx-ir {
+  flex-shrink: 0;
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+  color: $cyan-400;
+  opacity: 0;
+  transition: all $transition-fast;
+}
+
+.fx-donde {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: $text-muted;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+// ─── MODO PRESENTACIÓN ───────────────────────────────────
+// Menos tarjetas, más grandes y con más aire: se mira desde lejos y en
+// compañía, no de cerca y a solas.
+.fx-destacadas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: $spacing-lg;
+}
+
+.fx-tarjeta.grande {
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background-image: linear-gradient(160deg, rgba(0, 200, 215, 0.04) 0%, transparent 62%);
+
+  h2 {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 19px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: -0.3px;
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+}
+
+.presentando .fx-header-texto h1 { font-size: 30px; }
+
+// ─── VACÍO ───────────────────────────────────────────────
+.fx-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-xxl $spacing-md;
+  color: $text-muted;
+
+  mat-icon { font-size: 38px; width: 38px; height: 38px; }
+  p { margin: 0; font-size: 14px; }
+}
+
+@media (max-width: $breakpoint-xs) {
+  .fx { padding: $spacing-md $spacing-sm $spacing-xxl; }
+  .fx-header-texto h1 { font-size: 21px; }
+  .fx-modo { width: 100%; justify-content: center; }
+  .fx-grid,
+  .fx-destacadas { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-tarjeta.clicable:hover { transform: none; }
+}
