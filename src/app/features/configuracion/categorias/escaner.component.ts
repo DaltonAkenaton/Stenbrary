@@ -33,13 +33,6 @@ import { ConfigService, CamaraPreferida } from '../../../core/services/config.se
 })
 export class EscanerCategoriaComponent {
 
-  readonly opcionesEscanerVelocidad = [
-    { valor: 0,   etiqueta: 'Instantáneo (recomendado)' },
-    { valor: 100, etiqueta: 'Rápido (100 ms)' },
-    { valor: 160, etiqueta: 'Normal (160 ms)' },
-    { valor: 250, etiqueta: 'Ahorrador (250 ms)' },
-  ];
-
   readonly opcionesEscanerCooldown = [
     { valor: 0,    etiqueta: 'Sin espera' },
     { valor: 800,  etiqueta: '0.8 s' },
@@ -98,18 +91,11 @@ export class EscanerCategoriaComponent {
     this.cdr.markForCheck();
   }
 
-  // ─── Comportamiento del escáner ─────────────────────
-  onChangeEscanerVelocidad(ms: number | string): void {
-    const n = typeof ms === 'string' ? parseInt(ms, 10) : ms;
-    this.configService.setEscanerVelocidadMs(isNaN(n) ? 0 : n);
-    const v = this.configService.escanerVelocidadMs;
-    this.debouncedToast(
-      'escaner-vel',
-      v === 0 ? 'Velocidad de detección: Instantáneo' : `Velocidad de detección: ${v} ms`,
-    );
-    this.cdr.markForCheck();
-  }
-
+  // ─── Comportamiento de la cámara ────────────────────
+  // `escanerVelocidadMs` se retiró de la UI en v3.32: solo estrangulaba el
+  // bucle de la cámara y, con el default en 0 (lo más rápido posible), el
+  // único ajuste posible era hacerla más lenta. La clave sigue en
+  // ConfigService por retrocompatibilidad con configuraciones guardadas.
   onChangeEscanerCooldown(ms: number | string): void {
     const n = typeof ms === 'string' ? parseInt(ms, 10) : ms;
     this.configService.setEscanerCooldownMs(isNaN(n) ? 0 : n);
@@ -118,12 +104,6 @@ export class EscanerCategoriaComponent {
       'escaner-cd',
       v === 0 ? 'Sin espera entre escaneos' : `Espera entre escaneos: ${v} ms`,
     );
-    this.cdr.markForCheck();
-  }
-
-  onSetEscanerVelocidad(ms: number, etiqueta: string): void {
-    this.configService.setEscanerVelocidadMs(ms);
-    this.toastService.success(`Velocidad de detección: ${etiqueta}`);
     this.cdr.markForCheck();
   }
 

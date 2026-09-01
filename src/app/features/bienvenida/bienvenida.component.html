@@ -129,27 +129,100 @@
           </div>
 
           @if (horarioActivo) {
-            <label class="wiz-label">Días que abre</label>
-            <div class="wiz-chips">
-              @for (dia of diasSemana; track $index) {
-                <button class="wiz-chip corto" [class.sel]="esDiaAbierto($index)"
-                        (click)="alternarDia($index)">{{ dia.slice(0, 3) }}</button>
-              }
+            <div class="wiz-chips" style="margin-top: 4px;">
+              <button class="wiz-chip" [class.sel]="horarioUniforme"
+                      (click)="setHorarioUniforme(true)">Mismo horario todos los días</button>
+              <button class="wiz-chip" [class.sel]="!horarioUniforme"
+                      (click)="setHorarioUniforme(false)">Distinto por día</button>
             </div>
 
-            <div class="wiz-horas">
-              <div>
-                <label class="wiz-label" for="ap">Abre</label>
-                <input id="ap" class="wiz-input corto" type="time" [(ngModel)]="apertura">
+            @if (horarioUniforme) {
+              <label class="wiz-label">Días que abre</label>
+              <div class="wiz-chips">
+                @for (dia of diasSemana; track $index) {
+                  <button class="wiz-chip corto" [class.sel]="esDiaAbierto($index)"
+                          (click)="alternarDia($index)">{{ dia.slice(0, 3) }}</button>
+                }
               </div>
-              <div>
-                <label class="wiz-label" for="ci">Cierra</label>
-                <input id="ci" class="wiz-input corto" type="time" [(ngModel)]="cierre">
+
+              <div class="wiz-horas">
+                <div>
+                  <label class="wiz-label" for="ap">Abre</label>
+                  <input id="ap" class="wiz-input corto" type="time" [(ngModel)]="apertura">
+                </div>
+                <div>
+                  <label class="wiz-label" for="ci">Cierra</label>
+                  <input id="ci" class="wiz-input corto" type="time" [(ngModel)]="cierre">
+                </div>
               </div>
+            } @else {
+              <!-- Editor día por día. El caso real es "L-V igual, sábado
+                   distinto": tener que salir del asistente para ese único
+                   día es donde se queda sin configurar. -->
+              <div class="wiz-dias">
+                @for (dia of diasSemana; track $index) {
+                  <div class="wiz-dia" [class.abierto]="dias[$index].abierto">
+                    <button class="wiz-dia-toggle" (click)="alternarDiaCustom($index)">
+                      <mat-icon>{{ dias[$index].abierto ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                      <span class="wiz-dia-nombre">{{ dia }}</span>
+                    </button>
+                    @if (dias[$index].abierto) {
+                      <div class="wiz-dia-horas">
+                        <input class="wiz-input mini" type="time"
+                               [(ngModel)]="dias[$index].apertura">
+                        <span class="wiz-guion">a</span>
+                        <input class="wiz-input mini" type="time"
+                               [(ngModel)]="dias[$index].cierre">
+                      </div>
+                    } @else {
+                      <span class="wiz-cerrado">Cerrado</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <p class="wiz-resumen">
+              <mat-icon>event_available</mat-icon>
+              {{ resumenHorario }}
+            </p>
+          }
+        }
+
+        <!-- ════════ SONIDO ════════ -->
+        @case ('sonido') {
+          <div class="wiz-opciones">
+            <button class="wiz-opcion" [class.sel]="sonidoActivo"
+                    (click)="sonidoActivo = true">
+              <mat-icon>volume_up</mat-icon>
+              <span class="op-titulo">Sí, con sonido</span>
+              <span class="op-desc">
+                Quien atiende oye que el registro se hizo sin apartar la vista
+                de la fila.
+              </span>
+            </button>
+            <button class="wiz-opcion" [class.sel]="!sonidoActivo"
+                    (click)="sonidoActivo = false">
+              <mat-icon>volume_off</mat-icon>
+              <span class="op-titulo">En silencio</span>
+              <span class="op-desc">
+                Para salas de estudio donde el ruido molesta.
+              </span>
+            </button>
+          </div>
+
+          @if (sonidoActivo) {
+            <label class="wiz-label" for="vol">Volumen</label>
+            <div class="wiz-inline">
+              <input id="vol" class="wiz-rango" type="range" min="1" max="100"
+                     [(ngModel)]="volumenPct">
+              <span class="wiz-sufijo">{{ volumenPct }}%</span>
             </div>
+            <button class="wiz-probar" (click)="probarSonido()">
+              <mat-icon>play_arrow</mat-icon> Escuchar
+            </button>
             <p class="wiz-ayuda">
-              El mismo horario para todos los días marcados. Si alguno es
-              distinto, lo afinas después en Configuración.
+              Pruébalo aquí mismo con el volumen del equipo como lo vayas a dejar.
             </p>
           }
         }

@@ -470,3 +470,269 @@
   }
   .wiz-barra { transition: none; }
 }
+
+// ─── EDITOR DE HORARIO POR DÍA ───────────────────────────
+.wiz-dias {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wiz-dia {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 8px 10px;
+  background: $navy-900;
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-sm;
+  transition: border-color $transition-fast, background $transition-fast;
+
+  &.abierto { border-color: rgba(0, 200, 215, 0.26); }
+}
+
+.wiz-dia-toggle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font-family: $font-body;
+  cursor: pointer;
+  padding: 2px 0;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: $text-muted;
+    transition: color $transition-fast;
+    flex-shrink: 0;
+  }
+}
+
+.wiz-dia.abierto .wiz-dia-toggle mat-icon { color: $success-color; }
+
+.wiz-dia-nombre {
+  font-size: 13px;
+  color: $text-secondary;
+  white-space: nowrap;
+}
+
+.wiz-dia.abierto .wiz-dia-nombre { color: $text-primary; }
+
+.wiz-dia-horas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.wiz-guion {
+  font-size: 11px;
+  color: $text-muted;
+}
+
+.wiz-cerrado {
+  flex-shrink: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+}
+
+.wiz-input.mini {
+  max-width: 108px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.wiz-resumen {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  margin: $spacing-sm 0 0;
+  padding: $spacing-sm $spacing-md;
+  background: rgba(0, 200, 215, 0.05);
+  border: 1px solid $border-subtle;
+  border-radius: $border-radius-sm;
+  font-size: 12px;
+  line-height: 1.55;
+  color: $text-secondary;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $cyan-400;
+    flex-shrink: 0;
+  }
+}
+
+// ─── SONIDO ──────────────────────────────────────────────
+.wiz-rango {
+  flex: 1;
+  min-width: 0;
+  accent-color: $cyan-500;
+  height: 4px;
+  cursor: pointer;
+}
+
+.wiz-probar {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 14px;
+  background: rgba(0, 200, 215, 0.08);
+  border: 1px solid $border-glow;
+  border-radius: 999px;
+  color: $cyan-300;
+  font-family: $font-body;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { background: rgba(0, 200, 215, 0.15); transform: translateY(-1px); }
+  &:active { transform: scale(0.97); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MÁS VIDA
+// ═══════════════════════════════════════════════════════════
+// El diagnóstico fue "se ve apagado, solo se mueven los modales y la barra".
+// Tenía razón: las animaciones estaban solo en la entrada de cada paso, que
+// dura 400ms y luego deja la pantalla congelada. Lo que da sensación de vida
+// no es una animación larga, son muchas microrreacciones: al pasar el cursor,
+// al pulsar, al elegir. Eso es lo que se añade aquí.
+
+// La tarjeta entra con escala, no solo con desplazamiento.
+.wiz-card {
+  animation: entrada-card 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes entrada-card {
+  from { opacity: 0; transform: translateY(22px) scale(0.975); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+// Brillo que recorre la barra de progreso: señal de que el sistema está vivo
+// aunque el usuario lleve un rato leyendo sin tocar nada.
+.wiz-riel { position: relative; }
+
+.wiz-barra {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    transform: translateX(-100%);
+    animation: brillo 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes brillo {
+  0%        { transform: translateX(-100%); }
+  55%, 100% { transform: translateX(100%); }
+}
+
+// ─── MICRORREACCIONES ────────────────────────────────────
+// Cada control responde al cursor y al clic. Es barato y es la diferencia
+// entre "una web" y "una aplicación".
+.wiz-opcion {
+  transform: translateZ(0);
+
+  &:hover:not(.sel) { transform: translateY(-2px); }
+  &:active { transform: scale(0.99); }
+
+  // Al seleccionar, el icono da un salto corto. Confirma la elección sin
+  // necesidad de leer nada.
+  &.sel mat-icon { animation: rebote 460ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+}
+
+@keyframes rebote {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+.wiz-chip {
+  &:hover:not(.sel) { transform: translateY(-1px); }
+  &:active { transform: scale(0.96); }
+  &.sel { animation: pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+}
+
+@keyframes pop {
+  0%   { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+.wiz-btn.principal {
+  position: relative;
+  overflow: hidden;
+
+  &:active { transform: scale(0.985); }
+
+  // Destello al pasar el cursor — refuerza cuál es la acción principal.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+    transform: translateX(-120%);
+    transition: transform 620ms ease;
+  }
+
+  &:hover::after { transform: translateX(120%); }
+}
+
+.wiz-input:focus { box-shadow: 0 0 0 3px rgba(0, 200, 215, 0.10); }
+
+.wiz-dia:hover { background: rgba(0, 200, 215, 0.04); }
+
+// ─── MOVIMIENTO REDUCIDO (revisado) ──────────────────────
+// No se apaga TODO: se conservan los fundidos y se quita solo el
+// desplazamiento. Una pantalla completamente inerte se lee como rota, que es
+// peor que el problema que se quiere evitar.
+@media (prefers-reduced-motion: reduce) {
+  .wiz::before,
+  .wiz::after,
+  .wiz-icono::after,
+  .wiz-barra::after,
+  .wiz-btn.principal::after {
+    animation: none;
+    transition: none;
+  }
+
+  .wiz-card,
+  .aparece {
+    animation: fundido 260ms ease both;
+  }
+
+  .wiz-opcion:hover,
+  .wiz-chip:hover,
+  .wiz-opcion:active,
+  .wiz-chip:active,
+  .wiz-btn.principal:active {
+    transform: none;
+  }
+
+  .wiz-opcion.sel mat-icon,
+  .wiz-chip.sel {
+    animation: none;
+  }
+}
+
+@keyframes fundido {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

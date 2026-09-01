@@ -49,6 +49,38 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.32.0',
+    fecha: '2026-08-31',
+    titulo: 'Asistente con horarios por día, sonido y más vida',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'El asistente inicial ahora permite definir un horario distinto para cada día, sin tener que salir a Configuración. El caso típico —lunes a viernes igual y sábado diferente— se resuelve ahí mismo, y un resumen te confirma cómo quedó.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Nuevo paso de sonido en el asistente: activar o desactivar el beep de confirmación, ajustar su volumen y probarlo antes de decidir.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El asistente se siente mucho más vivo: la tarjeta entra con movimiento, los botones responden al pasar el cursor y al pulsarlos, la opción elegida da un pequeño salto y la barra de progreso tiene un brillo que la recorre.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Se quitó el ajuste "Velocidad de detección". Solo servía para hacer la cámara MÁS lenta que su valor por defecto, que ya es lo más rápido posible.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          '"Espera entre escaneos" y "Saltar diálogo de confirmación" se movieron al bloque de ajustes de cámara: resultó que solo afectan a la cámara. El lector físico nunca muestra el diálogo y la entrada manual siempre lo muestra.',
+      },
+    ],
+  },
+  {
     version: '3.31.0',
     fecha: '2026-08-31',
     titulo: 'Catálogo de funciones y asistente a pantalla completa',

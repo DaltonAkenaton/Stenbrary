@@ -28,6 +28,7 @@ import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
 import { ConfigService } from '../../core/services/config.service';
+import { SoundService } from '../../core/services/sound.service';
 import { RestablecerService } from '../../core/services/restablecer.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
@@ -45,10 +46,18 @@ const PASOS: Paso[] = [
   { id: 'salida',    titulo: '¿Registras también las salidas?', descripcion: 'Permite saber cuánta gente hay dentro y cuánto tiempo se queda.', icono: 'logout' },
   { id: 'aforo',     titulo: '¿Hay un límite de personas?', descripcion: 'El sistema avisa cuando se acerca al límite.', icono: 'groups' },
   { id: 'horario',   titulo: '¿En qué horario abre?', descripcion: 'Fuera de horario el sistema avisa antes de registrar.', icono: 'schedule' },
+  { id: 'sonido',    titulo: '¿Sonido al escanear?', descripcion: 'Un beep confirma el registro sin tener que mirar la pantalla.', icono: 'volume_up' },
   { id: 'quiosco',   titulo: '¿La tablet queda sola en la entrada?', descripcion: 'El modo quiosco oculta los menús para que los alumnos solo escaneen.', icono: 'tablet_android' },
-  { id: 'avisos',    titulo: 'Avisos y respaldos', descripcion: 'Cada cuánto quieres que el sistema te recuerde cosas.', icono: 'notifications' },
+  { id: 'avisos',    titulo: 'Avisos y seguimiento', descripcion: 'Alumnos que dejan de venir, y recordatorios de respaldo.', icono: 'notifications' },
   { id: 'fin',       titulo: 'Todo listo', descripcion: 'Puedes cambiar cualquiera de estos ajustes cuando quieras.', icono: 'check_circle' },
 ];
+
+/** Un día del horario, editable de forma independiente. */
+interface DiaHorario {
+  abierto: boolean;
+  apertura: string;
+  cierre: string;
+}
 
 @Component({
   selector: 'app-bienvenida',
@@ -62,6 +71,7 @@ export class BienvenidaComponent {
   private readonly toast = inject(ToastService);
   private readonly restablecer = inject(RestablecerService);
   protected readonly config = inject(ConfigService);
+  private readonly sound = inject(SoundService);
 
   protected readonly pasos = PASOS;
   protected readonly indice = signal(0);
@@ -84,9 +94,31 @@ export class BienvenidaComponent {
   protected aforoMaximo = this.config.aforoMaximo;
   protected aforoModo = this.config.aforoModo;
   protected horarioActivo = this.config.horarioActivo;
+
+  // ── Horario ───────────────────────────────────────────
+  // Dos modos porque el caso real es mixto: casi siempre L-V comparten
+  // horario y el sábado es distinto. Obligar a terminar el asistente e ir a
+  // Configuración para ese único día es justo donde se queda sin configurar.
+  protected horarioUniforme = true;
   protected apertura = '07:00';
   protected cierre = '22:00';
   protected diasAbiertos: number[] = [1, 2, 3, 4, 5];
+
+  /** Índice 0 = domingo … 6 = sábado, igual que `Date.getDay()`. */
+  protected dias: DiaHorario[] = [
+    { abierto: false, apertura: '09:00', cierre: '14:00' }, // Dom
+    { abierto: true,  apertura: '07:00', cierre: '22:00' }, // Lun
+    { abierto: true,  apertura: '07:00', cierre: '22:00' }, // Mar
+    { abierto: true,  apertura: '07:00', cierre: '22:00' }, // Mié
+    { abierto: true,  apertura: '07:00', cierre: '22:00' }, // Jue
+    { abierto: true,  apertura: '07:00', cierre: '22:00' }, // Vie
+    { abierto: true,  apertura: '09:00', cierre: '14:00' }, // Sáb
+  ];
+
+  // ── Sonido ────────────────────────────────────────────
+  protected sonidoActivo = this.sound.habilitado;
+  protected volumenPct = Math.round(this.config.volumenBeep * 100);
+
   protected modoQuiosco = false;
   protected quioscoPin = this.config.quioscoPin;
   protected umbralInactividadDias = this.config.umbralInactividadDias;
@@ -136,10 +168,61 @@ export class BienvenidaComponent {
     const i = this.diasAbiertos.indexOf(dia);
     if (i >= 0) this.diasAbiertos.splice(i, 1);
     else this.diasAbiertos.push(dia);
+    // Mantener sincronizados los dos modos: quien marque días en uniforme y
+    // luego cambie a personalizado debe encontrarse su elección, no un reset.
+    this.dias[dia].abierto = this.diasAbiertos.includes(dia);
   }
 
   protected esDiaAbierto(dia: number): boolean {
     return this.diasAbiertos.includes(dia);
+  }
+
+  protected alternarDiaCustom(dia: number): void {
+    this.dias[dia].abierto = !this.dias[dia].abierto;
+    this.diasAbiertos = this.dias
+      .map((d, i) => (d.abierto ? i : -1))
+      .filter(i => i >= 0);
+  }
+
+  /** Al pasar a uniforme, propaga las horas comunes a los días abiertos. */
+  protected setHorarioUniforme(valor: boolean): void {
+    this.horarioUniforme = valor;
+    if (valor) {
+      this.dias.forEach((d, i) => {
+        d.abierto = this.diasAbiertos.includes(i);
+        if (d.abierto) {
+          d.apertura = this.apertura;
+          d.cierre = this.cierre;
+        }
+      });
+    }
+  }
+
+  /** Resumen legible del horario, para confirmar de un vistazo. */
+  protected get resumenHorario(): string {
+    const abiertos = this.dias
+      .map((d, i) => ({ ...d, i }))
+      .filter(d => d.abierto);
+    if (abiertos.length === 0) return 'Ningún día marcado como abierto.';
+
+    const franjas = new Map<string, string[]>();
+    abiertos.forEach(d => {
+      const clave = `${d.apertura}–${d.cierre}`;
+      const lista = franjas.get(clave) ?? [];
+      lista.push(this.diasSemana[d.i].slice(0, 3));
+      franjas.set(clave, lista);
+    });
+
+    return [...franjas.entries()]
+      .map(([horas, dias]) => `${dias.join(', ')}: ${horas}`)
+      .join(' · ');
+  }
+
+  /** Reproduce el beep para que se oiga antes de decidir. */
+  protected probarSonido(): void {
+    this.config.setVolumenBeep(this.volumenPct / 100);
+    this.sound.habilitado = true;
+    this.sound.beepScan();
   }
 
   // ── Persistencia ──────────────────────────────────────
@@ -170,14 +253,22 @@ export class BienvenidaComponent {
         this.config.setHorarioActivo(this.horarioActivo);
         if (this.horarioActivo) {
           for (let dia = 0; dia < 7; dia++) {
-            const abierto = this.diasAbiertos.includes(dia);
+            // En modo uniforme se aplican las horas comunes; en personalizado,
+            // las de cada día. `dias[]` es la fuente de verdad en ambos casos
+            // porque `alternarDia` la mantiene sincronizada.
+            const d = this.dias[dia];
             this.config.setHorarioDia(dia, {
-              cerrado: !abierto,
-              apertura: this.apertura,
-              cierre: this.cierre,
+              cerrado: !d.abierto,
+              apertura: this.horarioUniforme ? this.apertura : d.apertura,
+              cierre: this.horarioUniforme ? this.cierre : d.cierre,
             });
           }
         }
+        break;
+
+      case 'sonido':
+        this.sound.habilitado = this.sonidoActivo;
+        this.config.setVolumenBeep(this.sonidoActivo ? this.volumenPct / 100 : 0);
         break;
 
       case 'quiosco':

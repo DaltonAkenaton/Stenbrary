@@ -52,47 +52,33 @@
     <h2>Comportamiento del escáner</h2>
   </div>
   <p class="section-desc">
-    Ajusta cómo responde el escáner al detectar credenciales: velocidad, tiempo entre
-    escaneos, y si quieres saltar el diálogo de confirmación.
+    El lector físico no necesita ajustes: escanea y registra. Lo de abajo
+    solo aplica cuando se usa la cámara como respaldo.
   </p>
 
-  <!-- Velocidad de detección -->
-  <div style="margin-top: 6px;">
-    <strong style="font-size: .9rem; color:#E8F4F8;">Velocidad de detección</strong>
-    <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
-      Por defecto está en <strong style="color:#E8F4F8">instantáneo</strong> — el escáner
-      intenta detectar la credencial en cada frame de la cámara (lo más rápido posible).
-      Solo súbelo si necesitas ahorrar batería en tablets.
+  <!-- Los tres ajustes que vivían aquí resultaron ser TODOS de la cámara:
+       - Velocidad de detección: solo estrangulaba el bucle de la cámara. Con
+         el default (0 = lo más rápido posible) el único efecto que permitía
+         era hacerla MÁS LENTA, que no es algo que nadie quiera. Eliminada.
+       - Espera entre escaneos: pausa antes de REABRIR la cámara tras cancelar
+         el diálogo, para dar tiempo a retirar la credencial del encuadre.
+       - Saltar confirmación: desde v3.27 el lector físico nunca muestra el
+         diálogo y la entrada manual siempre lo muestra, así que este ajuste
+         solo afecta a la cámara.
+       Los dos que sobreviven pasan al bloque de respaldo, con el resto de lo
+       que únicamente aplica cuando no hay lector. -->
+
+  <details class="camara-respaldo">
+    <summary>
+      <mat-icon>photo_camera</mat-icon>
+      <span class="cr-titulo">Ajustes de cámara</span>
+      <span class="cr-etiqueta">solo respaldo</span>
+    </summary>
+
+    <p class="cr-nota">
+      La cámara solo se usa cuando no hay lector a la mano. Normalmente no
+      hace falta tocar nada de aquí.
     </p>
-    <div class="auto-close-options">
-      @for (op of opcionesEscanerVelocidad; track op.valor) {
-        <button class="auto-close-btn"
-                [class.active]="configService.escanerVelocidadMs === op.valor"
-                (click)="onSetEscanerVelocidad(op.valor, op.etiqueta)">
-          {{ op.etiqueta }}
-        </button>
-      }
-    </div>
-    <div class="aforo-input-row" style="margin-top: 12px;">
-      <label for="velMsInput">Personalizado (ms)</label>
-      <div class="aforo-stepper" style="max-width: 220px;">
-        <button type="button" class="stepper-btn"
-                (click)="onChangeEscanerVelocidad(configService.escanerVelocidadMs - 10)"
-                matTooltip="Disminuir 10 ms">
-          <mat-icon>remove</mat-icon>
-        </button>
-        <input id="velMsInput" type="number" min="0" step="10"
-               class="aforo-number-input"
-               [ngModel]="configService.escanerVelocidadMs"
-               (ngModelChange)="onChangeEscanerVelocidad($event)">
-        <button type="button" class="stepper-btn"
-                (click)="onChangeEscanerVelocidad(configService.escanerVelocidadMs + 10)"
-                matTooltip="Aumentar 10 ms">
-          <mat-icon>add</mat-icon>
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- Cooldown post-detección -->
   <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
@@ -159,18 +145,6 @@
        justo lo que lo arregla — borrarlos quitaría la recuperación del
        único escenario para el que la cámara existe.
   ══════════════════════════════════════════════════════ -->
-  <details class="camara-respaldo">
-    <summary>
-      <mat-icon>photo_camera</mat-icon>
-      <span class="cr-titulo">Ajustes de cámara</span>
-      <span class="cr-etiqueta">solo respaldo</span>
-    </summary>
-
-    <p class="cr-nota">
-      La cámara solo se usa cuando no hay lector a la mano. Normalmente no
-      hace falta tocar nada de aquí.
-    </p>
-
   <!-- Preferencia de cámara -->
   <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
     <strong style="font-size: .9rem; color:#E8F4F8;">Cámara preferida</strong>
