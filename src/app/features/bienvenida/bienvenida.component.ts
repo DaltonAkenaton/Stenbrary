@@ -26,12 +26,17 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { ConfigService } from '../../core/services/config.service';
 import { SoundService } from '../../core/services/sound.service';
 import { RestablecerService } from '../../core/services/restablecer.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 interface Paso {
   id: string;
@@ -62,7 +67,7 @@ interface DiaHorario {
 @Component({
   selector: 'app-bienvenida',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatIconModule, MatDialogModule],
   templateUrl: './bienvenida.component.html',
   styleUrl: './bienvenida.component.scss',
 })
@@ -72,6 +77,7 @@ export class BienvenidaComponent implements OnDestroy {
   private readonly restablecer = inject(RestablecerService);
   protected readonly config = inject(ConfigService);
   private readonly sound = inject(SoundService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly pasos = PASOS;
   protected readonly indice = signal(0);
@@ -236,11 +242,34 @@ export class BienvenidaComponent implements OnDestroy {
     this.moverA(-1);
   }
 
-  /** Saltar el asistente entero: los defaults ya son utilizables. */
-  protected saltarTodo(): void {
+  /**
+   * Saltar el asistente entero.
+   *
+   * Pide confirmación porque el enlace está justo debajo del botón de
+   * continuar: se pulsa sin querer, y el efecto es salir del asistente y
+   * perder lo configurado hasta ahí. Un descuido no debería costar tanto.
+   */
+  protected async saltarTodo(): Promise<void> {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '420px',
+      data: {
+        titulo: '¿Saltar la configuración?',
+        mensaje:
+          'El sistema quedará con los valores por defecto, que ya son ' +
+          'utilizables. Puedes ajustarlo todo después desde Configuración, ' +
+          'o volver a abrir este asistente cuando quieras.',
+        variante: 'warning',
+        textoConfirmar: 'Saltar',
+        textoCancelar: 'Seguir configurando',
+        icono: 'skip_next',
+      } as ConfirmDialogData,
+    });
+
+    if (!(await ref.afterClosed().toPromise())) return;
+
     this.restablecer.marcarSetupCompletado();
     this.toast.info('Puedes configurar todo desde Configuración cuando quieras.');
-    this.router.navigate(['/scanner']);
+    void this.router.navigate(['/scanner']);
   }
 
   protected alternarDia(dia: number): void {
@@ -356,7 +385,15 @@ export class BienvenidaComponent implements OnDestroy {
         if (/^\d{4,8}$/.test(this.quioscoPin)) {
           this.config.setQuioscoPin(this.quioscoPin);
         }
-        this.config.setModoQuiosco(this.modoQuiosco);
+        // El modo quiosco NO se aplica aquí, solo se recuerda la elección.
+        //
+        // `setModoQuiosco(true)` activa un effect en AppComponent que saca de
+        // cualquier ruta que no sea del flujo operativo — así que elegir "la
+        // tablet queda sola" expulsaba del asistente a media configuración.
+        //
+        // Aplicarlo al final tiene además otra ventaja: si alguien abandona
+        // el asistente a la mitad, no se queda encerrado en modo quiosco con
+        // un PIN que acaba de inventar y quizá no memorizó.
         break;
 
       case 'avisos':
@@ -383,6 +420,9 @@ export class BienvenidaComponent implements OnDestroy {
 
   private finalizar(): void {
     this.restablecer.marcarSetupCompletado();
+    // Ahora sí: el modo quiosco se activa cuando ya no queda nada que
+    // configurar, justo antes de entrar al sistema.
+    this.config.setModoQuiosco(this.modoQuiosco);
     this.arrancando.set(true);
     this.programar(() => {
       this.toast.success('Todo listo. ¡A trabajar!');

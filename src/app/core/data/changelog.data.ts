@@ -49,6 +49,28 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.35.2',
+    fecha: '2026-08-31',
+    titulo: 'Correcciones del asistente',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Elegir "la tablet queda sola" en el paso del modo quiosco cerraba el asistente de golpe y saltaba a la pantalla principal, dejando la configuración a medias. Ahora el modo quiosco se activa al terminar, no en pleno paso.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          '"Saltar y usar los valores por defecto" ahora pide confirmación. Está justo debajo del botón de continuar y era fácil pulsarlo sin querer, perdiendo todo lo configurado.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El asistente ya no tiene barra de desplazamiento. Cuando un paso es largo —como definir el horario día por día— lo que se desplaza es el contenido dentro de la tarjeta, y los botones de navegación quedan siempre a la vista.',
+      },
+    ],
+  },
+  {
     version: '3.35.1',
     fecha: '2026-08-31',
     titulo: 'Retroceder ahora se siente como retroceder',

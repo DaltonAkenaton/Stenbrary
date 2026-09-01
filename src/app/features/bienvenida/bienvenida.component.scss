@@ -24,16 +24,17 @@
   align-items: center;
   justify-content: center;
   gap: $spacing-lg;
-  padding: $spacing-xl $spacing-md;
+  padding: $spacing-lg $spacing-md;
   width: 100%;
-  min-height: 100%;
-  // `overflow: hidden` en ambos ejes dejaba el botón "Siguiente" inalcanzable
-  // cuando el contenido de un paso superaba el alto de la pantalla — en el
-  // paso de horarios personalizados, con siete días desplegados, pasa en
-  // cualquier portátil. En horizontal sí hay que recortar: las formas del
-  // fondo están diseñadas para salirse.
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 100%;
+  // Sin scroll de página, a propósito: es una pantalla de bienvenida, no un
+  // documento. Lo que se desplaza —cuando hace falta— es el cuerpo de la
+  // tarjeta, de modo que la navegación nunca se sale de vista.
+  //
+  // Antes se probó `overflow-y: auto` aquí para arreglar que el botón
+  // quedara inalcanzable en el paso de horarios día por día. Funcionaba,
+  // pero a costa de una barra de scroll que no pinta nada en una portada.
+  overflow: hidden;
 }
 
 // Dos halos lentos y desfasados. Se mueven lo justo para que la pantalla
@@ -202,12 +203,35 @@
   max-width: 46ch;
 }
 
+// El cuerpo es lo único que se desplaza, y solo si no cabe. Así el icono, el
+// título y los botones de navegación permanecen siempre visibles: en el paso
+// de horarios día por día, con siete días desplegados, el contenido supera la
+// pantalla en cualquier portátil.
 .wiz-cuerpo {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
   margin-top: $spacing-sm;
+  flex: 1 1 auto;
+  min-height: 0;          // sin esto, un hijo flex nunca encoge por debajo de su contenido
+  overflow-y: auto;
+  overflow-x: hidden;
+  // Aire para que la barra no se pegue al texto ni tape el borde del foco.
+  padding-right: 4px;
+  margin-right: -4px;
+
+  // Barra discreta: presente cuando hace falta, invisible cuando no.
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 200, 215, 0.28) transparent;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 200, 215, 0.22);
+    border-radius: 999px;
+  }
+  &::-webkit-scrollbar-thumb:hover { background: rgba(0, 200, 215, 0.4); }
 }
 
 .wiz-parrafo {
@@ -1102,7 +1126,15 @@
   padding-left: $spacing-lg + 14px;
   transform-style: preserve-3d;
   animation: none;
+  // Tope de altura para que la página nunca empuje la pantalla. El resto lo
+  // absorbe el scroll interno de `.wiz-cuerpo`. El descuento cubre la barra
+  // de progreso, los puntos y el padding del escenario.
+  max-height: calc(100vh - 150px);
+  overflow: hidden;
 }
+
+// El propio libro tampoco debe desbordar.
+.wiz-libro { max-height: calc(100vh - 150px); }
 
 // ─── HOJAS DE DEBAJO ─────────────────────────────────────
 // Asoman por la derecha y por abajo: las páginas que faltan por leer.

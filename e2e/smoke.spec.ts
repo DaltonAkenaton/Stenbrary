@@ -62,15 +62,53 @@ test.describe('Asistente de configuración inicial', () => {
     await expect(page.getByText(/Bienvenido a Stenbrary/i)).toBeVisible();
   });
 
+  test('saltar pide confirmación antes de salir', async ({ page }) => {
+    // El enlace de saltar está justo debajo del botón de continuar y se pulsa
+    // sin querer. Un descuido no debe costar toda la configuración.
+    await page.goto('/bienvenida');
+    await page.getByText(/Saltar y usar los valores por defecto/i).click();
+
+    await expect(page.getByText(/¿Saltar la configuración\?/)).toBeVisible();
+
+    // Arrepentirse deja el asistente donde estaba.
+    await page.getByRole('button', { name: /Seguir configurando/ }).click();
+    await expect(page).toHaveURL(/\/bienvenida$/);
+    await expect(page.getByText(/Bienvenido a Stenbrary/i)).toBeVisible();
+  });
+
   test('se puede saltar y deja de aparecer', async ({ page }) => {
     // El asistente no puede volverse una trampa: quien lo salta debe poder
     // usar el sistema y no encontrárselo otra vez en cada recarga.
     await page.goto('/bienvenida');
     await page.getByText(/Saltar y usar los valores por defecto/i).click();
+    await page.getByRole('button', { name: /^Saltar$/ }).click();
     await expect(page).toHaveURL(/\/scanner$/);
 
     await page.goto('/');
     await expect(page).toHaveURL(/\/scanner$/);
+  });
+
+  test('elegir modo quiosco NO expulsa del asistente', async ({ page }) => {
+    // Regresión: `setModoQuiosco(true)` dispara un effect en AppComponent que
+    // saca de cualquier ruta ajena al flujo operativo. Al guardarlo en pleno
+    // paso 7, el asistente se cerraba solo y saltaba al scanner.
+    await page.goto('/bienvenida');
+
+    // Avanzar hasta el paso del quiosco.
+    for (let i = 0; i < 6; i++) {
+      await page.getByRole('button', { name: /Siguiente/ }).click();
+      await page.waitForTimeout(500);
+    }
+    const opcionQuiosco = page.getByRole('button', { name: /La tablet queda sola/ });
+    await expect(opcionQuiosco).toBeVisible();
+
+    await opcionQuiosco.click();
+    await page.getByRole('button', { name: /Siguiente/ }).click();
+    await page.waitForTimeout(600);
+
+    // Sigue dentro del asistente, en el paso siguiente.
+    await expect(page).toHaveURL(/\/bienvenida$/);
+    await expect(page.getByText(/Avisos y seguimiento/i)).toBeVisible();
   });
 
   test('quien ya tiene datos NO ve el asistente', async ({ page }) => {
