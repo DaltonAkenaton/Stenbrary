@@ -321,3 +321,31 @@ test('las pantallas de presentación no se desbordan en móvil', async ({ page }
   }
   expect(fallos, `Desbordamiento:\n  - ${fallos.join('\n  - ')}`).toEqual([]);
 });
+
+test('el recorrido guiado de /funciones avanza y no se desborda', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.addInitScript(() => {
+    localStorage.setItem('stenbrary-setup-completado', '1');
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/funciones');
+  await page.getByRole('button', { name: /Modo presentación/ }).click();
+
+  // Primera diapositiva visible y con su ilustración.
+  await expect(page.locator('.tour-titulo')).toBeVisible();
+  await expect(page.locator('.demo')).toBeVisible();
+  const primero = await page.locator('.tour-titulo').innerText();
+
+  // Avanzar con la flecha del teclado — así se presenta, sin ratón.
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(600);
+  expect(await page.locator('.tour-titulo').innerText()).not.toBe(primero);
+
+  // Y volver.
+  await page.keyboard.press('ArrowLeft');
+  await page.waitForTimeout(600);
+  expect(await page.locator('.tour-titulo').innerText()).toBe(primero);
+
+  const { exceso, culpables } = await medirOverflow(page, 390);
+  expect(exceso, `Desborde: ${culpables.join(', ')}`).toBeLessThanOrEqual(TOLERANCIA_PX);
+});

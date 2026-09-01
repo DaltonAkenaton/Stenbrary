@@ -420,14 +420,25 @@ export class BienvenidaComponent implements OnDestroy {
 
   private finalizar(): void {
     this.restablecer.marcarSetupCompletado();
-    // Ahora sí: el modo quiosco se activa cuando ya no queda nada que
-    // configurar, justo antes de entrar al sistema.
-    this.config.setModoQuiosco(this.modoQuiosco);
     this.arrancando.set(true);
-    this.programar(() => {
-      this.toast.success('Todo listo. ¡A trabajar!');
-      void this.router.navigate(['/scanner']);
-    }, BienvenidaComponent.MS_ARRANQUE);
+    this.programar(() => this.entrarAlSistema(), BienvenidaComponent.MS_ARRANQUE);
+  }
+
+  /**
+   * Último paso: aplicar el modo quiosco y navegar.
+   *
+   * El quiosco se activa AQUÍ y no antes de la animación. `setModoQuiosco(true)`
+   * dispara un effect en AppComponent que redirige al scanner de inmediato, así
+   * que activarlo al empezar la secuencia se comía el arranque entero: quien
+   * elegía "la tablet queda sola" nunca llegaba a verlo.
+   *
+   * Es la segunda vez que este effect muerde. La regla queda clara: el modo
+   * quiosco es lo ÚLTIMO que se toca, cuando ya no queda nada que mostrar.
+   */
+  private entrarAlSistema(): void {
+    this.config.setModoQuiosco(this.modoQuiosco);
+    this.toast.success('Todo listo. ¡A trabajar!');
+    void this.router.navigate(['/scanner']);
   }
 
   /** Permite saltarse el arranque con un clic o una tecla. */
@@ -435,7 +446,7 @@ export class BienvenidaComponent implements OnDestroy {
     if (!this.arrancando()) return;
     this.timers.forEach(t => clearTimeout(t));
     this.timers = [];
-    void this.router.navigate(['/scanner']);
+    this.entrarAlSistema();
   }
 
   /** Validación mínima del PIN, mostrada en vivo. */

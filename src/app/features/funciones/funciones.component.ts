@@ -14,7 +14,7 @@
 // ║    personal nuevo consulte qué existe y dónde está.   ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -90,11 +90,62 @@ export class FuncionesComponent {
     this.areaActiva.set('todas');
   }
 
+  // ─── Recorrido guiado ───────────────────────────────────
+  // El "modo presentación" anterior seguía siendo una rejilla de 13 tarjetas:
+  // eso no es presentar, es pedirle a alguien que lea. Aquí va una función
+  // por pantalla, con su ilustración animada, y se avanza como en una
+  // presentación de diapositivas.
+  protected readonly slide = signal(0);
+  protected readonly totalSlides = this.destacadas.length;
+
+  protected readonly funcionActual = computed(() => this.destacadas[this.slide()]);
+  protected readonly enPrimera = computed(() => this.slide() === 0);
+  protected readonly enUltima = computed(() => this.slide() === this.totalSlides - 1);
+
+  /** Dirección, para que la diapositiva entre por el lado del que viene. */
+  protected readonly retrocediendo = signal(false);
+  protected readonly animarSlide = signal(true);
+
+  private mover(delta: number): void {
+    const destino = this.slide() + delta;
+    if (destino < 0 || destino >= this.totalSlides) return;
+    this.retrocediendo.set(delta < 0);
+    this.slide.set(destino);
+    // Reiniciar la animación: la clase ya está puesta y CSS solo dispara al
+    // añadirla, así que hay que quitarla y reponerla en el siguiente frame.
+    this.animarSlide.set(false);
+    requestAnimationFrame(() => this.animarSlide.set(true));
+  }
+
+  protected siguienteSlide(): void { this.mover(1); }
+  protected anteriorSlide(): void { this.mover(-1); }
+  protected irASlide(i: number): void { this.mover(i - this.slide()); }
+
+  /**
+   * Flechas del teclado.
+   *
+   * Quien presenta necesita avanzar sin apuntar con el ratón — y muchos
+   * mandos de presentación envían exactamente estas teclas.
+   */
+  @HostListener('window:keydown', ['$event'])
+  protected onTecla(e: KeyboardEvent): void {
+    if (!this.modoPresentacion()) return;
+    const objetivo = e.target as HTMLElement | null;
+    if (objetivo && ['INPUT', 'TEXTAREA', 'SELECT'].includes(objetivo.tagName)) return;
+
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); this.siguienteSlide(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   { e.preventDefault(); this.anteriorSlide(); }
+    if (e.key === 'Escape') this.alternarPresentacion();
+  }
+
   protected alternarPresentacion(): void {
     this.modoPresentacion.update(v => !v);
     // Los filtros no aplican en presentación; limpiarlos evita volver del
     // modo con un estado que el usuario no recuerda haber puesto.
-    if (this.modoPresentacion()) this.limpiarBusqueda();
+    if (this.modoPresentacion()) {
+      this.limpiarBusqueda();
+      this.slide.set(0);
+    }
   }
 
   protected abrir(f: Funcion): void {

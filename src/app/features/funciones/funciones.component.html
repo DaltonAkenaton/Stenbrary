@@ -24,28 +24,120 @@
 
   @if (modoPresentacion()) {
 
-    <!-- ══════════ MODO PRESENTACIÓN ══════════ -->
-    <!-- Solo lo destacado y en grande: enseñar 38 funciones de golpe no
-         convence a nadie, abruma. -->
-    <p class="fx-intro">
-      Lo esencial, en {{ destacadas.length }} puntos.
-    </p>
+    <!-- ══════════ RECORRIDO GUIADO ══════════
+         Una función por pantalla con su ilustración animada. La versión
+         anterior de este modo era una rejilla de 13 tarjetas: eso no es
+         presentar, es pedirle a alguien que lea. Se avanza con los botones,
+         con las flechas del teclado o con un mando de presentación. -->
+    <section class="tour" [class.atras]="retrocediendo()">
 
-    <div class="fx-destacadas">
-      @for (f of destacadas; track f.titulo) {
-        <article class="fx-tarjeta grande" [class.clicable]="!!f.ruta"
-                 (click)="abrir(f)">
-          <div class="fx-icono grande">
-            <mat-icon>{{ f.icono }}</mat-icon>
+      <div class="tour-escena" [class.anim]="animarSlide()">
+
+        @if (funcionActual(); as f) {
+          <!-- ── Ilustración ── -->
+          <!-- Motivos abstractos y no capturas: una captura envejece en cuanto
+               cambia la interfaz. Esto comunica la idea y no caduca. -->
+          <div class="demo" [attr.data-demo]="f.demo" aria-hidden="true">
+            @switch (f.demo) {
+              @case ('escaneo') {
+                <span class="d-lector"><mat-icon>barcode_reader</mat-icon></span>
+                <span class="d-credencial"></span>
+                <span class="d-check"><mat-icon>check</mat-icon></span>
+              }
+              @case ('salida') {
+                <span class="d-puerta entra"><mat-icon>login</mat-icon></span>
+                <span class="d-reloj"><mat-icon>schedule</mat-icon></span>
+                <span class="d-puerta sale"><mat-icon>logout</mat-icon></span>
+              }
+              @case ('aforo') {
+                <div class="d-medidor"><span class="d-nivel"></span></div>
+                <span class="d-gente"><mat-icon>groups</mat-icon></span>
+              }
+              @case ('grafica') {
+                <div class="d-barras">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+              }
+              @case ('alerta') {
+                <span class="d-campana"><mat-icon>notifications_active</mat-icon></span>
+                <span class="d-onda"></span>
+                <span class="d-onda tarde"></span>
+              }
+              @case ('nube') {
+                <span class="d-nube"><mat-icon>cloud</mat-icon></span>
+                <span class="d-flecha sube"><mat-icon>arrow_upward</mat-icon></span>
+                <span class="d-flecha baja"><mat-icon>arrow_downward</mat-icon></span>
+                <span class="d-equipo"><mat-icon>computer</mat-icon></span>
+              }
+              @case ('archivo') {
+                <span class="d-hoja h-a"></span>
+                <span class="d-hoja h-b"></span>
+                <span class="d-hoja h-c"></span>
+                <span class="d-doc"><mat-icon>description</mat-icon></span>
+              }
+              @case ('offline') {
+                <span class="d-sinred"><mat-icon>wifi_off</mat-icon></span>
+                <span class="d-engrane"><mat-icon>settings</mat-icon></span>
+                <span class="d-ok"><mat-icon>check_circle</mat-icon></span>
+              }
+              @case ('tablet') {
+                <span class="d-tablet"><mat-icon>tablet_android</mat-icon></span>
+                <span class="d-candado"><mat-icon>lock</mat-icon></span>
+              }
+              @case ('roles') {
+                <span class="d-persona p1"><mat-icon>shield_person</mat-icon></span>
+                <span class="d-persona p2"><mat-icon>person</mat-icon></span>
+                <span class="d-persona p3"><mat-icon>school</mat-icon></span>
+              }
+              @default {
+                <span class="d-generico"><mat-icon>{{ f.icono }}</mat-icon></span>
+              }
+            }
           </div>
-          <h2>{{ f.titulo }}</h2>
-          <p>{{ f.descripcion }}</p>
-          <span class="fx-donde">
-            <mat-icon>place</mat-icon>{{ f.donde }}
-          </span>
-        </article>
-      }
-    </div>
+
+          <!-- ── Texto ── -->
+          <div class="tour-texto">
+            <span class="tour-area">{{ f.donde }}</span>
+            <h2 class="tour-titulo">{{ f.titulo }}</h2>
+            <p class="tour-desc">{{ f.descripcion }}</p>
+
+            @if (f.ruta) {
+              <button class="tour-ir" (click)="abrir(f)">
+                <mat-icon>arrow_forward</mat-icon>
+                Verlo funcionando
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ── Navegación ── -->
+      <div class="tour-nav">
+        <button class="tour-flecha" (click)="anteriorSlide()"
+                [disabled]="enPrimera()" aria-label="Anterior">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+
+        <div class="tour-puntos">
+          @for (f of destacadas; track f.titulo; let i = $index) {
+            <button class="tour-punto"
+                    [class.actual]="i === slide()"
+                    [class.visto]="i < slide()"
+                    (click)="irASlide(i)"
+                    [attr.aria-label]="'Ir a ' + f.titulo"></button>
+          }
+        </div>
+
+        <button class="tour-flecha" (click)="siguienteSlide()"
+                [disabled]="enUltima()" aria-label="Siguiente">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <p class="tour-pie">
+        {{ slide() + 1 }} de {{ totalSlides }} · usa las flechas del teclado
+      </p>
+    </section>
 
   } @else {
 

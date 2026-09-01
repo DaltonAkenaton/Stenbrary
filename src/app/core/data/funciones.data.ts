@@ -23,6 +23,19 @@
 
 export type AreaFuncion = 'operacion' | 'consulta' | 'administracion' | 'datos' | 'tecnico';
 
+/** Motivos disponibles para el recorrido guiado. Ver funciones.component.scss. */
+export type DemoVisual =
+  | 'escaneo'    // credencial pasando por el lector
+  | 'salida'     // entrada y salida con tiempo
+  | 'aforo'      // medidor llenándose
+  | 'grafica'    // barras creciendo
+  | 'alerta'     // señal que pulsa
+  | 'nube'       // subida y bajada
+  | 'archivo'    // documento que sale
+  | 'offline'    // sin red, todo sigue
+  | 'tablet'     // pantalla sola en la entrada
+  | 'roles';     // personas con distintos permisos
+
 export interface Funcion {
   titulo: string;
   /** Una o dos frases, en lenguaje del usuario final. */
@@ -34,6 +47,15 @@ export interface Funcion {
   ruta?: string;
   /** Se resalta en la presentación al coordinador. */
   destacada?: boolean;
+  /**
+   * Motivo visual del recorrido guiado.
+   *
+   * Son ilustraciones abstractas animadas, no capturas de pantalla: una
+   * captura queda desactualizada en cuanto cambia la interfaz, y con este
+   * sistema cambiando cada semana acabaría mintiendo. Un motivo abstracto
+   * comunica la IDEA y no envejece.
+   */
+  demo?: DemoVisual;
 }
 
 export interface GrupoFunciones {
@@ -87,6 +109,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Pantalla principal',
     ruta: '/scanner',
     destacada: true,
+    demo: 'escaneo',
   },
   {
     titulo: 'Entrada manual',
@@ -122,6 +145,7 @@ export const FUNCIONES: Funcion[] = [
     area: 'operacion',
     donde: 'Pantalla principal',
     destacada: true,
+    demo: 'salida',
   },
   {
     titulo: 'Control de aforo en vivo',
@@ -132,6 +156,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Pantalla principal y En Biblioteca',
     ruta: '/presencia',
     destacada: true,
+    demo: 'aforo',
   },
   {
     titulo: 'Acceso de visitantes',
@@ -166,6 +191,7 @@ export const FUNCIONES: Funcion[] = [
     area: 'operacion',
     donde: 'Configuración → Quiosco',
     destacada: true,
+    demo: 'tablet',
   },
 
   // ─────────────── CONSULTA ───────────────
@@ -178,6 +204,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Resumen',
     ruta: '/dashboard',
     destacada: true,
+    demo: 'grafica',
   },
   {
     titulo: 'Estadísticas avanzadas',
@@ -188,6 +215,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Estadísticas',
     ruta: '/estadisticas',
     destacada: true,
+    demo: 'grafica',
   },
   {
     titulo: 'Comparar dos períodos',
@@ -216,6 +244,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Inactivos',
     ruta: '/inactivos',
     destacada: true,
+    demo: 'alerta',
   },
   {
     titulo: 'Historial por alumno',
@@ -263,6 +292,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Usuarios',
     ruta: '/usuarios',
     destacada: true,
+    demo: 'roles',
   },
   {
     titulo: 'Asistente de configuración',
@@ -273,6 +303,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Al instalar, o tras restablecer',
     ruta: '/bienvenida',
     destacada: true,
+    demo: 'archivo',
   },
   {
     titulo: 'Configuración detallada',
@@ -311,6 +342,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Importar Alumnos',
     ruta: '/importar-alumnos',
     destacada: true,
+    demo: 'archivo',
   },
   {
     titulo: 'Exportar a Excel y PDF',
@@ -320,6 +352,7 @@ export const FUNCIONES: Funcion[] = [
     area: 'datos',
     donde: 'Registros, Alumnos y Estadísticas',
     destacada: true,
+    demo: 'archivo',
   },
   {
     titulo: 'Respaldo y restauración',
@@ -354,6 +387,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Sincronización y Bajar de la nube',
     ruta: '/sincronizacion',
     destacada: true,
+    demo: 'nube',
   },
   {
     titulo: 'Datos de prueba',
@@ -373,6 +407,7 @@ export const FUNCIONES: Funcion[] = [
     area: 'tecnico',
     donde: 'Siempre activo',
     destacada: true,
+    demo: 'offline',
   },
   {
     titulo: 'Se instala como aplicación',

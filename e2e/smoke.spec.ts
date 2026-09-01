@@ -155,6 +155,23 @@ test('al terminar el asistente se ve el arranque y se entra al sistema', async (
   await expect(page).toHaveURL(/\/scanner$/, { timeout: 8000 });
 });
 
+test('con modo quiosco elegido, el arranque SIGUE viéndose', async ({ page }) => {
+  test.setTimeout(60_000);
+  // Regresión: activar el quiosco antes de la animación disparaba el effect
+  // de AppComponent y redirigía al scanner al instante, comiéndose el
+  // arranque entero. Solo fallaba si se elegía esa opción.
+  await page.goto('/bienvenida');
+
+  for (let i = 0; i < 6; i++) {
+    await page.getByRole('button', { name: /Siguiente/ }).click();
+    await page.waitForTimeout(500);
+  }
+  await page.getByRole('button', { name: /La tablet queda sola/ }).click();
+
+  await terminarAsistente(page);
+  await expect(page.locator('.arranque')).toBeVisible();
+});
+
 test('el arranque se puede saltar con un clic', async ({ page }) => {
   // Nadie debe quedar atrapado mirando una animación.
   await page.addInitScript(() => {

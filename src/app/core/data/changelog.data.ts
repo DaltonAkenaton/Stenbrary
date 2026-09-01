@@ -49,6 +49,30 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.36.0',
+    fecha: '2026-08-31',
+    titulo: 'Recorrido guiado en "Qué puede hacer"',
+    destacado: true,
+    resumen: 'El modo presentación deja de ser una rejilla de tarjetas y pasa a ser un recorrido: una función por pantalla, con una ilustración animada de lo que hace y avance con las flechas del teclado.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Recorrido guiado: las 13 funciones principales se presentan una por pantalla, cada una con una ilustración animada que muestra la idea — la credencial pasando por el lector, el medidor de aforo llenándose, los datos subiendo y bajando de la nube.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Se avanza con los botones, con las flechas del teclado o con un mando de presentación. Los puntos de abajo permiten saltar a cualquier función.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Si habías elegido el modo quiosco, al pulsar "Empezar a usar Stenbrary" el sistema saltaba directo a la pantalla principal sin mostrar la animación final.',
+      },
+    ],
+  },
+  {
     version: '3.35.2',
     fecha: '2026-08-31',
     titulo: 'Correcciones del asistente',

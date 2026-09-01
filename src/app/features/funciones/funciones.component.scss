@@ -296,37 +296,9 @@
   mat-icon { font-size: 14px; width: 14px; height: 14px; }
 }
 
-// ─── MODO PRESENTACIÓN ───────────────────────────────────
-// Menos tarjetas, más grandes y con más aire: se mira desde lejos y en
-// compañía, no de cerca y a solas.
-.fx-destacadas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: $spacing-lg;
-}
+// Los estilos de la antigua rejilla de destacadas vivían aquí. Se retiraron
+// al sustituirla por el recorrido guiado — ver "RECORRIDO GUIADO" al final.
 
-.fx-tarjeta.grande {
-  align-items: flex-start;
-  gap: $spacing-md;
-  padding: $spacing-lg;
-  background-image: linear-gradient(160deg, rgba(0, 200, 215, 0.04) 0%, transparent 62%);
-
-  h2 {
-    margin: 0;
-    font-family: $font-display;
-    font-size: 19px;
-    font-weight: 700;
-    color: $text-primary;
-    letter-spacing: -0.3px;
-  }
-
-  p {
-    font-size: 14px;
-    line-height: 1.65;
-  }
-}
-
-.presentando .fx-header-texto h1 { font-size: 30px; }
 
 // ─── VACÍO ───────────────────────────────────────────────
 .fx-vacio {
@@ -345,10 +317,446 @@
   .fx { padding: $spacing-md $spacing-sm $spacing-xxl; }
   .fx-header-texto h1 { font-size: 21px; }
   .fx-modo { width: 100%; justify-content: center; }
-  .fx-grid,
-  .fx-destacadas { grid-template-columns: 1fr; }
+  .fx-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .fx-tarjeta.clicable:hover { transform: none; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECORRIDO GUIADO
+// ═══════════════════════════════════════════════════════════
+// Sustituye a la rejilla de tarjetas destacadas. Trece tarjetas puestas a la
+// vez son un muro de texto: quien las mira decide no leerlas y se pierde el
+// mensaje. Una función por pantalla, con ilustración, se sostiene sola.
+
+.tour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-lg;
+  padding: $spacing-lg 0;
+}
+
+.tour-escena {
+  display: grid;
+  grid-template-columns: minmax(200px, 320px) minmax(0, 1fr);
+  align-items: center;
+  gap: $spacing-xxl;
+  width: 100%;
+  min-height: 300px;
+}
+
+// Entra por el lado del que viene: da sentido de recorrido, igual que en el
+// asistente. Al retroceder, la dirección se invierte.
+.tour-escena.anim > * {
+  animation: tour-entra 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.tour-escena.anim > *:nth-child(2) { animation-delay: 90ms; }
+
+.tour.atras .tour-escena.anim > * { animation-name: tour-entra-atras; }
+
+@keyframes tour-entra {
+  from { opacity: 0; transform: translateX(42px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tour-entra-atras {
+  from { opacity: 0; transform: translateX(-42px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+// ─── TEXTO ───────────────────────────────────────────────
+.tour-texto {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  max-width: 54ch;
+}
+
+.tour-area {
+  font-family: $font-mono;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: $cyan-400;
+}
+
+.tour-titulo {
+  margin: 0;
+  font-family: $font-display;
+  font-size: clamp(24px, 3.4vw, 36px);
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+}
+
+.tour-desc {
+  margin: 0;
+  font-size: clamp(15px, 1.5vw, 18px);
+  line-height: 1.65;
+  color: $text-secondary;
+}
+
+.tour-ir {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 11px 18px;
+  background: rgba(0, 200, 215, 0.08);
+  border: 1px solid $border-glow;
+  border-radius: $border-radius-md;
+  color: $cyan-300;
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+  &:hover { background: rgba(0, 200, 215, 0.16); transform: translateY(-1px); }
+  &:active { transform: scale(0.98); }
+}
+
+// ─── NAVEGACIÓN ──────────────────────────────────────────
+.tour-nav {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+}
+
+.tour-flecha {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: $navy-800;
+  border: 1px solid $border-subtle;
+  color: $text-secondary;
+  cursor: pointer;
+  @include flex-center;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $border-glow;
+    color: $cyan-300;
+    transform: scale(1.06);
+  }
+
+  &:active:not(:disabled) { transform: scale(0.95); }
+  &:disabled { opacity: 0.25; cursor: not-allowed; }
+}
+
+.tour-puntos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tour-punto {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 200, 215, 0.18);
+  cursor: pointer;
+  transition: all $transition-normal;
+
+  &.visto { background: $teal-500; }
+
+  &.actual {
+    width: 26px;
+    border-radius: 999px;
+    background: $cyan-400;
+    box-shadow: 0 0 10px rgba(0, 200, 215, 0.55);
+  }
+
+  &:hover:not(.actual) { background: rgba(0, 200, 215, 0.45); }
+}
+
+.tour-pie {
+  margin: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ILUSTRACIONES ANIMADAS
+// ═══════════════════════════════════════════════════════════
+// Cada motivo representa la IDEA de la función, no su interfaz. Ese es el
+// motivo de no usar capturas: una captura queda obsoleta en cuanto se toca
+// una pantalla, y con este sistema cambiando cada semana acabaría mintiendo.
+// Un motivo abstracto sigue siendo cierto.
+
+.demo {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  border-radius: $border-radius-xl;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(0, 200, 215, 0.09), transparent 65%),
+    $navy-800;
+  border: 1px solid $border-subtle;
+  overflow: hidden;
+  @include flex-center;
+
+  mat-icon {
+    font-size: 46px;
+    width: 46px;
+    height: 46px;
+    color: $cyan-400;
+  }
+
+  > span { position: absolute; }
+}
+
+// ─── escaneo ─────────────────────────────────────────────
+.d-lector { top: 26%; }
+
+.d-credencial {
+  top: 52%;
+  left: -60px;
+  width: 68px;
+  height: 42px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, $navy-600, $navy-700);
+  border: 1px solid rgba(0, 200, 215, 0.35);
+  animation: pasar-credencial 3.2s ease-in-out infinite;
+}
+
+@keyframes pasar-credencial {
+  0%       { left: -70px; opacity: 0; }
+  18%      { opacity: 1; }
+  45%, 58% { left: 50%; margin-left: -34px; opacity: 1; }
+  85%      { left: 105%; opacity: 0; }
+  100%     { left: 105%; opacity: 0; }
+}
+
+.d-check {
+  bottom: 20%;
+  opacity: 0;
+  animation: aparecer-check 3.2s ease-in-out infinite;
+
+  mat-icon { color: $success-color; font-size: 34px; width: 34px; height: 34px; }
+}
+
+@keyframes aparecer-check {
+  0%, 46%   { opacity: 0; transform: scale(0.6); }
+  56%       { opacity: 1; transform: scale(1.18); }
+  64%, 78%  { opacity: 1; transform: scale(1); }
+  90%, 100% { opacity: 0; transform: scale(1); }
+}
+
+// ─── salida ──────────────────────────────────────────────
+.d-puerta.entra { left: 16%; animation: latir-suave 3s ease-in-out infinite; }
+.d-puerta.sale  { right: 16%; animation: latir-suave 3s ease-in-out 1.5s infinite; }
+.d-reloj mat-icon { font-size: 34px; width: 34px; height: 34px; color: $text-muted; }
+
+@keyframes latir-suave {
+  0%, 100% { opacity: 0.35; transform: scale(0.94); }
+  50%      { opacity: 1;    transform: scale(1.06); }
+}
+
+// ─── aforo ───────────────────────────────────────────────
+.d-medidor {
+  position: absolute;
+  bottom: 22%;
+  width: 62%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(0, 200, 215, 0.12);
+  overflow: hidden;
+}
+
+.d-nivel {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, $success-color, $amber-color 72%, $warn-color);
+  animation: llenar-aforo 4s ease-in-out infinite;
+}
+
+@keyframes llenar-aforo {
+  0%       { width: 8%; }
+  55%, 70% { width: 92%; }
+  100%     { width: 8%; }
+}
+
+.d-gente { top: 32%; }
+
+// ─── grafica ─────────────────────────────────────────────
+.d-barras {
+  position: absolute;
+  bottom: 26%;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 46%;
+
+  span {
+    width: 18px;
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(180deg, $cyan-400, rgba(0, 169, 158, 0.35));
+    animation: crecer-barra 2.8s ease-in-out infinite;
+  }
+
+  span:nth-child(1) { animation-delay: 0s;    height: 42%; }
+  span:nth-child(2) { animation-delay: 0.14s; height: 68%; }
+  span:nth-child(3) { animation-delay: 0.28s; height: 100%; }
+  span:nth-child(4) { animation-delay: 0.42s; height: 56%; }
+  span:nth-child(5) { animation-delay: 0.56s; height: 80%; }
+}
+
+@keyframes crecer-barra {
+  0%, 100% { transform: scaleY(0.25); opacity: 0.55; }
+  45%, 62% { transform: scaleY(1);    opacity: 1; }
+}
+
+.d-barras span { transform-origin: bottom; }
+
+// ─── alerta ──────────────────────────────────────────────
+.d-campana { animation: campanear 2.6s ease-in-out infinite; z-index: 1; }
+
+@keyframes campanear {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  60%           { transform: rotate(-14deg); }
+  68%           { transform: rotate(11deg); }
+  76%           { transform: rotate(-6deg); }
+  84%           { transform: rotate(0deg); }
+}
+
+.d-onda {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 166, 35, 0.55);
+  opacity: 0;
+  animation: expandir-onda 2.6s ease-out infinite;
+
+  &.tarde { animation-delay: 0.5s; }
+}
+
+@keyframes expandir-onda {
+  0%, 50% { transform: scale(0.5); opacity: 0; }
+  60%     { opacity: 0.8; }
+  100%    { transform: scale(2.4); opacity: 0; }
+}
+
+// ─── nube ────────────────────────────────────────────────
+.d-nube   { top: 20%; }
+.d-equipo { bottom: 20%; mat-icon { color: $text-secondary; } }
+
+.d-flecha {
+  mat-icon { font-size: 26px; width: 26px; height: 26px; color: $teal-400; }
+
+  &.sube { left: 32%; top: 44%; animation: subir-flecha 2.6s ease-in-out infinite; }
+  &.baja { right: 32%; top: 44%; animation: bajar-flecha 2.6s ease-in-out 1.3s infinite; }
+}
+
+@keyframes subir-flecha {
+  0%, 100% { opacity: 0; transform: translateY(10px); }
+  40%      { opacity: 1; transform: translateY(-8px); }
+}
+
+@keyframes bajar-flecha {
+  0%, 100% { opacity: 0; transform: translateY(-10px); }
+  40%      { opacity: 1; transform: translateY(8px); }
+}
+
+// ─── archivo ─────────────────────────────────────────────
+.d-doc { z-index: 1; }
+
+.d-hoja {
+  width: 54px;
+  height: 68px;
+  border-radius: 4px;
+  background: rgba(0, 200, 215, 0.07);
+  border: 1px solid rgba(0, 200, 215, 0.28);
+  animation: salir-hoja 3s ease-in-out infinite;
+
+  &.h-b { animation-delay: 0.35s; }
+  &.h-c { animation-delay: 0.7s; }
+}
+
+@keyframes salir-hoja {
+  0%       { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.85); }
+  25%      { opacity: 1; }
+  100%     { opacity: 0; transform: translate(74px, -66px) rotate(16deg) scale(1); }
+}
+
+// ─── offline ─────────────────────────────────────────────
+.d-sinred {
+  top: 24%;
+  mat-icon { color: $warn-color; }
+  animation: parpadeo-lento 3s ease-in-out infinite;
+}
+
+@keyframes parpadeo-lento {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+.d-engrane {
+  mat-icon { font-size: 54px; width: 54px; height: 54px; }
+  animation: girar-engrane 6s linear infinite;
+}
+
+@keyframes girar-engrane {
+  to { transform: rotate(360deg); }
+}
+
+.d-ok {
+  bottom: 22%;
+  mat-icon { color: $success-color; font-size: 30px; width: 30px; height: 30px; }
+  animation: latir-suave 3s ease-in-out infinite;
+}
+
+// ─── tablet ──────────────────────────────────────────────
+.d-tablet mat-icon { font-size: 76px; width: 76px; height: 76px; }
+
+.d-candado {
+  bottom: 24%;
+  right: 26%;
+  mat-icon { font-size: 26px; width: 26px; height: 26px; color: $amber-color; }
+  animation: latir-suave 2.6s ease-in-out infinite;
+}
+
+// ─── roles ───────────────────────────────────────────────
+.d-persona {
+  animation: latir-suave 3.6s ease-in-out infinite;
+
+  &.p1 { left: 20%; mat-icon { color: $cyan-300; font-size: 40px; width: 40px; height: 40px; } }
+  &.p2 { animation-delay: 1.2s; }
+  &.p3 { right: 20%; animation-delay: 2.4s;
+         mat-icon { color: $text-muted; font-size: 34px; width: 34px; height: 34px; } }
+}
+
+// ─── responsive ──────────────────────────────────────────
+@media (max-width: $breakpoint-sm) {
+  .tour-escena {
+    grid-template-columns: 1fr;
+    gap: $spacing-lg;
+    text-align: center;
+  }
+  .demo { max-width: 210px; }
+  .tour-texto { align-items: center; max-width: none; }
+  .tour-ir { align-self: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-escena.anim > * { animation: none; opacity: 1; transform: none; }
+  .demo * { animation: none !important; }
+  .d-credencial { left: 50%; margin-left: -34px; opacity: 1; }
+  .d-check, .d-flecha, .d-hoja { opacity: 1; }
+  .d-nivel { width: 70%; }
+  .d-barras span { transform: scaleY(1); opacity: 1; }
 }
