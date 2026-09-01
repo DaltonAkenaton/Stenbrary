@@ -843,26 +843,23 @@
 }
 
 // ═══════════════════════════════════════════════════════════
-// TRANSICIÓN DIRECCIONAL ENTRE PASOS
+// ENTRADA DEL CONTENIDO
 // ═══════════════════════════════════════════════════════════
-// Sustituye al desplazamiento vertical: entrar desde el lado del que vienes
-// da continuidad espacial. Al retroceder, la dirección se invierte.
+// Antes el contenido se desplazaba 34px en horizontal, con la dirección
+// invertida al retroceder. Tenía sentido cuando las tarjetas se deslizaban de
+// lado, pero ahora la página GIRA: dos movimientos a la vez y en ejes
+// distintos se leen como ruido, no como riqueza. El giro ya cuenta de dónde
+// viene la hoja; al contenido solo le toca aparecer.
+//
+// El escalonado se conserva: es lo que hace que se perciba una secuencia
+// (icono, título, texto) en lugar de un bloque que se enciende de golpe.
 .aparece {
-  animation: entrar-der 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: entrar-contenido 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.hacia-atras .aparece {
-  animation-name: entrar-izq;
-}
-
-@keyframes entrar-der {
-  from { opacity: 0; transform: translateX(34px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes entrar-izq {
-  from { opacity: 0; transform: translateX(-34px); }
-  to   { opacity: 1; transform: translateX(0); }
+@keyframes entrar-contenido {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 // Escalonado más marcado: 40/100/160ms apenas se percibía como secuencia.
@@ -905,7 +902,7 @@
   .wiz-icono::before,
   .punto.actual { animation: none; }
   .forma { opacity: 0.07; }
-  .hacia-atras .aparece { animation-name: fundido; }
+  .aparece { animation-name: fundido; }
 }
 // ═══════════════════════════════════════════════════════════
 // (El bloque del mazo de cartas vivía aquí. Se retiró al cambiar la
@@ -1129,12 +1126,51 @@
 // ─── PASAR PÁGINA ────────────────────────────────────────
 // El giro va sobre el borde IZQUIERDO, donde está el lomo. Es la diferencia
 // entre "pasar una página" y "retirar una carta".
+// ─── AVANZAR ─────────────────────────────────────────────
+// La hoja actual se levanta y se va; la siguiente ya estaba debajo.
 .wiz-libro[data-fase='saliendo'] .wiz-card {
   animation: pagina-pasa 380ms cubic-bezier(0.32, 0, 0.5, 1) forwards;
 }
 
 .wiz-libro[data-fase='entrando'] .wiz-card {
   animation: pagina-revela 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+// ─── RETROCEDER ──────────────────────────────────────────
+// Antes reutilizaba la animación de avanzar, y ahí estaba el problema: "la
+// hoja se levanta y se va hacia la izquierda" SIGNIFICA avanzar. Verlo al
+// pulsar Atrás contradice lo que el botón dice, y esa contradicción es lo
+// que no terminaba de convencer aunque el movimiento fuera suave.
+//
+// Retroceder es el gesto inverso: la hoja actual no se levanta —queda
+// tapada—, y la anterior vuelve a caer desde el lomo por encima de ella.
+.wiz-libro[data-fase='saliendo'] .wiz-card.hacia-atras {
+  animation: pagina-tapada 380ms cubic-bezier(0.4, 0, 0.7, 1) forwards;
+}
+
+.wiz-libro[data-fase='entrando'] .wiz-card.hacia-atras {
+  animation: pagina-vuelve 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/** La hoja que se queda debajo: se hunde un poco y se apaga. */
+@keyframes pagina-tapada {
+  0%   { transform: translateY(0) scale(1);        opacity: 1; }
+  100% { transform: translateY(5px) scale(0.988);  opacity: 0; }
+}
+
+/** La anterior baja desde el lomo y se asienta encima. */
+@keyframes pagina-vuelve {
+  0% {
+    transform-origin: left center;
+    transform: rotateY(-62deg);
+    opacity: 0;
+  }
+  35%  { opacity: 1; }
+  100% {
+    transform-origin: left center;
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
 }
 
 @keyframes pagina-pasa {
@@ -1171,6 +1207,18 @@
 // Las hojas se recolocan: el bloque avanza al pasar página.
 .wiz-libro[data-fase='saliendo'] .hoja.h1 { transform: translate(3px, 3px); }
 .wiz-libro[data-fase='saliendo'] .hoja.h2 { transform: translate(9px, 8px); opacity: 0.8; }
+
+// Con movimiento reducido, el giro se sustituye por un fundido: la
+// información sigue llegando, sin rotaciones.
+@media (prefers-reduced-motion: reduce) {
+  .wiz-libro[data-fase='saliendo'] .wiz-card,
+  .wiz-libro[data-fase='entrando'] .wiz-card,
+  .wiz-libro[data-fase='saliendo'] .wiz-card.hacia-atras,
+  .wiz-libro[data-fase='entrando'] .wiz-card.hacia-atras {
+    animation: fundido 220ms ease both;
+  }
+  .hoja { transition: none; }
+}
 
 // ─── FONDO: LIBROS A LA DERIVA ───────────────────────────
 // Antes eran cuadrados abstractos: bonitos y anónimos. Unos libros dicen de

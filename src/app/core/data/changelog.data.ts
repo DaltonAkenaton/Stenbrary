@@ -49,6 +49,23 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.35.1',
+    fecha: '2026-08-31',
+    titulo: 'Retroceder ahora se siente como retroceder',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Al pulsar Atrás en el asistente se veía la misma animación que al avanzar: la hoja se levantaba y se iba hacia la izquierda, que es justo el gesto de pasar página hacia adelante. Ahora la hoja anterior vuelve a caer desde el lomo por encima de la actual, que es como se retrocede en un libro de verdad.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El contenido de cada paso ya no se desplaza de lado mientras la página gira. Eran dos movimientos a la vez en direcciones distintas, y se leían como ruido; ahora solo aparece, y el giro de la hoja cuenta la dirección.',
+      },
+    ],
+  },
+  {
     version: '3.35.0',
     fecha: '2026-08-31',
     titulo: 'Paso de página suave y el libro que se cierra',

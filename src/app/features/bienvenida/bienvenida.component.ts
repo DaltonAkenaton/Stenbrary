@@ -139,10 +139,10 @@ export class BienvenidaComponent implements OnDestroy {
   /**
    * Dirección del último movimiento.
    *
-   * El contenido entra desde la derecha al avanzar y desde la izquierda al
-   * retroceder. Es lo que convierte una sucesión de formularios en un
-   * recorrido con sentido espacial: se percibe que hay un "antes" y un
-   * "después", no pantallas sueltas.
+   * Avanzar y retroceder usan gestos OPUESTOS, no el mismo: al avanzar la
+   * hoja se levanta y se va; al retroceder, la anterior vuelve a caer desde
+   * el lomo por encima. Reutilizar la misma animación en ambos sentidos
+   * contradecía lo que decía el botón.
    */
   protected readonly haciaAtras = signal(false);
 
@@ -218,7 +218,7 @@ export class BienvenidaComponent implements OnDestroy {
       this.reanimar();
       // Volver a reposo cuando la carta ya está al frente, para no dejar
       // transformaciones activas que compliquen los estados de hover.
-      this.programar(() => this.fase.set('reposo'), 470);
+      this.programar(() => this.fase.set('reposo'), 520);
     }, BienvenidaComponent.MS_SALIDA);
   }
 
