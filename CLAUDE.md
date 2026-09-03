@@ -43,8 +43,9 @@ npx ng serve
 # Build de producción
 npx ng build --configuration production
 
-# Lint
-npx ng lint
+# NO hay linter configurado. `npx ng lint` falla con "Cannot find lint target":
+# el proyecto nunca añadió @angular-eslint. La red de seguridad son los
+# type-checks (abajo) + el pre-commit de Husky, no un linter.
 
 # Generar componente standalone
 npx ng generate component features/nombre --standalone --style=scss
@@ -61,11 +62,28 @@ npx tsc --noEmit -p tsconfig.spec.json
 # Guardrail de versión (package.json ↔ CHANGELOG)
 node scripts/check-version.mjs
 
-# E2E smoke (Playwright)
+# E2E (Playwright). Levanta el dev server solo, pero fuera de CI REUTILIZA el
+# que ya esté en el 4200 (`reuseExistingServer`). Si hay uno colgado con un
+# error de compilación, los tests fallan por un overlay de Vite que intercepta
+# los clics y el mensaje no dice nada del error real: mata el 4200 y repite.
 npx playwright test
+
+# Un solo test E2E, por nombre
+npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **69 specs unitarios en verde** (`matricula.utils`, `horarios.utils`, `insignias.utils`, `database.service`). 4 smoke E2E con Playwright. CI GitHub Actions (`.github/workflows/ci.yml`). Husky v9 pre-commit (version guardrail + type-check app/spec).
+Suite activa: **178 specs unitarios en verde**, en 9 archivos —
+`matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
+`invariante.utils`, `descarga.utils`, `database.service`, `backup.service`,
+`estadisticas-avanzadas.service`. **20 tests E2E** con Playwright
+(12 en `smoke.spec.ts`, 8 en `responsive.spec.ts`). CI GitHub Actions
+(`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
+type-check app/spec).
+
+Al cerrar una tanda, la verificación completa es: type-check → tests unitarios
+→ E2E → build de producción. No hay linter que la complemente, así que conviene
+no saltarse el type-check de `tsconfig.spec.json`: es el único que revisa los
+archivos de prueba.
 
 ## Arquitectura
 
