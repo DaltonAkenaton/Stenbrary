@@ -24,8 +24,7 @@ import * as XLSX from 'xlsx';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
-import { coincide } from '../../core/utils/invariante.utils';
-import { CARRERAS, TURNOS } from '../../core/constants/catalogos.constants';
+import { TURNOS } from '../../core/constants/catalogos.constants';
 
 /** Una fila parseada del Excel con estado de validación */
 interface FilaImportacion {
@@ -984,7 +983,7 @@ export class ImportarAlumnosComponent {
             activo: true,
           });
           resultado.importados++;
-        } catch (error: any) {
+        } catch {
           // Matrícula duplicada en la base de datos
           resultado.duplicados++;
         }
@@ -1016,7 +1015,7 @@ export class ImportarAlumnosComponent {
       }
 
       console.log('✅ Importación completada:', resultado);
-    } catch (error) {
+    } catch {
       this.loadingService.hide();
       this.importando = false;
       this.toastService.error('Error durante la importación');

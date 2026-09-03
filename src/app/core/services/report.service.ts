@@ -161,7 +161,7 @@ export class ReportService {
 
     if (secciones.topAlumnos && opciones.topAlumnos && opciones.topAlumnos.length > 0) {
       y = this.verificarEspacioPagina(doc, y, 70);
-      y = this.dibujarTopAlumnos(doc, opciones.topAlumnos, y, margin, pageWidth);
+      y = this.dibujarTopAlumnos(doc, opciones.topAlumnos, y, margin);
     }
 
     if (secciones.tablaRegistros) {
@@ -174,17 +174,18 @@ export class ReportService {
 
     if (secciones.carreras) {
       y = this.verificarEspacioPagina(doc, y, 60);
-      y = this.dibujarResumenCarreras(doc, registros, y, margin, pageWidth);
+      y = this.dibujarResumenCarreras(doc, registros, y, margin);
     }
 
     if (secciones.motivos) {
       y = this.verificarEspacioPagina(doc, y, 60);
-      y = this.dibujarResumenMotivos(doc, registros, y, margin, pageWidth);
+      y = this.dibujarResumenMotivos(doc, registros, y, margin);
     }
 
     if (secciones.turnos) {
       y = this.verificarEspacioPagina(doc, y, 60);
-      y = this.dibujarResumenTurnos(doc, registros, y, margin, pageWidth);
+      // El valor devuelto ya no lo lee nadie: esta es la última sección.
+      this.dibujarResumenTurnos(doc, registros, y, margin);
     }
 
     this.dibujarFooterTodasPaginas(doc, pageWidth, margin);
@@ -202,7 +203,6 @@ export class ReportService {
     registros: Registro[],
     y: number,
     margin: number,
-    pageWidth: number,
   ): number {
     if (registros.length === 0) return y;
 
@@ -362,7 +362,7 @@ export class ReportService {
     margin: number,
     pageWidth: number
   ): number {
-    let y = startY;
+    const y = startY;
 
     const totalRegistros = registros.length;
     const registrosAlumnos = registros.filter(r => r.matricula !== 'INVITADO');
@@ -410,8 +410,7 @@ export class ReportService {
     doc: jsPDF,
     top: TopAlumnoReporte[],
     startY: number,
-    margin: number,
-    pageWidth: number
+    margin: number
   ): number {
     // Título de sección
     doc.setFontSize(11);
@@ -492,7 +491,7 @@ export class ReportService {
     registros: Registro[],
     startY: number,
     margin: number,
-    titulo: string = 'Detalle de Registros'
+    titulo = 'Detalle de Registros'
   ): number {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -553,8 +552,7 @@ export class ReportService {
     doc: jsPDF,
     registros: Registro[],
     startY: number,
-    margin: number,
-    pageWidth: number
+    margin: number
   ): number {
     const porCarrera = new Map<string, { visitas: number; alumnos: Set<string> }>();
     registros.forEach(r => {
@@ -608,8 +606,7 @@ export class ReportService {
     doc: jsPDF,
     registros: Registro[],
     startY: number,
-    margin: number,
-    pageWidth: number
+    margin: number
   ): number {
     const porMotivo = new Map<string, number>();
     registros.forEach(r => {

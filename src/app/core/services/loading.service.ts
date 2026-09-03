@@ -30,7 +30,7 @@ export class LoadingService {
   /**
    * Mostrar indicador de carga
    */
-  show(message: string = 'Cargando...'): void {
+  show(message = 'Cargando...'): void {
     this.loadingSubject.next({
       isLoading: true,
       message

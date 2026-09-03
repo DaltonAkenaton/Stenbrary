@@ -960,7 +960,7 @@ export class DatabaseService {
    */
   async verificarRegistroReciente(
     matricula: string,
-    minutosUmbral: number = 30
+    minutosUmbral = 30
   ): Promise<Registro | null> {
     try {
       await this.inicializar();
@@ -1501,11 +1501,11 @@ export class DatabaseService {
    * `diasSinVenir` es Infinity → ordenados al final como "nunca").
    * Ordenado por `diasSinVenir` descendente.
    */
-  async obtenerAlumnosInactivos(diasUmbral: number): Promise<Array<{
+  async obtenerAlumnosInactivos(diasUmbral: number): Promise<{
     alumno: Alumno;
     ultimaVisita: Date | null;
     diasSinVenir: number;
-  }>> {
+  }[]> {
     try {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');

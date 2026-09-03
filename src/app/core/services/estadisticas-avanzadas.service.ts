@@ -529,7 +529,7 @@ export class EstadisticasAvanzadasService {
   }
 
   async generarHeatmap(
-    diasPeriodo: number = 30,
+    diasPeriodo = 30,
     rangoCustom?: RangoFechas,
   ): Promise<HeatmapResultado> {
     // Si se pasa un rango explícito (modo personalizado), úsalo;
@@ -598,7 +598,7 @@ export class EstadisticasAvanzadasService {
   }
 
   async obtenerTopAlumnos(
-    limite: number = 10,
+    limite = 10,
     dias?: number,
     rangoCustom?: RangoFechas,
   ): Promise<TopAlumno[]> {
@@ -660,7 +660,7 @@ export class EstadisticasAvanzadasService {
   async generarInsights(
     rango: RangoFechas,
     horaFiltro?: { desde: number; hasta: number } | null,
-    umbralInactividadDias: number = 30,
+    umbralInactividadDias = 30,
   ): Promise<Insight[]> {
     const insights: Insight[] = [];
 
@@ -732,7 +732,7 @@ export class EstadisticasAvanzadasService {
   }
 
   /** Devuelve la cuenta de alumnos inactivos según el umbral. Helper público. */
-  async contarAlumnosInactivos(umbralInactividadDias: number = 30): Promise<number> {
+  async contarAlumnosInactivos(umbralInactividadDias = 30): Promise<number> {
     const umbral = Math.max(1, umbralInactividadDias);
     const todosRegistros = await this.obtenerRegistrosConCache();
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
@@ -827,7 +827,7 @@ export class EstadisticasAvanzadasService {
   }
 
   /** Versión legacy que acepta días. Internamente reusa la nueva. */
-  async predecirDiaOcupado(dias: number = 30): Promise<string> {
+  async predecirDiaOcupado(dias = 30): Promise<string> {
     const heatmap = await this.generarHeatmap(dias);
     return this.predecirDiaOcupadoDesde(heatmap);
   }

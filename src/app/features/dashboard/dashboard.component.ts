@@ -799,6 +799,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // EMPTY STATE
   // ═══════════════════════════════════════════════
 
+  // Se queda como getter aunque hoy devuelva una constante: es el punto por
+  // donde entrará la lógica de permisos cuando haya roles (Fase 2.3 en
+  // docs/ROADMAP.md). Convertirlo en un campo `readonly`, que es lo que pide
+  // la regla, borraría esa intención del código.
+  // eslint-disable-next-line @typescript-eslint/class-literal-property-style
   get permiteCtaActividades(): boolean {
     // En quiosco solo el flujo operativo es accesible; el CTA al scanner sigue siendo válido.
     // Si hubiéramos puesto otros CTA (importar, etc.) los gatearíamos aquí.

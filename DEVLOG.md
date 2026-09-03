@@ -9,6 +9,90 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-09-02 — Se añade el linter que llevaba cinco meses documentado
+
+Continuación directa de la entrada anterior: `@angular-eslint` instalado y
+configurado. **172 errores en la primera pasada, 0 al terminar**, sin bajar
+ninguna regla que importara para conseguirlo.
+
+**Lo primero fue un bug de configuración:** la config que genera `ng add` no
+ignora nada, así que estaba linteando `.angular/cache` — dependencias
+precompiladas por Vite, código de terceros. Ese `ignores` va antes de mirar
+ningún resultado, o el recuento miente.
+
+**Criterio de niveles.** Es la decisión de fondo y está escrita en la cabecera
+de `eslint.config.js` para que no se erosione:
+
+- **`error`** solo para lo que no debe entrar nunca: código muerto y las
+  convenciones que CLAUDE.md ya exigía por escrito.
+- **`warn`** para deuda real que arreglar de golpe sería un refactor
+  arriesgado, no una limpieza. Un `warn` aquí no es "da igual": es "importa y
+  tiene fecha", y cada bloque dice cuántos hay y cuándo pasa a `error`.
+
+Los 84 `no-explicit-any` y los 41 de accesibilidad quedan en `warn`. Los `any`
+se arreglan al tocar cada archivo; la accesibilidad es Fase 3 del ROADMAP.
+Ponerlos en `error` habría forzado a taparlos deprisa — y en accesibilidad eso
+significa añadir `(keyup)` vacíos, que calla el aviso sin resolver nada y es
+peor que no hacerlo.
+
+**El valor real: dos convenciones pasan de texto a comprobación.**
+`no-alert` (nada de `confirm()` nativo) y `prefer-control-flow` (`@if`/`@for`,
+nunca `*ngIf`/`*ngFor`) estaban en CLAUDE.md sosteniéndose por disciplina.
+Ambas daban **0** al instalar el linter — el código ya cumplía — así que
+ponerlas en `error` no costó nada y ahora quedan blindadas.
+
+**Código muerto encontrado**, todo verificado antes de borrar:
+
+- 4 parámetros `pageWidth` sin usar en `report.service`, con sus argumentos en
+  las llamadas, y una asignación a `y` que nadie leía.
+- `p90` en el heatmap de estadísticas: los cinco niveles de intensidad salen de
+  tres umbrales más el cero, así que el cuarto percentil no se consultaba
+  nunca. El comentario que lo anunciaba también mentía y se corrigió.
+- 6 imports muertos (`NgClass`, `Registro`, `VersionChangelog`, `computed`,
+  `signal`, `coincide`, `CARRERAS`), un `ngOnDestroy` vacío con su
+  `implements OnDestroy`, y 4 `catch (err)` que no usaban la variable.
+- **`SCAN_INTERVAL_LOWRES_MS`** en el scanner: huérfano desde v3.9.1, cuando el
+  pipeline agresivo pasó a estar siempre activo y desapareció la rama "lowres".
+  Estaba **documentado en CLAUDE.md** como parte del throttle adaptativo. Y
+  **`DUPLICADO_UMBRAL_MIN = 30`**, una segunda fuente de verdad muerta: el
+  umbral real sale de `ConfigService.umbralDuplicadoMin`. Los dos fuera, y
+  CLAUDE.md corregido con la explicación de por qué desaparecieron.
+
+**Dos cosas que NO se cambiaron por complacer al linter**, ambas con su
+justificación en el código:
+
+- `permiteCtaActividades` sigue siendo un getter que devuelve `true`, con
+  `eslint-disable` de una línea. Es el punto por donde entrará la lógica de
+  permisos en Fase 2.3; convertirlo en el campo `readonly` que pide la regla
+  borraría esa intención.
+- Los `catch` vacíos siguen vacíos, pero ahora llevan dentro un comentario
+  diciendo por qué se ignora el fallo. `no-empty-function` no reporta cuerpos
+  con comentarios, así que la regla acaba obligando a justificarlos — que es
+  exactamente lo que se quiere.
+
+**Enganchado donde se nota**, porque un linter que hay que recordar ejecutar se
+ignora en una semana:
+
+- `.husky/pre-commit` corre `eslint . --quiet` (solo errores). Con avisos, la
+  salida de cada commit enseñaría a ignorarla entera. Cuesta 11 s, el mismo
+  orden que los type-checks que ya había.
+- CI corre el lint completo. **El job de CI se llamaba "Lint, Type-check, Test,
+  Build" y no tenía paso de lint** desde que existe: otra deriva del mismo
+  tipo que la de CLAUDE.md, encontrada al ir a añadirlo.
+
+**Verificado:** 0 errores de lint · ambos type-checks · 178 tests unitarios ·
+**20 E2E** (la suite completa, no solo los de /funciones — se tocó el scanner
+y la generación de PDF) · build de producción.
+
+**Qué sigue:** los 84 `any` y los 41 avisos de accesibilidad. Ninguno es
+urgente, los dos están contados. Cuando el conteo de `any` llegue a cero, la
+regla pasa a `error`; la accesibilidad espera a Fase 3.
+
+Sin cambio de versión: nada de esto es visible para el usuario final, así que
+no toca `changelog.data.ts`.
+
+---
+
 ## 2026-09-01 — /funciones: el recorrido, rehecho (v3.40.0)
 
 El usuario dijo que la presentación "se mira algo simplón". Tenía razón, y la

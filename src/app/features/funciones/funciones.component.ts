@@ -482,7 +482,9 @@ export class FuncionesComponent implements OnDestroy {
   }
 
   private soltarBloqueoPantalla(): void {
-    void this.bloqueoPantalla?.release().catch(() => {});
+    void this.bloqueoPantalla?.release().catch(() => {
+      /* Si el bloqueo ya lo soltó el sistema, no hay nada que hacer. */
+    });
     this.bloqueoPantalla = undefined;
   }
 
@@ -574,7 +576,9 @@ export class FuncionesComponent implements OnDestroy {
     // Aquí el elemento todavía está en el documento, así que esta es la
     // última oportunidad de soltar la pantalla completa de forma ordenada.
     if (document.fullscreenElement === this.host.nativeElement) {
-      void document.exitFullscreen().catch(() => {});
+      void document.exitFullscreen().catch(() => {
+        /* Salir de pantalla completa es cortesía, no requisito. */
+      });
     }
   }
 }

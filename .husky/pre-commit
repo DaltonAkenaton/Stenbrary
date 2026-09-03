@@ -1,9 +1,17 @@
 #!/usr/bin/env sh
-# Pre-commit ligero: type-check + guardrail de versión.
+# Pre-commit ligero: guardrail de versión + lint + type-check.
 # Los tests unitarios y el build completo se ejecutan en CI.
+#
+# El lint va con --quiet a propósito: solo bloquea con ERRORES. Los avisos
+# (`any` sin tipar, accesibilidad) son deuda reconocida y contada — ver
+# eslint.config.js — y no deben impedir un commit. Verlos aquí en cada
+# commit acabaría enseñando a ignorar la salida entera.
 
 echo "🔎 [pre-commit] Verificando versión (package.json ↔ CHANGELOG)..."
 npm run --silent check:version || exit 1
+
+echo "🔎 [pre-commit] Lint (solo errores)..."
+npx eslint . --quiet || exit 1
 
 echo "🔎 [pre-commit] Type-check (app)..."
 npx tsc --noEmit -p tsconfig.app.json || exit 1

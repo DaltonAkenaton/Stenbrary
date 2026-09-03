@@ -16,7 +16,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChangelogService } from '../../core/services/changelog.service';
-import { TipoCambio, VersionChangelog } from '../../core/data/changelog.data';
+import { TipoCambio } from '../../core/data/changelog.data';
 
 @Component({
   selector: 'app-novedades',

@@ -84,8 +84,6 @@ import { verificarHorario } from '../../core/utils/horarios.utils';
 
 // ── Constantes ──────────────────────────────────────────────────────────────
 const SCAN_INTERVAL_MS         = 160; // más frecuente que 200ms para mejor respuesta
-const SCAN_INTERVAL_LOWRES_MS  = 120; // cámaras de baja resolución procesan más rápido → escanear más seguido
-const DUPLICADO_UMBRAL_MIN     = 30;
 // Umbral de "baja resolución" para upscaling agresivo en Otsu/strip/rotation.
 // 1400px cubre todas las webcams de laptop (que típicamente reportan 1280×720
 // pero tienen óptica pobre) y solo excluye cámaras HD reales de ≥1920px.
@@ -106,7 +104,7 @@ const LOWRES_THRESHOLD         = 1400;
  * En cámaras de baja resolución (≤800px ancho), se inyectan automáticamente
  * estrategias con upscaling agresivo (2×–3×) al principio de la lista.
  */
-const PREPROCESS_STRATEGIES: Array<{ filter: string; scale: number; label: string }> = [
+const PREPROCESS_STRATEGIES: { filter: string; scale: number; label: string }[] = [
   // 1. Equilibrado — mejor punto de partida para la mayoría de condiciones
   { filter: 'grayscale(100%) contrast(190%) brightness(105%)', scale: 1,   label: 'balanced'        },
   // 2. Alto contraste — iluminación normal, cámara sin problemas
@@ -130,7 +128,7 @@ const PREPROCESS_STRATEGIES: Array<{ filter: string; scale: number; label: strin
  * El upscaling agresivo (2×–3×) compensa la falta de píxeles del sensor,
  * dándole al decoder de ZXing más resolución horizontal para distinguir barras.
  */
-const LOWRES_EXTRA_STRATEGIES: Array<{ filter: string; scale: number; label: string }> = [
+const LOWRES_EXTRA_STRATEGIES: { filter: string; scale: number; label: string }[] = [
   // Upscale 2× + contraste moderado: balance general para laptops
   { filter: 'grayscale(100%) contrast(220%) brightness(105%)', scale: 2,   label: 'lowres-2x'       },
   // Upscale 2.5× + alto contraste: laptop con webcam 480p en baja iluminación
@@ -165,7 +163,7 @@ function sharpenCanvas(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  strength: number = 0.4
+  strength = 0.4
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   const src = imageData.data;
@@ -283,7 +281,7 @@ function invertCanvas(
 
 declare class BarcodeDetector {
   constructor(options?: { formats: string[] });
-  detect(source: ImageBitmapSource): Promise<Array<{ rawValue: string; format: string }>>;
+  detect(source: ImageBitmapSource): Promise<{ rawValue: string; format: string }[]>;
   static getSupportedFormats(): Promise<string[]>;
 }
 
@@ -358,7 +356,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   // ── Adaptación a resolución ────────────────────────────────────────────
   private esLowRes           = false;  // true si videoWidth ≤ LOWRES_THRESHOLD
-  private effectiveStrategies: Array<{ filter: string; scale: number; label: string }> = PREPROCESS_STRATEGIES;
+  private effectiveStrategies: { filter: string; scale: number; label: string }[] = PREPROCESS_STRATEGIES;
   private effectiveScanInterval = SCAN_INTERVAL_MS;
   private effectiveBudget    = 45;     // ms por frame — se aumenta en low-res
   private sharpenEnabled     = false;  // se activa en low-res para recuperar bordes
@@ -622,7 +620,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
         const video = this.videoElement?.nativeElement;
         if (!video) return;
         video.srcObject = this.mediaStream;
-        video.play().catch(() => {});
+        video.play().catch(() => {
+          /* Autoplay bloqueado: el usuario tocará la pantalla para arrancarlo. */
+        });
 
         // addEventListener en lugar de onloadeddata para no sobreescribir handlers
         const onReady = () => {
@@ -1247,7 +1247,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
    * Retorna las estrategias ordenadas por probabilidad de éxito.
    * Si una estrategia tiene éxitos recientes, se promueve al inicio.
    */
-  private getOrderedStrategies(): Array<{ filter: string; scale: number; label: string }> {
+  private getOrderedStrategies(): { filter: string; scale: number; label: string }[] {
     if (this.strategySuccessHistory.length < 3) return this.effectiveStrategies;
 
     // Contar éxitos por estrategia
@@ -1412,7 +1412,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (this.loopFrameId !== null) { cancelAnimationFrame(this.loopFrameId); this.loopFrameId = null; }
     if (this.linternaActiva) {
       const track = this.mediaStream?.getVideoTracks()[0];
-      track?.applyConstraints({ advanced: [{ torch: false } as any] }).catch(() => {});
+      track?.applyConstraints({ advanced: [{ torch: false } as any] }).catch(() => {
+        /* Apagar la linterna es best-effort: la cámara puede no soportarlo. */
+      });
       this.linternaActiva = false;
     }
     if (this.mediaStream) { this.mediaStream.getTracks().forEach(t => t.stop()); this.mediaStream = null; }

@@ -8,7 +8,7 @@
 // ║  - Código limpio sin residuos de merge                ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfigService } from '../../core/services/config.service';
@@ -74,7 +74,7 @@ interface EstadisticasAlumno {
   styleUrl: './detalle-alumno.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DetalleAlumnoComponent implements OnInit, OnDestroy {
+export class DetalleAlumnoComponent implements OnInit {
   alumno: Alumno | null = null;
   registros: RegistroDetalle[] = [];
   estadisticas: EstadisticasAlumno | null = null;
@@ -123,8 +123,6 @@ export class DetalleAlumnoComponent implements OnInit, OnDestroy {
 
     await this.cargarDatosAlumno(matricula);
   }
-
-  ngOnDestroy(): void {}
 
   // ═══════════════════════════════════════════════
   // CARGA DE DATOS

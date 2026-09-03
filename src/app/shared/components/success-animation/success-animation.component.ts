@@ -163,7 +163,7 @@ export class SuccessAnimationComponent implements OnInit {
   readonly lottieOptions = signal<AnimationOptions>({ path: '' });
 
   /** Partículas con datos randomizados (emoji, delay, escala) por instancia. */
-  readonly particulasDecoradas = signal<Array<{ emoji: string; delay: number; scale: number }>>([]);
+  readonly particulasDecoradas = signal<{ emoji: string; delay: number; scale: number }[]>([]);
 
   async ngOnInit(): Promise<void> {
     const elegido = this.elegirTema();
@@ -194,8 +194,8 @@ export class SuccessAnimationComponent implements OnInit {
     return TEMAS[Math.floor(Math.random() * TEMAS.length)];
   }
 
-  private generarParticulas(tema: Tema): Array<{ emoji: string; delay: number; scale: number }> {
-    const arr: Array<{ emoji: string; delay: number; scale: number }> = [];
+  private generarParticulas(tema: Tema): { emoji: string; delay: number; scale: number }[] {
+    const arr: { emoji: string; delay: number; scale: number }[] = [];
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       arr.push({
         emoji: tema.particles[Math.floor(Math.random() * tema.particles.length)],

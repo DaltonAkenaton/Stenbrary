@@ -22,7 +22,7 @@
 
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
-import { Alumno, Registro, Motivo } from '../models';
+import { Alumno, Motivo } from '../models';
 import { CARRERAS, GRADOS, GRUPOS } from '../constants/catalogos.constants';
 
 export const PRUEBA_MATRICULA_BASE = 9000001;

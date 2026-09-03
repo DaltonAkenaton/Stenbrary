@@ -28,6 +28,13 @@ jobs:
       - name: Version guardrail (package.json ↔ CHANGELOG)
         run: npm run check:version
 
+      # El nombre de este job prometía "Lint" desde el principio, pero el paso
+      # no existía porque el proyecto no tenía linter. Aquí va completo (con
+      # avisos, no solo errores) para que la deuda contada de eslint.config.js
+      # quede visible en el log de cada ejecución.
+      - name: Lint
+        run: npm run lint
+
       - name: Type-check (tsc --noEmit)
         run: npx tsc --noEmit -p tsconfig.json
 

@@ -567,7 +567,7 @@ const MS_POR_ALUMNO = 5;
 })
 export class DatosPruebaComponent implements OnInit {
   presets = PRESETS;
-  presetsKeys = Object.keys(PRESETS) as Array<Exclude<PresetVolumen, 'personalizado'>>;
+  presetsKeys = Object.keys(PRESETS) as Exclude<PresetVolumen, 'personalizado'>[];
 
   presetSeleccionado: PresetVolumen = 'medio';
   config: DatosPruebaConfig = { ...PRESETS.medio.config };

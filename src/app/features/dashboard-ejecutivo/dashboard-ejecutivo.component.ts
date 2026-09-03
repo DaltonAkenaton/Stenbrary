@@ -24,8 +24,6 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   NgZone,
-  computed,
-  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -140,7 +138,7 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   heatmapData: HeatmapData[] = [];
   heatmapHoras: number[] = [];
   heatmapRango: RangoFechas | null = null;
-  heatmapFechasPorDia: Map<string, Date[]> = new Map();
+  heatmapFechasPorDia = new Map<string, Date[]>();
   /** Pre-computado: matriz [día][hora] → cantidad. Evita .find() en cada render. */
   heatmapMatriz: Record<string, Record<number, number>> = {};
   /** Pre-computado: matriz [día][hora] → clase de intensidad. */
@@ -1020,7 +1018,7 @@ formatHora(h: number): string {
       }
     }
 
-    // Tier A7: usar PERCENTILES (p25, p50, p75, p90) en vez de % de máximo.
+    // Tier A7: usar PERCENTILES (p25, p50, p75) en vez de % de máximo.
     // Ventaja: si una celda tiene 1000 visitas y el resto 5, ya no todo se ve
     // intensidad-1 — la escala se ajusta a la distribución real.
     const valoresNoCero: number[] = [];
@@ -1039,14 +1037,13 @@ formatHora(h: number): string {
     const p25 = p(0.25);
     const p50 = p(0.50);
     const p75 = p(0.75);
-    const p90 = p(0.90);
 
     const clases: Record<string, Record<number, string>> = {};
     for (const dia of this.diasSemana) {
       clases[dia] = {};
       for (const hora of this.heatmapHoras) {
         clases[dia][hora] = this.calcularClaseIntensidadPercentil(
-          matriz[dia][hora], p25, p50, p75, p90,
+          matriz[dia][hora], p25, p50, p75,
         );
       }
     }
@@ -1084,8 +1081,10 @@ formatHora(h: number): string {
     this.precalcularFilasHeatmap();
   }
 
+  // Cinco niveles (0 a 4) salen de tres umbrales más el cero: p90 sobraba y
+  // no se consultaba, todo lo que pasa de p75 cae en `intensidad-4`.
   private calcularClaseIntensidadPercentil(
-    cantidad: number, p25: number, p50: number, p75: number, p90: number,
+    cantidad: number, p25: number, p50: number, p75: number,
   ): string {
     if (cantidad === 0) return 'intensidad-0';
     if (cantidad <= p25) return 'intensidad-1';
@@ -1352,7 +1351,7 @@ formatHora(h: number): string {
   }
 
   /** Cache de matrícula → turno para fallback de registros viejos sin r.turno. */
-  private turnoPorMatricula: Map<string, string> = new Map();
+  private turnoPorMatricula = new Map<string, string>();
 
   /** Tier B: tiempo estancia, retención, distribución turnos, top motivo, una sola visita, crecimiento 12m. */
   private calcularMetricasAvanzadas(registros: any[], rango: RangoFechas): void {
@@ -1857,7 +1856,7 @@ this.sparkRegistros = counts;
   }
 
   /** Cache global matrícula → grado (igual que turnoPorMatricula). */
-  private gradoPorMatricula: Map<string, number> = new Map();
+  private gradoPorMatricula = new Map<string, number>();
 
   /** Tier A: índices del array `etiquetas` que corresponden a domingo. */
   private calcularDomingosDelGrafico(rango: RangoFechas, diarios: DatosDiarios): number[] {

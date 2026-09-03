@@ -50,7 +50,7 @@ export class PwaUpdateService {
     concat(appEstable$, cadaMinuto$).subscribe(async () => {
       try {
         await this.swUpdate.checkForUpdate();
-      } catch (err) {
+      } catch {
         // Silenciar — puede fallar si el SW no está registrado
       }
     });
@@ -86,7 +86,7 @@ export class PwaUpdateService {
     try {
       await this.swUpdate.activateUpdate();
       document.location.reload();
-    } catch (err) {
+    } catch {
       // Fallback: recargar directamente
       document.location.reload();
     }

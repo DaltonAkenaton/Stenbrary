@@ -43,9 +43,15 @@ npx ng serve
 # Build de producción
 npx ng build --configuration production
 
-# NO hay linter configurado. `npx ng lint` falla con "Cannot find lint target":
-# el proyecto nunca añadió @angular-eslint. La red de seguridad son los
-# type-checks (abajo) + el pre-commit de Husky, no un linter.
+# Lint (@angular-eslint). Debe salir con 0 ERRORES; los avisos son deuda
+# contada — ver la cabecera de eslint.config.js.
+npx ng lint
+
+# Solo errores, sin el ruido de los avisos. Es lo que corre el pre-commit.
+npx eslint . --quiet
+
+# Arreglar lo auto-arreglable
+npx ng lint --fix
 
 # Generar componente standalone
 npx ng generate component features/nombre --standalone --style=scss
@@ -80,10 +86,25 @@ Suite activa: **178 specs unitarios en verde**, en 9 archivos —
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
 type-check app/spec).
 
-Al cerrar una tanda, la verificación completa es: type-check → tests unitarios
-→ E2E → build de producción. No hay linter que la complemente, así que conviene
-no saltarse el type-check de `tsconfig.spec.json`: es el único que revisa los
-archivos de prueba.
+Al cerrar una tanda, la verificación completa es: lint → type-check → tests
+unitarios → E2E → build de producción.
+
+**Linter (`eslint.config.js`).** Añadido en septiembre de 2026; antes `ng lint`
+estaba documentado pero no existía. Dos niveles con significados distintos:
+
+- **`error` bloquea** — código muerto, y las convenciones que este archivo ya
+  exigía por escrito: `no-alert` (nada de `confirm()` nativo) y
+  `prefer-control-flow` (`@if`/`@for`, nunca `*ngIf`/`*ngFor`). Ambas estaban
+  en verde al instalarlo, así que ahora quedan blindadas.
+- **`warn` no bloquea, pero cuenta** — 84 `no-explicit-any` y 41 avisos de
+  accesibilidad. Es deuda reconocida con fecha, no ruido: los `any` se
+  arreglan al tocar cada archivo, y la accesibilidad es Fase 3 del ROADMAP.
+
+Un `catch` vacío solo pasa el lint si lleva un comentario dentro diciendo por
+qué se ignora el fallo. Es intencionado: la regla obliga a justificarlo.
+
+El pre-commit corre `eslint . --quiet` (solo errores) para no acostumbrar a
+ignorar la salida; CI corre el lint completo, con avisos.
 
 ## Arquitectura
 
@@ -210,7 +231,15 @@ El componente detecta en `ngOnInit` si `BarcodeDetector` nativo está disponible
 - **Nativo** (`usandoNativo = true`): llama `detect(video)` directamente. Si falla, re-intenta sobre canvas preprocesado con sharpen y con binarización Otsu.
 - **ZXing fallback** (`usandoNativo = false`): `BrowserMultiFormatReader` con hints restringidos a `CODE_128 + CODE_39` y `TRY_HARDER`. Dibuja frames en `<canvas>` con filtros CSS y llama `decodeFromCanvas()`.
 
-El loop usa `requestAnimationFrame` con throttle adaptativo (`SCAN_INTERVAL_MS = 160`, `SCAN_INTERVAL_LOWRES_MS = 120`). Las estrategias de preprocesado están en `PREPROCESS_STRATEGIES` + `LOWRES_EXTRA_STRATEGIES` (tope del archivo) — cada estrategia tiene `filter` (CSS), `scale` (upscaling 1×–3×) y `label` (para logs + priorización adaptativa).
+El loop usa `requestAnimationFrame` con throttle (`SCAN_INTERVAL_MS = 160`). Las estrategias de preprocesado están en `PREPROCESS_STRATEGIES` + `LOWRES_EXTRA_STRATEGIES` (tope del archivo) — cada estrategia tiene `filter` (CSS), `scale` (upscaling 1×–3×) y `label` (para logs + priorización adaptativa).
+
+> Aquí había documentado un `SCAN_INTERVAL_LOWRES_MS = 120` para un throttle
+> distinto en cámaras de baja resolución. El linter demostró que la constante
+> no se usaba en ninguna parte: quedó huérfana en v3.9.1, cuando el pipeline
+> agresivo pasó a estar siempre activo y dejó de haber una rama "lowres". Se
+> eliminó. Lo mismo con un `DUPLICADO_UMBRAL_MIN = 30` del scanner, que era
+> una segunda fuente de verdad muerta — el umbral real sale de
+> `ConfigService.umbralDuplicadoMin`.
 
 **v3.9.1 cambio clave:** el pipeline agresivo está SIEMPRE activo (ya no gateado por resolución) porque las webcams de laptop reportan 1280×720 pero tienen foco fijo que produce imágenes borrosas. `sharpenCanvas()` (unsharp mask) siempre ON.
 
