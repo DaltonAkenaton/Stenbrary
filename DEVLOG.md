@@ -196,6 +196,41 @@ movimiento hacia AFUERA — el contrario de `archivo`). Vale la pena anotarlo:
 la vista general no era solo una función, fue también una herramienta de
 revisión que hizo evidente un defecto que de una en una no se veía.
 
+### El linter que no existe
+
+Al ejecutar la verificación de cierre, `npx ng lint` respondió:
+
+```
+Cannot find "lint" target for the specified project.
+```
+
+**Nunca se añadió `@angular-eslint`.** La línea está en `CLAUDE.md` desde el
+commit que creó el archivo (`9ee1ce0`, v3.7.0, 2026-03-31): cinco meses en los
+que la documentación decía "pasa el linter" y quien la siguiera obtenía un
+error. No es que el lint fallara — es que la documentación describía una red
+de seguridad que no estaba puesta.
+
+Lo importante no es el comando roto, es lo que implica: **la única barrera
+automática de estilo y errores tontos son los dos type-checks**
+(`tsconfig.app.json` y `tsconfig.spec.json`) más el pre-commit de Husky. Nada
+revisa imports sin usar, variables muertas, `any` implícitos donde no los
+detecte el compilador, ni convenciones del propio `CLAUDE.md` (`@if` vs
+`*ngIf`, `confirm()` nativo, etc.). Esas reglas se sostienen solo por
+disciplina y revisión.
+
+De paso salió que el conteo de la suite también estaba desactualizado: decía
+69 specs unitarios y 4 E2E; son 178 en 9 archivos y 20 E2E en 2. `CLAUDE.md`
+queda corregido con los tres puntos (commit `a69e767`), documentando el lint
+como ausencia explícita en vez de borrar la línea, para que nadie lo intente
+otra vez y concluya que está roto.
+
+**Decisión pendiente para el usuario:** añadir `@angular-eslint` es barato
+(`ng add`) y convertiría en automáticas varias reglas de `CLAUDE.md` que hoy
+son solo texto. El coste es una primera pasada ruidosa sobre ~40 componentes
+que nunca han visto un linter. No se hizo en esta tanda porque no era el
+encargo y habría mezclado un cambio transversal con un rediseño de una sola
+pantalla.
+
 ---
 
 ## 2026-06-01 (tarde) — Fase 2.3.x: página /usuarios + badge en tiempo real
