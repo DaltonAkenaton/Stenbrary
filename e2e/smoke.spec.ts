@@ -82,7 +82,12 @@ test.describe('Asistente de configuración inicial', () => {
     await page.goto('/bienvenida');
     await page.getByText(/Saltar y usar los valores por defecto/i).click();
     await page.getByRole('button', { name: /^Saltar$/ }).click();
-    await expect(page).toHaveURL(/\/scanner$/);
+
+    // Saltar la configuración no salta el arranque: el libro se cierra igual.
+    // Antes esto navegaba directo y quien usaba los valores por defecto nunca
+    // veía el cierre, que es la señal de que la instalación terminó.
+    await expect(page.locator('.arranque')).toBeVisible();
+    await expect(page).toHaveURL(/\/scanner$/, { timeout: 8000 });
 
     await page.goto('/');
     await expect(page).toHaveURL(/\/scanner$/);

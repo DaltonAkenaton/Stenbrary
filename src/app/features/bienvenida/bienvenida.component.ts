@@ -267,9 +267,14 @@ export class BienvenidaComponent implements OnDestroy {
 
     if (!(await ref.afterClosed().toPromise())) return;
 
-    this.restablecer.marcarSetupCompletado();
-    this.toast.info('Puedes configurar todo desde Configuración cuando quieras.');
-    void this.router.navigate(['/scanner']);
+    // Saltar la configuración NO debe saltarse el arranque. Antes esto
+    // navegaba directo al scanner y quien elegía los valores por defecto
+    // nunca veía cerrarse el libro: la única señal de que la instalación
+    // había terminado, y justo el momento que marca que el sistema empieza
+    // a existir. Ahorrar preguntas no es motivo para quedarse sin el cierre.
+    this.mensajeEntrada =
+      'Listo con los valores por defecto. Puedes ajustarlo todo desde Configuración.';
+    this.finalizar();
   }
 
   protected alternarDia(dia: number): void {
@@ -435,9 +440,16 @@ export class BienvenidaComponent implements OnDestroy {
    * Es la segunda vez que este effect muerde. La regla queda clara: el modo
    * quiosco es lo ÚLTIMO que se toca, cuando ya no queda nada que mostrar.
    */
+  /**
+   * Mensaje del toast al entrar. Se guarda en un campo y no se pasa como
+   * argumento porque `saltarArranque()` también llama aquí, y tendría que
+   * conocer un mensaje que no le corresponde elegir.
+   */
+  private mensajeEntrada = 'Todo listo. ¡A trabajar!';
+
   private entrarAlSistema(): void {
     this.config.setModoQuiosco(this.modoQuiosco);
-    this.toast.success('Todo listo. ¡A trabajar!');
+    this.toast.success(this.mensajeEntrada);
     void this.router.navigate(['/scanner']);
   }
 
