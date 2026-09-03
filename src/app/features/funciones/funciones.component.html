@@ -2,182 +2,26 @@
   funciones.component.html
   Stenbrary — Qué puede hacer el sistema
 
-  Dos modos en una sola pantalla: presentación (pocas tarjetas grandes, para
-  enseñar) y catálogo (todo, con buscador, para consultar).
+  Dos modos en una sola pantalla: recorrido (una función por diapositiva, a
+  pantalla completa, para enseñar) y catálogo (todo, con buscador, para
+  consultar).
 -->
 
 <div class="fx" [class.presentando]="modoPresentacion()">
 
   @if (!modoPresentacion()) {
-    <!-- ══════════ CABECERA ══════════ -->
+
+    <!-- ══════════ CABECERA DEL CATÁLOGO ══════════ -->
     <header class="fx-header">
       <div class="fx-header-texto">
         <h1>¿Qué puede hacer Stenbrary?</h1>
-        <p>
-          {{ totalFunciones }} funciones disponibles hoy · versión {{ version }}
-        </p>
+        <p>{{ totalFunciones }} funciones disponibles hoy · versión {{ version }}</p>
       </div>
       <button class="fx-modo" (click)="alternarPresentacion()">
         <mat-icon>slideshow</mat-icon>
         Modo presentación
       </button>
     </header>
-  } @else {
-    <!-- Barra mínima. En presentación, un título de página y un número de
-         versión son ruido: compiten con la diapositiva y delatan que estás
-         dentro de una aplicación en vez de viendo una presentación. Queda
-         solo la posición y la salida. -->
-    <header class="fx-barra">
-      <span class="fx-contador">
-        <strong>{{ slide() + 1 < 10 ? '0' : '' }}{{ slide() + 1 }}</strong>
-        <span class="fx-contador-sep">/</span>
-        {{ totalSlides }}
-      </span>
-      <button class="fx-salir" (click)="alternarPresentacion()">
-        <mat-icon>close</mat-icon>
-        Salir
-      </button>
-    </header>
-  }
-
-  @if (modoPresentacion()) {
-
-    <!-- ══════════ RECORRIDO GUIADO ══════════
-         Una función por pantalla con su ilustración animada. La versión
-         anterior de este modo era una rejilla de 13 tarjetas: eso no es
-         presentar, es pedirle a alguien que lea. Se avanza con los botones,
-         con las flechas del teclado o con un mando de presentación. -->
-    <section class="tour" [class.atras]="retrocediendo()">
-
-      <div class="tour-escena" [class.anim]="animarSlide()">
-
-        @if (funcionActual(); as f) {
-          <!-- ── Ilustración ── -->
-          <!-- Motivos abstractos y no capturas: una captura envejece en cuanto
-               cambia la interfaz. Esto comunica la idea y no caduca. -->
-          <div class="demo" [attr.data-demo]="f.demo" aria-hidden="true">
-            @switch (f.demo) {
-              @case ('escaneo') {
-                <span class="d-lector"><mat-icon>barcode_reader</mat-icon></span>
-                <span class="d-credencial"></span>
-                <span class="d-check"><mat-icon>check</mat-icon></span>
-              }
-              @case ('salida') {
-                <span class="d-puerta entra"><mat-icon>login</mat-icon></span>
-                <span class="d-reloj"><mat-icon>schedule</mat-icon></span>
-                <span class="d-puerta sale"><mat-icon>logout</mat-icon></span>
-              }
-              @case ('aforo') {
-                <div class="d-medidor"><span class="d-nivel"></span></div>
-                <span class="d-gente"><mat-icon>groups</mat-icon></span>
-              }
-              @case ('grafica') {
-                <div class="d-barras">
-                  <span></span><span></span><span></span><span></span><span></span>
-                </div>
-              }
-              @case ('alerta') {
-                <span class="d-campana"><mat-icon>notifications_active</mat-icon></span>
-                <span class="d-onda"></span>
-                <span class="d-onda tarde"></span>
-              }
-              @case ('nube') {
-                <span class="d-nube"><mat-icon>cloud</mat-icon></span>
-                <span class="d-flecha sube"><mat-icon>arrow_upward</mat-icon></span>
-                <span class="d-flecha baja"><mat-icon>arrow_downward</mat-icon></span>
-                <span class="d-equipo"><mat-icon>computer</mat-icon></span>
-              }
-              @case ('archivo') {
-                <span class="d-hoja h-a"></span>
-                <span class="d-hoja h-b"></span>
-                <span class="d-hoja h-c"></span>
-                <span class="d-doc"><mat-icon>description</mat-icon></span>
-              }
-              @case ('offline') {
-                <span class="d-sinred"><mat-icon>wifi_off</mat-icon></span>
-                <span class="d-engrane"><mat-icon>settings</mat-icon></span>
-                <span class="d-ok"><mat-icon>check_circle</mat-icon></span>
-              }
-              @case ('tablet') {
-                <span class="d-tablet"><mat-icon>tablet_android</mat-icon></span>
-                <span class="d-candado"><mat-icon>lock</mat-icon></span>
-              }
-              @case ('roles') {
-                <span class="d-persona p1"><mat-icon>shield_person</mat-icon></span>
-                <span class="d-persona p2"><mat-icon>person</mat-icon></span>
-                <span class="d-persona p3"><mat-icon>school</mat-icon></span>
-              }
-              @case ('listado') {
-                <span class="d-filtro"><mat-icon>filter_alt</mat-icon></span>
-                <div class="d-filas">
-                  <span></span><span></span><span></span><span></span>
-                </div>
-              }
-              @case ('perfil') {
-                <span class="d-avatar"><mat-icon>person</mat-icon></span>
-                <div class="d-hitos">
-                  <span></span><span></span><span></span><span></span><span></span>
-                </div>
-              }
-              @case ('respaldo') {
-                <span class="d-escudo"><mat-icon>shield</mat-icon></span>
-                <span class="d-copia"></span>
-                <span class="d-copia c2"></span>
-              }
-              @default {
-                <span class="d-generico"><mat-icon>{{ f.icono }}</mat-icon></span>
-              }
-            }
-          </div>
-
-          <!-- ── Texto ── -->
-          <div class="tour-texto">
-            <!-- El numeral se movió a la barra superior: aquí chocaba con el
-                 chip de sección y lo cortaba el borde del panel, y se leía
-                 como un accidente en vez de una decisión. -->
-            <span class="tour-area">{{ f.donde }}</span>
-            <h2 class="tour-titulo">{{ f.titulo }}</h2>
-            <p class="tour-desc">{{ f.descripcion }}</p>
-
-            @if (f.ruta) {
-              <button class="tour-ir" (click)="abrir(f)">
-                <mat-icon>arrow_forward</mat-icon>
-                Verlo funcionando
-              </button>
-            }
-          </div>
-        }
-      </div>
-
-      <!-- ── Navegación ── -->
-      <div class="tour-nav">
-        <button class="tour-flecha" (click)="anteriorSlide()"
-                [disabled]="enPrimera()" aria-label="Anterior">
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-
-        <div class="tour-puntos">
-          @for (f of destacadas; track f.titulo; let i = $index) {
-            <button class="tour-punto"
-                    [class.actual]="i === slide()"
-                    [class.visto]="i < slide()"
-                    (click)="irASlide(i)"
-                    [attr.aria-label]="'Ir a ' + f.titulo"></button>
-          }
-        </div>
-
-        <button class="tour-flecha" (click)="siguienteSlide()"
-                [disabled]="enUltima()" aria-label="Siguiente">
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-      </div>
-
-      <p class="tour-pie">
-        {{ slide() + 1 }} de {{ totalSlides }} · usa las flechas del teclado
-      </p>
-    </section>
-
-  } @else {
 
     <!-- ══════════ CATÁLOGO ══════════ -->
     <div class="fx-controles">
@@ -227,26 +71,228 @@
 
         <div class="fx-grid">
           @for (f of bloque.funciones; track f.titulo) {
-            <article class="fx-tarjeta" [class.clicable]="!!f.ruta"
-                     (click)="abrir(f)">
+            <article class="fx-tarjeta" [class.clicable]="!!f.ruta" (click)="abrir(f)">
               <div class="fx-tarjeta-head">
-                <div class="fx-icono">
-                  <mat-icon>{{ f.icono }}</mat-icon>
-                </div>
+                <div class="fx-icono"><mat-icon>{{ f.icono }}</mat-icon></div>
                 <h3>{{ f.titulo }}</h3>
-                @if (f.ruta) {
-                  <mat-icon class="fx-ir">arrow_forward</mat-icon>
-                }
+                @if (f.ruta) { <mat-icon class="fx-ir">arrow_forward</mat-icon> }
               </div>
               <p>{{ f.descripcion }}</p>
-              <span class="fx-donde">
-                <mat-icon>place</mat-icon>{{ f.donde }}
-              </span>
+              <span class="fx-donde"><mat-icon>place</mat-icon>{{ f.donde }}</span>
             </article>
           }
         </div>
       </section>
     }
+
+  } @else {
+
+    <!-- ══════════ RECORRIDO ══════════
+         En presentación no hay título de página ni número de versión: compiten
+         con la diapositiva y delatan que estás dentro de una aplicación en vez
+         de viendo una presentación. Queda la posición, el control del avance
+         automático y la salida. -->
+
+    <header class="fx-barra">
+      <!-- El texto va en su propio <span> para poder ocultarlo en móvil sin
+           llevarse el icono por delante. -->
+      <span class="fx-marca">
+        <mat-icon>menu_book</mat-icon>
+        <span>Stenbrary</span>
+      </span>
+
+      <!-- El progreso segmentado sustituye a los puntos. Con 17 diapositivas
+           los puntos no caben en un teléfono y nadie acierta a tocar uno; los
+           segmentos comunican lo mismo, se pulsan bien y se leen a distancia. -->
+      <nav class="fx-progreso" aria-label="Diapositivas">
+        @for (d of diapositivas; track $index) {
+          <button class="fx-tramo"
+                  [class.actual]="$index === slide()"
+                  [class.visto]="$index < slide()"
+                  [class.contando]="reproduciendo() && $index === slide()"
+                  (click)="saltarA($index)"
+                  [attr.aria-current]="$index === slide() ? 'true' : null"
+                  [attr.aria-label]="'Diapositiva ' + ($index + 1) + ': ' + tituloDe(d)"></button>
+        }
+      </nav>
+
+      <div class="fx-barra-acciones">
+        <button class="fx-icono-btn" (click)="alternarVistaGeneral()"
+                [class.activo]="vistaGeneral()"
+                aria-label="Ver todas las diapositivas">
+          <mat-icon>grid_view</mat-icon>
+        </button>
+        <button class="fx-icono-btn" (click)="alternarAuto()"
+                [class.activo]="reproduciendo()"
+                [attr.aria-label]="reproduciendo() ? 'Pausar avance automático' : 'Avance automático'">
+          <mat-icon>{{ reproduciendo() ? 'pause' : 'play_arrow' }}</mat-icon>
+        </button>
+        <button class="fx-salir" (click)="alternarPresentacion()">
+          <mat-icon>close</mat-icon>
+          <span>Salir</span>
+        </button>
+      </div>
+    </header>
+
+    @if (vistaGeneral()) {
+
+      <!-- ══════════ VISTA GENERAL ══════════
+           Lo que separa pasar diapositivas de presentar: ver el mazo entero y
+           saltar a la que te acaban de preguntar, en vez de recorrerlo una a
+           una delante de quien preguntó. -->
+      <section class="mazo">
+        <div class="mazo-grid">
+          @for (d of diapositivas; track $index) {
+            <button class="mazo-ficha" [class.actual]="$index === slide()"
+                    (click)="saltarA($index)">
+              <span class="mazo-num">
+                {{ $index + 1 < 10 ? '0' : '' }}{{ $index + 1 }}
+              </span>
+              <span class="mazo-arte">
+                @if (funcionDe(d); as f) {
+                  <app-funcion-ilustracion class="mini" [demo]="f.demo" [icono]="f.icono"/>
+                } @else {
+                  <mat-icon>{{ $index === 0 ? 'slideshow' : 'flag' }}</mat-icon>
+                }
+              </span>
+              <span class="mazo-titulo">{{ tituloDe(d) }}</span>
+            </button>
+          }
+        </div>
+
+        <p class="mazo-atajos">
+          <span><kbd>←</kbd><kbd>→</kbd> avanzar</span>
+          <span><kbd>1</kbd>–<kbd>9</kbd> ir a una función</span>
+          <span><kbd>G</kbd> esta vista</span>
+          <span><kbd>P</kbd> avance automático</span>
+          <span><kbd>Esc</kbd> salir</span>
+        </p>
+      </section>
+
+    } @else {
+
+    <section class="tour"
+             (pointerdown)="iniciarGesto($event)"
+             (pointerup)="terminarGesto($event)">
+
+      <div class="tour-escena"
+           [class.anim]="animarSlide()"
+           [class.atras]="retrocediendo()"
+           [class.portada]="!funcionActual()">
+
+        @switch (actual().tipo) {
+
+          <!-- ── Portada ── -->
+          @case ('portada') {
+            <div class="tour-portada">
+              <span class="tour-sello">Sistema de control de acceso</span>
+              <h1 class="tour-marca">Stenbrary</h1>
+              <p class="tour-lema">
+                Todo lo que pasa en la biblioteca, registrado sin papel y sin
+                depender de internet.
+              </p>
+              <div class="tour-cifras">
+                <span><strong>{{ totalFunciones }}</strong> funciones</span>
+                <span><strong>{{ destacadas.length }}</strong> en este recorrido</span>
+                <span><strong>v{{ version }}</strong></span>
+              </div>
+              <button class="tour-ir grande" (click)="navegar(1)">
+                Empezar el recorrido
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          }
+
+          <!-- ── Cierre ── -->
+          @case ('cierre') {
+            <div class="tour-portada cierre">
+              <span class="tour-sello">Fin del recorrido</span>
+              <h1 class="tour-marca">Y hay {{ totalFunciones - destacadas.length }} más.</h1>
+              <p class="tour-lema">
+                Lo que acabas de ver son las funciones principales. El catálogo
+                completo está a un clic, con buscador.
+              </p>
+              <div class="tour-acciones">
+                <button class="tour-ir grande" (click)="alternarPresentacion()">
+                  <mat-icon>grid_view</mat-icon>
+                  Ver el catálogo completo
+                </button>
+                <button class="tour-secundario" (click)="saltarA(0)">
+                  <mat-icon>replay</mat-icon>
+                  Repetir
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- ── Función ── -->
+          @default {
+            @if (funcionActual(); as f) {
+              <!-- Motivos abstractos y no capturas: una captura envejece en
+                   cuanto cambia la interfaz. Esto comunica la idea y no caduca. -->
+              <div class="tour-lienzo">
+                <app-funcion-ilustracion [demo]="f.demo" [icono]="f.icono"/>
+              </div>
+
+              <div class="tour-texto">
+                <span class="tour-area">
+                  <mat-icon>place</mat-icon>
+                  {{ f.donde }}
+                </span>
+                <h2 class="tour-titulo">{{ f.titulo }}</h2>
+                <p class="tour-desc">{{ f.descripcion }}</p>
+
+                @if (f.ruta) {
+                  <button class="tour-ir" (click)="abrir(f)">
+                    <mat-icon>arrow_forward</mat-icon>
+                    Verlo funcionando
+                  </button>
+                }
+              </div>
+            }
+          }
+        }
+      </div>
+    </section>
+
+    <!-- ── Navegación ── -->
+    <footer class="tour-nav">
+      <button class="tour-flecha" (click)="navegar(-1)"
+              [disabled]="enPrimera()" aria-label="Anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+
+      <span class="tour-posicion">
+        @if (numeroFuncion()) {
+          <strong>{{ numeroFuncion() < 10 ? '0' : '' }}{{ numeroFuncion() }}</strong>
+          <span class="sep">/</span>{{ destacadas.length }}
+        } @else {
+          <span class="tour-pista">usa las flechas o desliza</span>
+        }
+      </span>
+
+      <button class="tour-flecha" (click)="navegar(1)"
+              [disabled]="enUltima()" aria-label="Siguiente">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </footer>
+
+    }
+
+    <!-- Realimentación del marcado por número: sin esto, teclear "12" es
+         escribir a ciegas y no sabes si el sistema te está oyendo. -->
+    @if (marcado()) {
+      <div class="fx-marcado" aria-hidden="true">{{ marcado() }}</div>
+    }
+
+    <!-- Un lector de pantalla no percibe que la diapositiva cambió: el cambio
+         ocurre sin recargar ni mover el foco. Esto lo anuncia. -->
+    <p class="fx-sr" aria-live="polite">
+      @if (funcionActual(); as f) {
+        Diapositiva {{ numeroFuncion() }} de {{ destacadas.length }}: {{ f.titulo }}.
+        {{ f.descripcion }}
+      }
+    </p>
   }
 
 </div>

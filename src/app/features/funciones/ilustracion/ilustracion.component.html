@@ -1,0 +1,488 @@
+<!--
+  ilustracion.component.html
+  Stenbrary — Motivos del recorrido guiado
+
+  Un solo lienzo de 320x320 para todos los motivos: así el encuadre no salta
+  al cambiar de diapositiva. Los defs (degradados, brillo, rejilla) se
+  declaran una vez y los comparten todas las escenas.
+
+  Estilo de trazo, no de relleno: las formas se dibujan con líneas finas y la
+  profundidad viene de tres capas — rejilla de fondo, halo, y la figura. Es lo
+  que separa una ilustración de un icono.
+-->
+
+<svg class="il" viewBox="0 0 320 320" role="img" aria-hidden="true"
+     preserveAspectRatio="xMidYMid meet">
+
+  <defs>
+    <linearGradient id="ilCyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5DE4EC"/>
+      <stop offset="1" stop-color="#00A99E"/>
+    </linearGradient>
+
+    <linearGradient id="ilVela" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#22D4E1" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#22D4E1" stop-opacity="0"/>
+    </linearGradient>
+
+    <radialGradient id="ilHalo">
+      <stop offset="0" stop-color="#00C8D7" stop-opacity=".26"/>
+      <stop offset=".65" stop-color="#00C8D7" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#00C8D7" stop-opacity="0"/>
+    </radialGradient>
+
+    <pattern id="ilRejilla" width="26" height="26" patternUnits="userSpaceOnUse">
+      <path d="M26 0H0v26" fill="none" stroke="#00C8D7" stroke-opacity=".07"
+            stroke-width="1"/>
+    </pattern>
+
+    <!-- Difumina la capa de atrás: da aire sin añadir elementos. -->
+    <filter id="ilSuave" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- Fondo común: rejilla + halo que respira -->
+  <rect class="il-rejilla" x="0" y="0" width="320" height="320" fill="url(#ilRejilla)"/>
+  <circle class="il-halo" cx="160" cy="158" r="132" fill="url(#ilHalo)"/>
+
+  @switch (demo) {
+
+    <!-- ══════════ ESCANEO ══════════
+         La credencial pasa bajo el lector, el haz la barre y confirma. -->
+    @case ('escaneo') {
+      <g class="il-escena">
+        <rect class="il-t" x="96" y="44" width="128" height="30" rx="11"/>
+        <rect class="il-f" x="128" y="68" width="64" height="5" rx="2.5"/>
+        <circle class="il-led" cx="208" cy="59" r="3.5"/>
+
+        <path class="il-haz" d="M128 72 L96 214 H224 L192 72 Z" fill="url(#ilVela)"/>
+
+        <g class="il-credencial">
+          <rect class="il-t" x="92" y="150" width="136" height="88" rx="12"/>
+          <circle class="il-t" cx="120" cy="176" r="13"/>
+          <rect class="il-f" x="142" y="168" width="66" height="6" rx="3"/>
+          <rect class="il-f d" x="142" y="182" width="44" height="6" rx="3"/>
+          <g class="il-barras">
+            <rect x="106" y="204" width="3" height="20" rx="1"/>
+            <rect x="113" y="204" width="5" height="20" rx="1"/>
+            <rect x="122" y="204" width="2" height="20" rx="1"/>
+            <rect x="128" y="204" width="6" height="20" rx="1"/>
+            <rect x="138" y="204" width="3" height="20" rx="1"/>
+            <rect x="145" y="204" width="4" height="20" rx="1"/>
+            <rect x="153" y="204" width="2" height="20" rx="1"/>
+            <rect x="159" y="204" width="6" height="20" rx="1"/>
+            <rect x="169" y="204" width="3" height="20" rx="1"/>
+            <rect x="176" y="204" width="5" height="20" rx="1"/>
+            <rect x="185" y="204" width="2" height="20" rx="1"/>
+            <rect x="191" y="204" width="4" height="20" rx="1"/>
+            <rect x="199" y="204" width="3" height="20" rx="1"/>
+            <rect x="206" y="204" width="6" height="20" rx="1"/>
+          </g>
+          <rect class="il-lectura" x="100" y="212" width="120" height="2" rx="1"/>
+        </g>
+
+        <g class="il-ok">
+          <circle class="il-ok-anillo" cx="160" cy="274" r="19"/>
+          <path class="il-ok-check" d="M151 274l6.5 7 12-14"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ SALIDA ══════════
+         Entra por un lado, sale por el otro, y en medio se mide el tiempo. -->
+    @case ('salida') {
+      <g class="il-escena">
+        <rect class="il-t" x="46" y="104" width="42" height="112" rx="10"/>
+        <rect class="il-t" x="232" y="104" width="42" height="112" rx="10"/>
+        <path class="il-f" d="M67 128v64"/>
+        <path class="il-f" d="M253 128v64"/>
+
+        <path class="il-guia" d="M88 160h144"/>
+
+        <circle class="il-t d" cx="160" cy="160" r="42"/>
+        <circle class="il-arco" cx="160" cy="160" r="42"/>
+        <path class="il-f b" d="M160 138v24l16 10"/>
+
+        <circle class="il-viajero" cx="0" cy="160" r="7"/>
+
+        <path class="il-punta" d="M104 160l-11-8v16z"/>
+        <path class="il-punta" d="M216 160l11-8v16z"/>
+      </g>
+    }
+
+    <!-- ══════════ AFORO ══════════
+         El anillo se llena; los puntos son quienes ya están dentro. -->
+    @case ('aforo') {
+      <g class="il-escena">
+        <circle class="il-pista" cx="160" cy="158" r="86"/>
+        <circle class="il-aforo" cx="160" cy="158" r="86"/>
+
+        <g class="il-personas">
+          <circle cx="132" cy="132" r="9"/>
+          <circle cx="160" cy="126" r="9"/>
+          <circle cx="188" cy="132" r="9"/>
+          <circle cx="118" cy="160" r="9"/>
+          <circle cx="146" cy="156" r="9"/>
+          <circle cx="174" cy="156" r="9"/>
+          <circle cx="202" cy="160" r="9"/>
+          <circle cx="132" cy="186" r="9"/>
+          <circle cx="160" cy="182" r="9"/>
+          <circle cx="188" cy="186" r="9"/>
+        </g>
+
+        <rect class="il-f d" x="126" y="212" width="68" height="6" rx="3"/>
+      </g>
+    }
+
+    <!-- ══════════ GRÁFICA ══════════
+         Barras que crecen y una tendencia que se dibuja encima. -->
+    @case ('grafica') {
+      <g class="il-escena">
+        <path class="il-eje" d="M56 240h208"/>
+        <path class="il-eje d" d="M56 190h208"/>
+        <path class="il-eje d" d="M56 140h208"/>
+        <path class="il-eje d" d="M56 90h208"/>
+
+        <g class="il-barras-g">
+          <rect x="70" y="150" width="30" height="90" rx="7"/>
+          <rect x="112" y="112" width="30" height="128" rx="7"/>
+          <rect x="154" y="168" width="30" height="72" rx="7"/>
+          <rect x="196" y="88" width="30" height="152" rx="7"/>
+          <rect x="238" y="132" width="30" height="108" rx="7"/>
+        </g>
+
+        <path class="il-tendencia" d="M85 138 L127 100 L169 156 L211 76 L253 120"/>
+
+        <g class="il-nodos">
+          <circle cx="85" cy="138" r="5"/>
+          <circle cx="127" cy="100" r="5"/>
+          <circle cx="169" cy="156" r="5"/>
+          <circle cx="211" cy="76" r="5"/>
+          <circle cx="253" cy="120" r="5"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ RESUMEN ══════════
+         El tablero de hoy: tres cifras y cómo va el día. Deliberadamente
+         distinto de `grafica` — la vista general los enseña uno al lado del
+         otro y compartir motivo delataba que la ilustración no dice nada de
+         la función concreta. -->
+    @case ('resumen') {
+      <g class="il-escena">
+        <g class="il-fichas">
+          <g class="f1">
+            <rect class="il-t" x="34" y="58" width="76" height="66" rx="11"/>
+            <rect class="il-f" x="48" y="76" width="34" height="9" rx="4.5"/>
+            <rect class="il-f d" x="48" y="98" width="48" height="6" rx="3"/>
+          </g>
+          <g class="f2">
+            <rect class="il-t" x="122" y="58" width="76" height="66" rx="11"/>
+            <rect class="il-f" x="136" y="76" width="44" height="9" rx="4.5"/>
+            <rect class="il-f d" x="136" y="98" width="30" height="6" rx="3"/>
+          </g>
+          <g class="f3">
+            <rect class="il-t" x="210" y="58" width="76" height="66" rx="11"/>
+            <rect class="il-f" x="224" y="76" width="28" height="9" rx="4.5"/>
+            <rect class="il-f d" x="224" y="98" width="44" height="6" rx="3"/>
+          </g>
+        </g>
+
+        <rect class="il-t d" x="34" y="146" width="252" height="128" rx="12"/>
+
+        <g class="il-horas">
+          <rect x="56" y="212" width="20" height="42" rx="5"/>
+          <rect x="86" y="196" width="20" height="58" rx="5"/>
+          <rect x="116" y="176" width="20" height="78" rx="5"/>
+          <rect x="146" y="162" width="20" height="92" rx="5"/>
+          <rect x="176" y="186" width="20" height="68" rx="5"/>
+          <rect x="206" y="206" width="20" height="48" rx="5"/>
+          <rect x="236" y="222" width="20" height="32" rx="5"/>
+        </g>
+
+        <!-- El pico del día, señalado. Es lo que se mira primero en el
+             tablero real. -->
+        <g class="il-pico">
+          <circle cx="156" cy="162" r="7"/>
+          <path class="il-pico-tallo" d="M156 148v-14"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ ALERTA ══════════
+         Una racha que se corta: el último punto se apaga y avisa. -->
+    @case ('alerta') {
+      <g class="il-escena">
+        <path class="il-eje d" d="M52 160h216"/>
+
+        <g class="il-racha">
+          <circle cx="64" cy="160" r="11"/>
+          <circle cx="112" cy="160" r="11"/>
+          <circle cx="160" cy="160" r="11"/>
+        </g>
+
+        <g class="il-apagados">
+          <circle cx="208" cy="160" r="11"/>
+          <circle cx="256" cy="160" r="11"/>
+        </g>
+
+        <g class="il-aviso">
+          <circle class="il-onda" cx="232" cy="160" r="26"/>
+          <circle class="il-onda t" cx="232" cy="160" r="26"/>
+          <path class="il-signo" d="M232 138v22"/>
+          <circle class="il-signo-p" cx="232" cy="172" r="3.5"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ NUBE ══════════
+         Los datos suben y bajan entre el equipo y la nube. -->
+    @case ('nube') {
+      <g class="il-escena">
+        <path class="il-t" d="M110 152c-20 0-30-14-24-29 4-11 15-16 24-14 2-22 22-36 44-32 18 3 30 16 32 32 18-4 33 11 31 27-2 11-11 16-22 16Z"/>
+
+        <path class="il-guia v" d="M160 168v72"/>
+
+        <g class="il-paquetes">
+          <rect class="sube" x="152" y="228" width="16" height="16" rx="4"/>
+          <rect class="baja" x="152" y="180" width="16" height="16" rx="4"/>
+        </g>
+
+        <rect class="il-t" x="106" y="246" width="108" height="44" rx="9"/>
+        <path class="il-f" d="M140 300h40"/>
+        <path class="il-f d" d="M124 262h52"/>
+        <path class="il-f d" d="M124 274h32"/>
+      </g>
+    }
+
+    <!-- ══════════ ARCHIVO ══════════
+         Las filas de una hoja de cálculo vuelan al documento. -->
+    @case ('archivo') {
+      <g class="il-escena">
+        <g class="il-hoja">
+          <rect class="il-t" x="40" y="94" width="106" height="132" rx="10"/>
+          <path class="il-f d" d="M40 122h106"/>
+          <path class="il-f d" d="M76 122v104"/>
+          <path class="il-f d" d="M111 122v104"/>
+          <path class="il-f d" d="M40 152h106"/>
+          <path class="il-f d" d="M40 182h106"/>
+        </g>
+
+        <g class="il-vuelo">
+          <rect class="v1" x="54" y="132" width="78" height="12" rx="6"/>
+          <rect class="v2" x="54" y="162" width="78" height="12" rx="6"/>
+          <rect class="v3" x="54" y="192" width="78" height="12" rx="6"/>
+        </g>
+
+        <g class="il-destino">
+          <path class="il-t" d="M182 84h68l30 30v122a10 10 0 0 1-10 10h-88a10 10 0 0 1-10-10V94a10 10 0 0 1 10-10Z"/>
+          <path class="il-f" d="M250 84v30h30"/>
+          <path class="il-f d" d="M198 150h68"/>
+          <path class="il-f d" d="M198 172h68"/>
+          <path class="il-f d" d="M198 194h44"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ EXPORTAR ══════════
+         El movimiento contrario al de `archivo`: aquí los datos SALEN del
+         sistema, en dos formatos. La dirección de las flechas es lo único que
+         hay que leer para saber cuál es cuál. -->
+    @case ('exportar') {
+      <g class="il-escena">
+        <g class="il-fuente">
+          <rect class="il-t" x="102" y="44" width="116" height="104" rx="11"/>
+          <path class="il-f d" d="M102 72h116"/>
+          <path class="il-f d" d="M140 72v76"/>
+          <path class="il-f d" d="M180 72v76"/>
+          <path class="il-f d" d="M102 100h116"/>
+          <path class="il-f d" d="M102 124h116"/>
+        </g>
+
+        <path class="il-guia salida" d="M160 148v34"/>
+
+        <g class="il-salidas">
+          <!-- Hoja de cálculo -->
+          <g class="s1">
+            <rect class="il-t" x="36" y="196" width="88" height="98" rx="10"/>
+            <path class="il-f" d="M36 220h88"/>
+            <path class="il-f d" d="M80 220v74"/>
+            <path class="il-f d" d="M36 250h88"/>
+            <path class="il-f d" d="M36 274h88"/>
+          </g>
+          <!-- Documento con esquina doblada -->
+          <g class="s2">
+            <path class="il-t" d="M196 196h56l32 30v58a10 10 0 0 1-10 10h-78a10 10 0 0 1-10-10v-78a10 10 0 0 1 10-10Z"/>
+            <path class="il-f" d="M252 196v30h32"/>
+            <path class="il-f d" d="M212 250h56"/>
+            <path class="il-f d" d="M212 270h34"/>
+          </g>
+        </g>
+
+        <path class="il-punta baja" d="M160 186l-9-11h18z"/>
+      </g>
+    }
+
+    <!-- ══════════ OFFLINE ══════════
+         Sin red arriba; abajo el sistema sigue trabajando igual. -->
+    @case ('offline') {
+      <g class="il-escena">
+        <g class="il-sinred">
+          <path class="il-wifi" d="M104 82a80 80 0 0 1 112 0"/>
+          <path class="il-wifi d" d="M124 106a52 52 0 0 1 72 0"/>
+          <circle class="il-wifi-p" cx="160" cy="128" r="6"/>
+          <path class="il-tachado" d="M112 62l96 76"/>
+        </g>
+
+        <circle class="il-pista chica" cx="160" cy="212" r="58"/>
+        <g class="il-engrane">
+          <circle class="il-t" cx="160" cy="212" r="26"/>
+          <g class="il-dientes">
+            <path d="M160 176v-14"/><path d="M160 248v14"/>
+            <path d="M124 212h-14"/><path d="M196 212h14"/>
+            <path d="M135 187l-10-10"/><path d="M185 237l10 10"/>
+            <path d="M185 187l10-10"/><path d="M135 237l-10 10"/>
+          </g>
+        </g>
+
+        <g class="il-ok chico">
+          <circle class="il-ok-anillo v" cx="222" cy="270" r="17"/>
+          <path class="il-ok-check v" d="M214 270l5.5 6 11-12.5"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ TABLET ══════════
+         Una pantalla sola en la entrada, cerrada con llave. -->
+    @case ('tablet') {
+      <g class="il-escena">
+        <g class="il-tablet">
+          <rect class="il-t" x="80" y="34" width="160" height="230" rx="18"/>
+          <rect class="il-panel" x="94" y="52" width="132" height="182" rx="10"/>
+
+          <g class="il-mira">
+            <path d="M116 96V80h18"/><path d="M204 96V80h-18"/>
+            <path d="M116 174v16h18"/><path d="M204 174v16h-18"/>
+          </g>
+          <rect class="il-mira-linea" x="118" y="134" width="84" height="2" rx="1"/>
+
+          <circle class="il-f" cx="160" cy="249" r="6"/>
+        </g>
+
+        <g class="il-candado">
+          <rect class="il-t v" x="216" y="230" width="52" height="42" rx="9"/>
+          <path class="il-f v" d="M228 230v-12a14 14 0 0 1 28 0v12"/>
+          <circle class="il-f v" cx="242" cy="250" r="4"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ ROLES ══════════
+         Quién puede hacer qué, en un árbol de permisos. -->
+    @case ('roles') {
+      <g class="il-escena">
+        <path class="il-rama" d="M160 108v28M160 136H92v26M160 136h68v26"/>
+
+        <g class="il-nodo n1">
+          <circle class="il-t" cx="160" cy="80" r="28"/>
+          <path class="il-f" d="M160 66l14 6v12c0 9-6 15-14 18-8-3-14-9-14-18V72Z"/>
+        </g>
+
+        <g class="il-nodo n2">
+          <circle class="il-t" cx="92" cy="190" r="26"/>
+          <circle class="il-f" cx="92" cy="182" r="8"/>
+          <path class="il-f" d="M78 204a14 14 0 0 1 28 0"/>
+        </g>
+
+        <g class="il-nodo n3">
+          <circle class="il-t" cx="228" cy="190" r="26"/>
+          <circle class="il-f" cx="228" cy="182" r="8"/>
+          <path class="il-f" d="M214 204a14 14 0 0 1 28 0"/>
+        </g>
+
+        <path class="il-rama d" d="M228 216v22h-46v18"/>
+
+        <g class="il-nodo n4">
+          <circle class="il-t d" cx="160" cy="278" r="22"/>
+          <path class="il-f d" d="M146 272l14-7 14 7-14 7Zm0 4v8l14 7 14-7v-8"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ LISTADO ══════════
+         Muchos registros entran, el filtro deja pasar los que importan. -->
+    @case ('listado') {
+      <g class="il-escena">
+        <g class="il-entrantes">
+          <rect x="76" y="52" width="168" height="13" rx="6.5"/>
+          <rect x="76" y="74" width="168" height="13" rx="6.5"/>
+          <rect x="76" y="96" width="168" height="13" rx="6.5"/>
+          <rect x="76" y="118" width="168" height="13" rx="6.5"/>
+        </g>
+
+        <path class="il-embudo" d="M74 148h172l-58 44v40l-56 22v-62Z"/>
+
+        <g class="il-salientes">
+          <rect x="98" y="266" width="124" height="14" rx="7"/>
+          <rect x="112" y="290" width="96" height="14" rx="7"/>
+        </g>
+      </g>
+    }
+
+    <!-- ══════════ PERFIL ══════════
+         Una persona y todo lo que ha hecho, en una línea de tiempo. -->
+    @case ('perfil') {
+      <g class="il-escena">
+        <circle class="il-t" cx="160" cy="82" r="34"/>
+        <circle class="il-anillo-p" cx="160" cy="82" r="34"/>
+        <circle class="il-f" cx="160" cy="72" r="11"/>
+        <path class="il-f" d="M141 100a19 19 0 0 1 38 0"/>
+
+        <path class="il-eje" d="M48 176h224"/>
+        <g class="il-hitos-g">
+          <circle cx="66" cy="176" r="7"/>
+          <circle cx="113" cy="176" r="7"/>
+          <circle cx="160" cy="176" r="7"/>
+          <circle cx="207" cy="176" r="7"/>
+          <circle cx="254" cy="176" r="7"/>
+        </g>
+
+        <path class="il-area" d="M56 258 L104 232 L152 246 L200 208 L264 224 V286 H56 Z"
+              fill="url(#ilVela)"/>
+        <path class="il-tendencia p" d="M56 258 L104 232 L152 246 L200 208 L264 224"/>
+      </g>
+    }
+
+    <!-- ══════════ RESPALDO ══════════
+         Todo cae dentro del escudo y queda guardado. -->
+    @case ('respaldo') {
+      <g class="il-escena">
+        <g class="il-cajas">
+          <rect class="c1" x="146" y="40" width="28" height="28" rx="7"/>
+          <rect class="c2" x="146" y="40" width="28" height="28" rx="7"/>
+          <rect class="c3" x="146" y="40" width="28" height="28" rx="7"/>
+        </g>
+
+        <path class="il-escudo-b" filter="url(#ilSuave)"
+              d="M160 108l72 30v58c0 46-31 79-72 94-41-15-72-48-72-94v-58Z"/>
+        <path class="il-escudo"
+              d="M160 108l72 30v58c0 46-31 79-72 94-41-15-72-48-72-94v-58Z"/>
+        <path class="il-escudo-check" d="M133 208l20 21 37-43"/>
+      </g>
+    }
+
+    <!-- ══════════ GENÉRICO ══════════
+         Funciones sin motivo propio: el icono, pero enmarcado. -->
+    @default {
+      <g class="il-escena">
+        <circle class="il-pista" cx="160" cy="158" r="92"/>
+        <circle class="il-anillo-p" cx="160" cy="158" r="92"/>
+      </g>
+    }
+  }
+</svg>
+
+@if (!demo) {
+  <span class="il-icono"><mat-icon>{{ icono }}</mat-icon></span>
+}

@@ -9,6 +9,195 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-09-01 — /funciones: el recorrido, rehecho (v3.40.0)
+
+El usuario dijo que la presentación "se mira algo simplón". Tenía razón, y la
+causa no era la que parecía.
+
+**Diagnóstico: el SCSS estaba sedimentado, no diseñado.**
+Los tres commits anteriores sobre `funciones.component.scss` fueron +232, +214
+y +245 líneas y **ninguno borró nada**. Cada rediseño se apiló encima del
+anterior redefiniendo los mismos selectores y dejando que ganara el orden del
+archivo. Estado al empezar: 1413 líneas, `.demo mat-icon` definido 3 veces
+(46 → 58 → 96px), `.d-tablet mat-icon` 4 veces, 3 `@keyframes` duplicados que
+se pisaban en silencio (`pasar-credencial`, `salir-hoja`, `guardar-copia`),
+9 media queries con bloques repetidos —uno con un comentario admitiendo que
+estaba duplicado "a propósito" porque dependía del orden— y 28
+`rgba(0, 200, 215, x)` escritos a mano.
+
+Cuando ya no puedes predecir el render sin abrir el navegador, cada mejora es
+un parche más. Eso es lo que se percibe como simplón.
+
+**Qué se hizo:**
+
+- **SCSS reescrito de cero**, 1413 → 963 líneas: una capa, tokenizado
+  (`$fx-acento-*`), un solo punto de corte responsive. Regla en la cabecera:
+  un selector, un sitio.
+- **Ilustraciones a componente propio** (`funciones/ilustracion/`): 13 escenas
+  SVG de trazo con `<defs>` compartidos, sobre un lienzo común de 320×320.
+  Sustituyen a los `<mat-icon>` estirados a 96–168px — un glifo dibujado para
+  24px, a ese tamaño, es una silueta plana, y esa era la causa nº1 del aspecto
+  pobre. Vocabulario cerrado de clases (`.il-t`, `.il-f`, `.d`, `.v`, `.b`) y
+  todos los ciclos a 4 s o múltiplo, para que la escena tenga ritmo en vez de
+  ruido.
+- **Pantalla completa de verdad** (`requestFullscreen` sobre el elemento
+  anfitrión). El "modo presentación" anterior seguía enseñando sidebar, topbar
+  y bottom nav; al proyectar el host, quedan fuera. Se escucha
+  `fullscreenchange` porque en pantalla completa el navegador se queda con
+  Escape y nuestro `keydown` no llega a dispararse.
+- **View Transitions API** para el cambio de diapositiva, con
+  `ApplicationRef.tick()` dentro del callback (Angular renderiza async y la API
+  exige el DOM ya actualizado al retornar). Aporta lo que faltaba: animar la
+  SALIDA. Degrada a la animación CSS de entrada donde no existe.
+- Portada y cierre, avance automático (7 s), gesto de deslizar, `aria-live`,
+  Home/End/Espacio, y progreso segmentado en lugar de 17 puntos.
+- **Fix real:** el regex de acentos de `normalizar()` estaba escrito con los
+  caracteres combinantes **literales** (bytes CC 80 – CD AF). Funcionaba, pero
+  cualquier herramienta que normalizara el archivo a NFC los habría fusionado
+  con el carácter anterior y roto el buscador sin que el diff lo delatara.
+  Ahora se escribe con escapes Unicode explícitos en lugar de literales.
+
+**Lo que se descubrió por el camino:**
+
+- Los pseudo-elementos de View Transitions cuelgan del raíz del documento, así
+  que sus reglas **no pueden vivir en el SCSS del componente** (el encapsulado
+  de Angular las anularía): van en `src/styles.scss`. Y se anclan **sin
+  espacio** (`html[data-x]::view-transition-old(y)`); con combinador
+  descendente no seleccionan nada y falla en silencio.
+- El build imprime "19 rules skipped due to selector errors" por ese bloque. Es
+  el inliner de CSS crítico (css-select), que no sabe leer esos
+  pseudo-elementos. **Las reglas sí se emiten y funcionan** (verificado en
+  `dist/.../styles-*.css`). Envolver en `@supports` no lo silencia: beasties
+  recorre dentro igual. Queda documentado en el propio archivo.
+- El marco cónico giratorio del panel se animaba rotando el pseudo-elemento, lo
+  que recortaba las esquinas en cada vuelta. Ahora se anima el ángulo con
+  `@property --fx-angulo`.
+- Primer render: la composición quedaba pegada a la izquierda con ~450px
+  muertos a la derecha. La columna de texto era `1fr` pero el texto se cortaba
+  a 46ch. Se dimensiona por medida de lectura (`47ch`) + `justify-content:
+  center`.
+
+**Verificado:** build de producción OK · 178 tests unitarios en verde · 2 e2e
+de /funciones (avance del recorrido + sin desborde a 390px) · capturas de las
+17 diapositivas a 1440×900 y del móvil a 390×844.
+
+### Segunda pasada (misma versión, sin liberar)
+
+El usuario reportó que **el texto parpadeaba** al pasar de diapositiva. Causa:
+corrían **dos animaciones a la vez**. `mover()` reactivaba la clase `.anim` de
+respaldo *dentro* del callback de `startViewTransition`, así que se animaba la
+instantánea y el elemento real por debajo; y quitar y reponer `.anim` dejaba un
+fotograma con el contenido a opacidad plena antes de saltar a 0 para volver a
+entrar. Arreglo: con View Transitions disponible, la clase se queda apagada y
+la animación es solo del navegador.
+
+Segundo contribuyente: `object-fit: cover` sobre las instantáneas. El grupo
+interpolaba su caja del tamaño viejo al nuevo y las instantáneas se estiraban
+para seguirlo, deformando el texto a mitad de camino. Ahora
+`::view-transition-group(...)` lleva `animation: none` —sin morfeo de caja— y
+las instantáneas van a `object-fit: none`, a su tamaño real.
+
+**Verificado con instrumentación, no a ojo:** un script mide
+`getAnimations()` sobre el `.tour-texto` real durante la transición. Resultado:
+0 animaciones en el elemento, opacidad constante en 1, y 5 animaciones
+corriendo sobre los pseudo-elementos. Antes había una `fx-entra` compitiendo.
+
+**Añadido en la misma tanda:**
+- **Vista general** (tecla `G`): las 17 diapositivas en miniatura, navegables.
+  Es lo que separa pasar diapositivas de presentar — poder ir a la que te
+  acaban de preguntar. Las miniaturas van con las animaciones congeladas
+  (`:host(.mini)` reutilizando el mixin de `prefers-reduced-motion`): quince
+  bucles a la vez no aportan nada a algo que se mira medio segundo.
+- **Salto por número**, acumulando dígitos en una ventana de 550 ms para poder
+  teclear "12", con realimentación en pantalla.
+- **Wake Lock** mientras se presenta, re-pedido en `visibilitychange` porque el
+  sistema lo suelta al ocultarse la pestaña y no lo devuelve solo.
+- Contador de tiempo dentro del tramo actual con el avance automático.
+
+### Tercera pasada: el destello al cambiar de página
+
+Segundo reporte del usuario: "cambio de página y hay como un flash donde se
+mira un texto". No era la transición entre diapositivas, era **el salto de
+ruta**.
+
+Instrumentado con un muestreo por fotograma (`requestAnimationFrame` +
+comprobar si `.fx-header` está en el DOM), no a ojo:
+
+```
+fotogramas con el CATÁLOGO renderizado: 6
+  texto que se alcanza a ver: "¿Qué puede hacer Stenbrary?36 funciones "
+```
+
+`abrir()` llamaba a `salirPresentacion()` —que apaga `modoPresentacion` y por
+tanto renderiza el catálogo entero, cabecera y 36 tarjetas— y *después* a
+`router.navigate()`, que es asíncrono. Angular aprovechaba ese hueco de ~100 ms
+para pintar el catálogo. Arreglo: al navegar se sueltan los recursos
+(temporizador, wake lock) pero el modo se queda encendido; el componente se
+destruye enseguida y `ngOnDestroy` remata. Con un `navegandoAUnaFuncion` para
+que el manejador de `fullscreenchange` no complete la salida por su cuenta, y
+un `.then(ok => ...)` por si un guard bloquea la navegación y hay que salir de
+verdad.
+
+**Segundo destello, encontrado de paso:** `salirPresentacion()` apagaba el modo
+ANTES de soltar la pantalla completa, así que el catálogo se renderizaba dentro
+de un elemento todavía proyectado — aparecía a pantalla completa un instante y
+luego encogía de golpe al marco de la aplicación. Ahora la salida va en dos
+tiempos: se suelta la pantalla completa y `onCambioPantallaCompleta` completa
+el resto, lo que además unifica las tres formas de salir (botón, Escape, y el
+navegador saliendo por su cuenta) en un solo camino.
+
+Medición final: navegar a una función, **0 fotogramas** de catálogo (antes 6);
+salir del recorrido, 0 fotogramas de catálogo proyectado a pantalla completa.
+
+### Cuarta pasada: el parpadeo de verdad — los dos textos encimados
+
+El usuario volvió con capturas de vídeo pausado a mitad de transición. En ellas
+se leen **los dos títulos superpuestos, letra sobre letra**: "Registro con
+lector de credencial" encima de la portada que aún no se había ido.
+
+No era un defecto de mecanismo: era el **fundido cruzado en sí**. Old y new se
+desvanecen a la vez en la misma posición durante 460 ms. Con imágenes eso es un
+dissolve; con dos párrafos distintos es un borrón ilegible, y se percibe como
+parpadeo.
+
+**Error de método que conviene anotar:** en la pasada anterior verifiqué con
+`getAnimations()` sobre el `.tour-texto` REAL y salió limpio — y lo estaba. Pero
+esto ocurre entero en la capa de pseudo-elementos, donde esa consulta no llega.
+Medí una cosa correcta que no era la que fallaba, y di por cerrado algo que no
+lo estaba.
+
+**Arreglo — relevo en vez de fundido cruzado**, y solo donde importa:
+- **Texto**: la saliente dura 150 ms con `animation-fill-mode: forwards` (sin
+  `forwards` vuelve a opacidad 1 al acabar y reaparece bajo la entrante: el
+  mismo defecto por otra puerta); la entrante arranca a los 155 ms con
+  `fill-mode: both` para quedarse invisible durante la espera.
+- **Ilustración**: se sigue cruzando a propósito. El relevo estricto en las dos
+  capas dejaba ~100 ms de escenario vacío —cambiar un parpadeo por otro— y dos
+  dibujos de línea superpuestos un instante no estorban.
+- `mix-blend-mode: normal` en vez del `plus-lighter` del navegador: ese modo
+  existe para que un fundido cruzado no baje de brillo, pero ya no hay cruce y
+  sumar luz solo haría más visible cualquier solape residual.
+
+**Verificación con control negativo**, que es lo que faltó la vez anterior: el
+script mide los fotogramas en que la saliente y la entrante están las dos
+visibles, y se ejecuta DOS veces — una reinyectando por CSS las reglas
+antiguas. Sin ese control, un cero no prueba nada.
+
+```
+ANTES (fundido cruzado)    con LOS DOS TEXTOS a la vez: 11
+AHORA (relevo)             con LOS DOS TEXTOS a la vez:  0
+```
+
+**Lo que destapó la vista general:** puestas en rejilla se veía que las
+diapositivas 6/7 y 12/13 compartían ilustración (`grafica` y `archivo`). Se
+añadieron dos motivos nuevos, `resumen` (tablero del día: cifras + horas, con
+el pico señalado) y `exportar` (la tabla que se parte en Excel y PDF, con el
+movimiento hacia AFUERA — el contrario de `archivo`). Vale la pena anotarlo:
+la vista general no era solo una función, fue también una herramienta de
+revisión que hizo evidente un defecto que de una en una no se veía.
+
+---
+
 ## 2026-06-01 (tarde) — Fase 2.3.x: página /usuarios + badge en tiempo real
 
 Tras dejar verde el CI, seguimos avanzando hacia el cierre de Fase 2.

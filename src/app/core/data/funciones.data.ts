@@ -23,15 +23,24 @@
 
 export type AreaFuncion = 'operacion' | 'consulta' | 'administracion' | 'datos' | 'tecnico';
 
-/** Motivos disponibles para el recorrido guiado. Ver funciones.component.scss. */
+/**
+ * Motivos disponibles para el recorrido guiado.
+ *
+ * Cada valor tiene su escena SVG en
+ * `features/funciones/ilustracion/ilustracion.component.html` y sus
+ * animaciones en el `.scss` de al lado. Añadir un valor aquí sin añadir la
+ * escena no rompe nada: cae al motivo genérico (el icono, enmarcado).
+ */
 export type DemoVisual =
   | 'escaneo'    // credencial pasando por el lector
   | 'salida'     // entrada y salida con tiempo
   | 'aforo'      // medidor llenándose
-  | 'grafica'    // barras creciendo
+  | 'grafica'    // tendencia que se dibuja sobre barras
+  | 'resumen'    // tablero del día: cifras y una barra
   | 'alerta'     // señal que pulsa
   | 'nube'       // subida y bajada
-  | 'archivo'    // documento que sale
+  | 'archivo'    // filas de una hoja que entran al sistema
+  | 'exportar'   // el sistema saca Excel y PDF
   | 'offline'    // sin red, todo sigue
   | 'tablet'     // pantalla sola en la entrada
   | 'roles'      // personas con distintos permisos
@@ -207,7 +216,7 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Resumen',
     ruta: '/dashboard',
     destacada: true,
-    demo: 'grafica',
+    demo: 'resumen',
   },
   {
     titulo: 'Estadísticas avanzadas',
@@ -360,7 +369,7 @@ export const FUNCIONES: Funcion[] = [
     area: 'datos',
     donde: 'Registros, Alumnos y Estadísticas',
     destacada: true,
-    demo: 'archivo',
+    demo: 'exportar',
   },
   {
     titulo: 'Respaldo y restauración',

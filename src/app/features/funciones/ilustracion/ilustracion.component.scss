@@ -1,0 +1,1019 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  ilustracion.component.scss                          ║
+// ║  Stenbrary — Motivos del recorrido guiado            ║
+// ║                                                      ║
+// ║  Tres reglas que mantienen esto coherente:           ║
+// ║                                                      ║
+// ║  1. Vocabulario cerrado de trazos: `.il-t` (figura   ║
+// ║     principal), `.il-f` (detalle), `.d` (atenuado),  ║
+// ║     `.v` (aviso ámbar), `.b` (brillante). Ninguna    ║
+// ║     escena inventa un color suelto.                  ║
+// ║  2. Todo ciclo dura 4 s o un múltiplo. Con varias    ║
+// ║     animaciones sueltas a duraciones primas, la      ║
+// ║     escena nunca vuelve al mismo sitio y se percibe  ║
+// ║     como ruido en vez de ritmo.                      ║
+// ║  3. Movimiento lento y de poca amplitud. Esto se     ║
+// ║     proyecta detrás de alguien que está hablando:    ║
+// ║     debe acompañar, no robar la atención.            ║
+// ╚══════════════════════════════════════════════════════╝
+
+@import '../../../../styles/variables';
+
+:host {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.il {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+// ═══════════════════════════════════════════════════════════
+// VOCABULARIO DE TRAZO
+// ═══════════════════════════════════════════════════════════
+// El degradado en el trazo es lo que evita el aspecto de icono: una figura
+// monocroma de 2px se lee plana, la misma con una rampa cyan→teal tiene
+// dirección y volumen.
+
+.il-t {
+  fill: none;
+  stroke: url(#ilCyan);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  &.d { opacity: 0.34; }
+  &.v { stroke: $amber-color; }
+}
+
+path.il-f,
+.il-f:not(rect):not(circle) {
+  fill: none;
+  stroke: $cyan-300;
+  stroke-width: 2.2;
+  stroke-opacity: 0.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+rect.il-f,
+circle.il-f {
+  fill: $cyan-300;
+  fill-opacity: 0.55;
+  stroke: none;
+}
+
+.il-f.d { opacity: 0.42; }
+.il-f.b { stroke-opacity: 1; stroke: $cyan-200; }
+path.il-f.v  { stroke: $amber-color; stroke-opacity: 0.9; }
+circle.il-f.v { fill: $amber-color; fill-opacity: 0.85; }
+
+.il-punta { fill: $cyan-300; fill-opacity: 0.7; }
+
+// Circunferencia de fondo sobre la que corre un arco de progreso.
+.il-pista {
+  fill: none;
+  stroke: $cyan-500;
+  stroke-opacity: 0.13;
+  stroke-width: 10;
+
+  &.chica { stroke-width: 2.6; stroke-opacity: 0.22; }
+}
+
+.il-eje {
+  fill: none;
+  stroke: $cyan-500;
+  stroke-opacity: 0.28;
+  stroke-width: 1.6;
+
+  &.d { stroke-opacity: 0.12; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FONDO
+// ═══════════════════════════════════════════════════════════
+// La rejilla deriva un mosaico completo (26 px) en 40 s: el bucle es
+// invisible porque termina exactamente donde empezó, y basta para que el
+// fondo no se lea como una imagen congelada.
+
+.il-rejilla {
+  animation: il-deriva 40s linear infinite;
+  opacity: 0.85;
+}
+
+@keyframes il-deriva {
+  to { transform: translate(26px, 26px); }
+}
+
+.il-halo {
+  transform-box: view-box;
+  transform-origin: 160px 158px;
+  animation: il-respira 8s ease-in-out infinite;
+}
+
+@keyframes il-respira {
+  0%, 100% { opacity: 0.75; transform: scale(0.94); }
+  50%      { opacity: 1;    transform: scale(1.05); }
+}
+
+// La escena entra con un empuje mínimo. El desplazamiento grande lo hace la
+// diapositiva completa; aquí solo se necesita que la figura "aterrice".
+.il-escena {
+  transform-box: view-box;
+  transform-origin: 160px 160px;
+  animation: il-aterriza 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes il-aterriza {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ESCANEO
+// ═══════════════════════════════════════════════════════════
+
+.il-haz {
+  transform-box: view-box;
+  transform-origin: 160px 72px;
+  animation: il-haz 4s ease-in-out infinite;
+}
+
+@keyframes il-haz {
+  0%, 100% { opacity: 0.25; }
+  40%, 65% { opacity: 0.9; }
+}
+
+.il-led {
+  fill: $cyan-300;
+  animation: il-led 4s ease-in-out infinite;
+}
+
+@keyframes il-led {
+  0%, 30%  { fill: $cyan-300; opacity: 0.35; }
+  45%, 70% { fill: $success-color; opacity: 1; }
+  100%     { fill: $cyan-300; opacity: 0.35; }
+}
+
+.il-credencial {
+  transform-box: view-box;
+  animation: il-credencial 4s cubic-bezier(0.33, 1, 0.68, 1) infinite;
+}
+
+@keyframes il-credencial {
+  0%       { opacity: 0; transform: translateY(84px); }
+  22%, 72% { opacity: 1; transform: translateY(0); }
+  92%, 100% { opacity: 0; transform: translateY(-26px); }
+}
+
+.il-barras rect {
+  fill: $cyan-200;
+  fill-opacity: 0.45;
+}
+
+// La línea de lectura recorre el código una vez por ciclo. Es el gesto que
+// convierte "una credencial dibujada" en "una credencial siendo leída".
+.il-lectura {
+  fill: $cyan-200;
+  transform-box: view-box;
+  filter: drop-shadow(0 0 6px rgba(93, 228, 236, 0.9));
+  animation: il-lectura 4s ease-in-out infinite;
+}
+
+@keyframes il-lectura {
+  0%, 24%   { opacity: 0; transform: translateY(-8px); }
+  32%       { opacity: 1; }
+  56%       { opacity: 1; transform: translateY(12px); }
+  64%, 100% { opacity: 0; transform: translateY(12px); }
+}
+
+.il-ok {
+  transform-box: view-box;
+  transform-origin: 160px 274px;
+  animation: il-ok 4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+
+  &.chico {
+    transform-origin: 222px 270px;
+    animation-name: il-ok-suave;
+    animation-timing-function: ease-in-out;
+  }
+}
+
+.il-ok-anillo {
+  fill: none;
+  stroke: $success-color;
+  stroke-width: 2.6;
+
+  &.v { stroke: $success-color; }
+}
+
+.il-ok-check {
+  fill: none;
+  stroke: $success-color;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: il-traza-30 4s ease-out infinite;
+
+  &.v { stroke-dasharray: 27; stroke-dashoffset: 0; animation: none; }
+}
+
+@keyframes il-ok {
+  0%, 52%   { opacity: 0; transform: scale(0.5); }
+  64%, 88%  { opacity: 1; transform: scale(1); }
+  100%      { opacity: 0; transform: scale(0.9); }
+}
+
+@keyframes il-ok-suave {
+  0%, 100% { opacity: 0.55; transform: scale(0.96); }
+  50%      { opacity: 1;    transform: scale(1.04); }
+}
+
+@keyframes il-traza-30 {
+  0%, 56%   { stroke-dashoffset: 30; }
+  70%, 100% { stroke-dashoffset: 0; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SALIDA
+// ═══════════════════════════════════════════════════════════
+
+// Guía de puntos que avanza: indica el sentido del recorrido incluso cuando
+// el viajero está fuera de cuadro.
+.il-guia {
+  fill: none;
+  stroke: $cyan-400;
+  stroke-opacity: 0.35;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 2 12;
+  animation: il-marcha 1.6s linear infinite;
+
+  &.v { animation-name: il-marcha-v; }
+}
+
+@keyframes il-marcha   { to { stroke-dashoffset: -14; } }
+@keyframes il-marcha-v { to { stroke-dashoffset: -14; } }
+
+.il-viajero {
+  fill: $cyan-200;
+  transform-box: view-box;
+  filter: drop-shadow(0 0 8px rgba(93, 228, 236, 0.7));
+  animation: il-viaja 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes il-viaja {
+  0%        { opacity: 0; transform: translateX(58px); }
+  12%       { opacity: 1; }
+  46%, 58%  { transform: translateX(160px); opacity: 1; }
+  92%       { opacity: 1; transform: translateX(262px); }
+  100%      { opacity: 0; transform: translateX(268px); }
+}
+
+// Arco de estancia: se llena mientras la persona está dentro y se vacía al
+// salir. r=42 → perímetro 264.
+.il-arco {
+  fill: none;
+  stroke: url(#ilCyan);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-dasharray: 264;
+  stroke-dashoffset: 264;
+  transform-box: view-box;
+  transform-origin: 160px 160px;
+  transform: rotate(-90deg);
+  animation: il-arco 4s ease-in-out infinite;
+}
+
+@keyframes il-arco {
+  0%, 14%   { stroke-dashoffset: 264; }
+  56%       { stroke-dashoffset: 40; }
+  74%, 100% { stroke-dashoffset: 264; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// AFORO
+// ═══════════════════════════════════════════════════════════
+// r=86 → perímetro 541. El arco no llega nunca al 100 %: un medidor lleno
+// comunica "bloqueado", y lo que se está enseñando es que se ve en vivo.
+
+.il-aforo {
+  fill: none;
+  stroke: url(#ilCyan);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 541;
+  stroke-dashoffset: 541;
+  transform-box: view-box;
+  transform-origin: 160px 158px;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 10px rgba(0, 200, 215, 0.35));
+  animation: il-aforo 8s ease-in-out infinite;
+}
+
+@keyframes il-aforo {
+  0%, 100% { stroke-dashoffset: 460; }
+  50%      { stroke-dashoffset: 170; }
+}
+
+.il-personas circle {
+  fill: $cyan-300;
+  transform-box: view-box;
+  transform-origin: center;
+  animation: il-persona 8s ease-in-out infinite;
+
+  @for $i from 1 through 10 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 180}ms; }
+  }
+}
+
+@keyframes il-persona {
+  0%, 100% { opacity: 0.18; transform: scale(0.6); }
+  35%, 70% { opacity: 0.9;  transform: scale(1); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// GRÁFICA
+// ═══════════════════════════════════════════════════════════
+
+.il-barras-g rect {
+  fill: url(#ilCyan);
+  fill-opacity: 0.28;
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: il-barra 8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+
+  @for $i from 1 through 5 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 130}ms; }
+  }
+}
+
+@keyframes il-barra {
+  0%, 100% { transform: scaleY(0.12); fill-opacity: 0.14; }
+  30%, 72% { transform: scaleY(1);    fill-opacity: 0.34; }
+}
+
+.il-tendencia {
+  fill: none;
+  stroke: url(#ilCyan);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 290;
+  stroke-dashoffset: 290;
+  filter: drop-shadow(0 0 8px rgba(0, 200, 215, 0.45));
+  animation: il-traza-290 8s ease-in-out infinite;
+
+  &.p {
+    stroke-dasharray: 240;
+    stroke-dashoffset: 240;
+    animation-name: il-traza-240;
+    animation-duration: 4s;
+  }
+}
+
+@keyframes il-traza-290 {
+  0%, 12%   { stroke-dashoffset: 290; }
+  46%, 74%  { stroke-dashoffset: 0; }
+  100%      { stroke-dashoffset: 290; }
+}
+
+@keyframes il-traza-240 {
+  0%, 10%   { stroke-dashoffset: 240; }
+  50%, 80%  { stroke-dashoffset: 0; }
+  100%      { stroke-dashoffset: 240; }
+}
+
+.il-nodos circle {
+  fill: $cyan-200;
+  transform-box: view-box;
+  transform-origin: center;
+  animation: il-nodo-punto 8s ease-out infinite;
+
+  @for $i from 1 through 5 {
+    &:nth-child(#{$i}) { animation-delay: #{800 + ($i - 1) * 340}ms; }
+  }
+}
+
+@keyframes il-nodo-punto {
+  0%, 4%    { opacity: 0; transform: scale(0.3); }
+  12%, 74%  { opacity: 1; transform: scale(1); }
+  86%, 100% { opacity: 0; transform: scale(0.6); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESUMEN
+// ═══════════════════════════════════════════════════════════
+
+.il-fichas > g {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: il-ficha 8s ease-in-out infinite;
+
+  &.f2 { animation-delay: 260ms; }
+  &.f3 { animation-delay: 520ms; }
+}
+
+@keyframes il-ficha {
+  0%, 100% { opacity: 0.45; transform: translateY(6px); }
+  18%, 72% { opacity: 1;    transform: translateY(0); }
+}
+
+.il-horas rect {
+  fill: url(#ilCyan);
+  fill-opacity: 0.3;
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: il-hora 8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+
+  @for $i from 1 through 7 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 90}ms; }
+  }
+
+  // La hora punta va llena: es la que el tablero real destaca.
+  &:nth-child(4) { fill-opacity: 0.75; }
+}
+
+@keyframes il-hora {
+  0%, 100% { transform: scaleY(0.1); }
+  26%, 76% { transform: scaleY(1); }
+}
+
+.il-pico {
+  transform-box: view-box;
+  transform-origin: 156px 162px;
+  animation: il-pico 8s ease-out infinite;
+
+  circle { fill: $cyan-200; }
+}
+
+.il-pico-tallo {
+  fill: none;
+  stroke: $cyan-300;
+  stroke-width: 2;
+  stroke-opacity: 0.5;
+  stroke-dasharray: 3 4;
+}
+
+@keyframes il-pico {
+  0%, 22%   { opacity: 0; transform: scale(0.4); }
+  34%, 76%  { opacity: 1; transform: scale(1); }
+  90%, 100% { opacity: 0; transform: scale(0.7); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXPORTAR
+// ═══════════════════════════════════════════════════════════
+// El sentido del movimiento es todo el mensaje: en `archivo` las filas entran
+// al sistema, aquí los formatos salen de él.
+
+.il-guia.salida {
+  fill: none;
+  stroke: $cyan-400;
+  stroke-opacity: 0.4;
+  stroke-width: 2;
+  stroke-dasharray: 2 10;
+  animation: il-marcha 1.4s linear infinite;
+}
+
+.il-punta.baja {
+  fill: $cyan-300;
+  fill-opacity: 0.8;
+  transform-box: view-box;
+  animation: il-baja-punta 4s ease-in-out infinite;
+}
+
+@keyframes il-baja-punta {
+  0%, 100% { opacity: 0.3; transform: translateY(-6px); }
+  50%      { opacity: 1;   transform: translateY(4px); }
+}
+
+.il-salidas > g {
+  transform-box: view-box;
+  transform-origin: 160px 200px;
+
+  &.s1 { animation: il-sale-izq 4s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+  &.s2 { animation: il-sale-der 4s cubic-bezier(0.16, 1, 0.3, 1) 400ms infinite; }
+}
+
+@keyframes il-sale-izq {
+  0%, 10%   { opacity: 0; transform: translate(56px, -34px) scale(0.7); }
+  40%, 84%  { opacity: 1; transform: translate(0, 0) scale(1); }
+  100%      { opacity: 0; transform: translate(0, 0) scale(1); }
+}
+
+@keyframes il-sale-der {
+  0%, 10%   { opacity: 0; transform: translate(-56px, -34px) scale(0.7); }
+  40%, 84%  { opacity: 1; transform: translate(0, 0) scale(1); }
+  100%      { opacity: 0; transform: translate(0, 0) scale(1); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ALERTA
+// ═══════════════════════════════════════════════════════════
+// Tres visitas seguidas y luego nada: el hueco es el mensaje. Por eso los dos
+// últimos puntos son contorno vacío y no color atenuado — "no vino" no es
+// "vino poco".
+
+.il-racha circle {
+  fill: $cyan-400;
+  fill-opacity: 0.75;
+  transform-box: view-box;
+  transform-origin: center;
+  animation: il-late 4s ease-in-out infinite;
+
+  &:nth-child(2) { animation-delay: 200ms; }
+  &:nth-child(3) { animation-delay: 400ms; }
+}
+
+@keyframes il-late {
+  0%, 100% { transform: scale(1);    fill-opacity: 0.75; }
+  50%      { transform: scale(1.12); fill-opacity: 1; }
+}
+
+.il-apagados circle {
+  fill: none;
+  stroke: $cyan-500;
+  stroke-opacity: 0.3;
+  stroke-width: 2;
+  stroke-dasharray: 4 5;
+}
+
+.il-onda {
+  fill: none;
+  stroke: $amber-color;
+  stroke-width: 2;
+  transform-box: view-box;
+  transform-origin: 232px 160px;
+  animation: il-onda 4s ease-out infinite;
+
+  &.t { animation-delay: 1.3s; }
+}
+
+@keyframes il-onda {
+  0%   { opacity: 0.55; transform: scale(0.5); }
+  70%, 100% { opacity: 0; transform: scale(1.5); }
+}
+
+.il-signo {
+  fill: none;
+  stroke: $amber-color;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+}
+
+.il-signo-p { fill: $amber-color; }
+
+// ═══════════════════════════════════════════════════════════
+// NUBE
+// ═══════════════════════════════════════════════════════════
+
+.il-paquetes rect {
+  fill: url(#ilCyan);
+  fill-opacity: 0.7;
+  transform-box: view-box;
+
+  &.sube { animation: il-sube 4s ease-in-out infinite; }
+  &.baja { animation: il-baja 4s ease-in-out 2s infinite; }
+}
+
+@keyframes il-sube {
+  0%        { opacity: 0; transform: translateY(0); }
+  20%       { opacity: 1; }
+  70%       { opacity: 1; transform: translateY(-64px); }
+  85%, 100% { opacity: 0; transform: translateY(-72px); }
+}
+
+@keyframes il-baja {
+  0%        { opacity: 0; transform: translateY(0); }
+  20%       { opacity: 1; }
+  70%       { opacity: 1; transform: translateY(58px); }
+  85%, 100% { opacity: 0; transform: translateY(66px); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ARCHIVO
+// ═══════════════════════════════════════════════════════════
+// Las filas salen de la hoja y aterrizan en el documento. Cada una lleva su
+// propio destino porque la altura de origen y la de llegada no coinciden:
+// un desplazamiento común las haría llegar torcidas.
+
+.il-vuelo rect {
+  fill: url(#ilCyan);
+  fill-opacity: 0.65;
+  transform-box: view-box;
+
+  &.v1 { animation: il-vuela-1 4s cubic-bezier(0.5, 0, 0.3, 1) infinite; }
+  &.v2 { animation: il-vuela-2 4s cubic-bezier(0.5, 0, 0.3, 1) 400ms infinite; }
+  &.v3 { animation: il-vuela-3 4s cubic-bezier(0.5, 0, 0.3, 1) 800ms infinite; }
+}
+
+@keyframes il-vuela-1 {
+  0%        { opacity: 0; transform: translate(0, 0) scale(1); }
+  14%       { opacity: 1; }
+  60%, 100% { opacity: 0; transform: translate(144px, 18px) scale(0.82); }
+}
+
+@keyframes il-vuela-2 {
+  0%        { opacity: 0; transform: translate(0, 0) scale(1); }
+  14%       { opacity: 1; }
+  60%, 100% { opacity: 0; transform: translate(144px, 10px) scale(0.82); }
+}
+
+@keyframes il-vuela-3 {
+  0%        { opacity: 0; transform: translate(0, 0) scale(1); }
+  14%       { opacity: 1; }
+  60%, 100% { opacity: 0; transform: translate(144px, 2px) scale(0.82); }
+}
+
+.il-destino {
+  transform-box: view-box;
+  transform-origin: 232px 170px;
+  animation: il-recibe 4s ease-in-out infinite;
+}
+
+@keyframes il-recibe {
+  0%, 40%, 100% { transform: scale(1); }
+  55%           { transform: scale(1.035); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// OFFLINE
+// ═══════════════════════════════════════════════════════════
+
+.il-wifi {
+  fill: none;
+  stroke: $text-muted;
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.5;
+
+  &.d { opacity: 0.3; }
+}
+
+.il-wifi-p { fill: $text-muted; opacity: 0.5; }
+
+.il-tachado {
+  fill: none;
+  stroke: $amber-color;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-dasharray: 124;
+  stroke-dashoffset: 124;
+  animation: il-tacha 8s ease-in-out infinite;
+}
+
+@keyframes il-tacha {
+  0%, 6%    { stroke-dashoffset: 124; }
+  22%, 100% { stroke-dashoffset: 0; }
+}
+
+.il-engrane {
+  transform-box: view-box;
+  transform-origin: 160px 212px;
+  animation: il-gira 16s linear infinite;
+}
+
+@keyframes il-gira { to { transform: rotate(360deg); } }
+
+.il-dientes path {
+  fill: none;
+  stroke: url(#ilCyan);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABLET
+// ═══════════════════════════════════════════════════════════
+
+.il-tablet {
+  transform-box: view-box;
+  transform-origin: 160px 150px;
+  animation: il-flota 8s ease-in-out infinite;
+}
+
+@keyframes il-flota {
+  0%, 100% { transform: translateY(0)    rotate(0deg); }
+  50%      { transform: translateY(-7px) rotate(-0.8deg); }
+}
+
+.il-panel {
+  fill: $cyan-500;
+  fill-opacity: 0.05;
+  stroke: $cyan-500;
+  stroke-opacity: 0.16;
+  stroke-width: 1.5;
+}
+
+.il-mira path {
+  fill: none;
+  stroke: url(#ilCyan);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.il-mira-linea {
+  fill: $cyan-200;
+  transform-box: view-box;
+  filter: drop-shadow(0 0 6px rgba(93, 228, 236, 0.8));
+  animation: il-mira 4s ease-in-out infinite;
+}
+
+@keyframes il-mira {
+  0%, 100% { transform: translateY(-40px); opacity: 0.35; }
+  50%      { transform: translateY(40px);  opacity: 1; }
+}
+
+.il-candado {
+  transform-box: view-box;
+  transform-origin: 242px 248px;
+  animation: il-candado 4s ease-in-out infinite;
+}
+
+@keyframes il-candado {
+  0%, 100% { transform: scale(1);    opacity: 0.8; }
+  50%      { transform: scale(1.06); opacity: 1; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROLES
+// ═══════════════════════════════════════════════════════════
+
+.il-rama {
+  fill: none;
+  stroke: $cyan-400;
+  stroke-opacity: 0.4;
+  stroke-width: 2;
+  stroke-dasharray: 3 8;
+  animation: il-marcha 2s linear infinite;
+
+  &.d { stroke-opacity: 0.2; }
+}
+
+// Se encienden en cascada de arriba abajo: es la jerarquía, contada en el
+// tiempo en vez de con una leyenda.
+.il-nodo {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: il-nodo-luz 8s ease-in-out infinite;
+
+  &.n1 { animation-delay: 0ms; }
+  &.n2 { animation-delay: 500ms; }
+  &.n3 { animation-delay: 1000ms; }
+  &.n4 { animation-delay: 1500ms; }
+}
+
+@keyframes il-nodo-luz {
+  0%, 100% { opacity: 0.5; }
+  12%, 45% { opacity: 1; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// LISTADO
+// ═══════════════════════════════════════════════════════════
+
+.il-entrantes rect {
+  fill: $cyan-400;
+  fill-opacity: 0.3;
+  transform-box: view-box;
+  animation: il-entra-fila 4s cubic-bezier(0.5, 0, 0.4, 1) infinite;
+
+  @for $i from 1 through 4 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 160}ms; }
+  }
+}
+
+@keyframes il-entra-fila {
+  0%        { opacity: 0; transform: translateY(-22px) scaleX(1); }
+  18%, 40%  { opacity: 1; transform: translateY(0) scaleX(1); }
+  70%, 100% { opacity: 0; transform: translateY(46px) scaleX(0.7); }
+}
+
+.il-embudo {
+  fill: $cyan-500;
+  fill-opacity: 0.06;
+  stroke: url(#ilCyan);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+
+.il-salientes rect {
+  fill: url(#ilCyan);
+  fill-opacity: 0.8;
+  transform-box: view-box;
+  animation: il-sale-fila 4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+
+  &:nth-child(2) { animation-delay: 200ms; }
+}
+
+@keyframes il-sale-fila {
+  0%, 40%   { opacity: 0; transform: translateY(-18px) scaleX(0.6); }
+  58%, 88%  { opacity: 1; transform: translateY(0) scaleX(1); }
+  100%      { opacity: 0; transform: translateY(0) scaleX(1); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PERFIL
+// ═══════════════════════════════════════════════════════════
+
+// Anillo segmentado que gira: distingue la ficha de una persona de cualquier
+// otro círculo de la pantalla.
+.il-anillo-p {
+  fill: none;
+  stroke: url(#ilCyan);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 26 14;
+  transform-box: view-box;
+  transform-origin: center;
+  animation: il-gira 24s linear infinite;
+}
+
+.il-hitos-g circle {
+  fill: $cyan-300;
+  transform-box: view-box;
+  transform-origin: center;
+  animation: il-hito 4s ease-in-out infinite;
+
+  @for $i from 1 through 5 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 220}ms; }
+  }
+}
+
+@keyframes il-hito {
+  0%, 100% { opacity: 0.22; transform: scale(0.7); }
+  30%, 60% { opacity: 1;    transform: scale(1.25); }
+}
+
+.il-area {
+  animation: il-area 4s ease-in-out infinite;
+}
+
+@keyframes il-area {
+  0%, 14%   { opacity: 0; }
+  55%, 82%  { opacity: 1; }
+  100%      { opacity: 0; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESPALDO
+// ═══════════════════════════════════════════════════════════
+
+.il-cajas rect {
+  fill: url(#ilCyan);
+  fill-opacity: 0.7;
+  transform-box: view-box;
+  animation: il-cae 4s cubic-bezier(0.5, 0, 0.7, 1) infinite;
+
+  &.c2 { animation-delay: 500ms; }
+  &.c3 { animation-delay: 1000ms; }
+}
+
+@keyframes il-cae {
+  0%        { opacity: 0; transform: translateY(-26px) scale(0.7); }
+  16%       { opacity: 1; transform: translateY(0) scale(1); }
+  46%       { opacity: 1; transform: translateY(110px) scale(0.72); }
+  56%, 100% { opacity: 0; transform: translateY(126px) scale(0.5); }
+}
+
+.il-escudo {
+  fill: $cyan-500;
+  fill-opacity: 0.05;
+  stroke: url(#ilCyan);
+  stroke-width: 2.8;
+  stroke-linejoin: round;
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: il-traza-500 8s ease-in-out infinite;
+}
+
+@keyframes il-traza-500 {
+  0%, 4%    { stroke-dashoffset: 500; }
+  34%, 100% { stroke-dashoffset: 0; }
+}
+
+// Copia difuminada detrás: el escudo deja de ser una silueta recortada y gana
+// el peso que pedía ser el elemento principal de la escena.
+.il-escudo-b {
+  fill: $cyan-500;
+  fill-opacity: 0.16;
+  stroke: none;
+  transform-box: view-box;
+  transform-origin: 160px 195px;
+  animation: il-respira 8s ease-in-out infinite;
+}
+
+.il-escudo-check {
+  fill: none;
+  stroke: $success-color;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: il-traza-90 8s ease-out infinite;
+}
+
+@keyframes il-traza-90 {
+  0%, 44%   { stroke-dashoffset: 90; }
+  60%, 100% { stroke-dashoffset: 0; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESPALDO DEL MOTIVO GENÉRICO
+// ═══════════════════════════════════════════════════════════
+
+.il-icono {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  mat-icon {
+    font-size: 88px;
+    width: 88px;
+    height: 88px;
+    color: $cyan-300;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MOVIMIENTO REDUCIDO
+// ═══════════════════════════════════════════════════════════
+// Con `prefers-reduced-motion` no basta con quitar las animaciones: varias
+// escenas dejan su estado inicial en opacidad 0 o trazo sin dibujar, y sin
+// animación se quedarían invisibles. Hay que devolverlas al estado final.
+
+// El mismo estado congelado hace falta en dos contextos distintos, así que
+// vive en un mixin: con `prefers-reduced-motion`, y en las miniaturas de la
+// vista general, donde quince escenas animadas a la vez serían quince bucles
+// compitiendo por la GPU para algo que solo se mira medio segundo.
+@mixin il-congelada {
+  .il *,
+  .il-icono {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .il-escena,
+  .il-credencial,
+  .il-lectura,
+  .il-ok,
+  .il-viajero,
+  .il-area,
+  .il-destino {
+    opacity: 1;
+    transform: none;
+  }
+
+  .il-ok-check,
+  .il-tendencia,
+  .il-escudo,
+  .il-escudo-check,
+  .il-tachado { stroke-dashoffset: 0; }
+
+  .il-arco  { stroke-dashoffset: 90; }
+  .il-aforo { stroke-dashoffset: 190; }
+
+  .il-personas circle,
+  .il-nodos circle,
+  .il-hitos-g circle,
+  .il-entrantes rect,
+  .il-salientes rect,
+  .il-vuelo rect,
+  .il-paquetes rect,
+  .il-cajas rect,
+  .il-nodo,
+  .il-fichas > g,
+  .il-salidas > g,
+  .il-pico,
+  .il-punta.baja { opacity: 1; transform: none; }
+
+  .il-barras-g rect,
+  .il-horas rect { transform: none; fill-opacity: 0.3; }
+  .il-horas rect:nth-child(4) { fill-opacity: 0.75; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @include il-congelada;
+}
+
+// La clase la pone quien usa el componente (`<app-funcion-ilustracion mini>`).
+:host(.mini) {
+  @include il-congelada;
+
+  // A 120px la rejilla de fondo se convierte en textura sucia y el halo se
+  // come el trazo. Se retiran: en miniatura solo importa la silueta.
+  .il-rejilla { display: none; }
+  .il-halo { opacity: 0.5; }
+}

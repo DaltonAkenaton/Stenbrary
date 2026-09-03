@@ -739,3 +739,135 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+// TRANSICIÓN DEL RECORRIDO (/funciones)
+// ═══════════════════════════════════════════════════════════
+// Estas reglas TIENEN que vivir aquí y no en `funciones.component.scss`: los
+// pseudo-elementos de la View Transitions API cuelgan del elemento raíz del
+// documento, así que el encapsulado de Angular los dejaría sin efecto.
+//
+// Lo que aporta la API es la mitad que faltaba: la diapositiva que se va
+// también se anima. Antes el contenido cambiaba de golpe y solo entraba el
+// nuevo, así que se leía como "cambió el texto" y no como "avancé".
+//
+// El atributo `data-recorrido` lo pone el componente en <html> antes de cada
+// cambio; de ahí sale el sentido de la animación. Ojo al escribir estos
+// selectores: los pseudo-elementos se anclan al raíz SIN espacio
+// (`html[...]::view-transition-old(x)`), con combinador descendente no
+// seleccionan nada y el fallo es silencioso.
+//
+// El build imprime "19 rules skipped due to selector errors" por este bloque:
+// es el inliner de CSS crítico (css-select), que no sabe leer estos
+// pseudo-elementos y por eso no los considera para el <style> en línea del
+// index. Las reglas SÍ se emiten en la hoja de estilos y funcionan; el aviso
+// es ruido de la herramienta. Envolver el bloque en @supports no lo silencia
+// —beasties recorre dentro igualmente— así que se deja documentado.
+
+// Sin morfeo de caja. Por defecto el grupo interpola su tamaño del estado
+// viejo al nuevo y las dos instantáneas se estiran para seguirlo: cuando la
+// diapositiva entrante tiene otra altura —un título de una línea tras uno de
+// dos— el texto se deforma a mitad de camino. Aquí el grupo salta directo a
+// la geometría nueva y solo se anima lo que pedimos: opacidad y traslación.
+::view-transition-group(recorrido-arte),
+::view-transition-group(recorrido-texto) {
+  animation: none;
+  overflow: clip;
+}
+
+// RELEVO, NO FUNDIDO CRUZADO.
+//
+// Este es el punto clave de todo el bloque. Por defecto —y como estaba— las
+// dos instantáneas se funden a la vez en el mismo sitio: durante medio segundo
+// el título entrante y el saliente se dibujan superpuestos, letra sobre letra,
+// y ambos legibles. Con imágenes eso es un fundido; con dos párrafos distintos
+// es un borrón que se percibe como un parpadeo.
+//
+// La regla que lo evita: la diapositiva que se va tiene que haber TERMINADO de
+// irse antes de que empiece a entrar la siguiente. De ahí que la salida sea
+// corta (170 ms) y la entrada arranque después, no a la vez.
+//
+// `mix-blend-mode: normal` en vez del `plus-lighter` que pone el navegador:
+// ese modo está pensado para que un fundido cruzado no baje de brillo en el
+// centro, pero aquí no hay cruce, y sumando luz solo haría más visible
+// cualquier solape residual.
+::view-transition-old(recorrido-arte),
+::view-transition-new(recorrido-arte),
+::view-transition-old(recorrido-texto),
+::view-transition-new(recorrido-texto) {
+  // `none` = cada instantánea se dibuja a su tamaño real, sin escalar. El
+  // ancho de la columna no cambia entre funciones, así que anclarlas arriba
+  // y al centro las deja alineadas; lo que sobra por altura lo recorta el
+  // `overflow: clip` del grupo.
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: center top;
+  mix-blend-mode: normal;
+}
+
+// `forwards` en las salientes es obligatorio: sin él la instantánea vuelve a
+// opacidad 1 al acabar su animación y reaparece bajo la entrante durante el
+// resto de la transición. Sería el mismo defecto por otra puerta.
+::view-transition-old(recorrido-arte),
+::view-transition-old(recorrido-texto) {
+  animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  animation-fill-mode: forwards;
+}
+
+// `both` en las entrantes mantiene la instantánea invisible durante su
+// retardo; sin él se vería a opacidad plena desde el fotograma cero, que es
+// justo lo que se quiere evitar.
+::view-transition-new(recorrido-arte),
+::view-transition-new(recorrido-texto) {
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+// ── La ilustración SÍ se cruza ──
+// El relevo estricto solo hace falta donde hay que leer. Dos dibujos de línea
+// superpuestos un instante no estorban, y mantener la ilustración en pantalla
+// todo el tiempo evita el efecto contrario: un hueco de escenario vacío entre
+// que se va una diapositiva y llega la otra, que se percibe igual de mal.
+::view-transition-old(recorrido-arte) { animation-duration: 260ms; }
+::view-transition-new(recorrido-arte) { animation-duration: 300ms; animation-delay: 60ms; }
+
+// ── El texto va por relevo ──
+// Sale rápido y la entrada arranca justo cuando la salida ha terminado.
+::view-transition-old(recorrido-texto) { animation-duration: 150ms; }
+::view-transition-new(recorrido-texto) { animation-duration: 260ms; animation-delay: 155ms; }
+
+html[data-recorrido='adelante']::view-transition-old(recorrido-arte)  { animation-name: rec-sale-izq; }
+html[data-recorrido='adelante']::view-transition-new(recorrido-arte)  { animation-name: rec-entra-der; }
+html[data-recorrido='adelante']::view-transition-old(recorrido-texto) { animation-name: rec-sale-izq-corto; }
+html[data-recorrido='adelante']::view-transition-new(recorrido-texto) { animation-name: rec-entra-der-corto; }
+
+html[data-recorrido='atras']::view-transition-old(recorrido-arte)  { animation-name: rec-sale-der; }
+html[data-recorrido='atras']::view-transition-new(recorrido-arte)  { animation-name: rec-entra-izq; }
+html[data-recorrido='atras']::view-transition-old(recorrido-texto) { animation-name: rec-sale-der-corto; }
+html[data-recorrido='atras']::view-transition-new(recorrido-texto) { animation-name: rec-entra-izq-corto; }
+
+@keyframes rec-sale-izq  { to   { opacity: 0; transform: translateX(-48px) scale(0.96); } }
+@keyframes rec-entra-der { from { opacity: 0; transform: translateX(48px)  scale(0.96); } }
+@keyframes rec-sale-der  { to   { opacity: 0; transform: translateX(48px)  scale(0.96); } }
+@keyframes rec-entra-izq { from { opacity: 0; transform: translateX(-48px) scale(0.96); } }
+
+@keyframes rec-sale-izq-corto  { to   { opacity: 0; transform: translateX(-28px); } }
+@keyframes rec-entra-der-corto { from { opacity: 0; transform: translateX(28px);  } }
+@keyframes rec-sale-der-corto  { to   { opacity: 0; transform: translateX(28px);  } }
+@keyframes rec-entra-izq-corto { from { opacity: 0; transform: translateX(-28px); } }
+
+// La barra, el progreso y la navegación apenas cambian entre diapositivas:
+// fundir el fotograma completo solo los emborronaría durante medio segundo.
+html::view-transition-old(root),
+html::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

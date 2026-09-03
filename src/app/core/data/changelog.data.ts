@@ -49,6 +49,90 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.40.0',
+    fecha: '2026-09-01',
+    titulo: 'La presentación, de verdad',
+    destacado: true,
+    resumen: 'El modo presentación deja de ser una pantalla más de la aplicación: ahora ocupa toda la pantalla, tiene portada y cierre, ilustraciones dibujadas para el tamaño al que se ven, y transiciones que se sienten como pasar una diapositiva.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'El recorrido va a pantalla completa de verdad. Desaparecen el menú lateral, la barra de arriba y la de abajo: ya no se ve que estás dentro de una aplicación.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Ilustraciones nuevas, dibujadas una por una. Antes eran iconos pequeños agrandados, que a ese tamaño se ven planos y borrosos. Ahora cada función tiene una escena propia con movimiento: la credencial que se lee, el aforo que se llena, las filas que se filtran.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Al cambiar de diapositiva, la anterior se va y la nueva entra. Antes el texto cambiaba de golpe y no se sentía que hubieras avanzado.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Al pasar de diapositiva ya no se ven los dos textos encimados un instante. El texto que sale termina de irse antes de que entre el siguiente, así que nunca se leen superpuestos.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Al abrir una función desde el recorrido ya no se ve un destello con el listado completo antes de que cargue la pantalla. Lo mismo al salir: el listado ya no aparece un instante a pantalla completa antes de acomodarse.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Vista general con todas las diapositivas en miniatura, para saltar directo a la que te preguntan sin pasarlas una por una delante de quien preguntó. Se abre con la tecla G o con el botón de la cuadrícula.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Tecleando el número de una función se salta a ella al instante. El número es el que aparece abajo en cada diapositiva.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'La pantalla ya no se apaga sola mientras estás presentando, aunque la diapositiva lleve quince minutos puesta.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Con el avance automático encendido, el tramo de la diapositiva actual se va llenando: se ve cuánto queda antes de que cambie.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          '"Resumen del día" y "Exportar a Excel y PDF" tienen ahora su propia ilustración. Antes compartían dibujo con otra función y no se distinguían.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'El recorrido abre con una portada y termina con un cierre, para no tener que explicar de qué va antes de empezar ni quedarse en blanco al final.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Avance automático: se deja puesto en una pantalla y va solo, cambiando de diapositiva cada 7 segundos. Útil para una jornada de puertas abiertas.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Desde una tablet o un celular ya se puede deslizar con el dedo para pasar de diapositiva, además de las flechas.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La posición dentro del recorrido se muestra como una barra de tramos que se pulsan para saltar a cualquier punto, igual en computadora que en celular.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El buscador del catálogo ignora los acentos de forma fiable: la comparación estaba escrita de una manera que podía romperse sin aviso al reformatear el archivo.',
+      },
+    ],
+  },
+  {
     version: '3.39.0',
     fecha: '2026-08-31',
     titulo: 'El recorrido, rediseñado',

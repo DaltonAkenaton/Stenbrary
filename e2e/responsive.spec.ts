@@ -331,9 +331,15 @@ test('el recorrido guiado de /funciones avanza y no se desborda', async ({ page 
   await page.goto('/funciones');
   await page.getByRole('button', { name: /Modo presentación/ }).click();
 
-  // Primera diapositiva visible y con su ilustración.
+  // El recorrido abre en la portada, no en la primera función: quien presenta
+  // necesita decir de qué va esto antes de entrar en materia.
+  await expect(page.locator('.tour-marca')).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(600);
+
+  // Primera función, con su ilustración.
   await expect(page.locator('.tour-titulo')).toBeVisible();
-  await expect(page.locator('.demo')).toBeVisible();
+  await expect(page.locator('app-funcion-ilustracion svg')).toBeVisible();
   const primero = await page.locator('.tour-titulo').innerText();
 
   // Avanzar con la flecha del teclado — así se presenta, sin ratón.
