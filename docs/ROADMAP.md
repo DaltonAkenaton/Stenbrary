@@ -34,19 +34,22 @@ Stenbrary es un sistema de **control de acceso a biblioteca universitaria** que 
 
 ---
 
-## Fase 1 — PWA offline-first (cerrando)
+## Fase 1 — PWA offline-first ✅ CERRADA (2026-09-02)
 
-Sistema actual, casi completo. Lo que falta para cerrar v4.0:
+### v4.0.0 — Última milla UX
+- [x] **Rediseño de `/configuración`** con layout sidebar + panel (v3.24.0). Shell con 7 categorías + buscador + URL fragment; el monolito de 2897 líneas quedó dividido en sub-componentes standalone con OnPush.
+- [x] **Command palette Ctrl+K** (v3.25.0): 18 comandos de navegación, 6 toggles de configuración y 6 acciones. Búsqueda fuzzy que ignora acentos.
+- [x] Revisión caso por caso de tooltips en dashboard ejecutivo (2026-09-02). Ver el detalle en `ESTADO.md` §2.0.
 
-### v4.0.0 — Última milla UX (~2 semanas)
-- [ ] **Rediseño de `/configuración`** con layout sidebar + panel (categorías a la izquierda, settings a la derecha). Razón: hoy el coordinador debe scrollear mucho y buscar settings — patrón roto en cuanto pasamos de ~6 categorías.
-- [ ] **Command palette Ctrl+K** que soporte 3 tipos de resultado:
-  1. Navegación (alumnos, registros, vistas — lo que ya hay)
-  2. **Toggle de settings** (modo quiosco, celebración, registro salida, horario, aforo, sonido)
-  3. **Acciones** (exportar respaldo, generar datos de prueba, limpiar registros, vaciar caché)
-- [ ] Revisión caso por caso de tooltips quitados en dashboard ejecutivo (con el fix global de scroll strategy ya no causan lag).
+Cualquier feature nueva del modelo local se evalúa contra "¿esto debería esperar a Fase 2?".
 
-Después de v4.0, Fase 1 queda cerrada. Cualquier feature nueva del modelo local se evalúa contra "¿esto debería esperar a Fase 2?".
+> **Nota de mantenimiento (2026-09-02).** Los dos primeros puntos estaban
+> hechos desde v3.24.0 y v3.25.0 y marcados como tales en `ESTADO.md`, pero
+> aquí seguían sin marcar durante meses. Dos documentos que describen el mismo
+> plan se separan solos si no se actualizan a la vez: **`ESTADO.md` es el
+> snapshot de qué está hecho y este archivo el plan de largo plazo**, así que
+> al cerrar algo hay que tocar los dos. Si vuelven a discrepar, gana
+> `ESTADO.md`, que va pegado al código.
 
 ---
 

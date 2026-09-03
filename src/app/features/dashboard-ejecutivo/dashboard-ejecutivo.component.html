@@ -169,7 +169,7 @@
               }
             </div>
             @if (kpiUltimoRegistroHace) {
-              <div class="kpi-hero-pulse" title="Hora del último registro real en el sistema">
+              <div class="kpi-hero-pulse" matTooltip="Hora del último registro real en el sistema">
                 <span class="pulse-dot"></span>
                 <span>Último registro {{ kpiUltimoRegistroHace }}</span>
               </div>
@@ -596,7 +596,7 @@
             @for (hora of heatmapHoras; track hora) {
               <div class="heatmap-hora">{{ hora }}:00</div>
             }
-            <div class="heatmap-corner heatmap-total-header" title="Total del día">Total</div>
+            <div class="heatmap-corner heatmap-total-header" matTooltip="Total del día">Total</div>
 
             @for (fila of heatmapFilas; track fila.dia) {
               <div class="heatmap-dia">{{ fila.etiqueta }}</div>
@@ -933,11 +933,11 @@
 
             @if (topAlumnos.length > 0) {
               <div class="export-btns">
-                <button class="export-btn" title="Exportar a Excel" (click)="exportarTopExcel()">
+                <button class="export-btn" matTooltip="Exportar a Excel" (click)="exportarTopExcel()">
                   <mat-icon>table_chart</mat-icon>
                   <span>Excel</span>
                 </button>
-                <button class="export-btn export-btn-pdf" title="Exportar a PDF" (click)="exportarTopPDF()">
+                <button class="export-btn export-btn-pdf" matTooltip="Exportar a PDF" (click)="exportarTopPDF()">
                   <mat-icon>picture_as_pdf</mat-icon>
                   <span>PDF</span>
                 </button>
@@ -980,7 +980,8 @@
                    class="top-limite-input"
                    [ngModel]="topLimite"
                    (ngModelChange)="setTopLimite($event)"
-                   title="Cantidad libre (1–1000)">
+                   matTooltip="Cantidad libre (1–1000)"
+                   aria-label="Cantidad de alumnos a mostrar">
             <span class="top-limite-sub">alumnos</span>
           </div>
         </div>
@@ -1241,7 +1242,8 @@
             <input type="date" class="date-input" [(ngModel)]="fechaReporteDiario">
           } @else if (tipoReporte === 'semanal') {
             <input type="date" class="date-input" [(ngModel)]="fechaReporteSemana"
-                   title="Cualquier día dentro de la semana a reportar">
+                   matTooltip="Cualquier día dentro de la semana a reportar"
+                   aria-label="Día de la semana a reportar">
           } @else if (tipoReporte === 'mensual') {
             <select class="date-input" [(ngModel)]="mesReporteSeleccionado">
               @for (m of mesesDisponibles; track m.valor) {

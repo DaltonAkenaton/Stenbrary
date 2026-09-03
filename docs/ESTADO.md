@@ -127,7 +127,10 @@ Prioridad: **🔴 alta** · **🟡 media** · **🟢 baja**.
 
 - [x] **Rediseño de `/configuración`** (v3.24.0): shell con sidebar de 7 categorías + buscador + URL fragment. Las 7 categorías (General, Escáner, Operación, Quiosco, Experiencia, Datos, Avanzado) son sub-componentes standalone con OnPush. Monolito de 2897 líneas dividido. Versión clásica eliminada (v3.25.1).
 - [x] **Command palette Ctrl+K** (v3.25.0): 18 comandos de navegación + 6 toggles de configuración + 6 acciones. Catálogo en `CommandPaletteService` (`providedIn: 'root'`). Búsqueda fuzzy ignora acentos. Chips de color por grupo. Atajos directos a cada categoría de config via URL fragment.
-- [ ] **Revisión de tooltips en dashboard ejecutivo**: con el fix global de scroll strategy (v3.24.0) ya no causan lag; restaurar caso por caso donde aporten valor (no por reflejo).
+- [x] **Revisión de tooltips en dashboard ejecutivo** (2026-09-02): la mayor parte ya se había restaurado en v3.26.0 sin actualizar esta lista. Al auditarlo quedaban **6 `title=` nativos** conviviendo con 56 `matTooltip`: distinto aspecto, 1–2 s de retardo y sin funcionar al tocar. Convertidos. Los dos que estaban sobre `<input>` sin `<label>` llevan además `aria-label`, porque ahí el `title` era su único nombre accesible y la conversión a secas lo habría borrado.
+
+**Con esto, Fase 1 queda cerrada.** Lo que entre a partir de aquí en el modelo
+local se evalúa contra "¿esto debería esperar a Fase 2?".
 
 ### 2.0.1 Fase 2.0 — Fundación de auth (Supabase) ✅ COMPLETADA (2026-05-20)
 

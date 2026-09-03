@@ -9,6 +9,55 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-09-02 (tarde) — Cierre de Fase 1
+
+Dos cosas pequeñas, una de ellas sorpresa.
+
+**El arranque, al saltar la configuración.** Lo reportó el usuario:
+`saltarTodo()` navegaba directo a `/scanner` sin pasar por `finalizar()`, así
+que quien elegía los valores por defecto nunca veía cerrarse el libro. Ese
+cierre es la única señal de que la instalación terminó. Ahorrar preguntas no
+es motivo para quedarse sin el cierre. El toast pasa a un campo
+(`mensajeEntrada`) para que `saltarArranque()` no tenga que conocer un mensaje
+que no le toca elegir. El e2e afirmaba lo viejo — que tras "Saltar" se llegaba
+al scanner de inmediato — y ahora fija lo nuevo.
+
+**Sobre /bienvenida no se hizo nada más, a propósito.** El usuario preguntó si
+merecía el mismo tratamiento que `/funciones`. La respuesta, mirando el
+código, es que no: `moverA()` ya hace relevo (`saliendo` → cambia índice →
+`entrando`), que es exactamente lo que a `/funciones` le faltaba; y su icono
+son 34 px dentro de un badge de 72, no un glifo estirado. Los dos defectos que
+justificaron rehacer `/funciones` aquí no existen. Proponer un rediseño habría
+sido inventar trabajo.
+
+**Los tooltips del dashboard ejecutivo** eran el último punto de Fase 1. Al
+auditarlo resultó que la mayor parte ya se había restaurado en v3.26.0 sin
+actualizar `ESTADO.md`. Lo que sí quedaba: **6 `title=` nativos** conviviendo
+con 56 `matTooltip` — otro aspecto, 1–2 s de retardo, y no funcionan al tocar.
+Convertidos, con un detalle que no era obvio: dos estaban sobre `<input>` sin
+`<label>`, así que su `title` era su **único nombre accesible** y una
+conversión a secas lo habría borrado. Esos llevan `aria-label` además.
+
+**Los dos documentos de plan se habían separado.** `ESTADO.md` daba por hechos
+el rediseño de `/configuración` y el Ctrl+K; `ROADMAP.md` los tenía sin marcar
+desde v3.24.0/v3.25.0. Es el mismo patrón que el `ng lint` documentado y
+ausente, y el `SCAN_INTERVAL_LOWRES_MS` documentado y muerto: **la
+documentación se separa del código en silencio y no hay nada que lo detecte.**
+Queda escrita en `ROADMAP.md` la regla de desempate — `ESTADO.md` gana, va
+pegado al código — y la obligación de tocar los dos al cerrar algo.
+
+**Fase 1 queda cerrada.**
+
+**Verificado:** 0 errores de lint · ambos type-checks · 178 tests unitarios ·
+3 e2e del camino de saltar · build de producción.
+
+**Qué sigue (Fase 2):** resolución de conflictos de sincronización — hoy se
+muestran campo por campo pero no se aplican, y la política hay que decidirla
+con el coordinador — y probar contra volumen real. Bloqueante aparte para
+vender: el calendario escolar configurable.
+
+---
+
 ## 2026-09-02 — Se añade el linter que llevaba cinco meses documentado
 
 Continuación directa de la entrada anterior: `@angular-eslint` instalado y
