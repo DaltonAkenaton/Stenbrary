@@ -261,8 +261,22 @@ for (const vp of VIEWPORTS) {
     for (const ruta of RUTAS) {
       await page.goto(ruta);
       await page.waitForLoadState('networkidle').catch(() => { /* SW puede no aquietarse */ });
+
       // Margen para gráficas y listas que montan en un tick posterior.
       await page.waitForTimeout(900);
+
+      // Comprobar dónde aterrizamos, no solo que la navegación terminó. Un
+      // guard puede haber redirigido: `roleGuard` manda a /login todo lo que
+      // sea administración cuando la nube está encendida y no hay sesión.
+      // Sin esto el test mide OTRA pantalla y reporta verde para una ruta que
+      // nunca renderizó — pasó de verdad: el entorno de dev tiene credenciales
+      // de Supabase, así que hasta v3.41.0 cinco de estas doce rutas eran
+      // /login y la auditoría del 2026-08-31 no pudo verlo.
+      const urlReal = new URL(page.url()).pathname;
+      if (urlReal !== ruta) {
+        fallos.push(`${ruta} → redirigió a ${urlReal}; no se midió la vista real`);
+        continue;
+      }
 
       const { exceso, culpables } = await medirOverflow(page, vp.width);
       if (exceso > TOLERANCIA_PX) {

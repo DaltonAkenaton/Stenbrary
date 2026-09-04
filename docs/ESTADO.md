@@ -121,7 +121,7 @@ ni a `docs/ROADMAP.md` (visión a largo plazo y fases del producto).
 
 Prioridad: **🔴 alta** · **🟡 media** · **🟢 baja**.
 
-### 2.0 Cierre de Fase 1 — v4.0 🔴 (en curso)
+### 2.0 Cierre de Fase 1 — v4.0 ✅ CERRADA (2026-09-02)
 
 Última milla antes de cerrar Fase 1 y arrancar Fase 2.
 
@@ -169,6 +169,7 @@ medir, no leer. Resultados:
 - [x] **Analítica verificada**: 36 tests nuevos sobre `EstadisticasAvanzadasService` (`estadisticas-avanzadas.service.spec.ts`) con dataset sintético de distribución conocida sobre fechas fijas. Cubre filtrado y bordes de rango, bucketing día/semana/mes, tendencias (incluida división por cero), distribución de motivos, top alumnos, carreras, heatmap con auto-expansión horaria, hora pico, caché y estado vacío. **Cero defectos aritméticos encontrados** — el motor de estadísticas es correcto.
 - [x] **Responsive verificado**: `e2e/responsive.spec.ts` recorre 12 rutas × 3 viewports (390 / 820 / 1440). **Cero desbordamientos.** `/estadisticas` es la vista mejor atendida del proyecto (17 media queries); las de menos cobertura son `/alumnos` (1) y `/presencia` (0), pero miden limpio.
   - ⚠️ **Nota sobre el instrumento**: la medición ingenua (`documentElement.scrollWidth`) da falso verde en esta app, porque `styles.scss` fija `html, body { overflow: hidden }` y `.content-area` añade `overflow-x: hidden` — el contenido que se pasa se recorta en silencio en vez de volverse scrollable. El spec mide el `scrollWidth` del contenedor de scroll real y **se auto-verifica** inyectando un desborde deliberado. No sustituir por la versión ingenua.
+  - ⚠️ **Corrección (2026-09-04)**: el instrumento estaba bien, pero medía la pantalla equivocada. `page.goto(ruta)` no comprobaba dónde aterrizaba, y el `ng serve` usa `environment.ts` —que sí trae credenciales de Supabase— con Playwright corriendo sin sesión: `roleGuard` mandaba `/estadisticas`, `/gestion-motivos`, `/configuracion`, `/importar-alumnos` e `/inactivos` a `/login`. **Cinco de las doce rutas eran la pantalla de login**, quince mediciones en total. La conclusión ("cero desbordamientos") resultó cierta al medirlas de verdad en v3.41.0, pero lo era por suerte. El spec ahora verifica `page.url()` contra la ruta pedida y falla si hubo redirección.
 - [x] **🔴 BUG CRÍTICO CORREGIDO — restaurar un backup destruía el historial** (v3.27.0). `importarBackup()` reconstruía los registros con `crearRegistro()`, cuya firma es `Omit<Registro, 'id' | 'fechaHora' | 'sincronizado'>` y estampa `fechaHora: new Date()`. Efecto: **cada restauración colapsaba todo el historial contra el día de la importación**, y descartaba `horaSalida`, `duracionMinutos`, `motivoIds`/`motivoNombres`, `turno`, `dispositivo` y `cierreAutomatico`. Los alumnos además recibían `id` nuevo, rompiendo el `alumnoId` de sus registros. La importación reportaba `exitoso: true` con el conteo correcto — fallo totalmente silencioso.
   - Fix: `DatabaseService.restaurarAlumno()` / `restaurarRegistro()` preservan `id` y fechas, revivien strings ISO → `Date`, y usan `put` (idempotente: reimportar no duplica).
   - Cubierto por `backup.service.spec.ts` (8 tests de round-trip que comparan contenido, no conteo).
@@ -197,6 +198,45 @@ Primera versión de la bajada. Espejo del modelo de subida: supervisada.
 - [ ] **Resolución de conflictos** 🟡 — hoy se muestran campo por campo pero no se aplican. Requiere decidir con el coordinador la política (¿gana la nube? ¿el local? ¿por campo?) y probablemente un respaldo automático previo.
 - [ ] **Probar contra volumen real** — validado en local; falta con miles de filas remotas.
 - [ ] Nota: en producción (Netlify) `environment.prod.ts` tiene Supabase vacío, así que esta pantalla solo es alcanzable en desarrollo hasta que se decida activar la nube en el sitio publicado.
+
+### 2.0.5 Activación de la nube por instalación ✅ (v3.41.0, 2026-09-04)
+
+Preparación para desplegar Fase 2 en producción sin romper a quien ya usa el
+sistema.
+
+- [x] **Encontrado antes de desplegar:** pegar las claves de PROD en
+  `environment.prod.ts` habría hecho que `roleGuard` (`role.guard.ts:51`)
+  exigiera sesión en `/configuracion`, `/estadisticas`, `/gestion-motivos`,
+  `/importar-alumnos`, `/inactivos`, `/sincronizacion`, `/descarga` y
+  `/usuarios` — para **todas** las instalaciones a la vez, el día del deploy.
+  La sesión llega por magic link, que necesita Internet y un correo que
+  llegue. Una app cuyo diferencial es operar sin red no puede pedir red para
+  abrir Configuración por el hecho de haber publicado una versión.
+- [x] **`isSupabaseConfigured()` deja de ser una sola condición.** Ahora son
+  dos: `hayCredencialesNube()` (lo decide quien compila) **y**
+  `isNubeActiva()` (lo decide el coordinador, default `false`, clave
+  `stenbrary-nube-activa`). El build puede llevar credenciales y cada
+  instalación sigue en solo-local hasta que alguien la enciende.
+- [x] **Interruptor** en `/configuracion` → Avanzado → "Conexión con la nube",
+  con confirmación que explica qué cambia. Encender lleva a `/login`; apagar
+  cierra sesión y vuelve al scanner. Ambos recargan la página: el cliente de
+  Supabase se cachea y `AuthService` fija su estado una sola vez, así que un
+  cambio en caliente dejaría media app con la idea vieja.
+- [x] **Salida de emergencia en `/login`.** Sin ella el interruptor es una
+  trampa: el botón para apagar la nube vive dentro de Configuración, que es
+  justo lo que deja de abrirse si el correo no llega. Cualquiera que abra
+  `/login` puede pulsarlo — mismo argumento que ya estaba escrito para
+  `puedeRestablecer`: quien tiene el equipo delante ya puede vaciar IndexedDB
+  desde el navegador. Los permisos reales los aplica RLS.
+- [x] 6 tests sobre el interruptor (`supabase.client.spec.ts`), incluido el
+  caso peligroso —build con claves, instalación que nunca pidió la nube— y la
+  degradación a solo-local si `localStorage` lanza.
+- [x] **`docs/DESPLIEGUE-NUBE.md`**: checklist de 9 pasos para crear el
+  proyecto de PROD, aplicar las 7 migraciones, configurar redirect URLs y
+  SMTP propio (el integrado de Supabase va a ~2 correos/hora y no sirve para
+  producción), promover al coordinador y verificar.
+
+Suite: **184 unitarios + 20 E2E**.
 
 ### 2.1 Infra de datos 🟡 _(bajado de 🔴 el 2026-08-31)_
 
@@ -256,18 +296,41 @@ Anotadas en sesión v3.17.x para después de la entrega; el coordinador pidió e
 
 ### 2.3.2 Permisos y sensibilidad 🟡
 
-- [ ] **Rol admin para operaciones sensibles**: editar matrícula de un alumno existente, eliminar alumno con historial, cambios masivos de carreras. Hoy no hay auth, la protección es solo un `ConfirmDialog`. Depende de §2.4.
+- [ ] **Rol admin para operaciones sensibles**: editar matrícula de un alumno existente, eliminar alumno con historial, cambios masivos de carreras. La infraestructura ya existe desde §2.4 (`permisos.can(...)`, `roleGuard`); lo que falta es aplicarla a estos botones concretos. Sin la nube encendida no hay roles y la protección sigue siendo solo un `ConfirmDialog`.
 
-### 2.4 Multi-usuario, auth y sync — Fase 2 🔴 (planeada post-v4.0)
+### 2.4 Multi-usuario, auth y sync — Fase 2 🟡 (en curso)
 
-**Plan completo en `docs/ROADMAP.md` §Fase 2.** Aquí solo el resumen:
+**Plan completo en `docs/ROADMAP.md` §Fase 2.** Decisiones: Supabase, 4 roles
+(super-admin, coordinador, asistente, alumno), sync supervisado — el
+coordinador revisa y descarta antes de subir (caso "alumno travieso"), NO sync
+automático ciego.
 
-- **Stack decidido:** Supabase (Postgres + Auth + Storage + Realtime).
-- **4 roles:** super-admin, coordinador, asistente, alumno.
-- **Sync supervisado**: offline-first con bandeja de sincronización; el coordinador revisa y descarta antes de subir (caso "alumno travieso"). NO sync automático ciego.
-- **Sub-fases 2.0 a 2.5** documentadas con deliverables, estimaciones y riesgos en el ROADMAP.
-- **Estimado total**: 4–5 meses part-time.
-- El **Activity Log** (§2.1) se enriquece con `usuarioId` cuando esta fase aterrice (Fase 2.3).
+> **Corrección de deriva (2026-09-04).** Esta sección decía "🔴 planeada
+> post-v4.0" cuando 2.0, 2.1, 2.2 y 2.3 llevaban meses en código. Mismo patrón
+> que el `ng lint` documentado y ausente. El estado real es el de abajo.
+
+**Hecho** (detalle en §2.0.1, §2.0.2, §2.0.4 y §2.0.5):
+
+- [x] **2.0 Fundación de auth** — magic link, `AuthService`, modo solo-local.
+- [x] **2.1 Modelo espejo** — schema Postgres + `RemoteDatabaseService` + importador one-shot.
+- [x] **2.2 Subida supervisada** — `/sincronizacion` con bandeja, filtros, descarte y errores por fila.
+- [x] **2.2 Bajada supervisada** — `/descarga` con motor de diff puro (22 tests).
+- [x] **2.3 Roles y permisos** — matriz declarativa, `roleGuard`, `/acceso-denegado`, `/usuarios`, migraciones 0006/0007.
+- [x] **Activación por instalación** (v3.41.0) — ver §2.0.5.
+
+**Falta:**
+
+- [ ] **Desplegar la nube en producción** 🔴 — `environment.prod.ts` sigue vacío, así que en el Netlify del coordinador nada de lo anterior existe. Checklist paso a paso en `docs/DESPLIEGUE-NUBE.md`. Bloqueado por trabajo fuera del repo: crear el proyecto de PROD, aplicar las 7 migraciones, SMTP propio.
+- [ ] **Resolución de conflictos** en `/descarga` 🟡 — se muestran campo por campo, no se aplican. Requiere política acordada con el coordinador + respaldo automático previo.
+- [ ] **Prueba con volumen real** 🟡 — validado en local; falta con miles de filas remotas.
+- [ ] **Sync automático opcional** 🟡 — el ROADMAP promete `syncAuto` + `syncAutoHora` ("subir a las 22:00"). No existe ninguna de las dos claves; hoy todo es manual.
+- [ ] **Cola persistida de reintentos** 🟡 — un error de red deja la fila en `pending` y se reintenta a mano. El ROADMAP pide un store `sync_queue`.
+- [ ] **Conflictos de subida** 🟡 — hoy last-write-wins implícito por `onConflict: 'id'`. Si dos coordinadores editan el mismo alumno, gana el último. Sin documentar ni resolver.
+- [ ] **Tests automatizados de RLS** 🔴 — con usuarios de los 4 roles. Es el riesgo nº 2 del ROADMAP y la defensa en profundidad sigue sin verificarse.
+- [ ] **Permisos en botones internos** 🟡 — el shell (sidebar + rutas) filtra; los botones dentro de cada vista no (p. ej. "Eliminar" en `/alumnos` para `asistente`).
+- [ ] **2.4 Portal alumno** 🟢 — sin empezar (~3-4 sem).
+- [ ] **2.5 Multi-tenant real** 🟢 — `organization_id` está en el schema; no hay UI de organización.
+- El **Activity Log** (§2.1) se enriquece con `usuarioId` ahora que hay auth.
 
 ### 2.5 Comercialización a otras universidades — Fase 5
 

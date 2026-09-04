@@ -78,11 +78,11 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **178 specs unitarios en verde**, en 9 archivos —
+Suite activa: **184 specs unitarios en verde**, en 10 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `descarga.utils`, `database.service`, `backup.service`,
-`estadisticas-avanzadas.service`. **20 tests E2E** con Playwright
-(12 en `smoke.spec.ts`, 8 en `responsive.spec.ts`). CI GitHub Actions
+`estadisticas-avanzadas.service`, `supabase.client`. **20 tests E2E** con
+Playwright (12 en `smoke.spec.ts`, 8 en `responsive.spec.ts`). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
 type-check app/spec).
 
@@ -224,6 +224,44 @@ Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los p
 - `ErrorReporterService` — cola offline en localStorage, drena en evento `online`. Endpoint configurable por environment. Cero costo de bundle si no se configura. Wired al `GlobalErrorHandler`.
 - `GlobalErrorHandler` — provider en `app.config.ts`.
 - `DatosPruebaService` — generador de alumnos/registros sintéticos con modelo UAT (3 períodos, vacaciones, festivos, Semana Santa, horario 7–22, turnos 66/22/12). Matrícula `9000001+` + `dispositivo: 'SEED-TEST'` como marcadores para limpieza selectiva. **Calendario hardcoded** — cuando se venda a otra universidad, abstraer a `CalendarioEscolarService` configurable desde UI (pendiente en `docs/ESTADO.md`).
+
+### Auth y nube (`core/auth/`, Fase 2)
+
+La app arranca **siempre** en modo solo-local y solo habla con Supabase si se
+cumplen **dos** condiciones independientes (`supabase.client.ts`):
+
+1. `hayCredencialesNube()` — el build trae `environment.supabase.{url,anonKey}`.
+   Lo decide quien compila.
+2. `isNubeActiva()` — esta instalación encendió la nube. Lo decide el
+   coordinador desde `/configuracion` → Avanzado → "Conexión con la nube".
+   Clave propia `stenbrary-nube-activa` en localStorage, default `false`.
+
+`isSupabaseConfigured()` es la conjunción de ambas, y de ella cuelga todo:
+`getSupabaseClient()` devuelve `null`, `AuthService` queda en `'local-only'`,
+`roleGuard` y `authGuard` dejan pasar todo, y `ConnectivityService` no sondea.
+
+**No colapsar esas dos condiciones en una.** Con una sola, publicar un build
+con credenciales haría que `roleGuard` exigiera sesión en toda la
+administración de todas las instalaciones a la vez, el día del deploy — y la
+sesión llega por magic link, que necesita Internet. La justificación larga está
+en la cabecera de `supabase.client.ts` y en `docs/ROADMAP.md` §Fase 2.
+
+Cambiar el interruptor **exige recargar la página** (`window.location.href`, no
+`router.navigate`): el cliente se cachea y `AuthService` fija su estado inicial
+una sola vez.
+
+`/login` tiene una salida de emergencia al modo solo-local. Es obligatoria, no
+decorativa: el interruptor de apagado vive dentro de Configuración, que es lo
+que deja de abrirse si el login falla. **Cualquier feature que pueda dejar al
+coordinador fuera de su propio sistema necesita su ruta de vuelta.**
+
+Rutas protegidas por `roleGuard`: `/estadisticas`, `/gestion-motivos`,
+`/configuracion`, `/importar-alumnos`, `/sincronizacion`, `/descarga`,
+`/inactivos`, `/usuarios`. La matriz de permisos es declarativa y pura en
+`core/auth/permissions.ts`; la capa reactiva es `permissions.service.ts`.
+`/diagnostico` **no** lleva guard a propósito.
+
+Para desplegar la nube en producción: `docs/DESPLIEGUE-NUBE.md`.
 
 ### Scanner (dual-mode, `features/scanner/scanner.component.ts`)
 

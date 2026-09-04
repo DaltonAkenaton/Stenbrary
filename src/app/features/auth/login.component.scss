@@ -161,3 +161,18 @@
     font-size: 20px;
   }
 }
+
+// Salida de emergencia hacia el modo solo-local. Secundario a propósito:
+// es un rescate, no un atajo que compita con iniciar sesión.
+.escape-btn {
+  margin-top: $spacing-sm;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}

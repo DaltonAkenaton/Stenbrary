@@ -24,6 +24,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { setNubeActiva } from '../../core/auth/supabase.client';
 
 type LoginStatus = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -100,6 +101,23 @@ export class LoginComponent {
     this.errorMessage.set(null);
   }
 
+
+  /**
+   * Salida de emergencia: apaga la nube en ESTA instalación y recarga.
+   *
+   * Con la nube encendida, `roleGuard` manda a /login todo lo que sea
+   * administración. Si el magic link no llega —correo caído, sin red, cuenta
+   * mal escrita— el coordinador se queda sin Configuración y sin forma de
+   * deshacerlo, porque el interruptor vive justamente dentro de
+   * Configuración. Este botón rompe ese círculo.
+   *
+   * Recarga dura y no `router.navigate`: hay que reconstruir el cliente de
+   * Supabase y el estado de `AuthService`, que se fijan una sola vez.
+   */
+  protected volverASoloLocal(): void {
+    setNubeActiva(false);
+    window.location.href = '/scanner';
+  }
   protected continuarLocal(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/scanner';
     void this.router.navigateByUrl(returnUrl);

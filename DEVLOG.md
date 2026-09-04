@@ -9,6 +9,119 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-09-04 — La nube se enciende con un interruptor, no con un deploy
+
+Primera tanda de Fase 2 después de cerrar Fase 1. El objetivo era el punto con
+peor relación entre construido y entregado: **`environment.prod.ts` tiene
+Supabase vacío**, así que los cuatro meses de auth, roles, bandeja de
+sincronización y descarga no existen en el Netlify que usa el coordinador.
+Pegar las claves parecía trabajo de cinco minutos.
+
+**No lo era.** `roleGuard` (`role.guard.ts:51`) dice: si Supabase está
+configurado y no hay sesión, a `/login`. Hoy en producción no hay claves, así
+que `isLocalOnly()` es `true` y todo pasa. En el momento de pegarlas,
+`/configuracion`, `/estadisticas`, `/gestion-motivos`, `/importar-alumnos`,
+`/inactivos`, `/sincronizacion`, `/descarga` y `/usuarios` empiezan a pedir
+sesión **en todas las instalaciones a la vez**. Y la sesión llega por magic
+link: Internet, más un correo que llegue. El primer diferenciador escrito en el
+ROADMAP es "la luz se va, el WiFi cae, el sistema sigue"; un despliegue que
+exige red para abrir Configuración lo contradice sin que nadie lo haya
+decidido.
+
+La operación diaria no se rompía — `/scanner`, `/registro-alumno`,
+`/presencia`, `/alumnos` y `/registros` no llevan guard — pero la
+administración sí, y el coordinador no había pedido nada.
+
+**El arreglo es separar dos cosas que estaban pegadas.** `isSupabaseConfigured()`
+respondía a una sola pregunta y en realidad son dos:
+
+1. `hayCredencialesNube()` — este **build** trae url + anonKey. Lo decide quien
+   compila.
+2. `isNubeActiva()` — esta **instalación** encendió la nube. Lo decide el
+   coordinador, arranca en `false`, vive en `localStorage`
+   (`stenbrary-nube-activa`).
+
+Con eso, publicar las claves deja de cambiar el comportamiento de nadie. El
+interruptor está en Configuración → Avanzado → "Conexión con la nube", con una
+confirmación que dice qué cambia antes de cambiarlo.
+
+**Clave propia y no `stenbrary-config`** a propósito: `getSupabaseClient()`
+corre en el inicializador de campo de `AuthService`, fuera de la inyección de
+dependencias, así que no puede depender de `ConfigService`. Mismo patrón que
+`stenbrary-sonido-activo`.
+
+**Encender y apagar recargan la página.** El cliente se cachea y `AuthService`
+fija su estado inicial una sola vez; un cambio en caliente dejaría media app
+con la idea vieja. Recarga dura, no `router.navigate`.
+
+**Lo que casi se me pasa: el interruptor era una trampa.** El botón para
+apagar la nube vive dentro de Configuración — que es exactamente lo que deja
+de abrirse cuando el login no funciona. Encender la nube y que el correo no
+llegue dejaba al coordinador sin administración y sin forma de deshacerlo.
+`/login` lleva ahora una salida de emergencia al modo solo-local.
+
+Sí, cualquiera que abra `/login` puede pulsarla. Es el mismo argumento que ya
+estaba escrito en `avanzado.component.ts` para `puedeRestablecer`: quien tiene
+el equipo delante ya puede vaciar IndexedDB desde el navegador. Los permisos
+de verdad los aplica RLS en el servidor; el front es UX. Sin dialog de
+confirmación, además: es una ruta de rescate, y ponerle fricción a un rescate
+es el error opuesto. Queda anotado en el ROADMAP como regla general — **toda
+ruta de ida necesita su ruta de vuelta**.
+
+**El texto que ya prometía esto.** La pantalla de login decía desde Fase 2.0:
+"¿Solo quieres usar el sistema sin cuenta? Pide al coordinador que active el
+modo solo-local". No había forma de activarlo desde la UI. Ahora ese párrafo es
+un botón.
+
+**Lo que NO se hizo, y por qué.** No se pegaron claves de PROD: hace falta
+crear el proyecto en Supabase, aplicar las 7 migraciones y configurar SMTP, y
+eso es trabajo fuera del repo. Queda `docs/DESPLIEGUE-NUBE.md` con los 9 pasos.
+Dos cosas que conviene saber antes de empezarlo:
+
+- El SMTP integrado de Supabase va a **~2 correos por hora** y su
+  documentación dice que no es para producción. Dos intentos de login seguidos
+  y el coordinador se queda esperando.
+- El keep-alive de GitHub Actions pinguea **solo el proyecto de dev**. Un
+  proyecto de producción pausado por inactividad es una caída silenciosa, y las
+  vacaciones son justo cuando no hay tráfico real que lo evite.
+
+**Deriva de documentación otra vez, tercera vez seguida.** `ESTADO.md` §2.4
+decía "Fase 2 🔴 planeada post-v4.0" con 2.0, 2.1, 2.2 y 2.3 en código desde
+mayo; §2.0 seguía "en curso" con Fase 1 cerrada; §2.3.2 decía "hoy no hay
+auth". Corregidos los tres, y §2.4 pasa a ser la lista real de lo que falta de
+Fase 2 — que es más corta de lo que parecía desde fuera.
+
+**Y al mirar por qué pasaba la suite E2E, otro instrumento roto.**
+`responsive.spec.ts` hace `page.goto(ruta)` y mide, sin comprobar dónde
+aterrizó. El `ng serve` usa `environment.ts`, que **sí** tiene credenciales de
+Supabase, y Playwright corre sin sesión: hasta hoy `roleGuard` mandaba
+`/estadisticas`, `/gestion-motivos`, `/configuracion`, `/importar-alumnos` e
+`/inactivos` a `/login`. Es decir, la auditoría del 2026-08-31 concluyó "12
+rutas × 3 viewports, cero desbordamientos" midiendo la pantalla de login quince
+veces.
+
+La conclusión resulta ser cierta —hoy, con la nube apagada por defecto, esas
+cinco rutas se renderizan de verdad y siguen midiendo limpio— pero lo era por
+suerte, no porque el test lo hubiera comprobado. El spec ahora verifica
+`page.url()` contra la ruta pedida y falla si hubo redirección.
+
+Van tres tandas seguidas encontrando lo mismo: **una comprobación que reporta
+verde sin comprobar lo que dice.** El `ng lint` documentado y ausente, el
+`SCAN_INTERVAL_LOWRES_MS` documentado y muerto, y ahora un test que mide la
+pantalla equivocada. El patrón no es descuido puntual; es que nada vigila a los
+vigilantes. Al escribir un test que "recorre" algo, la primera aserción debe ser
+que llegó.
+
+**Verificado:** 0 errores de lint · ambos type-checks · **184** tests unitarios
+(178 + 6 nuevos sobre el interruptor, incluido el caso peligroso: build con
+claves e instalación que nunca pidió la nube) · 20 E2E, con `responsive.spec`
+midiendo por fin las 12 rutas de verdad · build de producción.
+
+**Qué sigue:** los pasos manuales de `DESPLIEGUE-NUBE.md`. Después, volumen
+real y la política de conflictos con el coordinador.
+
+---
+
 ## 2026-09-02 (tarde) — Cierre de Fase 1
 
 Dos cosas pequeñas, una de ellas sorpresa.

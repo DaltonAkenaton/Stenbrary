@@ -49,6 +49,45 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.41.0',
+    fecha: '2026-09-04',
+    titulo: 'La nube, cuando tú lo decidas',
+    resumen: 'El sistema ya puede conectarse a la nube para respaldar datos, entrar desde varios equipos y dar acceso a asistentes con permisos distintos. La diferencia con antes es quién aprieta el botón: nadie te conecta por actualizar. La conexión se enciende desde Configuración, en el equipo que tú elijas y cuando tú quieras.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva sección "Conexión con la nube" en Configuración → Avanzado. ' +
+          'Mientras esté apagada —y arranca apagada— el sistema funciona ' +
+          'exactamente como hasta hoy: sin cuentas, sin iniciar sesión y sin ' +
+          'necesitar Internet para nada.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Al encenderla, las secciones de administración (Configuración, ' +
+          'Estadísticas, Actividades, Importar) piden iniciar sesión y ' +
+          'respetan el rol de cada persona. El escáner y el registro de ' +
+          'visitas siguen funcionando sin Internet, como siempre.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Salida de emergencia en la pantalla de inicio de sesión: si el ' +
+          'correo con el enlace no llega o te quedas sin Internet, el botón ' +
+          '"Usar sin cuenta" devuelve el equipo al modo de siempre. Nunca te ' +
+          'quedas fuera de tu propio sistema.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Puedes volver al modo de siempre cuando quieras desde la misma ' +
+          'sección. Los datos guardados en el equipo no se tocan, y lo que ya ' +
+          'hayas subido sigue en la nube.',
+      },
+    ],
+  },
+  {
     version: '3.40.0',
     fecha: '2026-09-01',
     titulo: 'La presentación, de verdad',

@@ -111,11 +111,27 @@
           </button>
         </form>
 
-        <p class="muted footer-note">
-          ¿Solo quieres usar el sistema sin cuenta? Pide al coordinador que
-          active el <strong>modo solo-local</strong>.
-        </p>
       </section>
+    }
+
+    <!-- Salida de emergencia. Con la nube encendida la administración pide
+         sesión, y la sesión llega por correo: si el correo no llega o no hay
+         Internet, esto es lo único que evita quedarse fuera del propio
+         sistema. Vive en /login porque es justo donde aterriza quien se
+         quedó fuera.
+         Sí, cualquiera que abra esta pantalla puede pulsarlo. Igual que
+         cualquiera con el equipo delante puede vaciar IndexedDB desde el
+         navegador — mismo argumento que ya está escrito en
+         `avanzado.component.ts` para `puedeRestablecer`. Los permisos de
+         verdad los aplica RLS en el servidor; esto es UX, no una cerradura. -->
+    @if (!isLocalOnly() && !isSignedIn()) {
+      <div class="footer-note">
+        <p class="muted">¿No llega el correo o no hay Internet?</p>
+        <button mat-stroked-button class="escape-btn" (click)="volverASoloLocal()">
+          <mat-icon>cloud_off</mat-icon>
+          <span>Usar sin cuenta (modo solo-local)</span>
+        </button>
+      </div>
     }
   </div>
 </div>

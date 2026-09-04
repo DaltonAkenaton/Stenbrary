@@ -26,8 +26,8 @@ Stenbrary es un sistema de **control de acceso a biblioteca universitaria** que 
 
 | Fase | Estado | Objetivo | Duración estimada |
 |---|---|---|---|
-| **1 — PWA offline-first** | Cerrando (v3.x → v4.0) | Sistema operativo local completo | — (ya en producción) |
-| **2 — Backend + auth + sync** | Planeada | Multi-usuario, sync a nube supervisado | 4–5 meses part-time |
+| **1 — PWA offline-first** | ✅ Cerrada (2026-09-02) | Sistema operativo local completo | — (ya en producción) |
+| **2 — Backend + auth + sync** | En curso (2.0–2.3 en código; falta desplegar) | Multi-usuario, sync a nube supervisado | 4–5 meses part-time |
 | **3 — Pulir producto** | Futura | Hardening, perf, a11y, capacitación | 2–3 meses |
 | **4 — Módulo de préstamos** | Investigación | Reservas, devoluciones, multas | TBD tras investigación |
 | **5 — Comercialización** | Largo plazo | Vender a otras universidades | TBD |
@@ -93,9 +93,31 @@ Componentes clave:
 
 Defense in depth: las restricciones se aplican **en BD (RLS) y en UI**, no solo en una capa.
 
+**Activación: la nube es opt-in por instalación** *(decidido 2026-09-04, v3.41.0)*.
+
+Que un build traiga credenciales de Supabase y que una instalación concreta
+hable con la nube son dos cosas distintas, y confundirlas rompe el primer
+diferenciador de la visión. Con una sola condición, publicar las claves en
+`environment.prod.ts` habría hecho que `roleGuard` exigiera sesión en toda la
+administración —para todos los usuarios, el día del deploy— y la sesión llega
+por magic link, que necesita Internet y un correo que llegue.
+
+Así que `isSupabaseConfigured()` = `hayCredencialesNube()` **y**
+`isNubeActiva()`. La segunda vive en `localStorage` por instalación, arranca
+en `false`, y la enciende el coordinador desde Configuración → Avanzado. Es el
+principio 2 ("el cliente manda sobre los defaults") aplicado a la decisión más
+grande del producto, y de paso es el interruptor que hará falta al instalar en
+la segunda universidad.
+
+Corolario obligatorio: **toda ruta de ida necesita su ruta de vuelta**. El
+interruptor de apagado vive dentro de Configuración, que es justo lo que deja
+de abrirse si el login falla, así que `/login` lleva una salida de emergencia
+al modo solo-local. Cualquier feature futura que pueda dejar al coordinador
+fuera de su propio sistema necesita lo mismo.
+
 ### Sub-fases
 
-#### 2.0 — Fundación de auth `(~2 sem)`
+#### 2.0 — Fundación de auth ✅ `(~2 sem)`
 - Setup proyecto Supabase + CLI + migrations.
 - Schema inicial: `organizations`, `users`, `user_roles`.
 - Login screen (email + magic link), logout.
@@ -104,7 +126,7 @@ Defense in depth: las restricciones se aplican **en BD (RLS) y en UI**, no solo 
 - **App sigue 100% funcional offline si no hay sesión** — login es opcional al arrancar (modo "solo local" para setup inicial y casos sin Internet).
 - **Aprendizajes esperados:** Supabase CLI, migrations SQL, JWT básico, sesión reactiva con signals.
 
-#### 2.1 — Modelo de datos espejo `(~2-3 sem)`
+#### 2.1 — Modelo de datos espejo ✅ `(~2-3 sem)`
 - Migrar schema `alumnos / registros / motivos` a Postgres con tipos correctos.
 - RLS policies básicas (por ahora solo "usuario autenticado puede leer/escribir lo suyo").
 - `RemoteDatabaseService` con la **misma interfaz pública** que `DatabaseService` local (adapter pattern). Esto permite swap por feature flag durante desarrollo.
@@ -112,7 +134,7 @@ Defense in depth: las restricciones se aplican **en BD (RLS) y en UI**, no solo 
 - Aún sin sync — solo CRUD remoto disponible para admins con Internet.
 - **Aprendizajes esperados:** SQL avanzado, RLS, diseño de schemas, índices Postgres, supabase-js SDK.
 
-#### 2.2 — Sync engine offline-first ⭐ **El difícil** `(~4-6 sem)`
+#### 2.2 — Sync engine offline-first ⭐ **El difícil** 🟡 parcial `(~4-6 sem)`
 - Bump `DB_VERSION` para añadir `_syncStatus`, `_localId`, `_remoteId` a stores existentes.
 - `SyncService` con cola persistida en IndexedDB (store nuevo `sync_queue`).
 - **Bandeja de sincronización** (`/sincronizacion`): vista del coordinador para revisar, filtrar, descartar y aprobar el batch antes de subir.
@@ -122,7 +144,7 @@ Defense in depth: las restricciones se aplican **en BD (RLS) y en UI**, no solo 
 - **Recomendación fuerte: spike de 1 semana antes** para validar el approach con un caso real antes de comprometer 6 semanas.
 - **Aprendizajes esperados:** arquitectura de sync, conflict resolution, optimistic UI, idempotencia, edge cases de red.
 
-#### 2.3 — Roles y permisos `(~2 sem)`
+#### 2.3 — Roles y permisos ✅ `(~2 sem)`
 - Implementar los 4 roles definidos arriba.
 - `roleGuard` parametrizable (`canActivate: [roleGuard], data: { roles: ['admin', 'asistente'] }`).
 - UI condicional: esconder botones que el rol actual no puede usar (vs. mostrar y denegar — la primera es mejor UX).

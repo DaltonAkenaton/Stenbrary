@@ -23,6 +23,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { RestablecerDialogComponent } from '../restablecer-dialog.component';
 import { RemoteDatabaseService } from '../../../core/services/remote-database.service';
 import { SubirSupabaseDialogComponent } from '../dialogs/subir-supabase-dialog.component';
+import { hayCredencialesNube, isNubeActiva, setNubeActiva } from '../../../core/auth/supabase.client';
 
 @Component({
   selector: 'app-config-avanzado',
@@ -49,6 +50,15 @@ export class AvanzadoCategoriaComponent {
   protected readonly auth = inject(AuthService);
   private readonly remote = inject(RemoteDatabaseService);
   readonly backendDisponible = this.remote.isAvailable();
+
+  /** Este build trae credenciales de Supabase (lo decide `environment.ts`). */
+  readonly hayCredenciales = hayCredencialesNube();
+
+  /**
+   * Esta instalación encendió la nube. Se lee una vez al construir: cambiarlo
+   * recarga la página, así que no necesita ser reactivo.
+   */
+  readonly nubeActiva = isNubeActiva();
 
   constructor(
     private databaseService: DatabaseService,
@@ -100,6 +110,69 @@ export class AvanzadoCategoriaComponent {
     // dejarlo ahí con todo en valores por defecto y sin explicar nada es
     // como entregarle un sistema distinto sin avisar.
     void this.router.navigate(['/bienvenida']);
+  }
+
+  // ─── Conexión con la nube ───────────────────────────────
+  // Encender la nube cambia el comportamiento de los guards: a partir de ahí
+  // la administración pide sesión. Por eso se confirma, se explica qué
+  // cambia, y se recarga la página — `getSupabaseClient()` cachea y
+  // `AuthService` fija su estado una sola vez, así que un cambio en caliente
+  // dejaría media app con la idea vieja.
+
+  async conectarNube(): Promise<void> {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '440px',
+      data: {
+        titulo: '¿Conectar este equipo con la nube?',
+        mensaje:
+          'Las secciones de administración (Configuración, Estadísticas, ' +
+          'Actividades, Importar) pasarán a pedir inicio de sesión. El escáner ' +
+          'y el registro de visitas siguen funcionando sin Internet. Si te ' +
+          'quedas fuera, puedes volver a modo solo-local desde la pantalla de ' +
+          'inicio de sesión.',
+        variante: 'warning',
+        textoConfirmar: 'Conectar',
+        icono: 'cloud_upload',
+      } as ConfirmDialogData,
+    });
+
+    if (!(await ref.afterClosed().toPromise())) return;
+
+    setNubeActiva(true);
+    // Recarga dura y a /login: la sesión es lo primero que hará falta, y el
+    // router de Angular no bastaría (hay que reconstruir el cliente).
+    window.location.href = '/login';
+  }
+
+  async desconectarNube(): Promise<void> {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '440px',
+      data: {
+        titulo: '¿Volver a modo solo-local?',
+        mensaje:
+          'Este equipo dejará de hablar con la nube: se cierra la sesión y ' +
+          'nadie tendrá que iniciarla para administrar. Los datos de este ' +
+          'navegador no se tocan, y lo que ya subiste sigue en la nube. ' +
+          'Puedes volver a conectarlo cuando quieras.',
+        variante: 'warning',
+        textoConfirmar: 'Volver a solo-local',
+        icono: 'cloud_off',
+      } as ConfirmDialogData,
+    });
+
+    if (!(await ref.afterClosed().toPromise())) return;
+
+    // Cerrar sesión primero: si no, queda dormida en localStorage y al
+    // reconectar entraría con el usuario anterior sin pedir nada. Best-effort:
+    // sin red `signOut` falla y da igual, la preferencia local manda.
+    try {
+      await this.auth.signOut();
+    } catch {
+      /* Sin red no se puede avisar al servidor; basta con apagar el interruptor. */
+    }
+
+    setNubeActiva(false);
+    window.location.href = '/scanner';
   }
 
   abrirSubidaSupabase(): void {

@@ -10,8 +10,23 @@ export const environment = {
   },
 
   /**
-   * Supabase — proyecto de PROD (separado de dev). Vacío = modo solo-local.
-   * Pegar url + anonKey del proyecto de PROD cuando se cree.
+   * Supabase — proyecto de PROD (separado de dev).
+   *
+   * Desde v3.41.0 pegar aquí las claves **ya no cambia el comportamiento de
+   * las instalaciones existentes**: la nube es opt-in por instalación
+   * (`stenbrary-nube-activa`, ver `core/auth/supabase.client.ts`). Un build
+   * con credenciales sigue arrancando en modo solo-local hasta que el
+   * coordinador la enciende desde /configuracion#avanzado. Antes de eso,
+   * publicar las claves habría hecho que `roleGuard` exigiera sesión en toda
+   * la administración desde el primer despliegue.
+   *
+   * Vacío = ni siquiera aparece el interruptor.
+   *
+   * La `anonKey` (`sb_publishable_*`) es pública por diseño y respeta RLS.
+   * NUNCA pegar aquí la `service_role` — esa solo va en Supabase CLI/admin.
+   *
+   * Pasos para crear el proyecto y aplicar las migraciones:
+   * `docs/DESPLIEGUE-NUBE.md`.
    */
   supabase: {
     url: '',

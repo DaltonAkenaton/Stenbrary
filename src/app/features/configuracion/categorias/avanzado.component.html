@@ -40,6 +40,52 @@
   </div>
 </div>
 
+<!-- ── CONEXIÓN CON LA NUBE (Fase 2 — activación por instalación) ──
+     Solo aparece si el build trae credenciales. Es el interruptor que
+     decide si esta instalación habla con Supabase: mientras esté apagado
+     la app se comporta igual que antes de Fase 2 (sin login, sin roles,
+     sin sondeos de red). Encenderlo es una decisión del coordinador, no
+     una consecuencia de haber desplegado una versión nueva. -->
+@if (hayCredenciales) {
+  <div class="section-card">
+    <div class="section-header">
+      <mat-icon>{{ nubeActiva ? 'cloud_done' : 'cloud_off' }}</mat-icon>
+      <h2>Conexión con la nube</h2>
+    </div>
+
+    @if (nubeActiva) {
+      <p class="section-desc">
+        Esta instalación está conectada a la nube. Las secciones de
+        administración piden iniciar sesión y respetan el rol de cada
+        usuario. El registro de entradas y salidas sigue funcionando sin
+        Internet, como siempre.
+      </p>
+      <div class="danger-actions">
+        <button class="btn-action" (click)="desconectarNube()" [disabled]="procesando">
+          <mat-icon>cloud_off</mat-icon>
+          <span>Volver a modo solo-local</span>
+        </button>
+      </div>
+    } @else {
+      <p class="section-desc">
+        Hoy este equipo trabaja <strong>solo en local</strong>: todo vive en
+        este navegador y nadie necesita cuenta. Al conectar la nube podrás
+        respaldar los datos en el servidor, entrar desde varios equipos y dar
+        acceso a asistentes con permisos distintos —
+        <strong>pero la administración pasará a pedir inicio de sesión</strong>,
+        así que hazlo cuando ya tengas tu cuenta a la mano.
+      </p>
+      <div class="danger-actions">
+        <button class="btn-action" (click)="conectarNube()" [disabled]="procesando">
+          <mat-icon>cloud_upload</mat-icon>
+          <span>Conectar con la nube</span>
+        </button>
+      </div>
+    }
+  </div>
+}
+
+
 <!-- ── SINCRONIZACIÓN EN LA NUBE (Fase 2.1) ──
      Solo si hay sesión activa + backend configurado. En modo solo-local
      o sin login esta tarjeta no se muestra para no confundir. -->
