@@ -9,6 +9,31 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-06 — Ronda de pruebas: cuadre, volumen y exportes
+
+Informe en `docs/PRUEBAS-RONDA-2026-10.md`. Todo con Playwright sobre el
+build de producción, servido por un servidor estático mínimo, con
+`timezoneId: America/Matamoros`.
+
+- **Cuadre 32/32.** Fixture de 6 alumnos / 10 visitas restaurado con la UI
+  real, reloj congelado con `page.clock`. Quedó como `e2e/cuadre.spec.ts`.
+  Las 6 "fallas" de la primera corrida eran de las regex: `innerText`
+  respeta `text-transform: uppercase` y pega spans contiguos.
+- **Volumen.** 21 k y 50 k registros: todo < 2 s en el equipo de desarrollo.
+- **Lo que encontró**, corregido en v3.44.1: el generador de datos de prueba
+  creaba visitas futuras (hora al azar 7–22 también para hoy); jsPDF sin
+  `compress` (41 MB → 4 MB); nombres de PDF idénticos; Excel de Registros sin
+  salida, duración ni motivos secundarios; detalles de texto.
+- **Trampa de la prueba que es lección de despliegue:** un perfil persistente
+  siguió ejecutando código viejo tras recompilar (service worker y caché HTTP;
+  el servidor de pruebas no mandaba `Cache-Control`). Se midió con
+  `serviceWorkers: 'block'` y `no-store`. En producción hay que verificar que
+  el aviso de nueva versión funcione en el primer despliegue.
+
+**Sigue:** pruebas manuales del usuario (lista en el informe), luego Cloudflare.
+
+---
+
 ## 2026-10-06 — Tanda 3: el resto del informe y el blindaje
 
 Cierra los 🟠 y 🟡 pendientes de `docs/AUDITORIA-2026-10.md` (v3.44.0).

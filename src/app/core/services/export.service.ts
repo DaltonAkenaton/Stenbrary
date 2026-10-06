@@ -13,6 +13,7 @@
 import { Injectable } from '@angular/core';
 import { Registro, Alumno } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
+import { duracionReal, esSalidaEstimada } from '../utils/estadisticas.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -36,15 +37,23 @@ export class ExportService {
     if (registros.length === 0) return;
     const XLSX = await this.cargarXlsx();
 
+    const hora = (x: Date) => x.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
     const datos = registros.map(r => {
       const d = new Date(r.fechaHora);
+      const real = duracionReal(r);
       return {
         'Fecha': d.toLocaleDateString('es-MX'),
-        'Hora': d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+        'Hora': hora(d),
         'Matrícula': r.matricula,
         'Alumno': r.nombreCompleto,
         'Carrera': r.carrera,
-        'Actividad': r.motivoNombre,
+        'Turno': r.turno ?? '',
+        // Todas las actividades de la visita, no solo la principal (P2).
+        'Actividades': (r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre]).join(', '),
+        'Salida': r.horaSalida ? hora(new Date(r.horaSalida)) : '',
+        // Minutos solo si la salida la registró una persona (P3).
+        'Duración (min)': real ?? '',
+        'Salida estimada': r.horaSalida && esSalidaEstimada(r) ? 'Sí' : '',
       };
     });
 
@@ -57,7 +66,11 @@ export class ExportService {
       { wch: 16 }, // Matrícula
       { wch: 32 }, // Alumno
       { wch: 30 }, // Carrera
-      { wch: 18 }, // Actividad
+      { wch: 12 }, // Turno
+      { wch: 30 }, // Actividades
+      { wch: 8 },  // Salida
+      { wch: 14 }, // Duración
+      { wch: 14 }, // Salida estimada
     ];
 
     const wb = XLSX.utils.book_new();

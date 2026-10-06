@@ -680,6 +680,12 @@ formatHora(h: number): string {
     });
   }
 
+  /** "07-oct" este año; "07-oct-25" si es de otro año (si no, "del 07-oct al 06-oct" era ambiguo). */
+  private fechaCortaComparativa(d: Date): string {
+    const corta = this.formatearFechaCorta(d);
+    return d.getFullYear() === new Date().getFullYear() ? corta : `${corta}-${String(d.getFullYear()).slice(-2)}`;
+  }
+
   formatearHoraMin(d: Date): string {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
@@ -1384,7 +1390,7 @@ formatHora(h: number): string {
       const ff = this.formatearFechaLarga(this.rangoActivo.fin);
       this.labelRangoActivo = `Del ${fi} al ${ff} · ${dias} ${dias === 1 ? 'día' : 'días'}`;
       this.labelRangoComparativo = this.tendencia?.rangoAnterior
-        ? `Comparado contra: del ${this.formatearFechaCorta(this.tendencia.rangoAnterior.inicio)} al ${this.formatearFechaCorta(this.tendencia.rangoAnterior.fin)}` +
+        ? `Comparado contra: del ${this.fechaCortaComparativa(this.tendencia.rangoAnterior.inicio)} al ${this.fechaCortaComparativa(this.tendencia.rangoAnterior.fin)}` +
           // P6: el período actual va a medias; el anterior se cortó a la misma altura.
           (this.tendencia.alMismoAvance ? ` hasta las ${this.formatearHoraMin(this.tendencia.rangoAnterior.fin)} (al mismo avance)` : '')
         : '';
@@ -2624,7 +2630,8 @@ this.sparkRegistros = counts;
     if (!this.tendencia) return 'Sin cambios';
     // Sin registros antes no hay base para un porcentaje: cualquier número
     // (0 %, 100 %, ∞) sería inventado. Se dice lo que pasó, sin cifra.
-    if (this.tendencia.sinReferencia) return 'Sin registros en el período anterior para comparar';
+    // Corto: también se pinta en la tarjeta de tendencia con letra grande.
+    if (this.tendencia.sinReferencia) return 'Sin datos previos para comparar';
     const p = Math.abs(this.tendencia.porcentajeCambio).toFixed(1);
     if (this.tendencia.direccion === 'up') return `↑ ${p}% más que el período anterior`;
     if (this.tendencia.direccion === 'down') return `↓ ${p}% menos que el período anterior`;

@@ -180,8 +180,8 @@
             </div>
             <div class="kpi-hero-value">{{ kpiTotalRegistros | number }}</div>
             <div class="kpi-hero-sub">
-              <strong>{{ kpiPromedioPorDia }}</strong>
-              <span matTooltip="Visitas divididas entre los días que abrió la biblioteca y hubo registros ({{ kpiDiasConActividad }} en este período). Domingos, festivos y vacaciones sin registros no cuentan."
+              <!-- &nbsp;: Angular quita el espacio entre dos etiquetas ("94.6promedio"). -->
+              <strong>{{ kpiPromedioPorDia }}</strong>&nbsp;<span matTooltip="Visitas divididas entre los días que abrió la biblioteca y hubo registros ({{ kpiDiasConActividad }} en este período). Domingos, festivos y vacaciones sin registros no cuentan."
                     matTooltipPosition="above">promedio por día con actividad</span> ·
               <strong>{{ kpiAlumnosUnicos | number }}</strong> alumnos únicos
               @if (kpiVariacionDiaria > 0) {

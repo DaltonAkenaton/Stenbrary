@@ -145,7 +145,10 @@ export class ReportService {
     opciones: OpcionesReporte
   ): Promise<void> {
     const { JsPDFCtor } = await this.cargarPdfLib();
-    const doc = new JsPDFCtor('portrait', 'mm', 'letter');
+    // compress: jsPDF no comprime por omisión. Con 21 mil visitas el PDF
+    // pesaba 41 MB, más que el límite de adjuntos del correo (ronda de
+    // pruebas 2026-10).
+    const doc = new JsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'letter', compress: true });
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
     const secciones = { ...SECCIONES_DEFAULT, ...(opciones.secciones || {}) };
@@ -722,9 +725,20 @@ export class ReportService {
     }
   }
 
+  /**
+   * El nombre lleva el PERÍODO del reporte. Antes todos se llamaban
+   * "reporte_personalizado_stenbrary_<hoy>.pdf" y dos reportes del mismo día
+   * se pisaban al descargar (ronda de pruebas 2026-10).
+   */
   private generarNombreArchivo(opciones: OpcionesReporte): string {
-    const fecha = fechaLocalISO();
-    return `reporte_${opciones.tipo}_stenbrary_${fecha}.pdf`;
+    if (opciones.fechaInicio && opciones.fechaFin) {
+      const ini = fechaLocalISO(opciones.fechaInicio);
+      const fin = fechaLocalISO(opciones.fechaFin);
+      return ini === fin
+        ? `reporte_stenbrary_${ini}.pdf`
+        : `reporte_stenbrary_${ini}_a_${fin}.pdf`;
+    }
+    return `reporte_${opciones.tipo}_stenbrary_${fechaLocalISO()}.pdf`;
   }
 
   // ═══════════════════════════════════════════════
@@ -747,7 +761,10 @@ export class ReportService {
     }
   ): Promise<void> {
     const { JsPDFCtor } = await this.cargarPdfLib();
-    const doc = new JsPDFCtor('portrait', 'mm', 'letter');
+    // compress: jsPDF no comprime por omisión. Con 21 mil visitas el PDF
+    // pesaba 41 MB, más que el límite de adjuntos del correo (ronda de
+    // pruebas 2026-10).
+    const doc = new JsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'letter', compress: true });
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 18;
 

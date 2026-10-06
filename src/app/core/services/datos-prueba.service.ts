@@ -424,10 +424,42 @@ export class DatosPruebaService {
     const hora = HORA_APERTURA + Math.floor(Math.random() * (HORA_CIERRE - HORA_APERTURA));
     const min = Math.floor(Math.random() * 60);
     fecha.setHours(hora, min, 0, 0);
-    return fecha;
+    return this.noEnElFuturo(fecha);
+  }
+
+  /**
+   * El calendario incluye HOY, y una hora al azar entre apertura y cierre
+   * caía muchas veces más tarde que ahora: los datos de prueba traían
+   * visitas en el futuro ("último registro hace unos segundos", presencia
+   * y proyección del día falseadas). Se reparten en lo que va del día; si
+   * todavía no abre, pasan al día anterior a la misma hora.
+   */
+  private noEnElFuturo(fecha: Date): Date {
+    const ahora = new Date();
+    if (fecha.getTime() <= ahora.getTime()) return fecha;
+    const apertura = new Date(ahora);
+    apertura.setHours(HORA_APERTURA, 0, 0, 0);
+    if (ahora.getTime() > apertura.getTime()) {
+      return new Date(apertura.getTime() + Math.random() * (ahora.getTime() - apertura.getTime()));
+    }
+    const ayer = new Date(fecha);
+    ayer.setDate(ayer.getDate() - 1);
+    return ayer;
   }
 
   private generarDuracion(fechaBase: Date): {
+    horaSalida: Date | undefined;
+    tipoEstado: 'corta' | 'abierta' | 'larga';
+  } {
+    const r = this.generarDuracionSinLimite(fechaBase);
+    // Una salida que caería después de ahora todavía no ocurrió: sigue dentro.
+    if (r.horaSalida && r.horaSalida.getTime() > Date.now()) {
+      return { horaSalida: undefined, tipoEstado: 'abierta' };
+    }
+    return r;
+  }
+
+  private generarDuracionSinLimite(fechaBase: Date): {
     horaSalida: Date | undefined;
     tipoEstado: 'corta' | 'abierta' | 'larga';
   } {

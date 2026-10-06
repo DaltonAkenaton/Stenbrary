@@ -49,6 +49,34 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.44.1',
+    fecha: '2026-10-06',
+    titulo: 'Probado con un año de datos',
+    resumen: 'Pusimos el sistema a prueba con miles de visitas y comprobamos cada número contra un cálculo hecho a mano. Estos son los ajustes que salieron.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto: 'Los PDF pesan hasta 10 veces menos: el de un año completo pasó de 41 MB a 4 MB y ya se puede mandar por correo.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Los PDF se nombran con su período (por ejemplo, reporte_stenbrary_2026-09-07_a_2026-10-06.pdf); antes se pisaban entre sí.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El Excel de Registros incluye todas las actividades de cada visita, la hora de salida, la duración y si la salida fue estimada.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Los datos de prueba ya no crean visitas en horas que todavía no llegan.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Detalles de texto en Estadísticas: espacio que faltaba en el promedio, tendencia sin datos previos más corta y año en el período comparado.',
+      },
+    ],
+  },
+  {
     version: '3.44.0',
     fecha: '2026-10-06',
     titulo: 'Detalles que cuentan',

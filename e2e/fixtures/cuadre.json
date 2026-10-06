@@ -1,0 +1,312 @@
+{
+ "meta": {
+  "version": "3.4",
+  "fecha": "2026-10-07T12:00:00-05:00",
+  "app": "Stenbrary",
+  "totalAlumnos": 6,
+  "totalRegistros": 10,
+  "totalMotivos": 3
+ },
+ "alumnos": [
+  {
+   "id": "a1",
+   "matricula": "2200000001",
+   "nombre": "Ana",
+   "apellidoPaterno": "Prueba",
+   "apellidoMaterno": "Cuadre",
+   "carrera": "Ing. TI",
+   "grado": 3,
+   "grupo": "A",
+   "turno": "Matutino",
+   "activo": true,
+   "fechaRegistro": "2026-01-10T10:00:00-06:00",
+   "datosExtra": {}
+  },
+  {
+   "id": "a2",
+   "matricula": "2200000002",
+   "nombre": "Beto",
+   "apellidoPaterno": "Prueba",
+   "apellidoMaterno": "Cuadre",
+   "carrera": "Ing. TI",
+   "grado": 5,
+   "grupo": "A",
+   "turno": "Vespertino",
+   "activo": true,
+   "fechaRegistro": "2026-01-10T10:00:00-06:00",
+   "datosExtra": {}
+  },
+  {
+   "id": "a3",
+   "matricula": "2200000003",
+   "nombre": "Caro",
+   "apellidoPaterno": "Prueba",
+   "apellidoMaterno": "Cuadre",
+   "carrera": "Derecho",
+   "grado": 1,
+   "grupo": "A",
+   "turno": "Matutino",
+   "activo": true,
+   "fechaRegistro": "2026-01-10T10:00:00-06:00",
+   "datosExtra": {}
+  },
+  {
+   "id": "a4",
+   "matricula": "2200000004",
+   "nombre": "Dani",
+   "apellidoPaterno": "Prueba",
+   "apellidoMaterno": "Cuadre",
+   "carrera": "Derecho",
+   "grado": 7,
+   "grupo": "A",
+   "turno": "Mixto",
+   "activo": true,
+   "fechaRegistro": "2026-01-10T10:00:00-06:00",
+   "datosExtra": {}
+  },
+  {
+   "id": "a5",
+   "matricula": "2200000005",
+   "nombre": "Eva",
+   "apellidoPaterno": "Prueba",
+   "apellidoMaterno": "Cuadre",
+   "carrera": "Ing. TI",
+   "grado": 3,
+   "grupo": "A",
+   "turno": "Matutino",
+   "activo": true,
+   "fechaRegistro": "2026-01-10T10:00:00-06:00",
+   "datosExtra": {}
+  },
+  {
+   "id": "a6",
+   "matricula": "2200000006",
+   "nombre": "Fer",
+   "apellidoPaterno": "Prueba",
+   "apellidoMaterno": "Cuadre",
+   "carrera": "Derecho",
+   "grado": 2,
+   "grupo": "A",
+   "turno": "Matutino",
+   "activo": false,
+   "fechaRegistro": "2026-01-10T10:00:00-06:00",
+   "datosExtra": {}
+  }
+ ],
+ "registros": [
+  {
+   "id": "r1",
+   "alumnoId": "a1",
+   "matricula": "2200000001",
+   "nombreCompleto": "Ana Prueba Cuadre",
+   "carrera": "Ing. TI",
+   "motivoId": "m1",
+   "motivoNombre": "Estudiar",
+   "motivoIds": [
+    "m1"
+   ],
+   "motivoNombres": [
+    "Estudiar"
+   ],
+   "fechaHora": "2026-10-05T10:00:00-05:00",
+   "sincronizado": false,
+   "turno": "Matutino",
+   "horaSalida": "2026-10-05T11:30:00-05:00",
+   "duracionMinutos": 90
+  },
+  {
+   "id": "r2",
+   "alumnoId": "a2",
+   "matricula": "2200000002",
+   "nombreCompleto": "Beto Prueba Cuadre",
+   "carrera": "Ing. TI",
+   "motivoId": "m1",
+   "motivoNombre": "Estudiar",
+   "motivoIds": [
+    "m1",
+    "m2"
+   ],
+   "motivoNombres": [
+    "Estudiar",
+    "Pedir libro"
+   ],
+   "fechaHora": "2026-10-05T10:15:00-05:00",
+   "sincronizado": false,
+   "turno": "Vespertino",
+   "horaSalida": "2026-10-05T10:45:00-05:00",
+   "duracionMinutos": 30
+  },
+  {
+   "id": "r3",
+   "alumnoId": "a3",
+   "matricula": "2200000003",
+   "nombreCompleto": "Caro Prueba Cuadre",
+   "carrera": "Derecho",
+   "motivoId": "m3",
+   "motivoNombre": "Trabajo escolar",
+   "motivoIds": [
+    "m3"
+   ],
+   "motivoNombres": [
+    "Trabajo escolar"
+   ],
+   "fechaHora": "2026-10-05T16:00:00-05:00",
+   "sincronizado": false,
+   "turno": "Matutino"
+  },
+  {
+   "id": "r4",
+   "alumnoId": "a1",
+   "matricula": "2200000001",
+   "nombreCompleto": "Ana Prueba Cuadre",
+   "carrera": "Ing. TI",
+   "motivoId": "m1",
+   "motivoNombre": "Estudiar",
+   "motivoIds": [
+    "m1"
+   ],
+   "motivoNombres": [
+    "Estudiar"
+   ],
+   "fechaHora": "2026-10-06T09:00:00-05:00",
+   "sincronizado": false,
+   "turno": "Matutino",
+   "horaSalida": "2026-10-06T13:00:00-05:00",
+   "duracionMinutos": 240,
+   "salidaEstimada": true
+  },
+  {
+   "id": "r5",
+   "alumnoId": "invitado-5",
+   "matricula": "INVITADO",
+   "nombreCompleto": "Visitante Invitado",
+   "carrera": "Visitante",
+   "motivoId": "m2",
+   "motivoNombre": "Pedir libro",
+   "motivoIds": [
+    "m2"
+   ],
+   "motivoNombres": [
+    "Pedir libro"
+   ],
+   "fechaHora": "2026-10-06T11:00:00-05:00",
+   "sincronizado": false
+  },
+  {
+   "id": "r6",
+   "alumnoId": "a2",
+   "matricula": "2200000002",
+   "nombreCompleto": "Beto Prueba Cuadre",
+   "carrera": "Ing. TI",
+   "motivoId": "m3",
+   "motivoNombre": "Trabajo escolar",
+   "motivoIds": [
+    "m3"
+   ],
+   "motivoNombres": [
+    "Trabajo escolar"
+   ],
+   "fechaHora": "2026-10-07T09:30:00-05:00",
+   "sincronizado": false,
+   "turno": "Vespertino"
+  },
+  {
+   "id": "r7",
+   "alumnoId": "a1",
+   "matricula": "2200000001",
+   "nombreCompleto": "Ana Prueba Cuadre",
+   "carrera": "Ing. TI",
+   "motivoId": "m1",
+   "motivoNombre": "Estudiar",
+   "motivoIds": [
+    "m1"
+   ],
+   "motivoNombres": [
+    "Estudiar"
+   ],
+   "fechaHora": "2026-09-28T10:00:00-05:00",
+   "sincronizado": false,
+   "turno": "Matutino"
+  },
+  {
+   "id": "r8",
+   "alumnoId": "a3",
+   "matricula": "2200000003",
+   "nombreCompleto": "Caro Prueba Cuadre",
+   "carrera": "Derecho",
+   "motivoId": "m1",
+   "motivoNombre": "Estudiar",
+   "motivoIds": [
+    "m1"
+   ],
+   "motivoNombres": [
+    "Estudiar"
+   ],
+   "fechaHora": "2026-09-29T10:00:00-05:00",
+   "sincronizado": false,
+   "turno": "Matutino"
+  },
+  {
+   "id": "r9",
+   "alumnoId": "a5",
+   "matricula": "2200000005",
+   "nombreCompleto": "Eva Prueba Cuadre",
+   "carrera": "Ing. TI",
+   "motivoId": "m1",
+   "motivoNombre": "Estudiar",
+   "motivoIds": [
+    "m1"
+   ],
+   "motivoNombres": [
+    "Estudiar"
+   ],
+   "fechaHora": "2026-08-28T10:00:00-05:00",
+   "sincronizado": false,
+   "turno": "Matutino"
+  },
+  {
+   "id": "r10",
+   "alumnoId": "a2",
+   "matricula": "2200000002",
+   "nombreCompleto": "Beto Prueba Cuadre",
+   "carrera": "Ing. TI",
+   "motivoId": "m1",
+   "motivoNombre": "Estudiar",
+   "motivoIds": [
+    "m1"
+   ],
+   "motivoNombres": [
+    "Estudiar"
+   ],
+   "fechaHora": "2026-09-30T15:00:00-05:00",
+   "sincronizado": false,
+   "turno": "Vespertino"
+  }
+ ],
+ "motivos": [
+  {
+   "id": "m1",
+   "nombre": "Estudiar",
+   "icono": "school",
+   "orden": 1,
+   "activo": true,
+   "color": "#00C8D7"
+  },
+  {
+   "id": "m2",
+   "nombre": "Pedir libro",
+   "icono": "book",
+   "orden": 2,
+   "activo": true,
+   "color": "#F5A623"
+  },
+  {
+   "id": "m3",
+   "nombre": "Trabajo escolar",
+   "icono": "work",
+   "orden": 3,
+   "activo": true,
+   "color": "#6366F1"
+  }
+ ]
+}

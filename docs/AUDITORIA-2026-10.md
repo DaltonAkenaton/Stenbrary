@@ -11,7 +11,8 @@
 | 2 — R6, O1, O2, O3, O9, O10, O11, O12, M1, M7 + horario de verano | ✅ Hecha (2026-10-06) | v3.42.0 |
 | 2b — calendario escolar (P7): periodos y días inhábiles UAT | ✅ Hecha (2026-10-06) | v3.43.0 |
 | 3 — O6, O7, O8, O13, M2–M6, M8, M9, M11, M13–M17, M19 + blindaje | ✅ Hecha (2026-10-06) | v3.44.0 |
-| Ronda masiva de pruebas | ⏳ Siguiente | |
+| Ronda de pruebas automatizada (cuadre, volumen, exportes) | ✅ Hecha (2026-10-06) — `docs/PRUEBAS-RONDA-2026-10.md` | v3.44.1 |
+| Pruebas manuales con el equipo real | ⏳ Usuario | |
 
 **Tanda 3, notas:**
 - **Blindaje:** retención, turnos, grados, combinaciones de motivos, variación diaria, conteo mensual,

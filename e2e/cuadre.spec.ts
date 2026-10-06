@@ -1,0 +1,111 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  e2e/cuadre.spec.ts                                   ║
+// ║  Stenbrary v3.44.1 — Cuadre de números de punta a punta║
+// ║                                                       ║
+// ║  Restaura e2e/fixtures/cuadre.json (6 alumnos, 10     ║
+// ║  visitas) con el "Restaurar respaldo" real, congela    ║
+// ║  el reloj en el miércoles 7 oct 2026 12:00 de Nuevo   ║
+// ║  Laredo y compara cada pantalla contra los valores    ║
+// ║  calculados A MANO (comentados junto a cada assert).  ║
+// ║                                                       ║
+// ║  Los unitarios prueban cada función; este prueba que  ║
+// ║  la pantalla muestre lo que la función calcula — el   ║
+// ║  hueco por el que se colaron los bugs de la auditoría ║
+// ║  2026-10 (docs/AUDITORIA-2026-10.md).                 ║
+// ║                                                       ║
+// ║  El fixture se regenera con e2e/fixtures/crear-cuadre.py.║
+// ╚══════════════════════════════════════════════════════╝
+
+import { test, expect, Page } from '@playwright/test';
+import path from 'node:path';
+
+const FIXTURE = path.join(__dirname, 'fixtures', 'cuadre.json');
+
+// innerText respeta el text-transform (etiquetas en MAYÚSCULAS) y pega los
+// números de spans contiguos ("360%" = 3 y 60 %): de ahí /i y \s*.
+async function texto(page: Page, selector: string): Promise<string> {
+  return (await page.locator(selector).first().innerText()).replace(/\s+/g, ' ');
+}
+
+test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-10-07T12:00:00-05:00') });
+    await page.addInitScript(() => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+    });
+    await page.goto('/configuracion#datos');
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles(FIXTURE);
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await page.locator('mat-dialog-container button').last().click();
+    await expect(page.locator('.import-result.success')).toContainText('Importación exitosa', { timeout: 15000 });
+  });
+
+  test('Estadísticas, 7 días', async ({ page }) => {
+    await page.goto('/estadisticas?p=ultimos7&tab=resumen');
+    await expect(page.locator('.kpis-hero')).toContainText(/alumnos únicos/i, { timeout: 15000 });
+    const hero = await texto(page, '.kpis-hero');
+    const iq = await texto(page, '.insights-quick');
+    const banner = await texto(page, '.rango-activo-banner');
+
+    expect(hero).toMatch(/Total de registros\D*6\b/i);                      // 3 + 2 + 1
+    expect(hero).toMatch(/\b2\s*promedio por día con actividad/i);           // 6 / 3 días (P4)
+    expect(hero).toMatch(/\b3 alumnos únicos/);                              // sin el invitado
+    // 6 contra 2: la visita del miércoles 30 a las 15:00 queda fuera (P6).
+    expect(hero).toMatch(/200\.0% más que el período anterior/);
+    expect(banner).toMatch(/hasta las 12:00 \(al mismo avance\)/);
+    expect(hero).toMatch(/Lunes 10:00 2 visitas/);
+    expect(hero).toMatch(/1h por visita · 2 medidas/);                       // (90 + 30) / 2; la de 240 es estimada (P3)
+    expect(hero).toMatch(/1 con salida estimada no cuentan/);
+    expect(hero).toMatch(/67%/);                                             // 2 de 3 con ≥2 visitas
+    expect(hero).toMatch(/Alumnos inactivos\D*1 30\+ días/i);               // Eva, hace 40 días (P1)
+    expect(hero).toMatch(/1 nunca han venido/);                              // Dani; Fer está desactivado
+    expect(hero).toMatch(/Vinieron solo 1 vez\D*1 solo 1 visita/i);          // Eva
+    expect(hero).toMatch(/Estudiar en 3 visitas · 50% de ellas/);           // cada motivo suma (P2)
+    expect(iq).toMatch(/Día más concurrido Lunes/i);
+    expect(iq).toMatch(/16\.7%/);                                            // 1 invitado de 6
+    expect(iq).not.toMatch(/Hoy al cierre/);                                 // < 4 miércoles de historial (P8)
+  });
+
+  test('Estadísticas, personas', async ({ page }) => {
+    await page.goto('/estadisticas?p=ultimos7&tab=personas');
+    await expect(page.getByText(/visitas de invitados/)).toBeVisible({ timeout: 15000 });
+    const t = await texto(page, '.dashboard-ejecutivo-container');
+    expect(t).toMatch(/hubo 1 visitas de invitados/);                        // fuera de carreras (P5)
+    expect(t).toMatch(/Matutino\s*3\s*60%/);
+    expect(t).toMatch(/Vespertino\s*2\s*40%/);
+    expect(t).toMatch(/1°\s*1\s*20%\s*3°\s*2\s*40%\s*5°\s*2\s*40%/);
+    expect(t).toMatch(/Estudiar \+ Pedir libro\s*1\s*100%/);
+  });
+
+  test('Comparar recorta el mes pasado al mismo avance', async ({ page }) => {
+    await page.goto('/estadisticas?p=ultimos7&tab=comparar');
+    await expect(page.locator('.comparador-card')).toContainText(/B sin registros/, { timeout: 15000 });
+    expect(await texto(page, '.comparador-card'))
+      .toMatch(/se tomó solo hasta el 7 de septiembre de 2026 a las 12:00/);
+  });
+
+  test('Resumen', async ({ page }) => {
+    await page.goto('/dashboard');
+    await expect(page.getByText('Visitas en total')).toBeVisible({ timeout: 15000 });
+    const t = await texto(page, 'body');
+    expect(t).toMatch(/\b1\b Accesos hoy/);
+    expect(t).toMatch(/\b6\b Alumnos registrados/);
+    expect(t).toMatch(/\b10\b Visitas en total/);
+    // El miércoles pasado a las 12:00 llevaba 0: no hay base para un %.
+    expect(t).not.toMatch(/vs miércoles pasado a esta hora/);
+  });
+
+  test('Registros: el día correcto y los motivos secundarios', async ({ page }) => {
+    await page.goto('/registros?fecha=2026-10-05');
+    await expect(page.locator('tbody tr')).toHaveCount(3, { timeout: 15000 });   // R1: no el día 4
+    await page.goto('/registros?desde=2026-10-01&hasta=2026-10-07&motivo=Pedir%20libro');
+    await expect(page.locator('tbody tr')).toHaveCount(2, { timeout: 15000 });   // incluye el secundario
+  });
+
+  test('Inactivos', async ({ page }) => {
+    await page.goto('/inactivos');
+    const resumen = page.locator('.summary-row');
+    await expect(resumen).toContainText(/1 alumno dejó de venir/, { timeout: 15000 });
+    await expect(resumen).toContainText(/1 nunca han venido/);
+  });
+});
