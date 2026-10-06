@@ -8,14 +8,32 @@
 | Tanda | Estado | Versión |
 |---|---|---|
 | 1 — R1, R2, R3, R4, R5, O5, O14, O15, O16, M10, M12 | ✅ Hecha (2026-10-06) | v3.41.1 |
-| 2 — tras decisiones | ⏳ Esperando P1, P3, P4, P6, P7, P8 | |
-| 3 — blindaje | ⏳ | |
+| 2 — R6, O1, O2, O3, O9, O10, O11, O12, M1, M7 + horario de verano | ✅ Hecha (2026-10-06) | v3.42.0 |
+| 2b — calendario escolar (P7): periodos y días inhábiles UAT | ⏳ Calendario 2026 recibido | |
+| 3 — blindaje y resto de 🟠/🟡 | ⏳ | |
 
 **Hallazgo nuevo durante la Tanda 1 (corregido):** el PDF de `/registros` calculaba su propio período
 para la cabecera (con el filtro "ayer" decía "Fecha: hoy"). Ahora usa el mismo rango que la lista.
 
-**Decisiones tomadas:** P2 → cada motivo de una visita suma (2026-10-06). P5 → los invitados no cuentan
-en carreras, turnos ni grados (2026-10-06).
+**Decisiones tomadas (todas el 2026-10-06):**
+P1 → inactivo = vino y dejó de venir; "nunca han venido" aparte.
+P2 → cada motivo de una visita suma.
+P3 → las salidas estimadas no cuentan en promedios, horas ni constancia.
+P4 → promedio entre días con al menos un registro.
+P5 → los invitados no cuentan en carreras, turnos ni grados.
+P6 → comparar al mismo avance (mismo día relativo y hora).
+P7 → la UAT tiene 3 periodos (Primavera, Verano, Otoño): calendario configurable en la Tanda 2b.
+P8 → el usuario delegó la decisión: proyección con el historial real, oculta sin base.
+
+**Hallazgos nuevos durante la Tanda 2 (corregidos):**
+- **Horario de verano.** El usuario vive en Nuevo Laredo, que lo conserva. Tres cálculos restaban
+  milisegundos para mover días: el período anterior de la tendencia, las rachas de logros y el reporte
+  semanal (perdía el domingo de la semana de noviembre). CI pasa a `TZ=America/Matamoros`.
+- **Sincronización.** Desactivar/reactivar un alumno, editar un registro a mano, los cierres automáticos
+  y su confirmación cambiaban la fila local sin marcarla pendiente: la nube se quedaba con la versión
+  vieja. Ahora pasan por `marcarPendienteEnSitio`.
+- El perfil del alumno contaba "días desde la última visita" en bloques de 24 h y la página Inactivos en
+  días de calendario.
 
 ## Resumen
 

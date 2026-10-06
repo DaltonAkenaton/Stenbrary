@@ -36,7 +36,16 @@ export interface Registro {
 
   // ── Cierre automático (v3.7.0) ──
   // true cuando el sistema cerró la entrada por tiempo, no el alumno
+  // (y el personal aún no lo revisó: confirmarlo lo vuelve false).
   cierreAutomatico?: boolean;
+
+  // ── Salida estimada (v3.42.0) ──
+  // true cuando `horaSalida` la puso el sistema (cierre por tiempo o al
+  // horario), no el alumno. A diferencia de `cierreAutomatico`, NO se
+  // borra al confirmar: confirmar significa "visto", no "medido". Las
+  // duraciones estimadas no entran en promedios, horas acumuladas ni
+  // constancias (decisión P3, docs/AUDITORIA-2026-10.md).
+  salidaEstimada?: boolean;
 
   // ── Turno del alumno al momento del registro (v3.16.0) ──
   // Se copia desde Alumno.turno al crear. Permite analítica por turno

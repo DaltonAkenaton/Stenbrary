@@ -33,7 +33,7 @@ cualquier prueba local escribe en los datos reales del coordinador, y que un
 
 ## 2. Aplicar las migraciones
 
-Las 7 migraciones de `supabase/migrations/` van **en orden**:
+Las 8 migraciones de `supabase/migrations/` van **en orden**:
 
 | Archivo | Qué deja |
 |---|---|
@@ -44,6 +44,7 @@ Las 7 migraciones de `supabase/migrations/` van **en orden**:
 | `0005_fix_alumnos_trigger.sql` | quita el trigger que asumía una columna `updated_at` inexistente |
 | `0006_user_management.sql` | RPC `set_user_role` + revoke anti-escalación |
 | `0007_user_profiles_email.sql` | email en `user_profiles` (lo necesita `/usuarios`) |
+| `0008_salida_estimada.sql` | marca las salidas que puso el sistema, para no contarlas como estancias reales |
 
 Con el CLI (recomendado — deja el historial registrado en Supabase):
 

@@ -89,6 +89,8 @@ interface RegistroRow {
   hora_salida: string | null;
   duracion_minutos: number | null;
   cierre_automatico: boolean;
+  /** 0008. Ausente si la base remota aún no tiene la migración. */
+  salida_estimada?: boolean;
   dispositivo: string | null;
   creado_por: string | null;
   created_at: string;
@@ -216,6 +218,7 @@ function registroFromRow(row: RegistroRow, motivos: RegistroMotivoRow[] = []): R
     horaSalida: row.hora_salida ? new Date(row.hora_salida) : undefined,
     duracionMinutos: row.duracion_minutos ?? undefined,
     cierreAutomatico: row.cierre_automatico,
+    salidaEstimada: row.salida_estimada ?? false,
     dispositivo: row.dispositivo ?? undefined,
     turno: row.turno ?? undefined,
     // `sincronizado` no existe en el modelo remoto — siempre true por construcción.
@@ -459,6 +462,7 @@ export class RemoteDatabaseService {
         fecha_hora: registro.fechaHora.toISOString(),
         hora_salida: registro.horaSalida ? registro.horaSalida.toISOString() : '',
         cierre_automatico: registro.cierreAutomatico ?? false,
+        salida_estimada: registro.salidaEstimada ?? false,
         dispositivo: registro.dispositivo ?? null,
       },
       motivos: motivos

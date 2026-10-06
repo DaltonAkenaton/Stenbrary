@@ -138,8 +138,8 @@
   <div class="summary-row">
     <div class="summary-chip">
       <mat-icon>group_off</mat-icon>
-      <strong>{{ inactivosBase().length }}</strong>
-      {{ inactivosBase().length === 1 ? 'alumno' : 'alumnos' }} ≥ {{ umbralDias() }}d
+      <strong>{{ inactivosConHistorial() }}</strong>
+      {{ inactivosConHistorial() === 1 ? 'alumno dejó' : 'alumnos dejaron' }} de venir ({{ umbralDias() }}+ días)
     </div>
 
     @if (inactivosFiltrados().length !== inactivosBase().length) {
@@ -150,10 +150,15 @@
     }
 
     @if (nuncaHanVenido() > 0) {
-      <div class="summary-chip warn">
-        <mat-icon>warning_amber</mat-icon>
-        {{ nuncaHanVenido() }} nunca han venido
-      </div>
+      <!-- P1: los que nunca han venido no son "inactivos" (casi siempre
+           son importados del padrón). Se cuentan aparte y se pueden ver. -->
+      <button type="button" class="summary-chip warn"
+              [attr.aria-pressed]="incluirNuncaVinieron()"
+              (click)="incluirNuncaVinieron.set(!incluirNuncaVinieron())"
+              matTooltip="Alumnos dados de alta que todavía no registran ninguna visita (por ejemplo, importados desde Excel). No cuentan como inactivos.">
+        <mat-icon>{{ incluirNuncaVinieron() ? 'visibility' : 'visibility_off' }}</mat-icon>
+        {{ nuncaHanVenido() }} nunca han venido · {{ incluirNuncaVinieron() ? 'ocultar' : 'mostrar' }}
+      </button>
     }
   </div>
 

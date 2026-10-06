@@ -22,6 +22,7 @@
 import { Injectable, signal } from '@angular/core';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { v4 as uuidv4 } from 'uuid';
+import { calcularInactividad, duracionReal } from '../utils/estadisticas.utils';
 import { Alumno, Registro, Motivo } from '../models';
 import { log, logError } from '../utils/logger';
 import { invariante } from '../utils/invariante.utils';
@@ -218,6 +219,19 @@ export class DatabaseService {
   private markPending<T extends { _syncStatus?: string; _lastSyncedAt?: Date }>(row: T): T {
     this.notificarCambioSync();
     return { ...row, _syncStatus: 'pending', _lastSyncedAt: undefined };
+  }
+
+  /**
+   * Igual que `markPending`, pero sobre una fila ya leída dentro de una
+   * transacción (las que se modifican campo a campo antes del `put`).
+   * Sin esto, desactivar un alumno, editar un registro o cerrarlo por
+   * tiempo cambiaba la fila local y la bandeja nunca la volvía a ofrecer:
+   * la nube se quedaba con la versión vieja (auditoría 2026-10).
+   */
+  private marcarPendienteEnSitio(row: { _syncStatus?: string; _lastSyncedAt?: Date }): void {
+    row._syncStatus = 'pending';
+    row._lastSyncedAt = undefined;
+    this.notificarCambioSync();
   }
 
   /**
@@ -700,6 +714,7 @@ export class DatabaseService {
       }
 
       alumno.activo = false;
+      this.marcarPendienteEnSitio(alumno);
       await store.put(alumno);
       await tx.done;
       this.notificarCambioDatos();
@@ -729,6 +744,7 @@ export class DatabaseService {
       }
 
       alumno.activo = true;
+      this.marcarPendienteEnSitio(alumno);
       await store.put(alumno);
       await tx.done;
       this.notificarCambioDatos();
@@ -1096,8 +1112,11 @@ export class DatabaseService {
       if (cambios.horaSalida === null) {
         registro.horaSalida = undefined;
         registro.duracionMinutos = undefined;
+        registro.salidaEstimada = undefined;
       } else if (cambios.horaSalida) {
+        // Alguien escribió la hora de salida a mano: deja de ser estimada.
         registro.horaSalida = new Date(cambios.horaSalida);
+        registro.salidaEstimada = false;
       }
 
       if (registro.horaSalida) {
@@ -1111,6 +1130,7 @@ export class DatabaseService {
       if (cambios.motivoId) registro.motivoId = cambios.motivoId;
       if (cambios.motivoNombre) registro.motivoNombre = cambios.motivoNombre;
 
+      this.marcarPendienteEnSitio(registro);
       await store.put(registro);
       await tx.done;
       this.notificarCambioDatos();
@@ -1174,8 +1194,8 @@ export class DatabaseService {
       // Actualizar registro + marcar como pending para sync (Fase 2.2)
       registro.horaSalida = ahora;
       registro.duracionMinutos = duracionMinutos;
-      registro._syncStatus = 'pending';
-      registro._lastSyncedAt = undefined;
+      registro.salidaEstimada = false;
+      this.marcarPendienteEnSitio(registro);
 
       await store.put(registro);
       await tx.done;
@@ -1303,6 +1323,9 @@ export class DatabaseService {
         actual.horaSalida = new Date(new Date(actual.fechaHora).getTime() + limiteMs);
         actual.duracionMinutos = horasUmbral * 60;
         actual.cierreAutomatico = !autoConfirmar;
+        // La salida la inventó el sistema: queda marcada aunque se confirme.
+        actual.salidaEstimada = true;
+        this.marcarPendienteEnSitio(actual);
         await store.put(actual);
         cerrados++;
       }
@@ -1348,6 +1371,8 @@ export class DatabaseService {
         const dur = (ahora.getTime() - new Date(actual.fechaHora).getTime()) / 60000;
         actual.duracionMinutos = Math.max(0, Math.round(dur));
         actual.cierreAutomatico = !autoConfirmar;
+        actual.salidaEstimada = true;
+        this.marcarPendienteEnSitio(actual);
         await store.put(actual);
         cerrados++;
       }
@@ -1379,7 +1404,9 @@ export class DatabaseService {
       const store = tx.store;
       const r = await store.get(registroId);
       if (r) {
+        // Confirmar = "visto". `salidaEstimada` se conserva a propósito.
         r.cierreAutomatico = false;
+        this.marcarPendienteEnSitio(r);
         await store.put(r);
       }
       await tx.done;
@@ -1509,7 +1536,8 @@ export class DatabaseService {
       if (fin) fin.setHours(23, 59, 59, 999);
 
       const conDuracion = registros.filter(r => {
-        if (typeof r.duracionMinutos !== 'number' || r.duracionMinutos <= 0) return false;
+        // Solo salidas reales (P3): las estimadas por el sistema no cuentan.
+        if (duracionReal(r) === null) return false;
         const fecha = new Date(r.fechaHora);
         if (inicio && fecha < inicio) return false;
         if (fin && fecha > fin) return false;
@@ -1548,31 +1576,12 @@ export class DatabaseService {
       if (!this.db) throw new Error('Base de datos no inicializada');
 
       const alumnos = await this.db.getAll('alumnos');
-      const activos = alumnos.filter(a => a.activo !== false);
       const todosRegistros = await this.db.getAll('registros');
 
-      const ahora = Date.now();
-      const MS_DIA = 1000 * 60 * 60 * 24;
-
-      // Mapa matricula → última fecha
-      const ultimaPorMatricula = new Map<string, number>();
-      for (const r of todosRegistros) {
-        const t = new Date(r.fechaHora).getTime();
-        const prev = ultimaPorMatricula.get(r.matricula);
-        if (prev === undefined || t > prev) ultimaPorMatricula.set(r.matricula, t);
-      }
-
-      const resultado = activos
-        .map(alumno => {
-          const t = ultimaPorMatricula.get(alumno.matricula);
-          if (t === undefined) {
-            return { alumno, ultimaVisita: null, diasSinVenir: Infinity };
-          }
-          const dias = Math.floor((ahora - t) / MS_DIA);
-          return { alumno, ultimaVisita: new Date(t), diasSinVenir: dias };
-        })
-        .filter(r => r.diasSinVenir >= diasUmbral)
-        .sort((a, b) => b.diasSinVenir - a.diasSinVenir);
+      // Definición única del sistema (P1, `estadisticas.utils`): la misma
+      // que usa el KPI de Estadísticas. Los que nunca vinieron van al final.
+      const { inactivos, nuncaVinieron } = calcularInactividad(alumnos, todosRegistros, diasUmbral);
+      const resultado = [...inactivos, ...nuncaVinieron];
 
       log(`😴 Alumnos inactivos (≥${diasUmbral}d):`, resultado.length);
       return resultado;

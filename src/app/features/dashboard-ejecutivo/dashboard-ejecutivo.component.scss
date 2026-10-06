@@ -3296,3 +3296,27 @@ canvas {
     font-size: clamp(1.7rem, 14vw, 2.3rem);
   }
 }
+// ─── Notas aclaratorias (auditoría 2026-10) ─────────────
+// Explican en pantalla por qué un número no incluye algo (invitados,
+// período recortado al mismo avance) en vez de dejarlo a adivinar.
+.nota-invitados,
+.comparador-corte {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 200, 215, 0.06);
+  color: rgba(200, 230, 240, 0.75);
+  font-size: 0.82rem;
+  line-height: 1.4;
+
+  mat-icon {
+    flex-shrink: 0;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #00C8D7;
+  }
+}

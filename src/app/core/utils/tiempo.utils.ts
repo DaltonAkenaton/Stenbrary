@@ -123,3 +123,26 @@ export function contarHastaMismaHora(fechas: Date[], referencia: Date = new Date
 function minutosDelDia(d: Date): number {
   return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
 }
+
+/**
+ * Días de calendario entre la fecha de `desde` y la de `hasta` (hora local),
+ * ignorando la hora: del lunes 23:00 al martes 08:00 es 1 día. Cuenta con
+ * fechas y no con milisegundos para que los días de 23 o 25 h del cambio
+ * de horario (Nuevo Laredo lo conserva) no descuadren el resultado.
+ */
+export function diasCalendarioEntre(desde: Date, hasta: Date): number {
+  const a = Date.UTC(desde.getFullYear(), desde.getMonth(), desde.getDate());
+  const b = Date.UTC(hasta.getFullYear(), hasta.getMonth(), hasta.getDate());
+  return Math.round((b - a) / 86_400_000);
+}
+
+/**
+ * La misma hora de reloj, `dias` días de calendario después (o antes, si es
+ * negativo). Restar `dias × 24 h` en milisegundos corre una hora los rangos
+ * que cruzan el cambio de horario; `setDate` no.
+ */
+export function desplazarDias(fecha: Date, dias: number): Date {
+  const d = new Date(fecha);
+  d.setDate(d.getDate() + dias);
+  return d;
+}

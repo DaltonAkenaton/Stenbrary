@@ -78,12 +78,15 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **202 specs unitarios en verde**, en 11 archivos —
+Suite activa: **231 specs unitarios en verde**, en 12 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
-`invariante.utils`, `descarga.utils`, `tiempo.utils`, `database.service`,
+`invariante.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`, `database.service`,
 `backup.service`, `estadisticas-avanzadas.service`, `supabase.client`.
-CI corre los unitarios con `TZ=America/Mexico_City` y Playwright con
-`timezoneId` igual: los errores de fecha "un día antes" no existen en UTC.
+CI corre los unitarios con `TZ=America/Matamoros` (la zona de Nuevo Laredo,
+que **conserva el horario de verano**) y Playwright con `timezoneId` igual:
+los errores de fecha "un día antes" no existen en UTC, y los de días de 23/25 h
+tampoco en Ciudad de México. Para desplazar fechas por días, `desplazarDias` /
+`diasCalendarioEntre`, nunca restar `N × 86 400 000` ms.
 
 **Fechas de calendario:** nunca `new Date('YYYY-MM-DD')` (es medianoche UTC:
 en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
@@ -213,7 +216,9 @@ Métodos clave adicionales:
 ### Modelos (`core/models/`)
 
 - `Alumno`: campos fijos (matricula, nombre, apellidos, carrera, grado, grupo, turno) + opcionales (`email`, `telefono`, `notas`) + `datosExtra: Record<string, string>` para campos personalizados de la coordinadora.
-- `Registro`: `motivoId`/`motivoNombre` (principal, retrocompat) **y** `motivoIds?`/`motivoNombres?` (múltiples, v3.7.0+). También `horaSalida?`, `duracionMinutos?`, `cierreAutomatico?`. No romper la retrocompatibilidad.
+- `Registro`: `motivoId`/`motivoNombre` (principal, retrocompat) **y** `motivoIds?`/`motivoNombres?` (múltiples, v3.7.0+). También `horaSalida?`, `duracionMinutos?`, `cierreAutomatico?` (pendiente de revisar; confirmar lo borra) y `salidaEstimada?` (v3.42.0: la salida la puso el sistema; **permanente**, su duración no cuenta en promedios ni constancias). No romper la retrocompatibilidad.
+
+**Métricas: una sola definición.** Todo número que aparezca en más de una pantalla (inactivos, motivos, estancia, promedio por día, día más concurrido, proyección) se calcula en `core/utils/estadisticas.utils.ts`, con `ahora` como parámetro. No reimplementarlo en un componente: así fue como "alumnos inactivos" llegó a dar dos cifras distintas. Las definiciones (P1–P8) están en `docs/AUDITORIA-2026-10.md` y, en lenguaje de usuario, en `docs/NOTAS-MANUAL.md`.
 - `Motivo`: `nombre`, `icono` (Material Icons), `orden`, `activo`, `color?`.
 
 ### Servicios (`core/services/`)

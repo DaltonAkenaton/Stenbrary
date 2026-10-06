@@ -325,6 +325,54 @@ describe('DatabaseService', () => {
       const cerrados = await db.cerrarEntradasAntiguas(0);
       expect(cerrados).toBe(0);
     });
+    it('marca la salida como estimada y la marca sobrevive a la confirmación (P3)', async () => {
+      const hace5h = new Date(ahoraFijo.getTime() - 5 * 60 * 60 * 1000);
+      const r = await crearRegistroConFecha(db, '1000017', hace5h);
+      await db.marcarComoSincronizado('registros', r.id);
+
+      await db.cerrarEntradasAntiguas(4);
+      let guardado = (await db.obtenerTodosLosRegistros()).find(x => x.id === r.id)!;
+      expect(guardado.salidaEstimada).toBe(true);
+      expect(guardado.cierreAutomatico).toBe(true);
+      // Ya estaba en la nube: el cierre tiene que volver a ofrecerse para subir.
+      expect(guardado._syncStatus).toBe('pending');
+
+      // Confirmar = "visto". La duración sigue siendo una suposición.
+      await db.confirmarCierreAutomatico(r.id);
+      guardado = (await db.obtenerTodosLosRegistros()).find(x => x.id === r.id)!;
+      expect(guardado.cierreAutomatico).toBe(false);
+      expect(guardado.salidaEstimada).toBe(true);
+    });
+
+    it('corregir la salida a mano la vuelve real', async () => {
+      const hace5h = new Date(ahoraFijo.getTime() - 5 * 60 * 60 * 1000);
+      const r = await crearRegistroConFecha(db, '1000018', hace5h);
+      await db.cerrarEntradasAntiguas(4);
+      const corregido = await db.actualizarRegistroManual(r.id, {
+        horaSalida: new Date(hace5h.getTime() + 45 * 60 * 1000),
+      });
+      expect(corregido.salidaEstimada).toBe(false);
+      expect(corregido.duracionMinutos).toBe(45);
+    });
+  });
+
+  describe('cambios que deben volver a subir a la nube', () => {
+    it('desactivar un alumno ya sincronizado lo deja pendiente de subir', async () => {
+      const a = await db.crearAlumno(nuevoAlumno('1000020'));
+      await db.marcarComoSincronizado('alumnos', a.id!);
+      await db.desactivarAlumno(a.id!);
+      const guardado = await db.obtenerAlumnoPorMatricula('1000020');
+      expect(guardado!.activo).toBe(false);
+      expect(guardado!._syncStatus).toBe('pending');
+    });
+
+    it('editar un registro ya sincronizado lo deja pendiente de subir', async () => {
+      const r = await crearRegistroConFecha(db, '1000021', new Date(2026, 2, 2, 10));
+      await db.marcarComoSincronizado('registros', r.id);
+      await db.actualizarRegistroManual(r.id, { motivoNombre: 'Pedir libro' });
+      const guardado = (await db.obtenerTodosLosRegistros()).find(x => x.id === r.id)!;
+      expect(guardado._syncStatus).toBe('pending');
+    });
   });
 
   describe('obtenerAlumnoPorMatricula', () => {

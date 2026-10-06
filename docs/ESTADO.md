@@ -232,7 +232,7 @@ sistema.
   caso peligroso —build con claves, instalación que nunca pidió la nube— y la
   degradación a solo-local si `localStorage` lanza.
 - [x] **`docs/DESPLIEGUE-NUBE.md`**: checklist de 9 pasos para crear el
-  proyecto de PROD, aplicar las 7 migraciones, configurar redirect URLs y
+  proyecto de PROD, aplicar las 8 migraciones, configurar redirect URLs y
   SMTP propio (el integrado de Supabase va a ~2 correos/hora y no sirve para
   producción), promover al coordinador y verificar.
 
@@ -320,7 +320,7 @@ automático ciego.
 
 **Falta:**
 
-- [ ] **Desplegar la nube en producción** 🔴 — `environment.prod.ts` sigue vacío, así que en el Netlify del coordinador nada de lo anterior existe. Checklist paso a paso en `docs/DESPLIEGUE-NUBE.md`. Bloqueado por trabajo fuera del repo: crear el proyecto de PROD, aplicar las 7 migraciones, SMTP propio.
+- [ ] **Desplegar la nube en producción** 🔴 — `environment.prod.ts` sigue vacío, así que en el Netlify del coordinador nada de lo anterior existe. Checklist paso a paso en `docs/DESPLIEGUE-NUBE.md`. Bloqueado por trabajo fuera del repo: crear el proyecto de PROD, aplicar las 8 migraciones, SMTP propio.
 - [ ] **Resolución de conflictos** en `/descarga` 🟡 — se muestran campo por campo, no se aplican. Requiere política acordada con el coordinador + respaldo automático previo.
 - [ ] **Prueba con volumen real** 🟡 — validado en local; falta con miles de filas remotas.
 - [ ] **Sync automático opcional** 🟡 — el ROADMAP promete `syncAuto` + `syncAutoHora` ("subir a las 22:00"). No existe ninguna de las dos claves; hoy todo es manual.

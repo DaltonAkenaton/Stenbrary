@@ -16,6 +16,7 @@ import { Alumno, Registro } from '../models';
 import type jsPDF from 'jspdf';
 import type autoTableT from 'jspdf-autotable';
 import { fechaLocalISO } from '../utils/tiempo.utils';
+import { contarMotivos, duracionReal, esInvitado, esSalidaEstimada, resumirEstancia } from '../utils/estadisticas.utils';
 
 export type TipoReporte = 'diario' | 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
@@ -207,8 +208,10 @@ export class ReportService {
   ): number {
     if (registros.length === 0) return y;
 
+    // P5: los invitados no son alumnos y no tienen turno.
+    const deAlumnos = registros.filter(r => !esInvitado(r));
     const conteo = new Map<string, number>();
-    for (const r of registros) {
+    for (const r of deAlumnos) {
       const t = (r as any).turno
         || this.turnoPorMatricula.get(r.matricula)
         || 'Sin turno';
@@ -223,7 +226,7 @@ export class ReportService {
     y += 6;
 
     const ordenado = Array.from(conteo.entries()).sort((a, b) => b[1] - a[1]);
-    const total = registros.length;
+    const total = deAlumnos.length;
     const filas = ordenado.map(([turno, cant]) => [
       turno,
       String(cant),
@@ -609,21 +612,17 @@ export class ReportService {
     startY: number,
     margin: number
   ): number {
-    const porMotivo = new Map<string, number>();
-    registros.forEach(r => {
-      porMotivo.set(r.motivoNombre, (porMotivo.get(r.motivoNombre) || 0) + 1);
-    });
-
-    if (porMotivo.size === 0) return startY;
+    // P2: cada motivo de una visita suma. El % es "de las visitas, cuántas
+    // incluyeron esta actividad" y la columna puede sumar más de 100 %.
+    const conteo = contarMotivos(registros);
+    if (conteo.length === 0) return startY;
 
     const total = registros.length;
-    const datos = Array.from(porMotivo.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([motivo, cantidad]) => [
-        motivo,
-        cantidad.toString(),
-        ((cantidad / total) * 100).toFixed(1) + '%',
-      ]);
+    const datos = conteo.map(c => [
+      c.nombre,
+      c.cantidad.toString(),
+      ((c.cantidad / total) * 100).toFixed(1) + '%',
+    ]);
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -632,7 +631,7 @@ export class ReportService {
 
     this._autoTable(doc, {
       startY: startY + 3,
-      head: [['Actividad', 'Registros', '% del Total']],
+      head: [['Actividad', 'Visitas que la incluyeron', '% de las visitas']],
       body: datos,
       margin: { left: margin, right: margin },
       styles: { fontSize: 8, cellPadding: 3, lineColor: [230, 230, 230], lineWidth: 0.2 },
@@ -763,8 +762,11 @@ export class ReportService {
 
     // Stats
     const totalVisitas = registrosFiltrados.length;
-    const conDuracion = registrosFiltrados.filter(r => typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0);
-    const totalMinutos = conDuracion.reduce((a, r) => a + (r.duracionMinutos || 0), 0);
+    // La constancia certifica horas: solo cuentan las salidas REALES. Las
+    // que estimó el sistema (cierre por tiempo u horario) no se certifican
+    // (decisión P3, docs/AUDITORIA-2026-10.md).
+    const estancia = resumirEstancia(registrosFiltrados);
+    const totalMinutos = estancia.totalMinutos;
     const horas = Math.floor(totalMinutos / 60);
     const minutos = totalMinutos % 60;
 
@@ -865,7 +867,7 @@ export class ReportService {
 
     dibujarStat(margin, 'Visitas totales', String(totalVisitas));
     dibujarStat(margin + statBoxW + 4, 'Horas acumuladas', `${horas}h ${minutos}m`);
-    dibujarStat(margin + (statBoxW + 4) * 2, 'Visitas con duración', `${conDuracion.length}`);
+    dibujarStat(margin + (statBoxW + 4) * 2, 'Visitas con salida registrada', `${estancia.visitasMedidas}`);
     y += statBoxH + 8;
 
     // ── TABLA ──
@@ -880,11 +882,10 @@ export class ReportService {
           const salida = r.horaSalida
             ? new Date(r.horaSalida).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
             : '—';
-          const dur = typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0
-            ? (r.duracionMinutos >= 60
-                ? `${Math.floor(r.duracionMinutos / 60)}h ${r.duracionMinutos % 60}m`
-                : `${r.duracionMinutos}m`)
-            : '—';
+          const real = duracionReal(r);
+          const dur = real !== null
+            ? (real >= 60 ? `${Math.floor(real / 60)}h ${real % 60}m` : `${real}m`)
+            : (r.horaSalida && esSalidaEstimada(r) ? 'sin registrar' : '—');
           return [
             fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }),
             entrada,

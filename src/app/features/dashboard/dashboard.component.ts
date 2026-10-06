@@ -36,6 +36,7 @@ import { Registro, Motivo } from '../../core/models';
 import { verificarHorario } from '../../core/utils/horarios.utils';
 import { logError } from '../../core/utils/logger';
 import { contarHastaMismaHora } from '../../core/utils/tiempo.utils';
+import { contarMotivos } from '../../core/utils/estadisticas.utils';
 
 const FMT_HORA_DASH = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
 
@@ -469,35 +470,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
       // ─── Insight automático del día ──────────────────
       this.insightDia = this.calcularInsightDia(registrosHoy);
 
-      // ─── Actividades de hoy (agrupar por motivo, soporta motivoIds[]) ─
-      const porMotivo = new Map<string, { cantidad: number; icono: string; color: string; motivoId?: string }>();
-      for (const r of registrosHoy) {
-        // v3.7+: registros multi-motivo. Si motivoNombres está, usarlos todos;
-        // si no, caer al motivoNombre principal (retrocompat).
-        const nombres = (r.motivoNombres && r.motivoNombres.length > 0)
-          ? r.motivoNombres
-          : [r.motivoNombre];
-
-        for (const nombre of nombres) {
-          if (!nombre) continue;
-          const existente = porMotivo.get(nombre);
-          if (existente) {
-            existente.cantidad++;
-          } else {
-            const m = motivosPorNombre.get(nombre);
-            porMotivo.set(nombre, {
-              cantidad: 1,
-              icono: m?.icono || 'label',
-              color: m?.color || '#00C8D7',
-              motivoId: m?.id,
-            });
-          }
-        }
-      }
-
-      const todasActividades = Array.from(porMotivo.entries())
-        .map(([nombre, data]) => ({ nombre, ...data }))
-        .sort((a, b) => b.cantidad - a.cantidad);
+      // ─── Actividades de hoy ─────────────────────────
+      // Misma cuenta que Estadísticas (P2): cada motivo de una visita suma,
+      // agrupado por id con el nombre actual del catálogo.
+      const todasActividades = contarMotivos(registrosHoy, motivos).map(c => {
+        const m = motivosPorNombre.get(c.nombre);
+        return {
+          nombre: c.nombre,
+          cantidad: c.cantidad,
+          icono: m?.icono || 'label',
+          color: c.color || m?.color || '#00C8D7',
+          motivoId: m?.id,
+        };
+      });
       this.totalActividadesDistintas = todasActividades.length;
       this.actividadesHoy = todasActividades.slice(0, 6);
 

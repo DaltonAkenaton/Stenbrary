@@ -198,16 +198,29 @@ describe('EstadisticasAvanzadasService', () => {
       expect(service.granularidadParaRango(rangoDe(181))).toBe('mes');
     });
 
-    it('rangoAnteriorMismaLongitud no se traslapa y conserva la longitud', () => {
-      const previo = service.rangoAnteriorMismaLongitud(semana);
+    it('rangoAnteriorMismaLongitud no se traslapa y cubre los mismos días de calendario', () => {
+      const previo = service.rangoAnteriorMismaLongitud(semana, new Date(2026, 5, 1));
       // Termina justo antes de que empiece el actual: sin solapamiento ni hueco.
       expect(previo.fin.getTime()).toBe(semana.inicio.getTime() - 1);
-      const largoActual = semana.fin.getTime() - semana.inicio.getTime();
-      const largoPrevio = previo.fin.getTime() - previo.inicio.getTime();
-      expect(largoPrevio).toBe(largoActual);
-      // Y cae exactamente en la semana previa (lunes 23 de febrero).
+      // Misma cantidad de DÍAS, no de milisegundos: la semana del 2 al 8 de
+      // marzo de 2026 incluye el cambio de horario de la frontera (8 de marzo)
+      // y dura una hora menos que la anterior.
+      expect(service.diasEnRango(previo)).toBe(service.diasEnRango(semana));
+      // Y cae exactamente en la semana previa: lunes 23 de febrero, 00:00.
       expect(previo.inicio.getDate()).toBe(23);
       expect(previo.inicio.getMonth()).toBe(1);
+      expect(previo.inicio.getHours()).toBe(0);
+    });
+
+    it('con el período en curso, corta el anterior a la misma altura (P6)', () => {
+      // Hoy es miércoles 4 de marzo a las 10:00; el rango "semana" llega hasta el domingo 8.
+      const ahora = new Date(2026, 2, 4, 10, 0);
+      const previo = service.rangoAnteriorMismaLongitud(semana, ahora);
+      // Mismo avance una semana antes: hasta el miércoles 25 de febrero a las 10:00.
+      expect(previo.fin.getDate()).toBe(25);
+      expect(previo.fin.getMonth()).toBe(1);
+      expect(previo.fin.getHours()).toBe(10);
+      expect(previo.inicio.getDate()).toBe(23);
     });
   });
 
@@ -320,6 +333,32 @@ describe('EstadisticasAvanzadasService', () => {
       expect((await service.compararTendencias(vacio)).sinReferencia).toBe(false);
     });
 
+    it('el comparador corta el período completo al avance del que sigue en curso (P6)', async () => {
+      // A = semana del 2 al 8 de marzo, consultada el miércoles 4 a las 10:00.
+      // B = semana anterior completa. Sin corte serían 6 contra 5: A parecería
+      // apenas +20 % con medio período por delante.
+      const ahora = new Date(2026, 2, 4, 10, 0);
+      const semanaPrevia = service.normalizarRango(new Date(2026, 1, 23), new Date(2026, 2, 1));
+      const c = await service.compararDosRangos(semana, semanaPrevia, null, ahora);
+      // A hasta ahora: lun 2 (3) + mar 3 (2) + mié 4 10:00 (1) = 6.
+      expect(c.a.totalRegistros).toBe(6);
+      // B hasta el miércoles 25 a las 10:00: mar 24 (3) + mié 25 9:00 (1) = 4.
+      expect(c.b.totalRegistros).toBe(4);
+      expect(c.corte?.slot).toBe('b');
+      expect(c.corte?.hasta.getDate()).toBe(25);
+      // Promedio por día CON ACTIVIDAD (P4): 6 visitas en 3 días.
+      expect(c.a.promedioPorDia).toBe(2);
+      expect(c.a.diasConActividad).toBe(3);
+    });
+
+    it('dos períodos ya cerrados se comparan completos', async () => {
+      const semanaPrevia = service.normalizarRango(new Date(2026, 1, 23), new Date(2026, 2, 1));
+      const c = await service.compararDosRangos(semana, semanaPrevia, null, new Date(2026, 5, 1));
+      expect(c.corte).toBeNull();
+      expect(c.a.totalRegistros).toBe(11);
+      expect(c.b.totalRegistros).toBe(5);
+    });
+
     it('el comparador A vs B también marca sinReferencia si B está vacío', async () => {
       const vacioB = service.normalizarRango(new Date(2025, 5, 1), new Date(2025, 5, 7));
       const c = await service.compararDosRangos(semana, vacioB);
@@ -360,16 +399,12 @@ describe('EstadisticasAvanzadasService', () => {
       expect(d.colores[1]).toBeTruthy();    // Pedir libro cae en la paleta
     });
 
-    it('CONTRATO: cuenta solo el motivo principal, no los secundarios', async () => {
-      // Test de caracterización, no de corrección. Un registro con
-      // motivoNombres = ['Estudiar', 'Investigación'] suma 1 a "Estudiar"
-      // y 0 a "Investigación".
-      //
-      // Es defendible (1 visita = 1 conteo, la dona suma 100%), pero tiene
-      // una consecuencia real: un motivo que los alumnos SIEMPRE eligen como
-      // secundario aparece con cero en la gráfica. Si algún día se decide
-      // contar todos los motivos, este test truena — que es justo lo que
-      // debe pasar, para que la decisión sea deliberada y no accidental.
+    it('CONTRATO: cada motivo de una visita suma (decisión P2, 2026-10-06)', async () => {
+      // Antes este test fijaba lo contrario —solo contaba el principal— y
+      // avisaba que trondría el día que se decidiera contar todos. Ese día
+      // llegó: el usuario decidió que una visita con dos motivos suma un
+      // punto a cada uno. Las cantidades pueden sumar más que las visitas;
+      // por eso `totalVisitas` viaja aparte como denominador.
       const multi = [
         reg('m1', '2000000001', 'ISC', 'Estudiar', fecha(3, 10, 0), {
           motivoIds: ['motivo-Estudiar', 'motivo-Investigación'],
@@ -378,8 +413,9 @@ describe('EstadisticasAvanzadasService', () => {
       ];
       const svc = new EstadisticasAvanzadasService(crearMockDb(multi) as any);
       const d = await svc.obtenerDistribucionMotivos(semana);
-      expect(d.etiquetas).toEqual(['Estudiar']);
-      expect(d.cantidades).toEqual([1]);
+      expect(d.etiquetas).toEqual(['Estudiar', 'Investigación']);
+      expect(d.cantidades).toEqual([1, 1]);
+      expect(d.totalVisitas).toBe(1);
     });
   });
 

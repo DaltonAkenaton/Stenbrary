@@ -96,13 +96,27 @@ export class InactivosComponent implements OnInit {
   orden = signal<OrdenMode>('dias-desc');
   vista = signal<VistaMode>('lista');
 
+  /**
+   * Si se muestran también los alumnos que nunca han venido. Por defecto no:
+   * "inactivo" es quien vino y dejó de venir (decisión P1); los que nunca
+   * han venido suelen ser importados del padrón y van aparte.
+   */
+  incluirNuncaVinieron = signal(false);
+
+  /** Inactivos con historial: la cifra que también muestra Estadísticas. */
+  inactivosConHistorial = computed(() =>
+    this.todos().filter(i => Number.isFinite(i.diasSinVenir) && i.diasSinVenir >= this.umbralDias()).length,
+  );
+
   /** Alumnos sobre el umbral (base sin filtros de búsqueda/carrera). */
   inactivosBase = computed(() => {
     const umbral = this.umbralDias();
     const todos = this.todos();
+    const conNunca = this.incluirNuncaVinieron();
     const out: AlumnoInactivoRender[] = [];
     for (const i of todos) {
       if (i.diasSinVenir < umbral) continue;
+      if (!Number.isFinite(i.diasSinVenir) && !conNunca) continue;
       // Recalcular gravedad si el umbral cambió (depende del umbral actual)
       i._gravedad = this.calcularGravedad(i.diasSinVenir, umbral);
       out.push(i);
@@ -150,7 +164,7 @@ export class InactivosComponent implements OnInit {
 
   nuncaHanVenido = computed(() => {
     let n = 0;
-    for (const i of this.inactivosBase()) if (!isFinite(i.diasSinVenir)) n++;
+    for (const i of this.todos()) if (!Number.isFinite(i.diasSinVenir)) n++;
     return n;
   });
 

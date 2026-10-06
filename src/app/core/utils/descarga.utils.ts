@@ -140,8 +140,9 @@ export function camposQueDifieren<T extends object>(
 // para guardar.
 
 /**
- * `cierreAutomatico`: la columna es `not null default false`, así que la
- * nube devuelve `false` donde el modelo local simplemente no tiene el campo.
+ * `cierreAutomatico` y `salidaEstimada`: las columnas son `not null default
+ * false`, así que la nube devuelve `false` donde el modelo local simplemente
+ * no tiene el campo.
  *
  * `motivoIds` / `motivoNombres`: al subir, `construirMotivosPayload()` deriva
  * `[motivoId]` cuando no hay array. La nube reconstruye ese array desde la
@@ -153,6 +154,7 @@ export function normalizarRegistro(r: Registro): Registro {
   return {
     ...r,
     cierreAutomatico: !!r.cierreAutomatico,
+    salidaEstimada: !!r.salidaEstimada,
     motivoIds: r.motivoIds ?? (r.motivoId ? [r.motivoId] : undefined),
     motivoNombres: r.motivoNombres ?? (r.motivoNombre ? [r.motivoNombre] : undefined),
     // Un `alumnoId` sintético equivale a "sin alumno", que es exactamente lo

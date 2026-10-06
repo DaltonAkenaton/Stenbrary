@@ -9,6 +9,41 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-06 — Tanda 2: una definición por métrica, y la frontera tiene horario de verano
+
+Con las decisiones P1–P8 del usuario, cada número que aparece en más de una
+pantalla se calcula ahora en **`core/utils/estadisticas.utils.ts`** (funciones
+puras, `ahora` como parámetro, 21 tests con datos contados a mano). Los dos
+"Alumnos inactivos" distintos (R6) eran el síntoma: dos implementaciones del
+mismo concepto que divergieron sin que nadie lo decidiera.
+
+**Lo que se descubrió.**
+- **El usuario vive en Nuevo Laredo**, que conserva el horario de verano de
+  EE. UU. La Tanda 1 había puesto CI en `America/Mexico_City`, que no lo tiene.
+  Al correr los tests en su máquina (`Central Standard Time`, con DST) truena
+  un test que comparaba longitudes de semana en milisegundos. Había tres
+  cálculos de "N días después" con aritmética de ms: período anterior,
+  rachas de logros y reporte semanal. Todos pasan a `desplazarDias` /
+  `diasCalendarioEntre`; CI a `America/Matamoros`.
+- **Agujero de sincronización:** cinco caminos de escritura modificaban la
+  fila dentro de una transacción sin pasar por `markPending`, así que la
+  bandeja nunca los volvía a ofrecer. Se notó al agregar `salidaEstimada`,
+  que viaja justamente por los cierres automáticos.
+- Dos tests de caracterización fijaban el comportamiento viejo **y decían
+  que debían tronar el día que se cambiara**. Troneron; se reescribieron
+  al nuevo contrato citando la decisión. Así deben funcionar.
+
+**Qué se decidió.** `salidaEstimada` es un campo nuevo y no un reuso de
+`cierreAutomatico`: este se borra al confirmar ("visto"), aquel es permanente
+("no medido"). Migración `0008` para la nube. Las filas viejas quedan en
+`false`: no hay forma fiable de reconocerlas (una visita real puede durar
+justo 4 h).
+
+**Sigue:** Tanda 2b (calendario UAT configurable: periodos y días inhábiles;
+el PDF 2026 ya está leído en memoria) y Tanda 3 (resto de 🟠/🟡).
+
+---
+
 ## 2026-10-06 — Auditoría de estadísticas y Tanda 1: las fechas mentían un día
 
 Antes de seguir con la nube, el usuario pidió una auditoría "brutal" de todo

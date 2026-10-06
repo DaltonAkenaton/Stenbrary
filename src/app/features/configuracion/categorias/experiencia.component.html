@@ -247,7 +247,7 @@
     @if (configService.umbralInactividadDias === 0) {
       Las alertas están <strong>desactivadas</strong>. La vista de Inactivos seguirá disponible con umbral ajustable en vivo.
     } @else {
-      Alumnos con más de <strong>{{ configService.umbralInactividadDias }} días</strong> sin venir aparecerán en la lista de Inactivos.
+      Alumnos que vinieron alguna vez y llevan <strong>{{ configService.umbralInactividadDias }} días o más</strong> sin volver aparecerán en la lista de Inactivos.
     }
   </p>
 </div>

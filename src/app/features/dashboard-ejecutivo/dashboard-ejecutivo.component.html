@@ -168,7 +168,9 @@
             </div>
             <div class="kpi-hero-value">{{ kpiTotalRegistros | number }}</div>
             <div class="kpi-hero-sub">
-              <strong>{{ kpiPromedioPorDia }}</strong> promedio por día ·
+              <strong>{{ kpiPromedioPorDia }}</strong>
+              <span matTooltip="Visitas divididas entre los días que abrió la biblioteca y hubo registros ({{ kpiDiasConActividad }} en este período). Domingos, festivos y vacaciones sin registros no cuentan."
+                    matTooltipPosition="above">promedio por día con actividad</span> ·
               <strong>{{ kpiAlumnosUnicos | number }}</strong> alumnos únicos
               @if (kpiVariacionDiaria > 0) {
                 · <span class="hero-variacion"
@@ -218,7 +220,7 @@
               <div class="kpi-label">
                 {{ labelTendencia }}
                 <mat-icon class="info-icon"
-                          matTooltip="Compara las visitas del período actual contra el período anterior de la misma duración. Si filtraste 30 días, lo compara contra los 30 días previos."
+                          matTooltip="Compara las visitas del período actual contra el período anterior de la misma duración. Si el período actual todavía no termina (por ejemplo, incluye hoy), el anterior se corta a la misma altura: mismo día y misma hora, para comparar parejo."
                           matTooltipPosition="above">
                   help_outline
                 </mat-icon>
@@ -259,14 +261,19 @@
               <div class="kpi-label">
                 Tiempo promedio de estancia
                 <mat-icon class="info-icon"
-                          matTooltip="En promedio cuánto tiempo se queda un alumno. Solo cuenta visitas con hora de salida (necesitas activar el módulo de salida en Configuración)."
+                          matTooltip="En promedio cuánto tiempo se queda un alumno. Solo cuenta visitas con hora de salida REAL. Las salidas que puso el sistema (cierre automático por tiempo o al cerrar la biblioteca) son una estimación y no entran. Necesitas el módulo de salida activo en Configuración."
                           matTooltipPosition="above">
                   help_outline
                 </mat-icon>
               </div>
               @if (kpiTiempoEstanciaPromedio > 0) {
                 <div class="kpi-value">{{ kpiTiempoEstanciaStr }}</div>
-                <div class="kpi-sub">por visita</div>
+                <div class="kpi-sub">
+                  por visita · {{ kpiVisitasMedidas | number }} medidas
+                  @if (kpiVisitasEstimadas > 0) {
+                    <br>{{ kpiVisitasEstimadas | number }} con salida estimada no cuentan
+                  }
+                </div>
               } @else {
                 <div class="kpi-value muted">N/D</div>
                 <div class="kpi-sub">Sin tiempos de salida</div>
@@ -296,13 +303,18 @@
               <div class="kpi-label">
                 Alumnos inactivos
                 <mat-icon class="info-icon"
-                          [matTooltip]="'Cuántos alumnos llevan más de ' + kpiUmbralInactividad + ' días sin venir contando desde HOY (no desde el filtro). Configurable en Configuración.'"
+                          [matTooltip]="'Alumnos que vinieron al menos una vez y llevan ' + kpiUmbralInactividad + ' días o más sin volver, contando desde HOY (no desde el filtro). Es la misma cifra que la página Inactivos. Los que nunca han venido se cuentan aparte. El umbral se cambia en Configuración.'"
                           matTooltipPosition="above">
                   help_outline
                 </mat-icon>
               </div>
               <div class="kpi-value">{{ kpiAlumnosInactivos | number }}</div>
-              <div class="kpi-sub">+{{ kpiUmbralInactividad }} días sin venir <span class="kpi-tag">general</span></div>
+              <div class="kpi-sub">
+                {{ kpiUmbralInactividad }}+ días sin venir <span class="kpi-tag">general</span>
+                @if (kpiNuncaVinieron > 0) {
+                  <br>{{ kpiNuncaVinieron | number }} nunca han venido
+                }
+              </div>
             </div>
           </div>
 
@@ -329,13 +341,13 @@
                 <div class="kpi-label">
                   Motivo más frecuente
                   <mat-icon class="info-icon"
-                            matTooltip="La actividad que más alumnos eligieron al registrarse en este período."
+                            matTooltip="La actividad incluida en más visitas del período. Si una visita marcó varias actividades, cuenta para cada una; por eso el % es 'de las visitas que la incluyeron'."
                             matTooltipPosition="above">
                     help_outline
                   </mat-icon>
                 </div>
                 <div class="kpi-value motivo">{{ kpiTopMotivo.nombre }}</div>
-                <div class="kpi-sub">{{ kpiTopMotivo.cantidad | number }} visitas · {{ kpiTopMotivo.porcentaje }}%</div>
+                <div class="kpi-sub">en {{ kpiTopMotivo.cantidad | number }} visitas · {{ kpiTopMotivo.porcentaje }}% de ellas</div>
               </div>
             </div>
           }
@@ -344,21 +356,21 @@
 
       <!-- INSIGHTS RÁPIDOS -->
       <section class="insights-quick" aria-label="Insights rápidos">
-        @if (kpiPrediccionHoy > 0) {
+        @if (kpiProyeccionHoy) {
           <div class="iq-card iq-prediccion"
-               matTooltip="Estimación de visitas al cierre del día con el ritmo actual. Confianza 'baja' si es temprano, 'alta' tras la mitad del día."
+               [matTooltip]="'Estimación con el ritmo real de los últimos ' + kpiProyeccionHoy.diasBase + ' días iguales a hoy: a esta hora suele haber llegado el ' + (kpiProyeccionHoy.fraccionTipica * 100 | number:'1.0-0') + '% de las visitas del día. La confianza dice qué tan parejos fueron esos días.'"
                matTooltipPosition="above">
             <mat-icon>insights</mat-icon>
             <div class="iq-body">
               <div class="iq-label">Hoy al cierre (proyección)</div>
-              <div class="iq-value">~{{ kpiPrediccionHoy | number }} visitas</div>
-              <div class="iq-sub">confianza: <strong>{{ kpiPrediccionHoyConfianza }}</strong></div>
+              <div class="iq-value">~{{ kpiProyeccionHoy.total | number }} visitas</div>
+              <div class="iq-sub">confianza: <strong>{{ kpiProyeccionHoy.confianza }}</strong></div>
             </div>
           </div>
         }
         @if (kpiDiaSemanaTop) {
           <div class="iq-card iq-dia-top"
-               matTooltip="Día de la semana con más visitas dentro del período filtrado."
+               matTooltip="Día de la semana con más visitas EN PROMEDIO dentro del período filtrado (visitas ÷ cuántos de esos días hubo con actividad)."
                matTooltipPosition="above">
             <mat-icon>event_available</mat-icon>
             <div class="iq-body">
@@ -449,7 +461,7 @@
               <mat-icon>pie_chart</mat-icon>
               Motivos de visita
               <mat-icon class="info-icon"
-                        matTooltip="Distribución de los motivos seleccionados al registrar."
+                        matTooltip="Cuántas visitas incluyeron cada motivo. Una visita con varios motivos cuenta para cada uno, así que los porcentajes pueden sumar más de 100%."
                         matTooltipPosition="above">
                 help_outline
               </mat-icon>
@@ -794,7 +806,7 @@
             <mat-icon>school</mat-icon>
             Visitas por carrera
             <mat-icon class="info-icon"
-                      matTooltip="Total de visitas agrupadas por carrera. El tooltip de cada barra muestra alumnos distintos y promedio por alumno."
+                      matTooltip="Total de visitas de alumnos agrupadas por carrera. El tooltip de cada barra muestra alumnos distintos y promedio por alumno. Los invitados no son alumnos y no se incluyen."
                       matTooltipPosition="above">
               help_outline
             </mat-icon>
@@ -811,6 +823,12 @@
             <canvas #chartCarreras></canvas>
           </div>
         }
+        @if (kpiVisitasInvitados > 0) {
+          <p class="nota-invitados">
+            <mat-icon>person_pin</mat-icon>
+            Además hubo {{ kpiVisitasInvitados | number }} visitas de invitados, que no se cuentan por carrera, turno ni grado.
+          </p>
+        }
       </mat-card>
 
       <!-- TURNO + GRADO -->
@@ -822,7 +840,7 @@
                 <mat-icon>work_history</mat-icon>
                 Distribución por turno
                 <mat-icon class="info-icon"
-                          matTooltip="Porcentaje de visitas según el turno del alumno (Matutino/Vespertino/Mixto)."
+                          matTooltip="Porcentaje de visitas de alumnos según su turno (Matutino/Vespertino/Mixto). Los invitados no se incluyen."
                           matTooltipPosition="above">
                   help_outline
                 </mat-icon>
@@ -1085,7 +1103,7 @@
                   </div>
                   <div class="slot-kpi">
                     <span class="slot-kpi-value">{{ comparativa.a.promedioPorDia }}</span>
-                    <span class="slot-kpi-label">prom/día</span>
+                    <span class="slot-kpi-label" matTooltip="Promedio por día con actividad">prom/día</span>
                   </div>
                 </div>
                 @if (comparativa.a.horaPico) {
@@ -1153,7 +1171,7 @@
                   </div>
                   <div class="slot-kpi">
                     <span class="slot-kpi-value">{{ comparativa.b.promedioPorDia }}</span>
-                    <span class="slot-kpi-label">prom/día</span>
+                    <span class="slot-kpi-label" matTooltip="Promedio por día con actividad">prom/día</span>
                   </div>
                 </div>
                 @if (comparativa.b.horaPico) {
@@ -1169,6 +1187,15 @@
             }
           </div>
         </div>
+
+        @if (comparativa?.corte) {
+          <p class="comparador-corte">
+            <mat-icon>info</mat-icon>
+            Para comparar parejo, el período {{ comparativa!.corte!.slot === 'a' ? 'A' : 'B' }} se tomó solo hasta el
+            {{ formatearFechaLarga(comparativa!.corte!.hasta) }} a las {{ formatearHoraMin(comparativa!.corte!.hasta) }}:
+            la misma altura que lleva el período en curso.
+          </p>
+        }
 
         @if (!comparativa && !cargandoComparativa) {
           <div class="empty-state">

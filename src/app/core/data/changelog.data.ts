@@ -49,6 +49,70 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.42.0',
+    fecha: '2026-10-06',
+    titulo: 'Estadísticas con reglas claras',
+    resumen: 'Cada número de Estadísticas tiene ahora una sola definición, la misma en todas las pantallas, y el sistema explica cómo se calcula. Al comparar contra el pasado, siempre se compara parejo.',
+    cambios: [
+      {
+        tipo: 'cambio',
+        texto:
+          'El promedio por día se calcula solo con los días que hubo registros. ' +
+          'Los domingos, festivos y vacaciones ya no lo bajan.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Si una visita marcó varios motivos, cuenta para cada uno. La gráfica de motivos ahora es de barras ' +
+          'y muestra el porcentaje de visitas que incluyeron cada motivo. Renombrar un motivo ya no parte sus números en dos.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Las salidas que estima el sistema (cierre por tiempo o al cerrar la biblioteca) ya no cuentan en el tiempo de estancia, ' +
+          'las horas acumuladas, los logros ni la constancia. En Registros aparecen marcadas como "(estimada)".',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'Los invitados ya no aparecen en carreras ni turnos; se indica aparte cuántas visitas de invitados hubo.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          '"Alumnos inactivos" muestra la misma cifra en Estadísticas y en Inactivos: los que vinieron y dejaron de venir. ' +
+          'Los que nunca han venido se cuentan aparte y se pueden mostrar u ocultar.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Al comparar un período que aún no termina (hoy, este mes) contra el anterior, el anterior se corta a la misma altura: ' +
+          'mismo día y misma hora. El mes en curso ya no aparece como "mes más bajo".',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La proyección "Hoy al cierre" usa cómo se comportaron los últimos días iguales a hoy. ' +
+          'Si no hay suficiente historial, no se muestra.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El día más concurrido se elige por promedio y no por suma, así no gana un día solo por repetirse más veces en el período.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Los días del cambio de horario ya no cortan las rachas de los logros ni le quitan el domingo al reporte semanal.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Cerrar entradas por tiempo, editar un registro o desactivar un alumno ahora sí se ofrece para subir a la nube.',
+      },
+    ],
+  },
+  {
     version: '3.41.1',
     fecha: '2026-10-06',
     titulo: 'Números que dicen la verdad',

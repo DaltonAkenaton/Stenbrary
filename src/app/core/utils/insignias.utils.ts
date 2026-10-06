@@ -8,6 +8,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Registro } from '../models';
+import { duracionReal } from './estadisticas.utils';
 
 export interface Insignia {
   id: string;
@@ -66,9 +67,12 @@ function calcularRachas(registros: Registro[]): { actual: number; maxima: number
     diasUnicos.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
   }
 
+  // Medianoches en UTC: entre dos fechas consecutivas hay SIEMPRE 24 h.
+  // Con medianoches locales, el día del cambio de horario (Nuevo Laredo lo
+  // conserva) mide 23 o 25 h y la racha se cortaba sin motivo.
   const fechas = [...diasUnicos].map(k => {
     const [y, m, d] = k.split('-').map(Number);
-    return new Date(y, m, d).getTime();
+    return Date.UTC(y, m, d);
   }).sort((a, b) => a - b);
 
   const UN_DIA = 86400000;
@@ -85,8 +89,7 @@ function calcularRachas(registros: Registro[]): { actual: number; maxima: number
   }
 
   const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const hoyTs = hoy.getTime();
+  const hoyTs = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
   const ultimo = fechas[fechas.length - 1];
   const diffDias = Math.round((hoyTs - ultimo) / UN_DIA);
 
@@ -105,7 +108,9 @@ function calcularRachas(registros: Registro[]): { actual: number; maxima: number
 export function calcularLogros(registros: Registro[]): LogrosAlumno {
   const { actual: rachaActual, maxima: rachaMaxima } = calcularRachas(registros);
 
-  const minutos = registros.reduce((acc, r) => acc + (r.duracionMinutos ?? 0), 0);
+  // Solo salidas reales: las estimadas por el sistema no son horas que el
+  // alumno haya demostrado (P3).
+  const minutos = registros.reduce((acc, r) => acc + (duracionReal(r) ?? 0), 0);
   const horasAcumuladas = Math.round((minutos / 60) * 10) / 10;
 
   const totalVisitas = registros.length;

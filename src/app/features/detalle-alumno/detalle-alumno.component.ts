@@ -29,7 +29,9 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
 import { RegistroDetalleDialogComponent } from './registro-detalle-dialog/registro-detalle-dialog.component';
 import { RegistroEditarDialogComponent, RegistroEditarResultado } from './registro-editar-dialog/registro-editar-dialog.component';
 import { calcularLogros, LogrosAlumno } from '../../core/utils/insignias.utils';
-import { formatearDuracion } from '../../core/utils/tiempo.utils';
+import { diasCalendarioEntre, formatearDuracion } from '../../core/utils/tiempo.utils';
+import { contarMotivos, resumirEstancia } from '../../core/utils/estadisticas.utils';
+import { Motivo } from '../../core/models';
 import { logError } from '../../core/utils/logger';
 
 /**
@@ -144,7 +146,11 @@ export class DetalleAlumnoComponent implements OnInit {
         return;
       }
 
-      const rawRegistros = await this.databaseService.obtenerRegistrosPorAlumno(matricula);
+      const [rawRegistros, catalogo] = await Promise.all([
+        this.databaseService.obtenerRegistrosPorAlumno(matricula),
+        this.databaseService.obtenerTodosLosMotivos(),
+      ]);
+      this.catalogoMotivos = catalogo;
       this.registros = rawRegistros.map(r =>
         Object.assign(r, { _fechaStr: FMT_DET.format(new Date(r.fechaHora)) })
       ) as RegistroDetalle[];
@@ -185,8 +191,9 @@ export class DetalleAlumnoComponent implements OnInit {
 
     if (this.estadisticas?.ultimaVisita) {
       this.ultimaVisitaStr = FMT_DET_CORTO.format(new Date(this.estadisticas.ultimaVisita));
-      const ms = Date.now() - new Date(this.estadisticas.ultimaVisita).getTime();
-      const dias = Math.max(0, Math.floor(ms / 86400000));
+      // Días de calendario, igual que la página Inactivos: el mismo alumno
+      // no puede llevar 29 días aquí y 30 allá según la hora (P1).
+      const dias = Math.max(0, diasCalendarioEntre(new Date(this.estadisticas.ultimaVisita), new Date()));
       this.diasDesdeUltimaVisitaNum = dias;
       this.diasDesdeUltimaVisitaStr = `${dias} ${dias === 1 ? 'día' : 'días'}`;
     } else {
@@ -216,6 +223,9 @@ export class DetalleAlumnoComponent implements OnInit {
   // ESTADÍSTICAS
   // ═══════════════════════════════════════════════
 
+  /** Catálogo de motivos, para mostrar nombres actuales (un motivo renombrado no se parte). */
+  private catalogoMotivos: Motivo[] = [];
+
   calcularEstadisticas(): void {
     if (!this.registros.length) {
       this.estadisticas = {
@@ -231,11 +241,11 @@ export class DetalleAlumnoComponent implements OnInit {
       return;
     }
 
-    const conDuracion = this.registros.filter(
-      r => typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0
-    );
-    const totalMinutos = conDuracion.reduce((a, r) => a + (r.duracionMinutos || 0), 0);
-    const duracionPromedio = conDuracion.length > 0 ? totalMinutos / conDuracion.length : 0;
+    // Solo salidas reales (P3): las estimadas por el sistema no cuentan
+    // como horas ni entran en el promedio.
+    const estancia = resumirEstancia(this.registros);
+    const totalMinutos = estancia.totalMinutos;
+    const duracionPromedio = estancia.visitasMedidas > 0 ? totalMinutos / estancia.visitasMedidas : 0;
 
     const totalVisitas = this.registros.length;
 
@@ -243,26 +253,10 @@ export class DetalleAlumnoComponent implements OnInit {
       Math.max(...this.registros.map(r => new Date(r.fechaHora).getTime()))
     );
 
-    const motivosCount = new Map<string, number>();
-    this.registros.forEach(registro => {
-      if (registro.motivoNombre) {
-        const count = motivosCount.get(registro.motivoNombre) || 0;
-        motivosCount.set(registro.motivoNombre, count + 1);
-      }
-    });
-
-    let motivoFrecuente = 'N/A';
-    let maxCount = 0;
-    motivosCount.forEach((count, motivo) => {
-      if (count > maxCount) {
-        maxCount = count;
-        motivoFrecuente = motivo;
-      }
-    });
-
-    const visitasPorMotivo = Array.from(motivosCount.entries())
-      .map(([motivo, cantidad]) => ({ motivo, cantidad }))
-      .sort((a, b) => b.cantidad - a.cantidad);
+    // P2: cada motivo de una visita suma; agrupado por id con el nombre actual.
+    const conteo = contarMotivos(this.registros, this.catalogoMotivos);
+    const motivoFrecuente = conteo[0]?.nombre ?? 'N/A';
+    const visitasPorMotivo = conteo.map(c => ({ motivo: c.nombre, cantidad: c.cantidad }));
 
     const primeraVisita = new Date(
       Math.min(...this.registros.map(r => new Date(r.fechaHora).getTime()))
@@ -281,7 +275,7 @@ export class DetalleAlumnoComponent implements OnInit {
       promedioSemanal,
       visitasPorMotivo,
       totalMinutos,
-      visitasConDuracion: conDuracion.length,
+      visitasConDuracion: estancia.visitasMedidas,
       duracionPromedio,
     };
   }

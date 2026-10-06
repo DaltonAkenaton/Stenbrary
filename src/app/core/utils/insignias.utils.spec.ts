@@ -96,6 +96,19 @@ describe('insignias.utils', () => {
       expect(l.horasAcumuladas).toBe(1.3);
     });
 
+    it('no suma horas de salidas estimadas por el sistema (P3)', () => {
+      const estimada: Registro = { ...reg(diaAtras(0), 240), salidaEstimada: true };
+      const l = calcularLogros([reg(diaAtras(1), 60), estimada]);
+      expect(l.horasAcumuladas).toBe(1);
+    });
+
+    it('la racha no se corta el día del cambio de horario', () => {
+      // 7, 8 y 9 de marzo de 2026: el 8 la frontera adelanta el reloj y
+      // ese día dura 23 h. Con medianoches locales, 8→9 no medía 24 h.
+      const regs = [7, 8, 9].map(d => reg(new Date(2026, 2, d, 12, 0)));
+      expect(calcularLogros(regs).rachaMaxima).toBe(3);
+    });
+
     it('ignora registros sin duracionMinutos (tratados como 0)', () => {
       const r: Registro = { ...reg(diaAtras(0)), duracionMinutos: undefined };
       const l = calcularLogros([r]);

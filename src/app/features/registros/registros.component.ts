@@ -28,6 +28,7 @@ import { ExportService } from '../../core/services/export.service';
 import { RegistroDetalleDialogComponent } from '../detalle-alumno/registro-detalle-dialog/registro-detalle-dialog.component';
 import { RegistroEditarDialogComponent, RegistroEditarResultado } from '../detalle-alumno/registro-editar-dialog/registro-editar-dialog.component';
 import { formatearDuracion, parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
+import { esSalidaEstimada, incluyeMotivo } from '../../core/utils/estadisticas.utils';
 import { logError } from '../../core/utils/logger';
 
 type RangoFecha = 'hoy' | 'ayer' | 'semana' | 'mes' | 'todo' | 'personalizado';
@@ -59,7 +60,10 @@ function buildRegistroRender(r: Registro): RegistroRender {
     _fechaDateStr: FMT_FECHA.format(entrada),
     _horaEntradaStr: FMT_HORA.format(entrada),
     _horaSalidaStr: salida ? FMT_HORA.format(salida) : '',
-    _duracionStr: r.duracionMinutos != null ? formatearDuracion(r.duracionMinutos, true) : '',
+    // Una salida que puso el sistema se marca: no es una estancia medida (P3).
+    _duracionStr: r.duracionMinutos != null
+      ? formatearDuracion(r.duracionMinutos, true) + (esSalidaEstimada(r) ? ' (estimada)' : '')
+      : '',
   }) as RegistroRender;
 }
 
@@ -297,7 +301,9 @@ columnas: string[] = [
     const resultado: RegistroRender[] = [];
     for (const r of todos) {
       if (r._fechaTs < tsMin || r._fechaTs > tsMax) continue;
-      if (motivoFiltro && r.motivoNombre !== motivoFiltro) continue;
+      // Cualquier motivo de la visita, no solo el principal: así la lista
+      // coincide con los conteos del Resumen y de Estadísticas (P2).
+      if (motivoFiltro && !incluyeMotivo(r, motivoFiltro)) continue;
       if (carreraFiltro && r.carrera !== carreraFiltro) continue;
       if (horaActiva || diaSemana !== null) {
         const d = new Date(r._fechaTs);

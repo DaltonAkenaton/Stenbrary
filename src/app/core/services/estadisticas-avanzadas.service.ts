@@ -16,7 +16,17 @@
 
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
-import { Registro, Alumno } from '../models';
+import { Registro, Alumno, Motivo } from '../models';
+import { desplazarDias, diasCalendarioEntre as diasEntre } from '../utils/tiempo.utils';
+import {
+  calcularInactividad,
+  contarMotivos,
+  esInvitado,
+  motivoMasFrecuente,
+  promedioPorDiaConActividad,
+  proyectarCierreHoy,
+  ProyeccionDia,
+} from '../utils/estadisticas.utils';
 
 /** Rango cerrado [inicio, fin] de fechas. */
 export interface RangoFechas {
@@ -40,12 +50,24 @@ export interface TendenciaComparativa {
   sinReferencia: boolean;
   /** Rango contra el que se está comparando (período anterior de la misma duración). */
   rangoAnterior: RangoFechas;
+  /**
+   * True si el período actual sigue en curso (termina después de ahora):
+   * entonces el anterior se corta a la MISMA altura — mismo día relativo y
+   * misma hora — en vez de compararse completo (decisión P6).
+   */
+  alMismoAvance: boolean;
 }
 
 /** Resultado de la comparación lado-a-lado entre dos rangos arbitrarios. */
 export interface ComparativaDosRangos {
   a: ComparativaSlice;
   b: ComparativaSlice;
+  /**
+   * Si uno de los dos períodos sigue en curso, el otro se recorta al mismo
+   * avance (decisión P6). Aquí queda cuál y hasta cuándo, para decirlo en
+   * pantalla. `null` si se compararon completos.
+   */
+  corte: { slot: 'a' | 'b'; hasta: Date } | null;
   diferencia: {
     cambio: number;
     porcentaje: number;
@@ -59,7 +81,9 @@ export interface ComparativaSlice {
   rango: RangoFechas;
   totalRegistros: number;
   alumnosUnicos: number;
+  /** Promedio entre los días con al menos un registro (decisión P4). */
   promedioPorDia: number;
+  diasConActividad: number;
   horaPico: HeatmapData | null;
   motivos: DistribucionMotivos;
 }
@@ -77,6 +101,8 @@ export interface HeatmapResultado {
   horas: number[];        // p. ej. [7, 8, ..., 21] o expandido si hay datos fuera
   rango: RangoFechas;     // rango real cubierto
   fechasPorDia: Map<string, Date[]>; // 'Lunes' → fechas concretas dentro del rango
+  /** 'Lunes' → cuántos lunes del rango tuvieron al menos un registro. */
+  diasConActividad: Map<string, number>;
 }
 
 export interface TopAlumno {
@@ -103,8 +129,29 @@ export interface DatosDiarios {
 /** NUEVO: Datos para gráfica de dona/motivos */
 export interface DistribucionMotivos {
   etiquetas: string[];      // ['Estudiar', 'Trabajo escolar', ...]
+  /** Visitas que INCLUYERON cada motivo (una visita puede sumar a varios). */
   cantidades: number[];     // [15, 8, ...]
   colores: string[];        // ['#00C8D7', '#0BC4B7', ...]
+  /** Visitas del período: el denominador de los porcentajes. */
+  totalVisitas: number;
+}
+
+/** Paleta de respaldo para motivos sin color propio. */
+const PALETA_MOTIVOS = [
+  '#00C8D7', '#0BC4B7', '#0EB07B', '#34D399',
+  '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899',
+  '#F05252', '#F97316', '#F5A623', '#5DE4EC',
+];
+
+/** Distribución de motivos (decisión P2: cada motivo de una visita suma). */
+function distribucionDe(registros: Registro[], catalogo: Motivo[]): DistribucionMotivos {
+  const conteo = contarMotivos(registros, catalogo);
+  return {
+    etiquetas: conteo.map(c => c.nombre),
+    cantidades: conteo.map(c => c.cantidad),
+    colores: conteo.map((c, i) => c.color || PALETA_MOTIVOS[i % PALETA_MOTIVOS.length]),
+    totalVisitas: registros.length,
+  };
 }
 
 /** NUEVO: Datos para gráfica de carreras */
@@ -242,12 +289,24 @@ export class EstadisticasAvanzadasService {
     return { inicio: i, fin: f };
   }
 
-  /** Calcula el rango anterior de la misma longitud, inmediatamente previo al actual. */
-  rangoAnteriorMismaLongitud(actual: RangoFechas): RangoFechas {
-    const ms = actual.fin.getTime() - actual.inicio.getTime();
-    const fin = new Date(actual.inicio.getTime() - 1);
-    const inicio = new Date(fin.getTime() - ms);
-    return { inicio, fin };
+  /**
+   * El período inmediatamente anterior, de los mismos días de calendario.
+   *
+   * Si el actual sigue en curso (termina después de `ahora`), el anterior
+   * se corta al MISMO avance: "últimos 7 días" a las 10:00 se compara con
+   * los 7 días previos hasta las 10:00 del último, no completos (P6).
+   *
+   * Se desplaza por días de calendario, no restando milisegundos: en
+   * Nuevo Laredo hay horario de verano y un rango que cruza el cambio
+   * quedaba corrido una hora.
+   */
+  rangoAnteriorMismaLongitud(actual: RangoFechas, ahora: Date = new Date()): RangoFechas {
+    const dias = this.diasEnRango(actual);
+    const finEfectivo = actual.fin.getTime() > ahora.getTime() ? ahora : actual.fin;
+    return {
+      inicio: desplazarDias(actual.inicio, -dias),
+      fin: desplazarDias(finEfectivo, -dias),
+    };
   }
 
   /** Cantidad de días (inclusivo) que cubre un rango. */
@@ -429,41 +488,7 @@ export class EstadisticasAvanzadasService {
   ): Promise<DistribucionMotivos> {
     const todosRegistros = await this.obtenerRegistrosConCache();
     const motivos = await this.databaseService.obtenerTodosLosMotivos();
-
-    const registrosPeriodo = this.filtrarPorRango(todosRegistros, rango, horaFiltro);
-
-    // Contar por motivo
-    const conteo = new Map<string, number>();
-    registrosPeriodo.forEach(r => {
-      const nombre = r.motivoNombre || 'Sin motivo';
-      conteo.set(nombre, (conteo.get(nombre) || 0) + 1);
-    });
-
-    // Ordenar de mayor a menor
-    const ordenado = Array.from(conteo.entries())
-      .sort((a, b) => b[1] - a[1]);
-
-    // Mapear colores de los motivos
-    const coloresPaleta = [
-      '#00C8D7', '#0BC4B7', '#0EB07B', '#34D399',
-      '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899',
-      '#F05252', '#F97316', '#F5A623', '#5DE4EC',
-    ];
-
-    const etiquetas: string[] = [];
-    const cantidades: number[] = [];
-    const colores: string[] = [];
-
-    ordenado.forEach(([nombre, cantidad], index) => {
-      etiquetas.push(nombre);
-      cantidades.push(cantidad);
-
-      // Buscar color del motivo, si no hay usar paleta cíclica
-      const motivoDB = motivos.find(m => m.nombre === nombre);
-      colores.push(motivoDB?.color || coloresPaleta[index % coloresPaleta.length]);
-    });
-
-    return { etiquetas, cantidades, colores };
+    return distribucionDe(this.filtrarPorRango(todosRegistros, rango, horaFiltro), motivos);
   }
 
   // ═══════════════════════════════════════════════
@@ -477,8 +502,9 @@ export class EstadisticasAvanzadasService {
   async compararTendencias(
     rangoActual: RangoFechas,
     horaFiltro?: { desde: number; hasta: number } | null,
+    ahora: Date = new Date(),
   ): Promise<TendenciaComparativa> {
-    const rangoAnterior = this.rangoAnteriorMismaLongitud(rangoActual);
+    const rangoAnterior = this.rangoAnteriorMismaLongitud(rangoActual, ahora);
     const todosRegistros = await this.obtenerRegistrosConCache();
 
     const actual = this.filtrarPorRango(todosRegistros, rangoActual, horaFiltro).length;
@@ -492,7 +518,8 @@ export class EstadisticasAvanzadasService {
     if (cambio < 0) direccion = 'down';
 
     const sinReferencia = anterior === 0 && actual > 0;
-    return { actual, anterior, cambio, porcentajeCambio, direccion, sinReferencia, rangoAnterior };
+    const alMismoAvance = rangoActual.fin.getTime() > ahora.getTime();
+    return { actual, anterior, cambio, porcentajeCambio, direccion, sinReferencia, rangoAnterior, alMismoAvance };
   }
 
   /**
@@ -504,35 +531,56 @@ export class EstadisticasAvanzadasService {
     rangoA: RangoFechas,
     rangoB: RangoFechas,
     horaFiltro?: { desde: number; hasta: number } | null,
+    ahora: Date = new Date(),
   ): Promise<ComparativaDosRangos> {
     const todos = await this.obtenerRegistrosConCache();
     const motivosBD = await this.databaseService.obtenerTodosLosMotivos();
 
-    const regsA = this.filtrarPorRango(todos, rangoA, horaFiltro);
-    const regsB = this.filtrarPorRango(todos, rangoB, horaFiltro);
-
-    const distribucion = (regs: Registro[]): DistribucionMotivos => {
-      const conteo = new Map<string, number>();
-      regs.forEach(r => conteo.set(r.motivoNombre || 'Sin motivo',
-        (conteo.get(r.motivoNombre || 'Sin motivo') || 0) + 1));
-      const orden = Array.from(conteo.entries()).sort((a, b) => b[1] - a[1]);
-      const paleta = ['#00C8D7', '#0BC4B7', '#0EB07B', '#34D399', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F05252', '#F97316', '#F5A623', '#5DE4EC'];
-      return {
-        etiquetas: orden.map(o => o[0]),
-        cantidades: orden.map(o => o[1]),
-        colores: orden.map(([n], i) => motivosBD.find(m => m.nombre === n)?.color || paleta[i % paleta.length]),
-      };
+    // P6: si un período sigue en curso, el otro se corta al mismo avance
+    // (mismo número de días desde su inicio, misma hora). "Este mes" al
+    // día 5 contra "mes pasado" completo daba −85 % casi siempre.
+    const enCurso = (r: RangoFechas) =>
+      r.inicio.getTime() <= ahora.getTime() && r.fin.getTime() > ahora.getTime();
+    const cortarAlAvanceDe = (base: RangoFechas, otro: RangoFechas): RangoFechas => {
+      const desdeInicio = diasEntre(base.inicio, ahora);
+      const hasta = desplazarDias(otro.inicio, desdeInicio);
+      hasta.setHours(ahora.getHours(), ahora.getMinutes(), ahora.getSeconds(), ahora.getMilliseconds());
+      return { inicio: otro.inicio, fin: hasta.getTime() < otro.fin.getTime() ? hasta : otro.fin };
     };
+
+    let efA = rangoA;
+    let efB = rangoB;
+    let corte: ComparativaDosRangos['corte'] = null;
+    if (enCurso(rangoA) && !enCurso(rangoB)) {
+      efA = { inicio: rangoA.inicio, fin: ahora };
+      efB = cortarAlAvanceDe(rangoA, rangoB);
+      if (efB.fin.getTime() < rangoB.fin.getTime()) corte = { slot: 'b', hasta: efB.fin };
+    } else if (enCurso(rangoB) && !enCurso(rangoA)) {
+      efB = { inicio: rangoB.inicio, fin: ahora };
+      efA = cortarAlAvanceDe(rangoB, rangoA);
+      if (efA.fin.getTime() < rangoA.fin.getTime()) corte = { slot: 'a', hasta: efA.fin };
+    }
+
+    const regsA = this.filtrarPorRango(todos, efA, horaFiltro);
+    const regsB = this.filtrarPorRango(todos, efB, horaFiltro);
 
     const alumnosUnicos = (regs: Registro[]): number => {
       const set = new Set<string>();
-      regs.forEach(r => { if (r.matricula !== 'INVITADO') set.add(r.matricula); });
+      regs.forEach(r => { if (!esInvitado(r)) set.add(r.matricula); });
       return set.size;
     };
 
-    const promedioPorDia = (regs: Registro[], rango: RangoFechas): number => {
-      const dias = this.diasEnRango(rango);
-      return dias > 0 ? parseFloat((regs.length / dias).toFixed(1)) : 0;
+    const slice = (rango: RangoFechas, regs: Registro[]): ComparativaSlice => {
+      const { promedio, dias } = promedioPorDiaConActividad(regs);
+      return {
+        rango,
+        totalRegistros: regs.length,
+        alumnosUnicos: alumnosUnicos(regs),
+        promedioPorDia: promedio,
+        diasConActividad: dias,
+        horaPico: this.calcularHoraPicoDesdeRegistros(regs),
+        motivos: distribucionDe(regs, motivosBD),
+      };
     };
 
     const totalA = regsA.length;
@@ -544,22 +592,9 @@ export class EstadisticasAvanzadasService {
     if (cambio < 0) direccion = 'down';
 
     return {
-      a: {
-        rango: rangoA,
-        totalRegistros: totalA,
-        alumnosUnicos: alumnosUnicos(regsA),
-        promedioPorDia: promedioPorDia(regsA, rangoA),
-        horaPico: this.calcularHoraPicoDesdeRegistros(regsA),
-        motivos: distribucion(regsA),
-      },
-      b: {
-        rango: rangoB,
-        totalRegistros: totalB,
-        alumnosUnicos: alumnosUnicos(regsB),
-        promedioPorDia: promedioPorDia(regsB, rangoB),
-        horaPico: this.calcularHoraPicoDesdeRegistros(regsB),
-        motivos: distribucion(regsB),
-      },
+      a: slice(efA, regsA),
+      b: slice(efB, regsB),
+      corte,
       diferencia: { cambio, porcentaje, direccion, sinReferencia: totalB === 0 && totalA > 0 },
     };
   }
@@ -575,6 +610,7 @@ export class EstadisticasAvanzadasService {
     const registrosPeriodo = this.filtrarPorRango(todosRegistros, rango);
 
     const heatmapMap = new Map<string, number>();
+    const fechasConActividad = new Map<string, Set<string>>();
 
     // Auto-expansión del rango horario: por defecto 7-21, pero si hay
     // registros fuera (biblioteca con horario nocturno, eventos especiales,
@@ -590,6 +626,9 @@ export class EstadisticasAvanzadasService {
       if (hora > maxHora) maxHora = hora;
       const key = `${dia}-${hora}`;
       heatmapMap.set(key, (heatmapMap.get(key) || 0) + 1);
+      const fechas = fechasConActividad.get(dia) ?? new Set<string>();
+      fechas.add(`${fecha.getFullYear()}-${fecha.getMonth()}-${fecha.getDate()}`);
+      fechasConActividad.set(dia, fechas);
     });
 
     const horas: number[] = [];
@@ -617,7 +656,10 @@ export class EstadisticasAvanzadasService {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    return { data: heatmapData, horas, rango, fechasPorDia };
+    const diasConActividad = new Map<string, number>();
+    diasSemana.forEach(d => diasConActividad.set(d, fechasConActividad.get(d)?.size ?? 0));
+
+    return { data: heatmapData, horas, rango, fechasPorDia, diasConActividad };
   }
 
   /** Cache local de alumnos (válido durante CACHE_TTL igual que registros). */
@@ -641,6 +683,7 @@ export class EstadisticasAvanzadasService {
   ): Promise<TopAlumno[]> {
     let registrosFiltrados = await this.obtenerRegistrosConCache();
     const todosAlumnos = await this.obtenerAlumnosConCache();
+    const motivosBD = await this.databaseService.obtenerTodosLosMotivos();
 
     // Si se pasa un rango explícito (modo personalizado), úsalo;
     // sino y hay días (preset), filtrar por últimos N. Si nada, sin filtro.
@@ -670,19 +713,7 @@ export class EstadisticasAvanzadasService {
       const alumno = alumnosPorMatricula.get(matricula);
       if (!alumno) return;
 
-      const motivosCount = new Map<string, number>();
-      registros.forEach(r => {
-        motivosCount.set(r.motivoNombre, (motivosCount.get(r.motivoNombre) || 0) + 1);
-      });
-
-      let motivoFrecuente = 'N/A';
-      let maxCount = 0;
-      motivosCount.forEach((count, motivo) => {
-        if (count > maxCount) {
-          maxCount = count;
-          motivoFrecuente = motivo;
-        }
-      });
+      const motivoFrecuente = motivoMasFrecuente(registros, motivosBD)?.nombre ?? 'N/A';
 
       const ultimaVisita = new Date(
         Math.max(...registros.map(r => new Date(r.fechaHora).getTime()))
@@ -724,72 +755,41 @@ export class EstadisticasAvanzadasService {
     // Pre-cargar para los insights siguientes
     const todosRegistros = await this.obtenerRegistrosConCache();
 
-    // Alumnos inactivos: usa el umbral configurado por el coordinador.
+    // Inactividad con la definición única (P1): sobre los alumnos que han
+    // venido alguna vez. Los importados que nunca han venido no "se
+    // perdieron" y no deben disparar una alerta de reactivación.
     const umbral = Math.max(1, umbralInactividadDias);
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
-    const alumnosActivos = todosAlumnos.filter(a => a.activo);
-    const limite = new Date();
-    limite.setDate(limite.getDate() - umbral);
-    limite.setHours(0, 0, 0, 0);
-
-    const matriculasConActividadReciente = new Set<string>();
-    const matriculasConHistorial = new Set<string>();
-    todosRegistros.forEach(r => {
-      matriculasConHistorial.add(r.matricula);
-      if (new Date(r.fechaHora) >= limite) {
-        matriculasConActividadReciente.add(r.matricula);
-      }
-    });
-
-    let alumnosSinVisitasRecientes = 0;
-    for (const alumno of alumnosActivos) {
-      if (
-        matriculasConHistorial.has(alumno.matricula) &&
-        !matriculasConActividadReciente.has(alumno.matricula)
-      ) {
-        alumnosSinVisitasRecientes++;
-      }
-    }
-
-    // El KPI fijo de "Alumnos Inactivos" arriba ya muestra el dato.
-    // Acá solo lanzamos alerta si la situación es seria (>30% del padrón
-    // activo está inactivo — eso significa un problema grande).
-    const totalActivos = alumnosActivos.length;
-    const proporcion = totalActivos > 0 ? alumnosSinVisitasRecientes / totalActivos : 0;
+    const { inactivos, nuncaVinieron } = calcularInactividad(todosAlumnos, todosRegistros, umbral);
+    const conHistorial = todosAlumnos.filter(a => a.activo !== false).length - nuncaVinieron.length;
+    const proporcion = conHistorial > 0 ? inactivos.length / conHistorial : 0;
     if (proporcion > 0.30) {
       insights.push({
         tipo: 'warning',
         icono: 'warning_amber',
-        titulo: 'Padrón con baja actividad',
-        descripcion: `${(proporcion * 100).toFixed(0)}% de los alumnos activos (${alumnosSinVisitasRecientes} de ${totalActivos}) no ha visitado en ${umbral}+ días. Considera campañas de reactivación.`,
+        titulo: 'Muchos alumnos dejaron de venir',
+        descripcion: `${(proporcion * 100).toFixed(0)}% de los alumnos que han venido alguna vez (${inactivos.length} de ${conHistorial}) lleva ${umbral} días o más sin volver. Considera campañas de reactivación.`,
       });
     }
 
     return insights;
   }
 
-  /** Devuelve la cuenta de alumnos inactivos según el umbral. Helper público. */
-  async contarAlumnosInactivos(umbralInactividadDias = 30): Promise<number> {
-    const umbral = Math.max(1, umbralInactividadDias);
+  /**
+   * Inactividad con la definición única del sistema (P1): la misma que usa
+   * la página /inactivos. `inactivos` = vinieron y llevan `umbral` días o
+   * más sin volver; `nuncaVinieron` va aparte.
+   */
+  async contarInactividad(umbralInactividadDias = 30): Promise<{ inactivos: number; nuncaVinieron: number }> {
     const todosRegistros = await this.obtenerRegistrosConCache();
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
-    const alumnosActivos = todosAlumnos.filter(a => a.activo);
-    const limite = new Date();
-    limite.setDate(limite.getDate() - umbral);
-    limite.setHours(0, 0, 0, 0);
+    const r = calcularInactividad(todosAlumnos, todosRegistros, umbralInactividadDias);
+    return { inactivos: r.inactivos.length, nuncaVinieron: r.nuncaVinieron.length };
+  }
 
-    const matRecientes = new Set<string>();
-    const matHistorial = new Set<string>();
-    todosRegistros.forEach(r => {
-      matHistorial.add(r.matricula);
-      if (new Date(r.fechaHora) >= limite) matRecientes.add(r.matricula);
-    });
-
-    let cuenta = 0;
-    for (const a of alumnosActivos) {
-      if (matHistorial.has(a.matricula) && !matRecientes.has(a.matricula)) cuenta++;
-    }
-    return cuenta;
+  /** Proyección del total de hoy con el historial real (P8). `null` = no hay base. */
+  async proyectarHoy(ahora: Date = new Date()): Promise<ProyeccionDia | null> {
+    return proyectarCierreHoy(await this.obtenerRegistrosConCache(), ahora);
   }
 
   async analizarPorCarrera(
@@ -802,6 +802,10 @@ export class EstadisticasAvanzadasService {
     const carrerasMap = new Map<string, { visitas: number; alumnos: Set<string> }>();
 
     registrosFiltrados.forEach(registro => {
+      // P5: los invitados no son alumnos y no tienen carrera. Antes salían
+      // como "Visitante": 40 visitas de "1 alumno" (todos con la matrícula
+      // INVITADO). Se cuentan aparte en la pantalla.
+      if (esInvitado(registro)) return;
       const carrera = registro.carrera || 'Sin carrera';
       const data = carrerasMap.get(carrera) || { visitas: 0, alumnos: new Set() };
       data.visitas++;
@@ -847,9 +851,16 @@ export class EstadisticasAvanzadasService {
    * Recibe directamente el HeatmapResultado ya calculado.
    */
   predecirDiaOcupadoDesde(heatmap: HeatmapResultado): string {
-    const visitasPorDia = new Map<string, number>();
+    // Promedio por día con actividad, no suma: en 30 días hay martes que
+    // salen 5 veces y lunes 4, y sumar le regalaba +25 % al martes (O3).
+    const totales = new Map<string, number>();
     heatmap.data.forEach(item => {
-      visitasPorDia.set(item.dia, (visitasPorDia.get(item.dia) || 0) + item.cantidad);
+      totales.set(item.dia, (totales.get(item.dia) || 0) + item.cantidad);
+    });
+    const visitasPorDia = new Map<string, number>();
+    totales.forEach((total, dia) => {
+      const dias = heatmap.diasConActividad?.get(dia) ?? 0;
+      if (dias > 0) visitasPorDia.set(dia, total / dias);
     });
 
     let diaOcupado = '';

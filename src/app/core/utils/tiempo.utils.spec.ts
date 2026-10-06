@@ -5,11 +5,13 @@
 // ║  Estos tests solo muerden en una zona con offset      ║
 // ║  negativo: en UTC, `new Date('YYYY-MM-DD')` y la hora  ║
 // ║  local coinciden y el bug no existe. Por eso CI corre  ║
-// ║  la suite con TZ=America/Mexico_City.                 ║
+// ║  la suite con TZ=America/Matamoros (Nuevo Laredo).    ║
 // ╚══════════════════════════════════════════════════════╝
 
 import {
   contarHastaMismaHora,
+  desplazarDias,
+  diasCalendarioEntre,
   fechaLocalISO,
   parseFechaLocal,
   rangoUltimosDias,
@@ -90,6 +92,34 @@ describe('tiempo.utils — fechas de calendario', () => {
 
     it('incluye un acceso exactamente a la hora de corte', () => {
       expect(contarHastaMismaHora(lunesPasado, new Date(2026, 9, 5, 13, 0))).toBe(3);
+    });
+  });
+
+  // En la frontera el reloj se adelanta el 8 de marzo de 2026 y se atrasa
+  // el 1 de noviembre: esos días duran 23 y 25 horas. En una zona sin
+  // horario de verano estos tests pasan igual; en CI (America/Matamoros)
+  // son los que detectan la resta de milisegundos.
+  describe('cambio de horario', () => {
+    it('desplazarDias conserva la hora de reloj al cruzar el cambio', () => {
+      const sabado = new Date(2026, 2, 7, 10, 0);
+      const lunes = desplazarDias(sabado, 2);
+      expect(lunes.getDate()).toBe(9);
+      expect(lunes.getHours()).toBe(10);
+      const atras = desplazarDias(new Date(2026, 10, 2, 0, 0), -7);
+      expect(atras.getDate()).toBe(26);
+      expect(atras.getHours()).toBe(0);
+    });
+
+    it('diasCalendarioEntre cuenta fechas, no bloques de 24 h', () => {
+      expect(diasCalendarioEntre(new Date(2026, 2, 7, 23, 0), new Date(2026, 2, 9, 1, 0))).toBe(2);
+      expect(diasCalendarioEntre(new Date(2026, 9, 31, 23, 0), new Date(2026, 10, 1, 23, 30))).toBe(1);
+      expect(diasCalendarioEntre(new Date(2026, 9, 6, 8), new Date(2026, 9, 6, 22))).toBe(0);
+    });
+
+    it('rangoUltimosDias que cruza el cambio empieza a las 00:00', () => {
+      const { inicio } = rangoUltimosDias(7, new Date(2026, 2, 10, 15, 0));
+      expect(fechaLocalISO(inicio)).toBe('2026-03-04');
+      expect(inicio.getHours()).toBe(0);
     });
   });
 });

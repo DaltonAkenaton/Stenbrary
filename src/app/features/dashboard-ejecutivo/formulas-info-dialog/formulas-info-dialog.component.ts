@@ -58,10 +58,16 @@ import { MatExpansionModule } from '@angular/material/expansion';
             Si tienes 240 ahora y 200 antes → la diferencia es +40 visitas,
             que representa un +20% de crecimiento.
           </p>
+          <p>
+            <strong>Al mismo avance:</strong> si el período que ves todavía no termina
+            (por ejemplo, incluye hoy), el anterior se corta a la misma altura: mismo
+            día y misma hora. Un miércoles a las 10:00, "esta semana" se compara con
+            la semana pasada hasta el miércoles a las 10:00, no con la semana completa.
+          </p>
           <p class="nota">
             <mat-icon>info</mat-icon>
-            Si el período anterior no tuvo registros, se reporta 0% (no se puede
-            dividir entre cero, así que evitamos números irreales).
+            Si el período anterior no tuvo registros, no se muestra porcentaje: no hay
+            base para calcularlo y cualquier número sería inventado.
           </p>
         </mat-expansion-panel>
 
@@ -72,14 +78,15 @@ import { MatExpansionModule } from '@angular/material/expansion';
           </mat-expansion-panel-header>
           <pre class="formula">
 Tomamos el total de registros del período
-y lo dividimos entre la cantidad de días que cubre el rango.</pre>
+y lo dividimos entre los días en que hubo al menos un registro.</pre>
           <p class="ejemplo">
-            <strong>Ejemplo:</strong> 600 registros en 30 días = 20 visitas por día.
+            <strong>Ejemplo:</strong> 600 registros en un mes donde la biblioteca tuvo
+            actividad 24 días = 25 visitas por día.
           </p>
           <p>
-            Cuenta <strong>todos los días del rango</strong> (incluso los que no abre
-            la biblioteca). Si quieres un promedio "solo de días hábiles", filtra por
-            hora o por preset semanal/mensual.
+            Solo cuentan los días <strong>con actividad</strong>: si hubo registros, la
+            biblioteca abrió. Así los domingos, festivos y vacaciones no bajan el
+            promedio. Un día que abrió pero no llegó nadie tampoco cuenta.
           </p>
         </mat-expansion-panel>
 
@@ -128,12 +135,14 @@ HORA PICO:
 2) Buscamos la celda con el número más alto.
 
 DÍA OCUPADO:
-1) Sumamos TODAS las visitas de cada día de la semana.
-2) Nos quedamos con el día que acumuló más.</pre>
+1) Sumamos las visitas de cada día de la semana.
+2) Dividimos entre cuántos de esos días hubo actividad.
+3) Nos quedamos con el día de mayor promedio.</pre>
           <p class="ejemplo">
             <strong>Ejemplo:</strong> si los lunes a las 11:00 hay 47 visitas y es la
-            celda más alta del heatmap → "Lunes 11:00" es la hora pico. Si la suma
-            total de los martes es la más grande, el día más ocupado es martes.
+            celda más alta del heatmap → "Lunes 11:00" es la hora pico. Para el día
+            más ocupado se usa el promedio: en 30 días puede haber 5 martes y solo
+            4 lunes, y sumando, el martes ganaría solo por aparecer más veces.
           </p>
         </mat-expansion-panel>
 
@@ -205,28 +214,29 @@ DÍA OCUPADO:
             <mat-panel-title><mat-icon>insights</mat-icon> Predicción de hoy</mat-panel-title>
           </mat-expansion-panel-header>
           <p>
-            Proyecta el total que tendrá el día actual al cierre, asumiendo que el
-            ritmo de visitas se mantiene parejo entre apertura (7:00) y cierre (22:00).
+            Proyecta el total que tendrá el día actual al cierre usando cómo se
+            comportaron <strong>los últimos días iguales a hoy</strong> (hasta 8 del mismo
+            día de la semana, de las últimas 10 semanas).
           </p>
           <pre class="formula">
-1) Vemos qué fracción del horario ya transcurrió.
-   (Si son las 13:00 → llevamos 6 horas de las 15 totales = 40%.)
+1) En esos días, vemos qué parte de las visitas del día
+   ya había llegado a esta misma hora.
 2) Tomamos las visitas de HOY hasta este momento.
-3) Las dividimos entre esa fracción para extrapolar al 100%.</pre>
+3) Las dividimos entre esa parte para estimar el total.</pre>
           <p class="ejemplo">
-            <strong>Ejemplo:</strong> a las 13:00 (40% del horario) llevas 80 visitas.
-            La predicción es 80 ÷ 0.40 = 200 visitas al cierre.
+            <strong>Ejemplo:</strong> los martes, a las 12:00 suele haber llegado el 40% de las
+            visitas del día. Hoy es martes y van 80 → la proyección es 80 ÷ 0.40 = 200.
           </p>
-          <p>Confianza:</p>
+          <p>Confianza: qué tan bien habría acertado este cálculo en esos mismos días.</p>
           <ul class="lista-rangos">
-            <li><strong>Alta:</strong> ya transcurrió ≥ 50% del horario</li>
-            <li><strong>Media:</strong> entre 25% y 50%</li>
-            <li><strong>Baja:</strong> menos del 25% (muy temprano para confiar)</li>
+            <li><strong>Alta:</strong> se habría equivocado menos de 15% en promedio</li>
+            <li><strong>Media:</strong> entre 15% y 30%</li>
+            <li><strong>Baja:</strong> más de 30% (días muy distintos entre sí)</li>
           </ul>
           <p class="nota">
-            <mat-icon>warning</mat-icon>
-            Es una extrapolación lineal simple. No considera estacionalidad ni
-            comparación con días previos similares.
+            <mat-icon>info</mat-icon>
+            Si no hay al menos 4 días comparables, o a esta hora normalmente todavía
+            no llega nadie, no se muestra proyección.
           </p>
         </mat-expansion-panel>
 
@@ -239,15 +249,20 @@ DÍA OCUPADO:
             Se cuenta a un alumno como inactivo si cumple <strong>las tres condiciones</strong>:
           </p>
           <ul class="lista-rangos">
-            <li>Está marcado como activo en su ficha</li>
+            <li>No está desactivado en su ficha</li>
             <li>Tiene al menos un registro histórico (sí ha venido alguna vez)</li>
-            <li>Su último registro fue hace más de <strong>U días</strong></li>
+            <li>Su último registro fue hace <strong>U días o más</strong> (días de calendario)</li>
           </ul>
           <p>
             U es el umbral configurado en
             <code>Configuración → Umbral de inactividad</code>
             (por defecto 30 días). Se mide desde <strong>hoy</strong>, no desde el
-            filtro del dashboard.
+            filtro del dashboard. Es la misma cifra que la página Inactivos.
+          </p>
+          <p class="nota">
+            <mat-icon>info</mat-icon>
+            Los alumnos que <strong>nunca</strong> han venido (por ejemplo, importados del
+            padrón) se cuentan aparte: no "dejaron" de venir.
           </p>
         </mat-expansion-panel>
 
@@ -273,6 +288,11 @@ DÍA OCUPADO:
             <strong>Ejemplo:</strong> si el mes top tuvo 1.000 visitas y otro mes
             tuvo 250 → ese mes se ve al 25% de la altura.
           </p>
+          <p class="nota">
+            <mat-icon>info</mat-icon>
+            El mes en curso va a medias: su cambio se compara contra el mes anterior
+            hasta el mismo día y hora, y no participa en "mes más bajo".
+          </p>
         </mat-expansion-panel>
 
         <!-- ─── COMPARADOR A vs B ─── -->
@@ -292,10 +312,60 @@ DÍA OCUPADO:
             <strong>Ejemplo:</strong> A = abril (300 visitas), B = marzo (250) →
             la diferencia es +50, lo que equivale a un +20% (abril fue 20% mejor).
           </p>
+          <p>
+            Si uno de los dos períodos <strong>sigue en curso</strong> (por ejemplo "Este mes"),
+            el otro se toma solo hasta la misma altura: el mismo número de días desde su
+            inicio y la misma hora. La pantalla avisa cuándo se hizo ese recorte.
+          </p>
           <p class="nota">
             <mat-icon>info</mat-icon>
-            Si los rangos tienen distinta duración el promedio diario sigue siendo
-            comparable; el total no.
+            Si los rangos tienen distinta duración, el promedio por día (con actividad)
+            sigue siendo comparable; el total no.
+          </p>
+        </mat-expansion-panel>
+
+        <!-- ─── MOTIVOS ─── -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title><mat-icon>category</mat-icon> Motivos de visita</mat-panel-title>
+          </mat-expansion-panel-header>
+          <p>
+            Si en una visita el alumno marcó varios motivos, cuenta para <strong>cada uno</strong>.
+            Por eso el porcentaje se lee como "de las visitas, cuántas incluyeron este
+            motivo" y la suma puede pasar de 100%.
+          </p>
+          <p class="ejemplo">
+            <strong>Ejemplo:</strong> 10 visitas; 6 marcaron "Estudiar" y 5 "Pedir libro" (una
+            visita marcó las dos) → Estudiar 60%, Pedir libro 50%.
+          </p>
+        </mat-expansion-panel>
+
+        <!-- ─── ESTANCIA ─── -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title><mat-icon>timer</mat-icon> Tiempo de estancia</mat-panel-title>
+          </mat-expansion-panel-header>
+          <p>
+            Promedio de minutos entre la entrada y la salida, contando <strong>solo las
+            salidas registradas por una persona</strong>.
+          </p>
+          <p>
+            Cuando el sistema cierra una entrada por tiempo, o al llegar la hora de cierre,
+            la hora de salida es una estimación: no se sabe cuándo se fue el alumno. Esas
+            visitas siguen contando como visitas, pero su duración no entra en el promedio,
+            en las horas acumuladas ni en la constancia.
+          </p>
+        </mat-expansion-panel>
+
+        <!-- ─── INVITADOS ─── -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title><mat-icon>person_pin</mat-icon> Invitados</mat-panel-title>
+          </mat-expansion-panel-header>
+          <p>
+            Las visitas de invitados cuentan en el total de visitas y en los motivos.
+            No cuentan en carreras, turnos ni grados (no son alumnos) ni en "alumnos
+            únicos".
           </p>
         </mat-expansion-panel>
 

@@ -63,7 +63,16 @@ import { ExportService } from '../../core/services/export.service';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfigService } from '../../core/services/config.service';
-import { fechaLocalISO } from '../../core/utils/tiempo.utils';
+import {
+  diaSemanaMasConcurrido,
+  esInvitado,
+  motivoMasFrecuente,
+  promedioPorDiaConActividad,
+  ProyeccionDia,
+  resumirEstancia,
+} from '../../core/utils/estadisticas.utils';
+import { Motivo } from '../../core/models';
+import { desplazarDias, fechaLocalISO } from '../../core/utils/tiempo.utils';
 
 Chart.register(...registerables);
 
@@ -198,7 +207,11 @@ formatHora(h: number): string {
 
   // ─── Métricas nuevas (Tier B) ────────────────────
   kpiTiempoEstanciaPromedio = 0; // minutos
-  kpiTiempoEstanciaStr = ''; // <-- NUEVA VARIABLE
+  kpiTiempoEstanciaStr = '';
+  /** Visitas con salida real que entraron en el promedio. */
+  kpiVisitasMedidas = 0;
+  /** Visitas con salida estimada por el sistema: excluidas del promedio (P3). */
+  kpiVisitasEstimadas = 0;
   kpiTasaRetencion = 0; // % alumnos con ≥N visitas (N = umbralRetencion)
   kpiUmbralRetencion = 3;
   kpiCrecimiento12m: { mes: string; cantidad: number }[] = [];
@@ -241,8 +254,8 @@ formatHora(h: number): string {
   kpiUltimoRegistroHace = ''; // "hace 23 minutos"
   kpiPctInvitados = 0;
   kpiCarreraTopCrecimiento: { carrera: string; cambio: number; porcentaje: number } | null = null;
-  kpiPrediccionHoy = 0; // proyección al cierre
-  kpiPrediccionHoyConfianza: 'alta' | 'media' | 'baja' = 'baja';
+  /** Proyección del total de hoy con el historial real (P8). null = no hay base. */
+  kpiProyeccionHoy: ProyeccionDia | null = null;
   kpiDiaSemanaTop = '';
   kpiDistribucionGrado: { grado: number; cantidad: number; porcentaje: number }[] = [];
   kpiCombinacionesMotivos: { combo: string; cantidad: number; porcentaje: number; anchoStr?: string }[] = [];
@@ -252,8 +265,14 @@ formatHora(h: number): string {
   kpiTotalRegistros = 0;
   kpiAlumnosUnicos = 0;
   kpiPromedioPorDia = 0;
+  /** Días con al menos un registro: el divisor del promedio (P4). */
+  kpiDiasConActividad = 0;
+  /** Visitas de invitados del período (no entran en carreras/turnos/grados, P5). */
+  kpiVisitasInvitados = 0;
   kpiHoraPico: HeatmapData | null = null;
   kpiAlumnosInactivos = 0;
+  /** Alumnos del padrón sin ninguna visita (P1: se muestran aparte). */
+  kpiNuncaVinieron = 0;
   kpiUmbralInactividad = 30;
 
   // ─── Selector de período (PRESETS) ────────────────
@@ -609,6 +628,10 @@ formatHora(h: number): string {
     });
   }
 
+  formatearHoraMin(d: Date): string {
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
   formatearFechaCorta(d: Date): string {
     return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
   }
@@ -775,8 +798,9 @@ formatHora(h: number): string {
 
   ariaDescripcionMotivos(): string {
     if (!this.distribucionMotivos || this.distribucionMotivos.cantidades.length === 0)
-      return 'Gráfica circular sin datos';
-    const total = this.distribucionMotivos.cantidades.reduce((s, v) => s + v, 0);
+      return 'Gráfica de motivos sin datos';
+    // % de visitas que incluyeron cada motivo (P2), no del total de marcas.
+    const total = this.distribucionMotivos.totalVisitas || 1;
     return this.distribucionMotivos.etiquetas
       .map((e, i) => `${e}: ${this.distribucionMotivos!.cantidades[i]} (${(this.distribucionMotivos!.cantidades[i] / total * 100).toFixed(0)}%)`)
       .join('. ');
@@ -1296,7 +1320,10 @@ formatHora(h: number): string {
       registrosCrudos.forEach(r => { if (r.matricula !== 'INVITADO') matriculasUnicas.add(r.matricula); });
       this.kpiAlumnosUnicos = matriculasUnicas.size;
       const dias = this.estadisticasService.diasEnRango(rango);
-      this.kpiPromedioPorDia = dias > 0 ? parseFloat((registrosCrudos.length / dias).toFixed(1)) : 0;
+      // P4: entre los días que abrió y hubo registros, no entre días naturales.
+      const promedio = promedioPorDiaConActividad(registrosCrudos);
+      this.kpiPromedioPorDia = promedio.promedio;
+      this.kpiDiasConActividad = promedio.dias;
       this.kpiHoraPico = this.estadisticasService.calcularHoraPicoEnRango(registrosCrudos);
       this.kpiHoraPicoStr = this.kpiHoraPico 
         ? `${this.kpiHoraPico.dia} ${this.formatHora(this.kpiHoraPico.hora)}` 
@@ -1305,8 +1332,10 @@ formatHora(h: number): string {
       // Alumnos inactivos: el servicio ya no emite un insight con la cantidad
       // (solo lo emite cuando >30% del padrón está inactivo, con otro título).
       // Llamar al método dedicado que cuenta directamente.
-      this.kpiAlumnosInactivos = await this.estadisticasService
-        .contarAlumnosInactivos(this.kpiUmbralInactividad);
+      // P1: la misma definición que la página /inactivos.
+      const inactividad = await this.estadisticasService.contarInactividad(this.kpiUmbralInactividad);
+      this.kpiAlumnosInactivos = inactividad.inactivos;
+      this.kpiNuncaVinieron = inactividad.nuncaVinieron;
 
       const TM = performance.now();
       // ─── TIER B: métricas avanzadas (rango actual) ──
@@ -1317,7 +1346,7 @@ formatHora(h: number): string {
       this.calcularVariacionDiaria(diarios);
       this.calcularDiaSemanaTop(registrosCrudos);
       this.calcularPctInvitados(registrosCrudos);
-      this.calcularPrediccionHoy(registrosCrudos);
+      await this.calcularPrediccionHoy();
       // diariosDomingoIdx (Tier A: tinte de domingos en barras diarias)
       this.diariosDomingoIdx = this.calcularDomingosDelGrafico(rango, diarios);
 
@@ -1328,7 +1357,11 @@ formatHora(h: number): string {
       const fi = this.formatearFechaLarga(this.rangoActivo.inicio);
       const ff = this.formatearFechaLarga(this.rangoActivo.fin);
       this.labelRangoActivo = `Del ${fi} al ${ff} · ${dias} ${dias === 1 ? 'día' : 'días'}`;
-      this.labelRangoComparativo = this.tendencia?.rangoAnterior ? `Comparado contra: del ${this.formatearFechaCorta(this.tendencia.rangoAnterior.inicio)} al ${this.formatearFechaCorta(this.tendencia.rangoAnterior.fin)}` : '';
+      this.labelRangoComparativo = this.tendencia?.rangoAnterior
+        ? `Comparado contra: del ${this.formatearFechaCorta(this.tendencia.rangoAnterior.inicio)} al ${this.formatearFechaCorta(this.tendencia.rangoAnterior.fin)}` +
+          // P6: el período actual va a medias; el anterior se cortó a la misma altura.
+          (this.tendencia.alMismoAvance ? ` hasta las ${this.formatearHoraMin(this.tendencia.rangoAnterior.fin)} (al mismo avance)` : '')
+        : '';
       this.labelMesPrincipal = (this.rangoActivo.inicio.getFullYear() === this.rangoActivo.fin.getFullYear() && this.rangoActivo.inicio.getMonth() === this.rangoActivo.fin.getMonth()) ? `${this.nombresMes[this.rangoActivo.inicio.getMonth()]} ${this.rangoActivo.inicio.getFullYear()}` : '';
       this.labelFiltroHora = this.filtroHoraActivo ? `Solo ${this.formatHora(this.filtroHoraDesde)}–${this.formatHora(this.filtroHoraHasta)}` : '';
       const g = this.datosDiarios?.granularidad;
@@ -1373,13 +1406,12 @@ formatHora(h: number): string {
 
   /** Tier B: tiempo estancia, retención, distribución turnos, top motivo, una sola visita, crecimiento 12m. */
   private calcularMetricasAvanzadas(registros: any[], rango: RangoFechas): void {
-    // Tiempo estancia promedio
-    const conDuracion = registros.filter(r => typeof r.duracionMinutos === 'number' && r.duracionMinutos > 0);
-    this.kpiTiempoEstanciaPromedio = conDuracion.length > 0
-      ? Math.round(conDuracion.reduce((s, r) => s + r.duracionMinutos, 0) / conDuracion.length)
-      : 0;
-
-    // NUEVO: Lo formateamos aquí de una vez (ej. "1h 20m")
+    // Tiempo de estancia: solo salidas reales. Las que estimó el sistema
+    // (cierre por tiempo u horario) son una suposición y no cuentan (P3).
+    const estancia = resumirEstancia(registros);
+    this.kpiTiempoEstanciaPromedio = estancia.promedioMinutos;
+    this.kpiVisitasMedidas = estancia.visitasMedidas;
+    this.kpiVisitasEstimadas = estancia.visitasEstimadas;
     this.kpiTiempoEstanciaStr = this.formatearDuracionMin(this.kpiTiempoEstanciaPromedio);
     
     // Retención adaptativa al rango (Tier A5):
@@ -1405,12 +1437,15 @@ formatHora(h: number): string {
 
     // Distribución por turno: usa r.turno si existe, fallback al join con alumnos
     // (registros viejos pre-v3.16.0 no tienen turno propagado).
+    // P5: los invitados no son alumnos y no tienen turno.
     const turnos = new Map<string, number>();
+    let totalTurnos = 0;
     for (const r of registros) {
+      if (esInvitado(r)) continue;
       const t = r.turno || this.turnoPorMatricula.get(r.matricula) || 'Sin turno';
       turnos.set(t, (turnos.get(t) || 0) + 1);
+      totalTurnos++;
     }
-    const totalTurnos = registros.length;
     const coloresTurno: Record<string, string> = {
       'Matutino': '#0BC4B7', 'Vespertino': '#F5A623', 'Mixto': '#6366F1', 'Sin turno': '#64748B',
     };
@@ -1422,17 +1457,14 @@ formatHora(h: number): string {
         color: coloresTurno[turno] || '#64748B',
       }));
 
-    // Top motivo del período
-    const motivos = new Map<string, number>();
-    for (const r of registros) {
-      const m = r.motivoNombre || 'Sin motivo';
-      motivos.set(m, (motivos.get(m) || 0) + 1);
-    }
-    let topMotivoNombre = ''; let topMotivoCantidad = 0;
-    motivos.forEach((c, n) => { if (c > topMotivoCantidad) { topMotivoCantidad = c; topMotivoNombre = n; } });
-    this.kpiTopMotivo = topMotivoCantidad > 0 ? {
-      nombre: topMotivoNombre, cantidad: topMotivoCantidad,
-      porcentaje: registros.length > 0 ? parseFloat((topMotivoCantidad / registros.length * 100).toFixed(1)) : 0,
+    // Top motivo del período. P2: cuenta todos los motivos de cada visita,
+    // y el % se lee como "% de visitas que lo incluyeron".
+    const top = this.distribucionMotivos;
+    this.kpiTopMotivo = top && top.cantidades.length > 0 ? {
+      nombre: top.etiquetas[0],
+      cantidad: top.cantidades[0],
+      porcentaje: top.totalVisitas > 0
+        ? parseFloat((top.cantidades[0] / top.totalVisitas * 100).toFixed(1)) : 0,
     } : null;
   }
 
@@ -1456,9 +1488,25 @@ formatHora(h: number): string {
     }
     this.kpiCrecimiento12m = meses.map(({ mes, cantidad }) => ({ mes, cantidad }));
 
+    // El mes en curso va a medias: su cambio se mide contra el mes anterior
+    // hasta el mismo día y hora, no contra el mes completo (P6). Antes salía
+    // "−80 %" y "MES MÁS BAJO" en cuanto empezaba un mes.
+    const finComparable = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const ultimoDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate();
+    finComparable.setDate(Math.min(hoy.getDate(), ultimoDiaMesAnterior));
+    finComparable.setHours(hoy.getHours(), hoy.getMinutes(), hoy.getSeconds(), 999);
+    const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).getTime();
+    this.mesAnteriorAlMismoDia = todos.filter(r => {
+      const t = new Date(r.fechaHora).getTime();
+      return t >= inicioMesAnterior && t <= finComparable.getTime();
+    }).length;
+
     // Las alturas y todo el resto del análisis 12m se computan aquí.
     this.calcularResumenCrecimiento12m();
   }
+
+  /** Visitas del mes anterior hasta el mismo día y hora que hoy (para el mes en curso). */
+  private mesAnteriorAlMismoDia = 0;
 
   /** Computa los KPIs y barras enriquecidas del crecimiento 12m. */
   private calcularResumenCrecimiento12m(): void {
@@ -1484,6 +1532,8 @@ formatHora(h: number): string {
     let peorIdx = -1;
     for (let i = 0; i < datos.length; i++) {
       if (datos[i].cantidad > datos[mejorIdx].cantidad) mejorIdx = i;
+      // El mes en curso no compite por "más bajo": está incompleto.
+      if (i === datos.length - 1) continue;
       if (datos[i].cantidad > 0 &&
           (peorIdx === -1 || datos[i].cantidad < datos[peorIdx].cantidad)) {
         peorIdx = i;
@@ -1502,7 +1552,9 @@ formatHora(h: number): string {
     // Barras enriquecidas (altura + flags + MoM + tooltip)
     this.crecimiento12mBarras = datos.map((m, i) => {
       const altura = Math.max(2, (m.cantidad / max) * 100);
-      const anterior = i > 0 ? datos[i - 1].cantidad : null;
+      const esMesEnCurso = i === datos.length - 1;
+      const anterior = i === 0 ? null
+        : esMesEnCurso ? this.mesAnteriorAlMismoDia : datos[i - 1].cantidad;
       let cambioMoM: number | null = null;
       let cambioMoMStr = '';
       if (anterior !== null && anterior > 0) {
@@ -1510,14 +1562,19 @@ formatHora(h: number): string {
         const signo = cambioMoM > 0 ? '+' : '';
         cambioMoMStr = `${signo}${cambioMoM.toFixed(0)}%`;
       } else if (anterior === 0 && m.cantidad > 0) {
-        cambioMoM = 100;
+        // Sin base no hay porcentaje: se marca "nuevo", sin cifra.
+        cambioMoM = null;
         cambioMoMStr = 'nuevo';
       }
       const esMejor = i === mejorIdx && m.cantidad > 0;
       const esPeor = peor !== null && i === peorIdx && peor.cantidad !== mejor.cantidad;
       const esActual = i === idxActual;
       let tooltip = `${m.mes}: ${m.cantidad} visitas`;
-      if (cambioMoMStr) tooltip += ` · ${cambioMoMStr} vs mes anterior`;
+      if (cambioMoMStr) {
+        tooltip += esMesEnCurso
+          ? ` · ${cambioMoMStr} vs el mes anterior a estas alturas (${anterior} visitas)`
+          : ` · ${cambioMoMStr} vs mes anterior`;
+      }
       if (esMejor) tooltip += ' · MEJOR MES';
       if (esPeor) tooltip += ' · MES MÁS BAJO';
       if (esActual) tooltip += ' · MES EN CURSO';
@@ -1722,74 +1779,38 @@ this.sparkRegistros = counts;
     this.kpiVariacionDiaria = media > 0 ? Math.round((std / media) * 100) : 0;
   }
 
-  /** Día de la semana con más visitas en el período. */
+  /**
+   * Día de la semana más concurrido EN PROMEDIO por día con actividad, no
+   * por suma: en 30 días algunos días de la semana caen 5 veces y otros 4 (O3).
+   */
   private calcularDiaSemanaTop(registros: any[]): void {
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const conteo = new Array(7).fill(0);
-    for (const r of registros) {
-      const d = new Date(r.fechaHora).getDay();
-      conteo[d]++;
-    }
-    let maxIdx = 0;
-    for (let i = 1; i < 7; i++) if (conteo[i] > conteo[maxIdx]) maxIdx = i;
-    this.kpiDiaSemanaTop = conteo[maxIdx] > 0 ? dias[maxIdx] : '';
+    const idx = diaSemanaMasConcurrido(registros);
+    this.kpiDiaSemanaTop = idx === null ? '' : dias[idx];
   }
 
   /** Tier B12: % invitados vs alumnos del período. */
   private calcularPctInvitados(registros: any[]): void {
-    if (registros.length === 0) { this.kpiPctInvitados = 0; return; }
+    if (registros.length === 0) { this.kpiPctInvitados = 0; this.kpiVisitasInvitados = 0; return; }
     const invitados = registros.filter(r => r.matricula === 'INVITADO').length;
+    this.kpiVisitasInvitados = invitados;
     this.kpiPctInvitados = parseFloat((invitados / registros.length * 100).toFixed(1));
   }
 
   /**
-   * Tier B13: predicción del total de hoy al cierre.
-   * Si el rango no incluye hoy → 0. Si lo incluye, extrapolar usando el
-   * ritmo de la hora actual respecto al ritmo histórico esperado.
+   * Proyección del total de hoy (P8). Solo si el rango activo incluye hoy.
+   * Usa TODO el historial (no el filtro de hora): compara con los últimos
+   * días del mismo tipo y qué parte del día suelen llevar a esta hora. Sin
+   * al menos 4 días comparables, no se muestra.
    */
-  private calcularPrediccionHoy(registros: any[]): void {
-    if (!this.rangoActivo) { this.kpiPrediccionHoy = 0; return; }
+  private async calcularPrediccionHoy(): Promise<void> {
+    this.kpiProyeccionHoy = null;
+    if (!this.rangoActivo) return;
     const ahora = new Date();
-    const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0, 0);
+    const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
     const finHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59, 999);
-
-    // ¿El rango activo incluye hoy?
-    if (this.rangoActivo.fin < inicioHoy || this.rangoActivo.inicio > finHoy) {
-      this.kpiPrediccionHoy = 0;
-      this.kpiPrediccionHoyConfianza = 'baja';
-      return;
-    }
-
-    // Visitas de HOY
-    const hoyMs = inicioHoy.getTime();
-    const ahoraMs = ahora.getTime();
-    const visitasHoy = registros.filter(r => {
-      const t = new Date(r.fechaHora).getTime();
-      return t >= hoyMs && t <= ahoraMs;
-    }).length;
-
-    // Estimación simple: si llevamos N% del horario, proyectar a 100%.
-    // Asumir horario abierto 7:00-22:00 (15 horas) — fallback genérico.
-    // TODO: leer del configService.horarios cuando esté implementado.
-    const horaActual = ahora.getHours() + ahora.getMinutes() / 60;
-    const horaApertura = 7;
-    const horaCierre = 22;
-    if (horaActual <= horaApertura) {
-      this.kpiPrediccionHoy = 0;
-      this.kpiPrediccionHoyConfianza = 'baja';
-      return;
-    }
-    if (horaActual >= horaCierre) {
-      this.kpiPrediccionHoy = visitasHoy;
-      this.kpiPrediccionHoyConfianza = 'alta';
-      return;
-    }
-    const fraccionTranscurrida = (horaActual - horaApertura) / (horaCierre - horaApertura);
-    this.kpiPrediccionHoy = visitasHoy > 0
-      ? Math.round(visitasHoy / Math.max(0.05, fraccionTranscurrida))
-      : 0;
-    this.kpiPrediccionHoyConfianza = fraccionTranscurrida >= 0.5 ? 'alta'
-      : fraccionTranscurrida >= 0.25 ? 'media' : 'baja';
+    if (this.rangoActivo.fin < inicioHoy || this.rangoActivo.inicio > finHoy) return;
+    this.kpiProyeccionHoy = await this.estadisticasService.proyectarHoy(ahora);
   }
 
   /** Tier B9 + B10: métricas globales (último registro absoluto + carrera con mayor crecimiento). */
@@ -1835,6 +1856,7 @@ this.sparkRegistros = counts;
         const d = new Date(r.fechaHora);
         const t = d.getTime();
         if (!aplicaHora(d)) continue;
+        if (esInvitado(r)) continue; // P5
         const c = r.carrera || 'Sin carrera';
         if (t >= inA && t <= fnA) carrerasA.set(c, (carrerasA.get(c) || 0) + 1);
         else if (t >= inB && t <= fnB) carrerasB.set(c, (carrerasB.get(c) || 0) + 1);
@@ -2021,7 +2043,9 @@ this.sparkRegistros = counts;
       const d = new Date(this.fechaReporteSemana + 'T00:00:00');
       if (isNaN(d.getTime())) return null;
       const inicio = this.inicioSemana(d);
-      const fin = this.finDia(new Date(inicio.getTime() + 6 * 86400000));
+      // 6 días de calendario, no 6 × 24 h: la semana del cambio de horario
+      // de noviembre perdía el domingo.
+      const fin = this.finDia(desplazarDias(inicio, 6));
       const fmt = (x: Date) => x.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
       return { inicio, fin, etiqueta: `Semana del ${fmt(inicio)} al ${fmt(fin)} ${fin.getFullYear()}` };
     }
@@ -2056,7 +2080,7 @@ this.sparkRegistros = counts;
     return this.generandoReporte ? 'Generando...' : `Reporte ${t.toLowerCase()}`;
   }
 
-  private calcularTopDelMes(registrosMes: any[], limite: number) {
+  private calcularTopDelMes(registrosMes: any[], limite: number, catalogo: Motivo[] = []) {
     const porMat = new Map<string, any[]>();
     for (const r of registrosMes) {
       const arr = porMat.get(r.matricula) || [];
@@ -2066,10 +2090,7 @@ this.sparkRegistros = counts;
     const top: any[] = [];
     porMat.forEach((regs, mat) => {
       if (mat === 'INVITADO') return;
-      const motivos = new Map<string, number>();
-      regs.forEach(r => motivos.set(r.motivoNombre, (motivos.get(r.motivoNombre) || 0) + 1));
-      let motivoFrecuente = 'N/A'; let maxC = 0;
-      motivos.forEach((c, m) => { if (c > maxC) { maxC = c; motivoFrecuente = m; } });
+      const motivoFrecuente = motivoMasFrecuente(regs, catalogo)?.nombre ?? 'N/A';
       const ultima = new Date(Math.max(...regs.map(r => new Date(r.fechaHora).getTime())));
       top.push({
         posicion: 0, matricula: mat, nombreCompleto: regs[0].nombreCompleto,
@@ -2098,7 +2119,8 @@ this.sparkRegistros = counts;
         this.toastService.warning('No hay registros en el periodo seleccionado');
         return;
       }
-      const topParaReporte = this.calcularTopDelMes(delRango, 10);
+      const topParaReporte = this.calcularTopDelMes(
+        delRango, 10, await this.databaseService.obtenerTodosLosMotivos());
       const { ReportService } = await import('../../core/services/report.service');
       const reportService = new ReportService(this.databaseService);
       const titulosPorTipo: Record<string, string> = {
@@ -2176,7 +2198,8 @@ this.sparkRegistros = counts;
         this.toastService.warning('No hay registros en el rango activo');
         return;
       }
-      const topParaReporte = this.calcularTopDelMes(delRango, 10);
+      const topParaReporte = this.calcularTopDelMes(
+        delRango, 10, await this.databaseService.obtenerTodosLosMotivos());
       const { ReportService } = await import('../../core/services/report.service');
       const reportService = new ReportService(this.databaseService);
       const sufijo = horaFiltro ? ` (${this.formatHora(horaFiltro.desde)}–${this.formatHora(horaFiltro.hasta)})` : '';
@@ -2453,6 +2476,12 @@ this.sparkRegistros = counts;
 
   }
 
+  /**
+   * Motivos en barras horizontales, no en dona (P2): cada motivo de una
+   * visita suma, así que las partes ya no forman un todo del 100 % y una
+   * dona daría a entender que sí. El % de cada barra es "de las visitas
+   * del período, cuántas incluyeron este motivo".
+   */
   private renderizarGraficaMotivos(): void {
     if (!this.chartMotivosRef || !this.distribucionMotivos) return;
     const canvas = this.chartMotivosRef.nativeElement;
@@ -2464,77 +2493,62 @@ this.sparkRegistros = counts;
       return;
     }
 
-    // Si la chart apunta a otro canvas (tab cambiada), destruir y recrear.
-    if (this.chartMotivos && this.chartMotivos.canvas !== canvas) {
-      this.chartMotivos.destroy();
-      this.chartMotivos = null;
-    }
-
-    if (this.chartMotivos) {
-      this.chartMotivos.data.labels = this.distribucionMotivos.etiquetas;
-      this.chartMotivos.data.datasets[0].data = this.distribucionMotivos.cantidades;
-      this.chartMotivos.data.datasets[0].backgroundColor =
-        this.distribucionMotivos.colores.map(c => c + 'CC');
-      this.chartMotivos.data.datasets[0].borderColor = this.distribucionMotivos.colores;
-      this.chartMotivos.update('none');
-      return;
-    }
-
+    this.chartMotivos?.destroy();
+    this.chartMotivos = null;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    this.chartMotivos = this.crearGraficaMotivos(ctx, this.distribucionMotivos, this.animDuracion);
+  }
 
-    this.chartMotivos = new Chart(ctx, {
-      type: 'doughnut',
+  /** Barras horizontales de motivos; la usan el Resumen y el comparador A/B. */
+  private crearGraficaMotivos(
+    ctx: CanvasRenderingContext2D,
+    motivos: DistribucionMotivos,
+    animacion: number,
+  ): Chart {
+    const total = motivos.totalVisitas;
+    return new Chart(ctx, {
+      type: 'bar',
       data: {
-        labels: this.distribucionMotivos.etiquetas,
+        labels: motivos.etiquetas,
         datasets: [{
-          data: this.distribucionMotivos.cantidades,
-          backgroundColor: this.distribucionMotivos.colores.map(c => c + 'CC'),
-          borderColor: this.distribucionMotivos.colores,
-          borderWidth: 2, hoverOffset: 8,
+          data: motivos.cantidades,
+          backgroundColor: motivos.colores.map(c => c + 'CC'),
+          borderColor: motivos.colores,
+          borderWidth: 2, borderRadius: 6, borderSkipped: false,
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: '65%',
-        animation: { duration: this.animDuracion },
-        interaction: { mode: 'nearest', intersect: false },
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        animation: { duration: animacion },
         plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              color: 'rgba(200, 230, 240, 0.7)',
-              font: { family: "'DM Sans', sans-serif", size: 12 },
-              padding: 16, usePointStyle: true, pointStyleWidth: 12,
-            },
-          },
+          legend: { display: false },
           tooltip: {
             backgroundColor: '#142033', titleColor: '#E8F4F8', bodyColor: '#E8F4F8',
             borderColor: 'rgba(0, 200, 215, 0.3)', borderWidth: 1, cornerRadius: 10, padding: 12,
+            displayColors: false,
             callbacks: {
               label: (item) => {
-                const total = (item.dataset.data as number[]).reduce((a, b) => a + b, 0);
-                const porcentaje = ((item.raw as number) / total * 100).toFixed(1);
-                return ` ${item.label}: ${item.raw} (${porcentaje}%)`;
+                const pct = total > 0 ? ((item.raw as number) / total * 100).toFixed(1) : '0';
+                return ` ${item.raw} visitas · ${pct}% de las visitas`;
               },
             },
           },
         },
+        scales: {
+          x: {
+            beginAtZero: true, grid: { color: 'rgba(200, 230, 240, 0.06)' },
+            ticks: { color: 'rgba(200, 230, 240, 0.4)', precision: 0,
+                     font: { family: "'DM Sans', sans-serif", size: 11 } },
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: 'rgba(200, 230, 240, 0.7)',
+                     font: { family: "'DM Sans', sans-serif", size: 12 } },
+          },
+        },
       },
     });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   }
 
   private renderizarGraficaCarreras(): void {
@@ -2643,35 +2657,7 @@ this.sparkRegistros = counts;
     if (motivos.cantidades.length === 0) return;
     const ctx = ref.nativeElement.getContext('2d');
     if (!ctx) return;
-    const chart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: motivos.etiquetas,
-        datasets: [{
-          data: motivos.cantidades,
-          backgroundColor: motivos.colores.map(c => c + 'CC'),
-          borderColor: motivos.colores, borderWidth: 2, hoverOffset: 6,
-        }],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false, cutout: '60%',
-        animation: { duration: 400 },
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: 'rgba(200, 230, 240, 0.7)',
-              font: { family: "'DM Sans', sans-serif", size: 11 },
-              padding: 10, usePointStyle: true, pointStyleWidth: 10, boxWidth: 10,
-            },
-          },
-          tooltip: {
-            backgroundColor: '#142033', titleColor: '#E8F4F8', bodyColor: '#E8F4F8',
-            borderColor: 'rgba(0, 200, 215, 0.3)', borderWidth: 1, cornerRadius: 10, padding: 10,
-          },
-        },
-      },
-    });
+    const chart = this.crearGraficaMotivos(ctx, motivos, 400);
     if (slot === 'a') this.chartCompararA = chart; else this.chartCompararB = chart;
   }
 
