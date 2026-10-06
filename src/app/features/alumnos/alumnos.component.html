@@ -123,7 +123,7 @@
           (ngModelChange)="actualizarFiltro('estado', $event)">
           <mat-option value="">Todos</mat-option>
           <mat-option value="activos">Activos</mat-option>
-          <mat-option value="inactivos">Inactivos</mat-option>
+          <mat-option value="inactivos">Desactivados</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -178,7 +178,7 @@
         }
         @if (filtros().estado) {
           <button class="filtro-chip" (click)="limpiarFiltro('estado')">
-            Estado: {{ filtros().estado === 'activos' ? 'Activos' : 'Inactivos' }}
+            Estado: {{ filtros().estado === 'activos' ? 'Activos' : 'Desactivados' }}
             <mat-icon>close</mat-icon>
           </button>
         }

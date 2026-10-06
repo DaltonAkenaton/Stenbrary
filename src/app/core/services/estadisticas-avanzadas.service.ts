@@ -27,6 +27,7 @@ import {
   proyectarCierreHoy,
   ProyeccionDia,
 } from '../utils/estadisticas.utils';
+import { esRegistroDePrueba } from '../utils/datos-prueba.utils';
 
 /** Rango cerrado [inicio, fin] de fechas. */
 export interface RangoFechas {
@@ -222,6 +223,15 @@ export class EstadisticasAvanzadasService {
     if (this.versionCache !== -1 && this.versionCache !== this.versionActual()) {
       this.invalidarCache();
     }
+  }
+
+  /**
+   * Todos los registros, de la misma caché que usan las métricas. Las
+   * pantallas deben pedirlos aquí y no a la BD: /estadisticas leía la base
+   * completa 4 veces por carga (auditoría 2026-10, M19).
+   */
+  obtenerRegistros(): Promise<Registro[]> {
+    return this.obtenerRegistrosConCache();
   }
 
   /** Invalida el caché manualmente */
@@ -729,6 +739,7 @@ export class EstadisticasAvanzadasService {
     rango: RangoFechas,
     horaFiltro?: { desde: number; hasta: number } | null,
     umbralInactividadDias = 30,
+    inactividadDesactivada = false,
   ): Promise<Insight[]> {
     const insights: Insight[] = [];
 
@@ -763,7 +774,7 @@ export class EstadisticasAvanzadasService {
     const { inactivos, nuncaVinieron } = calcularInactividad(todosAlumnos, todosRegistros, umbral);
     const conHistorial = todosAlumnos.filter(a => a.activo !== false).length - nuncaVinieron.length;
     const proporcion = conHistorial > 0 ? inactivos.length / conHistorial : 0;
-    if (proporcion > 0.30) {
+    if (!inactividadDesactivada && proporcion > 0.30) {
       insights.push({
         tipo: 'warning',
         icono: 'warning_amber',
@@ -785,6 +796,14 @@ export class EstadisticasAvanzadasService {
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
     const r = calcularInactividad(todosAlumnos, todosRegistros, umbralInactividadDias);
     return { inactivos: r.inactivos.length, nuncaVinieron: r.nuncaVinieron.length };
+  }
+
+  /**
+   * Registros generados por "Datos de prueba". Si hay, las cifras están
+   * mezcladas con datos inventados y la pantalla tiene que decirlo (O13).
+   */
+  async contarRegistrosDePrueba(): Promise<number> {
+    return (await this.obtenerRegistrosConCache()).filter(esRegistroDePrueba).length;
   }
 
   /** Proyección del total de hoy con el historial real (P8). `null` = no hay base. */

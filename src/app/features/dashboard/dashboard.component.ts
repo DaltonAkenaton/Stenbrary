@@ -38,6 +38,7 @@ import { logError } from '../../core/utils/logger';
 import { contarHastaMismaHora } from '../../core/utils/tiempo.utils';
 import { contarMotivos } from '../../core/utils/estadisticas.utils';
 import { diaInhabilEn } from '../../core/utils/calendario.utils';
+import { esMatriculaPrueba } from '../../core/utils/datos-prueba.utils';
 
 const FMT_HORA_DASH = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
 
@@ -106,7 +107,7 @@ interface InsightDia {
   tono: InsightTono;
 }
 
-type TipoAlerta = 'respaldo' | 'autoclose' | 'horario' | 'bd';
+type TipoAlerta = 'respaldo' | 'autoclose' | 'horario' | 'bd' | 'prueba';
 interface Alerta {
   tipo: TipoAlerta;
   icono: string;
@@ -222,9 +223,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  /** Alumnos de "Datos de prueba" en el padrón (se cuenta al cargar). */
+  private alumnosDePrueba = 0;
+
   private calcularAlertas(): Alerta[] {
     const lista: Alerta[] = [];
     const enQuiosco = this.configService.modoQuioscoSignal();
+
+    // 0. Datos de prueba mezclados con los reales (O13): todas las cifras
+    //    los incluyen hasta que se limpian. Oculto en quiosco.
+    if (!enQuiosco && this.alumnosDePrueba > 0) {
+      lista.push({
+        tipo: 'prueba',
+        icono: 'science',
+        titulo: 'Hay datos de prueba',
+        detalle: `${this.alumnosDePrueba} alumnos de prueba y sus visitas se cuentan en todas las cifras. Quítalos cuando termines de probar.`,
+        cta: {
+          texto: 'Ir a limpiar',
+          icono: 'arrow_forward',
+          accion: () => this.router.navigate(['/configuracion'], { fragment: 'datos' }),
+        },
+      });
+    }
 
     // 1. Respaldo pendiente (oculto en quiosco)
     if (!enQuiosco && this.configService.recordatorioRespaldoPendiente) {
@@ -388,6 +408,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.databaseService.obtenerMotivosActivos(),
       ]);
 
+      this.alumnosDePrueba = alumnos.filter(a => esMatriculaPrueba(a.matricula)).length;
+
       // Refrescar aforo en paralelo (no bloquea)
       if (this.aforoService.activo()) {
         void this.aforoService.refrescar();
@@ -428,7 +450,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           valor: registrosHoy.length,
           etiqueta: 'Accesos hoy',
           subtexto: 'entradas registradas hoy',
-          tooltip: 'Cuántos alumnos han ingresado a la biblioteca el día de hoy. Se reinicia a medianoche.',
+          tooltip: 'Visitas registradas hoy (alumnos e invitados; si alguien entra dos veces, cuenta dos). Se reinicia a medianoche.',
           color: '#00C8D7',
           ruta: '/registros',
           delta: this.calcularDeltaComparativa(registrosHoy.length),
@@ -687,12 +709,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
       };
     }
 
+    // Ventana de operación de HOY: la del horario configurado si está activo;
+    // si no, 8–20 como referencia. Antes era siempre 8–20 (M8).
+    const ventana = this.ventanaOperacionHoy(ahora);
+
     // ─── Regla 1: sin registros aún (alerta si ya pasó la apertura) ─
     if (registrosHoy.length === 0) {
-      // Si es muy temprano (antes de 7am), neutro. Si ya pasaron horas, alerta.
-      if (horaActual < 8) {
+      if (ventana === null) {
+        return {
+          texto: 'Hoy la biblioteca no abre según el horario configurado.',
+          icono: 'event_busy',
+          tono: 'neutro',
+        };
+      }
+      // Antes de abrir (y en la primera hora) es normal no tener registros.
+      if (horaActual < ventana.apertura + 1) {
         return {
           texto: 'Aún sin registros — la biblioteca todavía no abre.',
+          icono: 'bedtime',
+          tono: 'neutro',
+        };
+      }
+      if (horaActual >= ventana.cierre) {
+        return {
+          texto: 'Hoy no hubo registros.',
           icono: 'bedtime',
           tono: 'neutro',
         };
@@ -737,10 +777,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const sumaTop2 = top2[0].count + (top2[1]?.count ?? 0);
       const pctConcentracion = Math.round((sumaTop2 / registrosHoy.length) * 100);
       if (pctConcentracion >= 60) {
-        const desde = Math.min(top2[0].hora, top2[1]?.hora ?? top2[0].hora);
-        const hasta = Math.max(top2[0].hora, top2[1]?.hora ?? top2[0].hora) + 1;
+        const h1 = Math.min(top2[0].hora, top2[1]?.hora ?? top2[0].hora);
+        const h2 = Math.max(top2[0].hora, top2[1]?.hora ?? top2[0].hora);
+        // Solo se habla de un rango si las dos horas son seguidas; si no,
+        // "entre 9 y 14 h" sugería un bloque continuo que no existe (M9).
+        const cuando = h2 - h1 <= 1
+          ? `entre ${this.pad2(h1)} y ${this.pad2(h2 + 1)}h`
+          : `a las ${this.pad2(h1)}h y a las ${this.pad2(h2)}h`;
         return {
-          texto: `Actividad muy concentrada: ${pctConcentracion}% de los accesos entre ${this.pad2(desde)} y ${this.pad2(hasta)}h.`,
+          texto: `Actividad muy concentrada: ${pctConcentracion}% de los accesos ${cuando}.`,
           icono: 'bolt',
           tono: 'neutro',
         };
@@ -760,7 +805,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // ─── Regla 5: actividad sin pausas largas ─
     // Último registro hace > 2 horas en horario operativo (8am–8pm)
-    if (horaActual >= 8 && horaActual < 20 && this.ultimoRegistroHora) {
+    if (ventana && horaActual >= ventana.apertura && horaActual < ventana.cierre && this.ultimoRegistroHora) {
       const ultimoReg = this.ultimosRegistros[0];
       if (ultimoReg) {
         const minutosDesde = Math.floor((ahora.getTime() - new Date(ultimoReg.fechaHora).getTime()) / 60000);
@@ -793,6 +838,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       icono: 'check_circle',
       tono: 'positivo',
     };
+  }
+
+  /**
+   * Horas de apertura y cierre de hoy. Con horario activo, las del día
+   * (`null` si hoy está cerrado); sin horario, 8–20 como referencia.
+   */
+  private ventanaOperacionHoy(ahora: Date): { apertura: number; cierre: number } | null {
+    if (!this.configService.horarioActivo) return { apertura: 8, cierre: 20 };
+    const h = this.configService.horarios[ahora.getDay()];
+    if (!h || h.cerrado) return null;
+    const apertura = Number(h.apertura.split(':')[0]);
+    const cierre = Number(h.cierre.split(':')[0]);
+    if (!Number.isFinite(apertura) || !Number.isFinite(cierre)) return { apertura: 8, cierre: 20 };
+    return { apertura, cierre };
   }
 
   // ═══════════════════════════════════════════════

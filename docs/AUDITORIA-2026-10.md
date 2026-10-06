@@ -10,7 +10,16 @@
 | 1 — R1, R2, R3, R4, R5, O5, O14, O15, O16, M10, M12 | ✅ Hecha (2026-10-06) | v3.41.1 |
 | 2 — R6, O1, O2, O3, O9, O10, O11, O12, M1, M7 + horario de verano | ✅ Hecha (2026-10-06) | v3.42.0 |
 | 2b — calendario escolar (P7): periodos y días inhábiles UAT | ✅ Hecha (2026-10-06) | v3.43.0 |
-| 3 — blindaje y resto de 🟠/🟡 | ⏳ | |
+| 3 — O6, O7, O8, O13, M2–M6, M8, M9, M11, M13–M17, M19 + blindaje | ✅ Hecha (2026-10-06) | v3.44.0 |
+| Ronda masiva de pruebas | ⏳ Siguiente | |
+
+**Tanda 3, notas:**
+- **Blindaje:** retención, turnos, grados, combinaciones de motivos, variación diaria, conteo mensual,
+  resumen de crecimiento y cuartiles del mapa de calor salieron del componente a `estadisticas.utils.ts`,
+  con tests. Al sacarlos apareció otro "porcentaje inventado": la tendencia trimestral decía "↑ 100 %"
+  si el trimestre previo tenía 0 visitas (mismo patrón que R4). Corregido.
+- **No se hizo, a propósito:** M18 (rango de matrículas de prueba 9000001–9100000). La UAT usa
+  matrículas de 10 dígitos; se revisa cuando haya otra institución (Fase 5).
 
 **Hallazgo nuevo durante la Tanda 1 (corregido):** el PDF de `/registros` calculaba su propio período
 para la cabecera (con el filtro "ayer" decía "Fecha: hoy"). Ahora usa el mismo rango que la lista.

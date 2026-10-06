@@ -24,9 +24,11 @@ import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { Alumno, Motivo } from '../models';
 import { CARRERAS, GRADOS, GRUPOS } from '../constants/catalogos.constants';
+import { esMatriculaPrueba, PRUEBA_DISPOSITIVO, PRUEBA_MATRICULA_BASE } from '../utils/datos-prueba.utils';
 
-export const PRUEBA_MATRICULA_BASE = 9000001;
-export const PRUEBA_DISPOSITIVO = 'SEED-TEST';
+// Las marcas viven en utils para que estadísticas pueda reconocerlas sin
+// depender de este servicio. Se re-exportan por compatibilidad.
+export { PRUEBA_MATRICULA_BASE, PRUEBA_DISPOSITIVO } from '../utils/datos-prueba.utils';
 
 export interface DatosPruebaConfig {
   cantidadAlumnos: number;              // e.g. 2500
@@ -301,8 +303,7 @@ export class DatosPruebaService {
   // ═══════════════════════════════════════════════
 
   private esMatriculaPrueba(matricula: string): boolean {
-    const n = Number(matricula);
-    return Number.isFinite(n) && n >= PRUEBA_MATRICULA_BASE && n < PRUEBA_MATRICULA_BASE + 100_000;
+    return esMatriculaPrueba(matricula);
   }
 
   private validarConfig(c: DatosPruebaConfig): void {

@@ -49,6 +49,73 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.44.0',
+    fecha: '2026-10-06',
+    titulo: 'Detalles que cuentan',
+    resumen: 'La última ronda de la revisión de estadísticas: exportaciones con el título y el rango correctos, avisos cuando hay datos de prueba mezclados y varios ajustes para que cada texto diga exactamente lo que se calcula.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Si hay datos de prueba mezclados con los reales, el Resumen y Estadísticas lo avisan, con un acceso directo para limpiarlos.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Exportar el Top de alumnos usa la cantidad que ves en pantalla (ya no dice siempre "Top 5") y el mismo rango de fechas, también el personalizado.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'En los PDF, la tabla de detalle se titula según lo que contiene: "visitas del período" o "visitas de estos alumnos".',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'La tendencia trimestral del gráfico de 12 meses ya no muestra "↑ 100 %" cuando el trimestre anterior no tuvo visitas.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El Excel de Inactivos incluye la última visita y los días sin venir de cada alumno.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Diagnóstico detecta entradas de días anteriores que nunca se cerraron y cierres automáticos que nadie confirmó.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El umbral de duplicados acepta cualquier cantidad de minutos (0 lo desactiva), además de los atajos.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'Con las alertas de inactividad desactivadas (umbral 0), Estadísticas ya no cuenta inactivos por su cuenta.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'El Resumen respeta el horario configurado: no alerta "sin registros" antes de abrir ni en un día que no se abre.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'El mapa de calor nombra sus rangos como lo que son (7, 30, 365 días…). El filtro por hora indica que incluye la hora final completa (hasta las 21:59). ' +
+          'En Alumnos, el filtro "Inactivos" pasa a llamarse "Desactivados" para no confundirse con la página Inactivos.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Ya no se pueden crear dos actividades con el mismo nombre.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Estadísticas lee la base de datos una sola vez por carga (antes, cuatro).',
+      },
+    ],
+  },
+  {
     version: '3.43.0',
     fecha: '2026-10-06',
     titulo: 'Calendario escolar',

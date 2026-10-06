@@ -524,9 +524,23 @@ export class MotivoFormDialogComponent implements OnInit {
       this.guardando = true;
 
       const formValue = this.motivoForm.value;
+      const todosMotivos = await this.databaseService.obtenerTodosLosMotivos();
+
+      // Dos motivos con el mismo nombre son indistinguibles para el alumno
+      // y en los reportes (M17). Se compara sin mayúsculas ni acentos.
+      const normalizar = (t: string) =>
+        t.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const nombreNuevo = normalizar(formValue.nombre ?? '');
+      const repetido = todosMotivos.find(m =>
+        m.id !== this.data.motivo?.id && normalizar(m.nombre) === nombreNuevo);
+      if (repetido) {
+        this.toastService.warning(
+          `Ya existe la actividad "${repetido.nombre}"${repetido.activo ? '' : ' (desactivada)'}. Usa otro nombre.`);
+        this.guardando = false;
+        return;
+      }
 
       if (this.esNuevo) {
-        const todosMotivos = await this.databaseService.obtenerTodosLosMotivos();
         const maxOrden = todosMotivos.length > 0
           ? Math.max(...todosMotivos.map(m => m.orden))
           : 0;

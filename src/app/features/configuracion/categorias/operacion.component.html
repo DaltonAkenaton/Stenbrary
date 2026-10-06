@@ -239,8 +239,34 @@
       </button>
     }
   </div>
+  <!-- Valor libre, no solo presets (principio de flexibilidad, M16). -->
+  <div class="aforo-input-row" style="margin-top: 14px;">
+    <label for="umbralDuplicadoInput">Minutos personalizados</label>
+    <div class="aforo-stepper" style="max-width: 260px;">
+      <button type="button" class="stepper-btn"
+              (click)="setUmbralDuplicado(configService.umbralDuplicadoMin - 1)"
+              [disabled]="configService.umbralDuplicadoMin <= 0"
+              matTooltip="Disminuir 1 minuto">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <input id="umbralDuplicadoInput" type="number" min="0" step="1"
+             class="aforo-number-input"
+             [ngModel]="configService.umbralDuplicadoMin"
+             (ngModelChange)="setUmbralDuplicado($event)">
+      <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">min</span>
+      <button type="button" class="stepper-btn"
+              (click)="setUmbralDuplicado(configService.umbralDuplicadoMin + 1)"
+              matTooltip="Aumentar 1 minuto">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
   <p class="section-hint">
     <mat-icon>info</mat-icon>
-    Actualmente: {{ configService.umbralDuplicadoMin }} minutos entre registros del mismo alumno.
+    @if (configService.umbralDuplicadoMin === 0) {
+      Desactivado: cada escaneo se registra sin preguntar.
+    } @else {
+      Actualmente: {{ configService.umbralDuplicadoMin }} minutos entre registros del mismo alumno.
+    }
   </p>
 </div>

@@ -3320,3 +3320,20 @@ canvas {
     color: #00C8D7;
   }
 }
+
+// Aviso de datos de prueba mezclados (auditoría 2026-10, O13).
+.aviso-datos-prueba {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 166, 35, 0.35);
+  background: rgba(245, 166, 35, 0.08);
+  color: #F5D9A8;
+  font-size: 0.88rem;
+  line-height: 1.45;
+
+  mat-icon { color: #F5A623; flex-shrink: 0; }
+}

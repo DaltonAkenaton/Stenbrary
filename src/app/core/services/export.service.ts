@@ -69,8 +69,15 @@ export class ExportService {
 
   /**
    * Exporta alumnos a archivo Excel con formato.
+   *
+   * `columnasExtra` añade columnas al final de cada fila (p. ej. Inactivos
+   * agrega "Última visita" y "Días sin venir", que son su razón de ser).
    */
-  async exportarAlumnosXLSX(alumnos: Alumno[], nombreArchivo?: string): Promise<void> {
+  async exportarAlumnosXLSX(
+    alumnos: Alumno[],
+    nombreArchivo?: string,
+    columnasExtra?: (a: Alumno) => Record<string, string | number>,
+  ): Promise<void> {
     if (alumnos.length === 0) return;
     const XLSX = await this.cargarXlsx();
 
@@ -85,6 +92,7 @@ export class ExportService {
       'Turno': a.turno,
       'Activo': a.activo ? 'Sí' : 'No',
       'Fecha Registro': new Date(a.fechaRegistro).toLocaleDateString('es-MX'),
+      ...(columnasExtra ? columnasExtra(a) : {}),
     }));
 
     const ws = XLSX.utils.json_to_sheet(datos);
@@ -100,6 +108,7 @@ export class ExportService {
       { wch: 14 }, // Turno
       { wch: 8 },  // Activo
       { wch: 14 }, // Fecha Registro
+      ...(columnasExtra ? [{ wch: 16 }, { wch: 14 }] : []),
     ];
 
     const wb = XLSX.utils.book_new();

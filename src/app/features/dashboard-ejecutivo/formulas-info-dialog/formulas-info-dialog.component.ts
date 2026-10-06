@@ -96,8 +96,8 @@ y lo dividimos entre los días en que hubo al menos un registro.</pre>
             <mat-panel-title><mat-icon>repeat</mat-icon> Tasa de retención</mat-panel-title>
           </mat-expansion-panel-header>
           <p>
-            De los alumnos únicos del período, ¿qué % regresó al menos
-            <strong>N veces</strong>? El umbral N se ajusta solo al rango:
+            De los alumnos únicos del período, ¿qué % vino <strong>N veces o más</strong>?
+            El mínimo N se ajusta solo al largo del rango:
           </p>
           <ul class="lista-rangos">
             <li><strong>≤ 7 días:</strong> N = 2 visitas</li>
@@ -112,7 +112,7 @@ y lo dividimos entre los días en que hubo al menos un registro.</pre>
 4) Multiplicamos por 100 para tener el porcentaje.</pre>
           <p class="ejemplo">
             <strong>Ejemplo:</strong> en 30 días vinieron 80 alumnos distintos. De ellos,
-            20 regresaron al menos 3 veces → retención de 25%.
+            20 vinieron 3 veces o más → retención de 25%.
           </p>
           <p class="nota">
             <mat-icon>info</mat-icon>
@@ -204,7 +204,9 @@ DÍA OCUPADO:
           </p>
           <p class="nota">
             <mat-icon>info</mat-icon>
-            Solo se calcula cuando los datos están agrupados por día (rangos ≤ 31 días).
+            Solo se calcula cuando los datos están agrupados por día (rangos ≤ 31 días),
+            y solo con los días que hubo visitas: un domingo cerrado no cuenta como
+            "un día muy distinto".
           </p>
         </mat-expansion-panel>
 

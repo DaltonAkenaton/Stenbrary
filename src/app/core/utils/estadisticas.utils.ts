@@ -352,3 +352,259 @@ export function proyectarCierreHoy(registros: Registro[], ahora: Date = new Date
     confianza: errorMedio < 0.15 ? 'alta' : errorMedio < 0.3 ? 'media' : 'baja',
   };
 }
+
+// ═══════════════════════════════════════════════════════
+// MÉTRICAS DEL DASHBOARD EJECUTIVO (Tanda 3: blindaje)
+// ═══════════════════════════════════════════════════════
+// Antes vivían dentro del componente de 2800 líneas, sin un solo test.
+// Aquí se calculan; el componente solo les pone colores y textos.
+
+/**
+ * Visitas mínimas para contar a un alumno como "recurrente", según el largo
+ * del período: ≤7 días → 2, ≤30 → 3, ≤90 → 5, más → 8.
+ */
+export function umbralRetencionPara(diasDelRango: number): number {
+  return diasDelRango <= 7 ? 2 : diasDelRango <= 30 ? 3 : diasDelRango <= 90 ? 5 : 8;
+}
+
+export interface TasaRetencion {
+  /** % de alumnos únicos que vinieron `umbral` veces o más (0–100, entero). */
+  porcentaje: number;
+  recurrentes: number;
+  unicos: number;
+  umbral: number;
+}
+
+/** De los alumnos que vinieron en el período, cuántos vinieron `umbral` veces o más. Sin invitados. */
+export function tasaRetencion(registros: Registro[], umbral: number): TasaRetencion {
+  const visitas = new Map<string, number>();
+  for (const r of registros) {
+    if (esInvitado(r)) continue;
+    visitas.set(r.matricula, (visitas.get(r.matricula) || 0) + 1);
+  }
+  let recurrentes = 0;
+  visitas.forEach(v => { if (v >= umbral) recurrentes++; });
+  return {
+    porcentaje: visitas.size > 0 ? Math.round((recurrentes / visitas.size) * 100) : 0,
+    recurrentes,
+    unicos: visitas.size,
+    umbral,
+  };
+}
+
+export interface ParteDeDistribucion<K> {
+  clave: K;
+  cantidad: number;
+  /** % del total de la distribución, 1 decimal. */
+  porcentaje: number;
+}
+
+function repartir<K>(conteo: Map<K, number>): ParteDeDistribucion<K>[] {
+  const total = [...conteo.values()].reduce((s, v) => s + v, 0);
+  return [...conteo.entries()].map(([clave, cantidad]) => ({
+    clave,
+    cantidad,
+    porcentaje: total > 0 ? parseFloat((cantidad / total * 100).toFixed(1)) : 0,
+  }));
+}
+
+/**
+ * Visitas de alumnos por turno (P5: sin invitados). Usa el turno guardado en
+ * el registro; los anteriores a v3.16.0 no lo tienen y se toma el del alumno.
+ */
+export function distribucionPorTurno(
+  registros: Registro[],
+  turnoDelAlumno: (matricula: string) => string | undefined,
+): ParteDeDistribucion<string>[] {
+  const conteo = new Map<string, number>();
+  for (const r of registros) {
+    if (esInvitado(r)) continue;
+    const t = r.turno || turnoDelAlumno(r.matricula) || 'Sin turno';
+    conteo.set(t, (conteo.get(t) || 0) + 1);
+  }
+  return repartir(conteo).sort((a, b) => b.cantidad - a.cantidad);
+}
+
+/**
+ * Visitas por grado. El registro no guarda el grado, así que se usa el
+ * ACTUAL del alumno: una visita de hace un año cuenta en el grado de hoy.
+ * Sin invitados ni alumnos borrados (no tienen grado).
+ */
+export function distribucionPorGrado(
+  registros: Registro[],
+  gradoDelAlumno: (matricula: string) => number | undefined,
+): ParteDeDistribucion<number>[] {
+  const conteo = new Map<number, number>();
+  for (const r of registros) {
+    if (esInvitado(r)) continue;
+    const g = gradoDelAlumno(r.matricula);
+    if (g != null) conteo.set(g, (conteo.get(g) || 0) + 1);
+  }
+  return repartir(conteo).sort((a, b) => a.clave - b.clave);
+}
+
+/** Las combinaciones de motivos más frecuentes (solo visitas con 2 o más distintos). */
+export function combinacionesDeMotivos(registros: Registro[], limite = 5): ParteDeDistribucion<string>[] {
+  const conteo = new Map<string, number>();
+  for (const r of registros) {
+    const nombres = r.motivoNombres;
+    if (!nombres) continue;
+    const distintos = [...new Set(nombres)].sort();
+    if (distintos.length < 2) continue; // el mismo motivo repetido no es combinación
+    const combo = distintos.join(' + ');
+    conteo.set(combo, (conteo.get(combo) || 0) + 1);
+  }
+  return repartir(conteo).sort((a, b) => b.cantidad - a.cantidad).slice(0, limite);
+}
+
+/**
+ * Coeficiente de variación (%) de las visitas diarias: qué tan parecidos son
+ * los días entre sí. Ignora los días con 0 (cerrados), coherente con P4.
+ * 0 si hay menos de 2 días con actividad.
+ */
+export function variacionDiaria(cantidadesPorDia: number[]): number {
+  const valores = cantidadesPorDia.filter(v => v > 0);
+  if (valores.length < 2) return 0;
+  const media = valores.reduce((s, v) => s + v, 0) / valores.length;
+  const varianza = valores.reduce((s, v) => s + (v - media) ** 2, 0) / valores.length;
+  return media > 0 ? Math.round((Math.sqrt(varianza) / media) * 100) : 0;
+}
+
+// ─── Crecimiento mes a mes ─────────────────────────────
+
+export interface MesConteo {
+  /** Primer día del mes, 00:00 local. */
+  inicio: Date;
+  cantidad: number;
+}
+
+/** Visitas de los últimos `meses` meses calendario; el último es el mes en curso. */
+export function conteoMensual(registros: Registro[], hoy: Date = new Date(), meses = 12): MesConteo[] {
+  const lista: MesConteo[] = [];
+  const indice = new Map<string, MesConteo>();
+  for (let i = meses - 1; i >= 0; i--) {
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    const m = { inicio, cantidad: 0 };
+    lista.push(m);
+    indice.set(`${inicio.getFullYear()}-${inicio.getMonth()}`, m);
+  }
+  for (const r of registros) {
+    const d = new Date(r.fechaHora);
+    const m = indice.get(`${d.getFullYear()}-${d.getMonth()}`);
+    if (m) m.cantidad++;
+  }
+  return lista;
+}
+
+/**
+ * Visitas del mes anterior hasta el mismo día del mes y la misma hora que
+ * `hoy` (31 de marzo → hasta el 28 de febrero). Es la base justa para
+ * comparar el mes en curso, que va a medias (P6).
+ */
+export function mesAnteriorAlMismoDia(registros: Registro[], hoy: Date = new Date()): number {
+  const inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+  const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate();
+  const corte = new Date(hoy.getFullYear(), hoy.getMonth() - 1, Math.min(hoy.getDate(), ultimoDia),
+    hoy.getHours(), hoy.getMinutes(), hoy.getSeconds(), 999);
+  let n = 0;
+  for (const r of registros) {
+    const t = new Date(r.fechaHora).getTime();
+    if (t >= inicio.getTime() && t <= corte.getTime()) n++;
+  }
+  return n;
+}
+
+export type CambioMensual =
+  | { tipo: 'porcentaje'; valor: number }
+  /** Antes hubo 0 y ahora no: no hay base para un %. */
+  | { tipo: 'nuevo' }
+  | { tipo: 'ninguno' };
+
+export interface ResumenCrecimiento {
+  total: number;
+  /** Promedio entre los meses con al menos una visita. */
+  promedioMensual: number;
+  /** Índice del mes con más visitas, o -1 si no hubo ninguna. */
+  mejorIdx: number;
+  /** Índice del mes cerrado con menos visitas (>0), o -1. El mes en curso no participa. */
+  peorIdx: number;
+  /** Cambio de cada mes contra el anterior; el mes en curso, al mismo avance. */
+  cambios: CambioMensual[];
+  /**
+   * Últimos 3 meses CERRADOS contra los 3 previos; null sin historial.
+   * `sinReferencia`: el trimestre previo tuvo 0 visitas — antes salía "↑ 100 %".
+   */
+  trimestre: { porcentaje: number; direccion: 'up' | 'down' | 'igual'; sinReferencia: boolean } | null;
+}
+
+function cambioEntre(actual: number, anterior: number | null): CambioMensual {
+  if (anterior === null) return { tipo: 'ninguno' };
+  if (anterior > 0) return { tipo: 'porcentaje', valor: ((actual - anterior) / anterior) * 100 };
+  return actual > 0 ? { tipo: 'nuevo' } : { tipo: 'ninguno' };
+}
+
+export function resumirCrecimiento(cantidades: number[], anteriorAlMismoDia: number): ResumenCrecimiento {
+  const n = cantidades.length;
+  const total = cantidades.reduce((s, v) => s + v, 0);
+  const conDatos = cantidades.filter(c => c > 0).length;
+
+  let mejorIdx = -1;
+  let peorIdx = -1;
+  cantidades.forEach((c, i) => {
+    if (c > 0 && (mejorIdx === -1 || c > cantidades[mejorIdx])) mejorIdx = i;
+    if (i === n - 1) return; // el mes en curso está incompleto
+    if (c > 0 && (peorIdx === -1 || c < cantidades[peorIdx])) peorIdx = i;
+  });
+  // Si el más bajo empata con el mejor, "más bajo" no dice nada.
+  if (peorIdx !== -1 && mejorIdx !== -1 && cantidades[peorIdx] === cantidades[mejorIdx]) peorIdx = -1;
+
+  const cambios = cantidades.map((c, i) => {
+    if (i === 0) return cambioEntre(c, null);
+    return cambioEntre(c, i === n - 1 ? anteriorAlMismoDia : cantidades[i - 1]);
+  });
+
+  let trimestre: ResumenCrecimiento['trimestre'] = null;
+  const fin = n - 1; // excluye el mes en curso
+  const ultimos = cantidades.slice(Math.max(0, fin - 3), fin);
+  const previos = cantidades.slice(Math.max(0, fin - 6), Math.max(0, fin - 3));
+  if (ultimos.length >= 2 && previos.length >= 2) {
+    const a = ultimos.reduce((s, v) => s + v, 0);
+    const b = previos.reduce((s, v) => s + v, 0);
+    const porcentaje = b > 0 ? ((a - b) / b) * 100 : 0;
+    const sinReferencia = b === 0 && a > 0;
+    const direccion: 'up' | 'down' | 'igual' =
+      sinReferencia ? 'up' : porcentaje > 2 ? 'up' : porcentaje < -2 ? 'down' : 'igual';
+    trimestre = { porcentaje, direccion, sinReferencia };
+  }
+
+  return {
+    total,
+    promedioMensual: conDatos > 0 ? Math.round(total / conDatos) : 0,
+    mejorIdx,
+    peorIdx,
+    cambios,
+    trimestre,
+  };
+}
+
+// ─── Mapa de calor ─────────────────────────────────────
+
+/**
+ * Cortes p25 / p50 / p75 de las celdas CON visitas: los colores del mapa de
+ * calor se reparten por cuartos de la lista ordenada, no como % del máximo
+ * (una celda atípica aplastaba al resto).
+ */
+export function cuartilesDeCeldas(valores: number[]): { p25: number; p50: number; p75: number } {
+  const v = valores.filter(x => x > 0).sort((a, b) => a - b);
+  const p = (q: number) => (v.length === 0 ? 0 : v[Math.min(v.length - 1, Math.floor(v.length * q))]);
+  return { p25: p(0.25), p50: p(0.5), p75: p(0.75) };
+}
+
+/** Nivel 0–4 de una celda según los cuartiles. */
+export function nivelDeIntensidad(cantidad: number, c: { p25: number; p50: number; p75: number }): 0 | 1 | 2 | 3 | 4 {
+  if (cantidad <= 0) return 0;
+  if (cantidad <= c.p25) return 1;
+  if (cantidad <= c.p50) return 2;
+  if (cantidad <= c.p75) return 3;
+  return 4;
+}

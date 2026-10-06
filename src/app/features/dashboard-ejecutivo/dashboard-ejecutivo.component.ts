@@ -64,12 +64,23 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfigService } from '../../core/services/config.service';
 import {
+  combinacionesDeMotivos,
+  conteoMensual,
+  cuartilesDeCeldas,
   diaSemanaMasConcurrido,
+  distribucionPorGrado,
+  distribucionPorTurno,
   esInvitado,
+  mesAnteriorAlMismoDia,
   motivoMasFrecuente,
+  nivelDeIntensidad,
   promedioPorDiaConActividad,
   ProyeccionDia,
+  resumirCrecimiento,
   resumirEstancia,
+  tasaRetencion,
+  umbralRetencionPara,
+  variacionDiaria,
 } from '../../core/utils/estadisticas.utils';
 import { Motivo } from '../../core/models';
 import { periodoActual, periodoAnterior, PeriodoResuelto } from '../../core/utils/calendario.utils';
@@ -212,6 +223,11 @@ formatHora(h: number): string {
     return `${String(h).padStart(2, '0')}:00`;
   }
 
+  /** Fin de una hora incluida en un filtro: 21 → "21:59". */
+  formatHoraFin(h: number): string {
+    return `${String(h).padStart(2, '0')}:59`;
+  }
+
   // ─── Métricas nuevas (Tier B) ────────────────────
   kpiTiempoEstanciaPromedio = 0; // minutos
   kpiTiempoEstanciaStr = '';
@@ -278,9 +294,17 @@ formatHora(h: number): string {
   kpiVisitasInvitados = 0;
   kpiHoraPico: HeatmapData | null = null;
   kpiAlumnosInactivos = 0;
+  /** Registros de "Datos de prueba" mezclados con los reales (O13). */
+  registrosDePrueba = 0;
+
   /** Alumnos del padrón sin ninguna visita (P1: se muestran aparte). */
   kpiNuncaVinieron = 0;
   kpiUmbralInactividad = 30;
+  /**
+   * El coordinador puso el umbral en 0 ("alertas desactivadas"). Antes se
+   * ignoraba con `|| 30` y la tarjeta seguía contando inactivos (M6).
+   */
+  inactividadDesactivada = false;
 
   // ─── Selector de período (PRESETS) ────────────────
   presetSeleccionado: PresetRango = 'ultimos30';
@@ -309,6 +333,9 @@ formatHora(h: number): string {
   /** Pre-formateado para los <select> de hora — evita formatHora(h) por opción. */
   opcionesHoras: { v: number; label: string }[] =
     Array.from({ length: 24 }, (_, i) => ({ v: i, label: `${String(i).padStart(2, '0')}:00` }));
+  /** "Hasta" incluye la hora completa: elegir 21 filtra hasta las 21:59 (M5). */
+  opcionesHorasHasta: { v: number; label: string }[] =
+    Array.from({ length: 24 }, (_, i) => ({ v: i, label: `${String(i).padStart(2, '0')}:59` }));
 
   // ─── Heatmap config (sub-filtro independiente) ────
   heatmapPeriodo = 30;
@@ -317,12 +344,14 @@ formatHora(h: number): string {
   heatmapFechaInicio = '';
   heatmapFechaFin = '';
   opcionesHeatmap = [
-    { dias: 7,   label: 'Esta semana' },
-    { dias: 14,  label: '2 semanas' },
-    { dias: 30,  label: 'Este mes' },
-    { dias: 90,  label: '3 meses' },
-    { dias: 180, label: '6 meses' },
-    { dias: 365, label: 'Este año' },
+    // Son ventanas móviles que terminan hoy, no "esta semana" ni "este mes"
+    // de calendario: la etiqueta dice exactamente lo que se calcula (O6).
+    { dias: 7,   label: '7 días' },
+    { dias: 14,  label: '14 días' },
+    { dias: 30,  label: '30 días' },
+    { dias: 90,  label: '90 días' },
+    { dias: 180, label: '180 días' },
+    { dias: 365, label: '365 días' },
   ];
 
   // ─── Top alumnos config (sub-filtro independiente) ─
@@ -406,6 +435,7 @@ formatHora(h: number): string {
 
   async ngOnInit(): Promise<void> {
     try {
+      this.inactividadDesactivada = this.configService.umbralInactividadDias === 0;
       this.kpiUmbralInactividad = this.configService.umbralInactividadDias || 30;
       this.actualizarEtiquetasPeriodo();
       this.leerUrlParams();
@@ -1082,33 +1112,17 @@ formatHora(h: number): string {
       }
     }
 
-    // Tier A7: usar PERCENTILES (p25, p50, p75) en vez de % de máximo.
-    // Ventaja: si una celda tiene 1000 visitas y el resto 5, ya no todo se ve
-    // intensidad-1 — la escala se ajusta a la distribución real.
-    const valoresNoCero: number[] = [];
+    // Colores por cuartiles de las celdas con visitas, no por % del máximo.
+    const valores: number[] = [];
     for (const dia of this.diasSemana) {
-      for (const hora of this.heatmapHoras) {
-        const v = matriz[dia][hora];
-        if (v > 0) valoresNoCero.push(v);
-      }
+      for (const hora of this.heatmapHoras) valores.push(matriz[dia][hora]);
     }
-    valoresNoCero.sort((a, b) => a - b);
-    const p = (q: number): number => {
-      if (valoresNoCero.length === 0) return 0;
-      const idx = Math.min(valoresNoCero.length - 1, Math.floor(valoresNoCero.length * q));
-      return valoresNoCero[idx];
-    };
-    const p25 = p(0.25);
-    const p50 = p(0.50);
-    const p75 = p(0.75);
-
+    const cuartiles = cuartilesDeCeldas(valores);
     const clases: Record<string, Record<number, string>> = {};
     for (const dia of this.diasSemana) {
       clases[dia] = {};
       for (const hora of this.heatmapHoras) {
-        clases[dia][hora] = this.calcularClaseIntensidadPercentil(
-          matriz[dia][hora], p25, p50, p75,
-        );
+        clases[dia][hora] = `intensidad-${nivelDeIntensidad(matriz[dia][hora], cuartiles)}`;
       }
     }
 
@@ -1143,18 +1157,6 @@ formatHora(h: number): string {
     // las filas — antes esto se llamaba dentro del for de arriba leyendo
     // `this.heatmapMatriz` viejo (o {}) → todas las celdas salían en 0.
     this.precalcularFilasHeatmap();
-  }
-
-  // Cinco niveles (0 a 4) salen de tres umbrales más el cero: p90 sobraba y
-  // no se consultaba, todo lo que pasa de p75 cae en `intensidad-4`.
-  private calcularClaseIntensidadPercentil(
-    cantidad: number, p25: number, p50: number, p75: number,
-  ): string {
-    if (cantidad === 0) return 'intensidad-0';
-    if (cantidad <= p25) return 'intensidad-1';
-    if (cantidad <= p50) return 'intensidad-2';
-    if (cantidad <= p75) return 'intensidad-3';
-    return 'intensidad-4';
   }
 
   // ─── Top alumnos período ─────────────────────────
@@ -1305,7 +1307,8 @@ formatHora(h: number): string {
       // Las métricas del rango se derivan del array ya filtrado (rápido, en JS).
       const [tendencia, insights, diarios, motivos, carreras] = await Promise.all([
         this.estadisticasService.compararTendencias(rango, horaFiltro),
-        this.estadisticasService.generarInsights(rango, horaFiltro, this.kpiUmbralInactividad),
+        this.estadisticasService.generarInsights(
+          rango, horaFiltro, this.kpiUmbralInactividad, this.inactividadDesactivada),
         this.estadisticasService.obtenerRegistrosPorRango(rango, horaFiltro),
         this.estadisticasService.obtenerDistribucionMotivos(rango, horaFiltro),
         this.estadisticasService.analizarPorCarrera(rango, horaFiltro),
@@ -1355,6 +1358,7 @@ formatHora(h: number): string {
       // (solo lo emite cuando >30% del padrón está inactivo, con otro título).
       // Llamar al método dedicado que cuenta directamente.
       // P1: la misma definición que la página /inactivos.
+      this.registrosDePrueba = await this.estadisticasService.contarRegistrosDePrueba();
       const inactividad = await this.estadisticasService.contarInactividad(this.kpiUmbralInactividad);
       this.kpiAlumnosInactivos = inactividad.inactivos;
       this.kpiNuncaVinieron = inactividad.nuncaVinieron;
@@ -1385,7 +1389,7 @@ formatHora(h: number): string {
           (this.tendencia.alMismoAvance ? ` hasta las ${this.formatearHoraMin(this.tendencia.rangoAnterior.fin)} (al mismo avance)` : '')
         : '';
       this.labelMesPrincipal = (this.rangoActivo.inicio.getFullYear() === this.rangoActivo.fin.getFullYear() && this.rangoActivo.inicio.getMonth() === this.rangoActivo.fin.getMonth()) ? `${this.nombresMes[this.rangoActivo.inicio.getMonth()]} ${this.rangoActivo.inicio.getFullYear()}` : '';
-      this.labelFiltroHora = this.filtroHoraActivo ? `Solo ${this.formatHora(this.filtroHoraDesde)}–${this.formatHora(this.filtroHoraHasta)}` : '';
+      this.labelFiltroHora = this.filtroHoraActivo ? `Solo ${this.formatHora(this.filtroHoraDesde)}–${this.formatHoraFin(this.filtroHoraHasta)}` : '';
       const g = this.datosDiarios?.granularidad;
       this.labelRegistrosDiarios = `Registros ${g === 'mes' ? 'por mes' : g === 'semana' ? 'por semana' : 'por día'}`;
       this.labelTendencia = dias <= 14 ? 'Tendencia semanal' : dias <= 90 ? 'Tendencia del período' : 'Tendencia anual';
@@ -1436,48 +1440,19 @@ formatHora(h: number): string {
     this.kpiVisitasEstimadas = estancia.visitasEstimadas;
     this.kpiTiempoEstanciaStr = this.formatearDuracionMin(this.kpiTiempoEstanciaPromedio);
     
-    // Retención adaptativa al rango (Tier A5):
-    //   ≤7 días → ≥2 visitas, ≤30 → ≥3, ≤90 → ≥5, >90 → ≥8
-    const dias = this.estadisticasService.diasEnRango(rango);
-    const umbralRetencion = dias <= 7 ? 2 : dias <= 30 ? 3 : dias <= 90 ? 5 : 8;
-    this.kpiUmbralRetencion = umbralRetencion;
+    // Retención adaptativa al rango: el mínimo de visitas crece con el largo del período.
+    const retencion = tasaRetencion(
+      registros, umbralRetencionPara(this.estadisticasService.diasEnRango(rango)));
+    this.kpiUmbralRetencion = retencion.umbral;
+    this.kpiTasaRetencion = retencion.porcentaje;
 
-    const visitasPorMatricula = new Map<string, number>();
-    for (const r of registros) {
-      if (r.matricula === 'INVITADO') continue;
-      visitasPorMatricula.set(r.matricula, (visitasPorMatricula.get(r.matricula) || 0) + 1);
-    }
-    const totalUnicos = visitasPorMatricula.size;
-    let recurrentes = 0;
-    visitasPorMatricula.forEach(v => {
-      if (v >= umbralRetencion) recurrentes++;
-    });
-    this.kpiTasaRetencion = totalUnicos > 0 ? Math.round((recurrentes / totalUnicos) * 100) : 0;
-
-    // "Una sola visita" REAL (Tier A6): alumnos con exactamente 1 visita HISTÓRICA total.
-    // (El cálculo se hace en cargarMetricasGlobales(), aquí no toca tocar.)
-
-    // Distribución por turno: usa r.turno si existe, fallback al join con alumnos
-    // (registros viejos pre-v3.16.0 no tienen turno propagado).
-    // P5: los invitados no son alumnos y no tienen turno.
-    const turnos = new Map<string, number>();
-    let totalTurnos = 0;
-    for (const r of registros) {
-      if (esInvitado(r)) continue;
-      const t = r.turno || this.turnoPorMatricula.get(r.matricula) || 'Sin turno';
-      turnos.set(t, (turnos.get(t) || 0) + 1);
-      totalTurnos++;
-    }
+    // Distribución por turno (P5: sin invitados).
     const coloresTurno: Record<string, string> = {
       'Matutino': '#0BC4B7', 'Vespertino': '#F5A623', 'Mixto': '#6366F1', 'Sin turno': '#64748B',
     };
-    this.kpiDistribucionTurnos = Array.from(turnos.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([turno, cantidad]) => ({
-        turno, cantidad,
-        porcentaje: totalTurnos > 0 ? parseFloat((cantidad / totalTurnos * 100).toFixed(1)) : 0,
-        color: coloresTurno[turno] || '#64748B',
-      }));
+    this.kpiDistribucionTurnos = distribucionPorTurno(registros, m => this.turnoPorMatricula.get(m))
+      .map(t => ({ turno: t.clave, cantidad: t.cantidad, porcentaje: t.porcentaje,
+                   color: coloresTurno[t.clave] || '#64748B' }));
 
     // Top motivo del período. P2: cuenta todos los motivos de cada visita,
     // y el % se lee como "% de visitas que lo incluyeron".
@@ -1490,40 +1465,17 @@ formatHora(h: number): string {
     } : null;
   }
 
-  /** Tier B: crecimiento mensual (últimos 12 meses, independiente del filtro). */
+  /** Crecimiento mensual (últimos 12 meses, independiente del filtro). */
   private async cargarCrecimiento12m(): Promise<void> {
-    const todos = await this.databaseService.obtenerTodosLosRegistros();
+    const todos = await this.estadisticasService.obtenerRegistros();
     const hoy = new Date();
-    const meses: { mes: string; cantidad: number; key: string }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      const nombresAbr = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      meses.push({ mes: `${nombresAbr[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`, cantidad: 0, key });
-    }
-    const mapa = new Map(meses.map(m => [m.key, m]));
-    for (const r of todos) {
-      const d = new Date(r.fechaHora);
-      const k = `${d.getFullYear()}-${d.getMonth()}`;
-      const mes = mapa.get(k);
-      if (mes) mes.cantidad++;
-    }
-    this.kpiCrecimiento12m = meses.map(({ mes, cantidad }) => ({ mes, cantidad }));
-
-    // El mes en curso va a medias: su cambio se mide contra el mes anterior
-    // hasta el mismo día y hora, no contra el mes completo (P6). Antes salía
-    // "−80 %" y "MES MÁS BAJO" en cuanto empezaba un mes.
-    const finComparable = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-    const ultimoDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate();
-    finComparable.setDate(Math.min(hoy.getDate(), ultimoDiaMesAnterior));
-    finComparable.setHours(hoy.getHours(), hoy.getMinutes(), hoy.getSeconds(), 999);
-    const inicioMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).getTime();
-    this.mesAnteriorAlMismoDia = todos.filter(r => {
-      const t = new Date(r.fechaHora).getTime();
-      return t >= inicioMesAnterior && t <= finComparable.getTime();
-    }).length;
-
-    // Las alturas y todo el resto del análisis 12m se computan aquí.
+    const nombresAbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    this.kpiCrecimiento12m = conteoMensual(todos, hoy).map(m => ({
+      mes: `${nombresAbr[m.inicio.getMonth()]} ${String(m.inicio.getFullYear()).slice(-2)}`,
+      cantidad: m.cantidad,
+    }));
+    // El mes en curso se compara contra el anterior al mismo día y hora (P6).
+    this.mesAnteriorAlMismoDia = mesAnteriorAlMismoDia(todos, hoy);
     this.calcularResumenCrecimiento12m();
   }
 
@@ -1546,55 +1498,28 @@ formatHora(h: number): string {
 
     const cantidades = datos.map(d => d.cantidad);
     const max = Math.max(...cantidades, 1);
-    const total = cantidades.reduce((s, v) => s + v, 0);
-    const mesesConDatos = cantidades.filter(c => c > 0).length || 1;
-
-    // Mejor / peor mes (peor solo entre meses con datos > 0)
-    let mejorIdx = 0;
-    let peorIdx = -1;
-    for (let i = 0; i < datos.length; i++) {
-      if (datos[i].cantidad > datos[mejorIdx].cantidad) mejorIdx = i;
-      // El mes en curso no compite por "más bajo": está incompleto.
-      if (i === datos.length - 1) continue;
-      if (datos[i].cantidad > 0 &&
-          (peorIdx === -1 || datos[i].cantidad < datos[peorIdx].cantidad)) {
-        peorIdx = i;
-      }
-    }
-    const mejor = datos[mejorIdx];
-    const peor = peorIdx >= 0 ? datos[peorIdx] : null;
-    // El último mes del array es el actual (currente).
+    const r = resumirCrecimiento(cantidades, this.mesAnteriorAlMismoDia);
     const idxActual = datos.length - 1;
 
-    this.crecimiento12mTotal = total;
-    this.crecimiento12mPromedio = Math.round(total / mesesConDatos);
-    this.crecimiento12mMejorMes = mejor.cantidad > 0 ? mejor : null;
-    this.crecimiento12mPeorMes = peor && peor.cantidad !== mejor.cantidad ? peor : null;
+    this.crecimiento12mTotal = r.total;
+    this.crecimiento12mPromedio = r.promedioMensual;
+    this.crecimiento12mMejorMes = r.mejorIdx >= 0 ? datos[r.mejorIdx] : null;
+    this.crecimiento12mPeorMes = r.peorIdx >= 0 ? datos[r.peorIdx] : null;
 
-    // Barras enriquecidas (altura + flags + MoM + tooltip)
     this.crecimiento12mBarras = datos.map((m, i) => {
       const altura = Math.max(2, (m.cantidad / max) * 100);
-      const esMesEnCurso = i === datos.length - 1;
-      const anterior = i === 0 ? null
-        : esMesEnCurso ? this.mesAnteriorAlMismoDia : datos[i - 1].cantidad;
-      let cambioMoM: number | null = null;
-      let cambioMoMStr = '';
-      if (anterior !== null && anterior > 0) {
-        cambioMoM = ((m.cantidad - anterior) / anterior) * 100;
-        const signo = cambioMoM > 0 ? '+' : '';
-        cambioMoMStr = `${signo}${cambioMoM.toFixed(0)}%`;
-      } else if (anterior === 0 && m.cantidad > 0) {
-        // Sin base no hay porcentaje: se marca "nuevo", sin cifra.
-        cambioMoM = null;
-        cambioMoMStr = 'nuevo';
-      }
-      const esMejor = i === mejorIdx && m.cantidad > 0;
-      const esPeor = peor !== null && i === peorIdx && peor.cantidad !== mejor.cantidad;
+      const cambio = r.cambios[i];
+      const cambioMoM = cambio.tipo === 'porcentaje' ? cambio.valor : null;
+      const cambioMoMStr = cambio.tipo === 'porcentaje'
+        ? `${cambio.valor > 0 ? '+' : ''}${cambio.valor.toFixed(0)}%`
+        : cambio.tipo === 'nuevo' ? 'nuevo' : '';
+      const esMejor = i === r.mejorIdx;
+      const esPeor = i === r.peorIdx;
       const esActual = i === idxActual;
       let tooltip = `${m.mes}: ${m.cantidad} visitas`;
       if (cambioMoMStr) {
-        tooltip += esMesEnCurso
-          ? ` · ${cambioMoMStr} vs el mes anterior a estas alturas (${anterior} visitas)`
+        tooltip += esActual
+          ? ` · ${cambioMoMStr} vs el mes anterior a estas alturas (${this.mesAnteriorAlMismoDia} visitas)`
           : ` · ${cambioMoMStr} vs mes anterior`;
       }
       if (esMejor) tooltip += ' · MEJOR MES';
@@ -1603,42 +1528,28 @@ formatHora(h: number): string {
       return { ...m, altura, esMejor, esPeor, esActual, cambioMoM, cambioMoMStr, tooltip };
     });
 
-    // Tendencia trimestral: últimos 3 meses (excluyendo el actual que está incompleto)
-    // vs los 3 meses previos. Si hay menos historial, comparar lo que haya.
-    const finalIdx = datos.length - 1; // mes actual (incompleto)
-    const iniA = Math.max(0, finalIdx - 3);
-    const iniB = Math.max(0, finalIdx - 6);
-    const ult3 = datos.slice(iniA, finalIdx); // 3 meses cerrados
-    const prev3 = datos.slice(iniB, iniA);
-    if (ult3.length >= 2 && prev3.length >= 2) {
-      const sumA = ult3.reduce((s, x) => s + x.cantidad, 0);
-      const sumB = prev3.reduce((s, x) => s + x.cantidad, 0);
-      let porcentaje = 0;
-      let direccion: 'up' | 'down' | 'igual' = 'igual';
-      if (sumB > 0) {
-        porcentaje = ((sumA - sumB) / sumB) * 100;
-      } else if (sumA > 0) {
-        porcentaje = 100;
-      }
-      if (porcentaje > 2) direccion = 'up';
-      else if (porcentaje < -2) direccion = 'down';
-      const absPct = Math.abs(porcentaje).toFixed(0);
-
-      // Derivar rangos de fechas reales a partir de los índices del array.
-      // datos[finalIdx] es el mes actual (incompleto, no entra en el cálculo).
-      // El array está ordenado de más viejo (idx 0) a más reciente (idx 11).
+    // Tendencia trimestral: 3 meses cerrados contra los 3 previos.
+    if (r.trimestre) {
+      const { porcentaje, direccion, sinReferencia } = r.trimestre;
+      const finalIdx = idxActual;
+      const iniA = Math.max(0, finalIdx - 3);
+      const iniB = Math.max(0, finalIdx - 6);
       const hoy = new Date();
       const fechaDeIdx = (idx: number): Date =>
         new Date(hoy.getFullYear(), hoy.getMonth() - (finalIdx - idx), 1);
-      const rangoActual = this.formatearRangoMeses(
-        fechaDeIdx(iniA), fechaDeIdx(finalIdx - 1));
-      const rangoAnterior = this.formatearRangoMeses(
-        fechaDeIdx(iniB), fechaDeIdx(iniA - 1));
+      const rangoActual = this.formatearRangoMeses(fechaDeIdx(iniA), fechaDeIdx(finalIdx - 1));
+      const rangoAnterior = this.formatearRangoMeses(fechaDeIdx(iniB), fechaDeIdx(iniA - 1));
+      const absPct = Math.abs(porcentaje).toFixed(0);
 
       let texto: string;
       let color: 'success' | 'warning' | 'neutral';
       let icono: string;
-      if (direccion === 'up') {
+      if (sinReferencia) {
+        // Sin visitas en el trimestre previo no hay base: antes decía "↑ 100 %".
+        texto = 'Sin visitas en el trimestre anterior para comparar';
+        color = 'neutral';
+        icono = 'fiber_new';
+      } else if (direccion === 'up') {
         texto = `↑ ${absPct}% último trimestre vs anterior`;
         color = 'success';
         icono = 'trending_up';
@@ -1651,15 +1562,15 @@ formatHora(h: number): string {
         color = 'neutral';
         icono = 'trending_flat';
       }
-      this.crecimiento12mTendencia = {
-        porcentaje, direccion, texto, color, icono, rangoActual, rangoAnterior,
-      };
+      this.crecimiento12mTendencia = { porcentaje, direccion, texto, color, icono, rangoActual, rangoAnterior };
     } else {
       this.crecimiento12mTendencia = null;
     }
 
     // Análisis automático corto
-    if (this.crecimiento12mTendencia?.direccion === 'up' &&
+    if (r.trimestre?.sinReferencia) {
+      this.crecimiento12mAnalisis = '';
+    } else if (this.crecimiento12mTendencia?.direccion === 'up' &&
         Math.abs(this.crecimiento12mTendencia.porcentaje) > 25) {
       this.crecimiento12mAnalisis =
         'Crecimiento sostenido — el flujo del último trimestre supera claramente al previo.';
@@ -1743,62 +1654,24 @@ this.sparkRegistros = counts;
 
   /** Tier B11: distribución por grado (1°, 2°, 3°, etc.). */
   private calcularDistribucionGrado(registros: any[]): void {
-    const conteo = new Map<number, number>();
-    for (const r of registros) {
-      // El registro NO tiene grado. Hacer fallback al alumno (alumnoTurno cache parcial).
-      // Para grado necesitamos otro mapa. Lo generamos al vuelo si no existe.
-      const grado = this.gradoPorMatricula.get(r.matricula);
-      if (grado != null) {
-        conteo.set(grado, (conteo.get(grado) || 0) + 1);
-      }
-    }
-    const total = Array.from(conteo.values()).reduce((s, v) => s + v, 0);
-    this.kpiDistribucionGrado = Array.from(conteo.entries())
-      .map(([grado, cantidad]) => ({
-        grado, cantidad,
-        porcentaje: total > 0 ? parseFloat((cantidad / total * 100).toFixed(1)) : 0,
-      }))
-      .sort((a, b) => a.grado - b.grado);
+    this.kpiDistribucionGrado = distribucionPorGrado(registros, m => this.gradoPorMatricula.get(m))
+      .map(g => ({ grado: g.clave, cantidad: g.cantidad, porcentaje: g.porcentaje }));
   }
 
   /** Tier B14: combinaciones de motivos más frecuentes (cuando hay multi-motivo). */
   private calcularCombinacionesMotivos(registros: any[]): void {
-    const conteo = new Map<string, number>();
-    for (const r of registros) {
-      const motivos = r.motivoNombres && r.motivoNombres.length > 1
-        ? [...r.motivoNombres].sort().join(' + ')
-        : null;
-      if (motivos) {
-        conteo.set(motivos, (conteo.get(motivos) || 0) + 1);
-      }
-    }
-    const totalCombos = Array.from(conteo.values()).reduce((s, v) => s + v, 0);
-   this.kpiCombinacionesMotivos = Array.from(conteo.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([combo, cantidad]) => {
-        const porcentaje = totalCombos > 0 ? parseFloat((cantidad / totalCombos * 100).toFixed(1)) : 0;
-        return {
-          combo, 
-          cantidad,
-          porcentaje,
-          anchoStr: this.anchoCombo(porcentaje) + '%' // <-- NUEVO: Pre-calculamos el ancho css
-        };
-      });
+    this.kpiCombinacionesMotivos = combinacionesDeMotivos(registros, 5).map(c => ({
+      combo: c.clave,
+      cantidad: c.cantidad,
+      porcentaje: c.porcentaje,
+      anchoStr: this.anchoCombo(c.porcentaje) + '%',
+    }));
   }
 
   /** Variación diaria (coeficiente de variación %): qué tan estable es el flujo. */
   private calcularVariacionDiaria(diarios: DatosDiarios): void {
-    if (diarios.granularidad !== 'dia' || diarios.cantidades.length < 2) {
-      this.kpiVariacionDiaria = 0;
-      return;
-    }
-    const valores = diarios.cantidades.filter(v => v > 0);
-    if (valores.length < 2) { this.kpiVariacionDiaria = 0; return; }
-    const media = valores.reduce((s, v) => s + v, 0) / valores.length;
-    const varianza = valores.reduce((s, v) => s + (v - media) ** 2, 0) / valores.length;
-    const std = Math.sqrt(varianza);
-    this.kpiVariacionDiaria = media > 0 ? Math.round((std / media) * 100) : 0;
+    // Solo tiene sentido con barras por día (rangos ≤ 31 días).
+    this.kpiVariacionDiaria = diarios.granularidad === 'dia' ? variacionDiaria(diarios.cantidades) : 0;
   }
 
   /**
@@ -1838,7 +1711,8 @@ this.sparkRegistros = counts;
   /** Tier B9 + B10: métricas globales (último registro absoluto + carrera con mayor crecimiento). */
   private async calcularMetricasGlobales(rango: RangoFechas, horaFiltro: { desde: number; hasta: number } | null): Promise<void> {
     try {
-      const todos = await this.databaseService.obtenerTodosLosRegistros();
+      // Misma lectura en caché que el resto de la pantalla (antes: otra lectura completa de la BD).
+      const todos = await this.estadisticasService.obtenerRegistros();
 
       // Tier B9: hace cuánto tiempo el último registro
       if (todos.length > 0) {
@@ -2005,7 +1879,7 @@ this.sparkRegistros = counts;
   // ═══════════════════════════════════════════════
 
   private async construirMesesDisponibles(): Promise<void> {
-    const todos = await this.databaseService.obtenerTodosLosRegistros();
+    const todos = await this.estadisticasService.obtenerRegistros();
     const meses = new Set<string>();
     const años = new Set<string>();
     for (const r of todos) {
@@ -2157,6 +2031,7 @@ this.sparkRegistros = counts;
         fechaInicio: rango.inicio,
         fechaFin: rango.fin,
         topAlumnos: topParaReporte,
+        tituloTabla: 'Detalle de visitas del período',
       });
       this.toastService.success(`Reporte generado (${delRango.length} registros)`);
     } catch (e) {
@@ -2224,7 +2099,7 @@ this.sparkRegistros = counts;
         delRango, 10, await this.databaseService.obtenerTodosLosMotivos());
       const { ReportService } = await import('../../core/services/report.service');
       const reportService = new ReportService(this.databaseService);
-      const sufijo = horaFiltro ? ` (${this.formatHora(horaFiltro.desde)}–${this.formatHora(horaFiltro.hasta)})` : '';
+      const sufijo = horaFiltro ? ` (${this.formatHora(horaFiltro.desde)}–${this.formatHoraFin(horaFiltro.hasta)})` : '';
       await reportService.generarReporteAccesos(delRango, {
         tipo: 'personalizado',
         titulo: `Dashboard ejecutivo — ${this.formatearFechaCorta(this.rangoActivo.inicio)} a ${this.formatearFechaCorta(this.rangoActivo.fin)}${sufijo}`,
@@ -2232,6 +2107,7 @@ this.sparkRegistros = counts;
         fechaFin: this.rangoActivo.fin,
         topAlumnos: topParaReporte,
         secciones,
+        tituloTabla: 'Detalle de visitas del período',
       });
       this.toastService.success(`PDF generado (${delRango.length} registros)`);
     } catch (e) {
@@ -2247,12 +2123,24 @@ this.sparkRegistros = counts;
   // EXPORTAR TOP ALUMNOS
   // ═══════════════════════════════════════════════
 
+  /**
+   * Rango con el que se calculó el Top que está en pantalla: personalizado,
+   * los últimos N días, o `null` = todo el historial. Antes la exportación
+   * usaba siempre los últimos N días aunque el Top fuera de un rango
+   * personalizado (auditoría 2026-10, O7).
+   */
+  private rangoDelTop(): RangoFechas | null {
+    const personalizado = this.rangoTopPersonalizado();
+    if (personalizado) return personalizado;
+    return this.topPeriodo > 0 ? this.estadisticasService.crearRangoUltimosDias(this.topPeriodo) : null;
+  }
+
   async exportarTopExcel(): Promise<void> {
     if (this.topAlumnos.length === 0) return;
     const registros = await this.obtenerRegistrosTopAlumnos();
     await this.exportService.exportarRegistrosXLSX(
       registros,
-      `top_alumnos_stenbrary_${fechaLocalISO()}`
+      `top_${this.topAlumnos.length}_alumnos_stenbrary_${fechaLocalISO()}`
     );
     this.toastService.success('Excel exportado correctamente');
   }
@@ -2262,16 +2150,10 @@ this.sparkRegistros = counts;
     const { ReportService } = await import('../../core/services/report.service');
     const reportService = new ReportService(this.databaseService);
     const registros = await this.obtenerRegistrosTopAlumnos();
-    const hoy = new Date();
-    let inicio: Date;
-    if (this.topPeriodo > 0) {
-      inicio = this.estadisticasService.crearRangoUltimosDias(this.topPeriodo).inicio;
-    } else {
-      const fechas = registros.map(r => new Date(r.fechaHora).getTime());
-      inicio = fechas.length > 0
-        ? new Date(Math.min(...fechas))
-        : new Date(hoy.getTime() - 365 * 24 * 60 * 60 * 1000);
-    }
+    const rango = this.rangoDelTop();
+    const fechas = registros.map(r => new Date(r.fechaHora).getTime());
+    const inicio = rango?.inicio ?? (fechas.length > 0 ? new Date(Math.min(...fechas)) : new Date());
+    const fin = rango?.fin ?? new Date();
     const topParaReporte = this.topAlumnos.map((t, i) => ({
       posicion: i + 1, matricula: t.alumno.matricula,
       nombreCompleto: this.obtenerNombreCompleto(t),
@@ -2280,9 +2162,11 @@ this.sparkRegistros = counts;
     }));
     await reportService.generarReporteAccesos(registros, {
       tipo: 'personalizado',
-      titulo: 'Top 5 Alumnos Más Frecuentes',
-      fechaInicio: inicio, fechaFin: hoy,
+      // La cantidad real en pantalla, no un "Top 5" fijo.
+      titulo: `Top ${this.topAlumnos.length} alumnos más frecuentes`,
+      fechaInicio: inicio, fechaFin: fin,
       topAlumnos: topParaReporte,
+      tituloTabla: 'Detalle de visitas de estos alumnos',
     });
     this.toastService.success('PDF exportado correctamente');
   }
@@ -2290,19 +2174,16 @@ this.sparkRegistros = counts;
   private async obtenerRegistrosTopAlumnos() {
     const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
     const matriculasTop = new Set(this.topAlumnos.map(t => t.alumno.matricula));
-    let registros = todosRegistros.filter(r => matriculasTop.has(r.matricula));
-    if (this.topPeriodo > 0) {
-      const rango = this.estadisticasService.crearRangoUltimosDias(this.topPeriodo);
-      const ini = rango.inicio.getTime();
-      const fin = rango.fin.getTime();
-      registros = registros.filter(r => {
+    const rango = this.rangoDelTop();
+    const ini = rango?.inicio.getTime() ?? -Infinity;
+    const fin = rango?.fin.getTime() ?? Infinity;
+    return todosRegistros
+      .filter(r => {
+        if (!matriculasTop.has(r.matricula)) return false;
         const t = new Date(r.fechaHora).getTime();
         return t >= ini && t <= fin;
-      });
-    }
-    return registros.sort((a, b) =>
-      new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime()
-    );
+      })
+      .sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
   }
 
   // ═══════════════════════════════════════════════

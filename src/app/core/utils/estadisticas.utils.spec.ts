@@ -11,6 +11,17 @@
 import { Alumno, Motivo, Registro } from '../models';
 import {
   calcularInactividad,
+  combinacionesDeMotivos,
+  conteoMensual,
+  cuartilesDeCeldas,
+  distribucionPorGrado,
+  distribucionPorTurno,
+  mesAnteriorAlMismoDia,
+  nivelDeIntensidad,
+  resumirCrecimiento,
+  tasaRetencion,
+  umbralRetencionPara,
+  variacionDiaria,
   contarMotivos,
   diaSemanaMasConcurrido,
   diasConActividad,
@@ -225,6 +236,128 @@ describe('estadisticas.utils', () => {
     it('nunca proyecta menos de lo que ya llegó', () => {
       const p = proyectarCierreHoy([...historial(6), ...hoy(8)], new Date(2026, 9, 6, 23, 0))!;
       expect(p.total).toBeGreaterThanOrEqual(8);
+    });
+  });
+
+  // ─── Tanda 3: métricas que antes vivían en el componente ───
+  describe('retención', () => {
+    it('el mínimo de visitas crece con el largo del período', () => {
+      expect(umbralRetencionPara(7)).toBe(2);
+      expect(umbralRetencionPara(30)).toBe(3);
+      expect(umbralRetencionPara(90)).toBe(5);
+      expect(umbralRetencionPara(365)).toBe(8);
+    });
+
+    it('% de alumnos que vinieron el mínimo o más, sin invitados', () => {
+      const regs = [
+        ...[1, 2, 3].map(d => reg(new Date(2026, 2, d), { matricula: 'A' })), // 3 visitas
+        reg(new Date(2026, 2, 1), { matricula: 'B' }),                       // 1 visita
+        ...[1, 2, 3, 4].map(d => reg(new Date(2026, 2, d), { matricula: 'INVITADO' })),
+      ];
+      expect(tasaRetencion(regs, 3)).toEqual({ porcentaje: 50, recurrentes: 1, unicos: 2, umbral: 3 });
+      expect(tasaRetencion([], 3).porcentaje).toBe(0);
+    });
+  });
+
+  describe('distribuciones de alumnos (P5)', () => {
+    it('turno: usa el del registro y, si falta, el del alumno; sin invitados', () => {
+      const regs = [
+        reg(new Date(2026, 2, 1), { matricula: 'A', turno: 'Matutino' }),
+        reg(new Date(2026, 2, 1), { matricula: 'B' }), // viejo, sin turno guardado
+        reg(new Date(2026, 2, 1), { matricula: 'INVITADO' }),
+      ];
+      const r = distribucionPorTurno(regs, m => (m === 'B' ? 'Vespertino' : undefined));
+      expect(r.map(t => [t.clave, t.cantidad, t.porcentaje])).toEqual([
+        ['Matutino', 1, 50], ['Vespertino', 1, 50],
+      ]);
+    });
+
+    it('grado: por el grado actual, ordenado, sin quien no tiene grado', () => {
+      const regs = [
+        reg(new Date(2026, 2, 1), { matricula: 'A' }),
+        reg(new Date(2026, 2, 2), { matricula: 'A' }),
+        reg(new Date(2026, 2, 1), { matricula: 'B' }),
+        reg(new Date(2026, 2, 1), { matricula: 'BORRADO' }),
+      ];
+      const grados: Record<string, number> = { A: 7, B: 3 };
+      const r = distribucionPorGrado(regs, m => grados[m]);
+      expect(r.map(g => [g.clave, g.cantidad])).toEqual([[3, 1], [7, 2]]);
+      expect(r[1].porcentaje).toBeCloseTo(66.7, 1);
+    });
+  });
+
+  describe('combinaciones de motivos', () => {
+    it('cuenta solo visitas con 2+ motivos distintos, sin importar el orden', () => {
+      const regs = [
+        reg(new Date(2026, 2, 1), { motivoNombres: ['Estudiar', 'Pedir libro'] }),
+        reg(new Date(2026, 2, 1), { motivoNombres: ['Pedir libro', 'Estudiar'] }),
+        reg(new Date(2026, 2, 1), { motivoNombres: ['Estudiar', 'Estudiar'] }), // repetido: no es combo
+        reg(new Date(2026, 2, 1), { motivoNombres: ['Estudiar'] }),
+      ];
+      const r = combinacionesDeMotivos(regs);
+      expect(r).toEqual([{ clave: 'Estudiar + Pedir libro', cantidad: 2, porcentaje: 100 }]);
+    });
+  });
+
+  describe('variación diaria', () => {
+    it('es el coeficiente de variación de los días con visitas', () => {
+      expect(variacionDiaria([10, 10, 10])).toBe(0);
+      // media 15, desviación 5 → 33 %
+      expect(variacionDiaria([10, 20, 0, 0])).toBe(33);
+      expect(variacionDiaria([10, 0, 0])).toBe(0);
+    });
+  });
+
+  describe('crecimiento mes a mes', () => {
+    it('cuenta los últimos 12 meses terminando en el mes en curso', () => {
+      const hoy = new Date(2026, 9, 6);
+      const regs = [
+        reg(new Date(2026, 9, 1)), reg(new Date(2026, 8, 30)),
+        reg(new Date(2025, 10, 15)), reg(new Date(2025, 9, 31)), // octubre 2025: fuera
+      ];
+      const m = conteoMensual(regs, hoy);
+      expect(m.length).toBe(12);
+      expect(m[0].inicio.getMonth()).toBe(10); // noviembre 2025
+      expect(m[0].cantidad).toBe(1);
+      expect(m[10].cantidad).toBe(1); // septiembre
+      expect(m[11].cantidad).toBe(1); // octubre
+    });
+
+    it('el mes anterior "al mismo día" se recorta a fin de mes si hace falta', () => {
+      // 31 de marzo → febrero hasta el 28.
+      const regs = [reg(new Date(2026, 1, 28, 9)), reg(new Date(2026, 1, 10)), reg(new Date(2026, 2, 1))];
+      expect(mesAnteriorAlMismoDia(regs, new Date(2026, 2, 31, 12))).toBe(2);
+      // 10 de marzo 08:00 → febrero hasta el 10 a las 08:00 (la visita del 10 a las 00:00 entra).
+      expect(mesAnteriorAlMismoDia(regs, new Date(2026, 2, 10, 8))).toBe(1);
+    });
+
+    it('el mes en curso no es "más bajo" y se compara al mismo avance', () => {
+      const cantidades = [0, 0, 0, 0, 0, 0, 100, 120, 80, 110, 90, 15];
+      const r = resumirCrecimiento(cantidades, 20);
+      expect(r.mejorIdx).toBe(7);
+      expect(r.peorIdx).toBe(8);        // 80, no los 15 del mes en curso
+      expect(r.cambios[11]).toEqual({ tipo: 'porcentaje', valor: -25 }); // 15 vs 20 al mismo día
+      expect(r.cambios[6]).toEqual({ tipo: 'nuevo' });                   // 0 → 100
+      expect(r.promedioMensual).toBe(86); // 515 / 6 meses con datos
+    });
+
+    it('si el trimestre anterior tuvo 0, no inventa "+100 %"', () => {
+      const r = resumirCrecimiento([0, 0, 0, 0, 0, 0, 0, 0, 10, 20, 30, 5], 0);
+      expect(r.trimestre?.sinReferencia).toBe(true);
+      expect(r.trimestre?.porcentaje).toBe(0);
+    });
+  });
+
+  describe('mapa de calor', () => {
+    it('reparte los colores por cuartos de las celdas con visitas', () => {
+      const c = cuartilesDeCeldas([0, 0, 1, 2, 3, 4, 100]);
+      expect(c).toEqual({ p25: 2, p50: 3, p75: 4 });
+      expect(nivelDeIntensidad(0, c)).toBe(0);
+      expect(nivelDeIntensidad(1, c)).toBe(1);
+      expect(nivelDeIntensidad(3, c)).toBe(2);
+      expect(nivelDeIntensidad(4, c)).toBe(3);
+      // La celda atípica no aplasta a las demás: solo ella es "muy alto".
+      expect(nivelDeIntensidad(100, c)).toBe(4);
     });
   });
 });

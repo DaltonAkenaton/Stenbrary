@@ -61,9 +61,19 @@ export function revisarIntegridad(
   alumnos: Alumno[],
   registros: Registro[],
   ahora: Date = new Date(),
+  opciones: {
+    /**
+     * Con el módulo de salida apagado, NINGUNA visita tiene salida y eso es
+     * lo normal: solo con él encendido una entrada vieja sin salida es un
+     * problema.
+     */
+    moduloSalidaActivo?: boolean;
+  } = {},
 ): ProblemaIntegridad[] {
   const problemas: ProblemaIntegridad[] = [];
   const limiteFuturo = ahora.getTime() + TOLERANCIA_FUTURO_MIN * 60_000;
+  const inicioHoy = new Date(ahora);
+  inicioHoy.setHours(0, 0, 0, 0);
 
   const fechasInvalidas: string[] = [];
   const enFuturo: string[] = [];
@@ -71,6 +81,8 @@ export function revisarIntegridad(
   const estanciaAbsurda: string[] = [];
   const duracionNegativa: string[] = [];
   const huerfanos: string[] = [];
+  const abiertasViejas: string[] = [];
+  const cierresSinRevisar: string[] = [];
 
   const matriculasConocidas = new Set(alumnos.map(a => a.matricula));
 
@@ -100,6 +112,14 @@ export function revisarIntegridad(
     // Los invitados no tienen alumno por diseño: no son huérfanos.
     if (r.matricula !== 'INVITADO' && !matriculasConocidas.has(r.matricula)) {
       huerfanos.push(etiqueta);
+    }
+
+    // De días anteriores: el cierre automático solo mira las entradas de
+    // HOY, y "En Biblioteca" solo muestra las de hoy. Estas se quedaron
+    // fuera de las dos para siempre.
+    if (entrada.getTime() < inicioHoy.getTime()) {
+      if (!r.horaSalida && opciones.moduloSalidaActivo) abiertasViejas.push(etiqueta);
+      if (r.cierreAutomatico === true) cierresSinRevisar.push(etiqueta);
     }
   });
 
@@ -144,7 +164,7 @@ export function revisarIntegridad(
     problemas.push({
       tipo: 'duracion-negativa',
       descripcion:
-        'Hay visitas con una duración negativa. El promedio de permanencia que muestran las estadísticas está mal por esto.',
+        'Hay visitas con una duración negativa (la entrada quedó después de la salida). Las estadísticas las ignoran, pero conviene corregirlas.',
       gravedad: 'alta',
       afectados: duracionNegativa.length,
       ejemplos: ejemplosDe(duracionNegativa),
@@ -169,6 +189,30 @@ export function revisarIntegridad(
       gravedad: 'media',
       afectados: huerfanos.length,
       ejemplos: ejemplosDe(huerfanos),
+    });
+  }
+
+  if (abiertasViejas.length) {
+    problemas.push({
+      tipo: 'entrada-abierta-antigua',
+      descripcion:
+        'Hay entradas de días anteriores que nunca registraron salida. No aparecen en "En Biblioteca" ' +
+        'ni las cierra el cierre automático, que solo revisa las de hoy.',
+      gravedad: 'baja',
+      afectados: abiertasViejas.length,
+      ejemplos: ejemplosDe(abiertasViejas),
+    });
+  }
+
+  if (cierresSinRevisar.length) {
+    problemas.push({
+      tipo: 'cierre-automatico-sin-revisar',
+      descripcion:
+        'Hay cierres automáticos de días anteriores que nadie confirmó. "En Biblioteca" solo muestra los de hoy, ' +
+        'así que estos ya no se pueden revisar desde ahí. Su duración es estimada y no cuenta en las estadísticas.',
+      gravedad: 'baja',
+      afectados: cierresSinRevisar.length,
+      ejemplos: ejemplosDe(cierresSinRevisar),
     });
   }
 

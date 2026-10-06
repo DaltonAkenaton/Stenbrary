@@ -9,6 +9,36 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-06 — Tanda 3: el resto del informe y el blindaje
+
+Cierra los 🟠 y 🟡 pendientes de `docs/AUDITORIA-2026-10.md` (v3.44.0).
+
+**Blindaje.** Los cálculos que seguían dentro de `dashboard-ejecutivo.component.ts`
+(retención, turnos, grados, combinaciones, variación, conteo mensual, resumen
+de crecimiento, cuartiles del mapa de calor) pasan a `estadisticas.utils.ts`
+con tests. El componente queda como presentación: colores y textos.
+
+**Lo que se descubrió al hacerlo.** La tendencia trimestral tenía el mismo
+defecto que R4: `sumB === 0 && sumA > 0` → `porcentaje = 100` → "↑ 100 %".
+Ningún test lo veía porque la función no existía fuera del componente. Es el
+argumento más fuerte para el blindaje: el patrón ya se había corregido en
+otros tres sitios.
+
+**Rendimiento (M19).** `EstadisticasAvanzadasService.obtenerRegistros()`
+expone la caché; las métricas globales, los meses disponibles y el crecimiento
+de 12 meses ya no hacen su propia lectura completa. Las exportaciones siguen
+leyendo de la BD a propósito: son a demanda y deben salir con lo último.
+
+**Datos de prueba (O13).** Sus marcas se mudan a `core/utils/datos-prueba.utils.ts`:
+desde el servicio, importar el reconocedor creaba un ciclo
+(`DatabaseService` → `estadisticas.utils` → `DatosPruebaService` → `DatabaseService`).
+
+Recorrido en navegador (Playwright) de las cinco pestañas de Estadísticas y
+siete pantallas más: sin errores de consola. Con base vacía; la prueba con
+volumen es la ronda siguiente.
+
+---
+
 ## 2026-10-06 — Tanda 2b: calendario escolar capturado a mano
 
 El preset "Este semestre" suponía enero–junio / julio–diciembre; la UAT tiene

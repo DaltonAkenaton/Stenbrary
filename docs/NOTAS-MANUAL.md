@@ -95,6 +95,31 @@ parejo todo el día.
 
 ---
 
+## Otros comportamientos documentables (v3.44.0)
+
+- **Datos de prueba:** si existen (Configuración → Datos → Datos de prueba), el
+  Resumen y Estadísticas muestran un aviso: todas las cifras los incluyen hasta
+  que se limpian.
+- **Umbral de inactividad = 0** significa "alertas desactivadas": Estadísticas
+  muestra "—" en la tarjeta de inactivos. La página Inactivos sigue disponible
+  con su propio umbral ajustable.
+- **Umbral de duplicados:** atajos o cualquier número de minutos; 0 lo
+  desactiva (cada escaneo se registra sin preguntar). Solo aplica con el
+  módulo de salida apagado.
+- **Filtro por hora:** "hasta las 21" incluye toda esa hora (21:00–21:59).
+- **Distribución por grado:** usa el grado ACTUAL del alumno; una visita de
+  hace un año cuenta en el grado de hoy (el registro no guarda el grado).
+- **Retención:** % de alumnos del período que vinieron N veces o más; N crece
+  con el largo del período (7 días → 2, 30 → 3, 90 → 5, más → 8).
+- **Excel de Inactivos:** incluye última visita y días sin venir.
+- **Diagnóstico → Revisar datos** detecta además: entradas de días anteriores
+  sin salida (con el módulo de salida activo) y cierres automáticos de días
+  anteriores sin confirmar.
+- **Alumnos → Estado:** "Desactivados" = dados de baja a mano. No confundir con
+  la página Inactivos (alumnos que dejaron de venir).
+- **Actividades:** no se permiten dos con el mismo nombre (sin distinguir
+  mayúsculas ni acentos).
+
 ## Fechas y zona horaria (v3.41.1 – v3.42.0)
 
 - Las fechas elegidas a mano (Registros, Eliminar registros, Estadísticas)

@@ -55,6 +55,18 @@
     </div>
   </header>
 
+  <!-- Datos de prueba mezclados: todas las cifras de abajo los incluyen (O13). -->
+  @if (registrosDePrueba > 0) {
+    <div class="aviso-datos-prueba" role="alert">
+      <mat-icon>science</mat-icon>
+      <span>
+        Hay <strong>{{ registrosDePrueba | number }}</strong> registros de <strong>datos de prueba</strong>
+        mezclados con los reales: todas las cifras de esta pantalla los incluyen.
+        Puedes quitarlos en Configuración → Datos → Datos de prueba.
+      </span>
+    </div>
+  }
+
   <!-- ═══ FILTROS GLOBALES ══════════════════════════════ -->
   <section class="filtros-card">
     <div class="filtros-row">
@@ -107,7 +119,7 @@
           </select>
           <span class="hora-label">Hasta</span>
           <select [(ngModel)]="filtroHoraHasta" (change)="setFiltroHora()" class="hora-select">
-            @for (h of opcionesHoras; track h.v) {
+            @for (h of opcionesHorasHasta; track h.v) {
               <option [ngValue]="h.v">{{ h.label }}</option>
             }
           </select>
@@ -287,7 +299,7 @@
               <div class="kpi-label">
                 Tasa de retención
                 <mat-icon class="info-icon"
-                          [matTooltip]="'De los alumnos del período, qué % regresó al menos ' + kpiUmbralRetencion + ' veces. El umbral se ajusta solo según el rango.'"
+                          [matTooltip]="'De los alumnos del período, qué % vino ' + kpiUmbralRetencion + ' veces o más. El mínimo se ajusta solo según el largo del rango. No incluye invitados.'"
                           matTooltipPosition="above">
                   help_outline
                 </mat-icon>
@@ -308,9 +320,17 @@
                   help_outline
                 </mat-icon>
               </div>
-              <div class="kpi-value">{{ kpiAlumnosInactivos | number }}</div>
+              @if (inactividadDesactivada) {
+                <div class="kpi-value muted">—</div>
+              } @else {
+                <div class="kpi-value">{{ kpiAlumnosInactivos | number }}</div>
+              }
               <div class="kpi-sub">
-                {{ kpiUmbralInactividad }}+ días sin venir <span class="kpi-tag">general</span>
+                @if (inactividadDesactivada) {
+                  Alertas de inactividad desactivadas en Configuración
+                } @else {
+                  {{ kpiUmbralInactividad }}+ días sin venir <span class="kpi-tag">general</span>
+                }
                 @if (kpiNuncaVinieron > 0) {
                   <br>{{ kpiNuncaVinieron | number }} nunca han venido
                 }
@@ -873,7 +893,7 @@
                 <mat-icon>stairs</mat-icon>
                 Distribución por grado
                 <mat-icon class="info-icon"
-                          matTooltip="Visitas agrupadas por el grado/semestre del alumno."
+                          matTooltip="Visitas de alumnos agrupadas por su grado ACTUAL (el registro no guarda el grado que tenía al visitar): una visita de hace un año cuenta en el grado de hoy. No incluye invitados."
                           matTooltipPosition="above">
                   help_outline
                 </mat-icon>

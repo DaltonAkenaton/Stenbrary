@@ -255,7 +255,10 @@ export class ConfigService {
   }
 
   setHorasAutoSalida(horas: number): void {
-    this.config.horasAutoSalida = horas;
+    // Validar aquí y no solo en la pantalla: un input vacío llegaba como
+    // null y quedaba guardado (M16). Se aceptan fracciones (2.5 h).
+    const n = Number(horas);
+    this.config.horasAutoSalida = Number.isFinite(n) ? Math.max(0, n) : 0;
     this.guardar();
   }
 
@@ -275,7 +278,8 @@ export class ConfigService {
   }
 
   setUmbralDuplicadoMin(minutos: number): void {
-    this.config.umbralDuplicadoMin = minutos;
+    const n = Number(minutos);
+    this.config.umbralDuplicadoMin = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
     this.guardar();
   }
 

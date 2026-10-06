@@ -31,6 +31,7 @@ import {
   ConfirmDialogData,
 } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { fechaLocalISO } from '../../core/utils/tiempo.utils';
+import { ConfigService } from '../../core/services/config.service';
 
 @Component({
   selector: 'app-diagnostico',
@@ -56,6 +57,7 @@ export class DiagnosticoComponent {
   // se ejecuta a petición: recorre los datos buscando valores que no pueden
   // ser correctos. Es lo que detecta los defectos que no lanzan error.
   private readonly db = inject(DatabaseService);
+  private readonly config = inject(ConfigService);
   protected readonly revisando = signal(false);
   protected readonly problemas = signal<ProblemaIntegridad[] | null>(null);
 
@@ -67,7 +69,9 @@ export class DiagnosticoComponent {
         this.db.obtenerTodosLosAlumnos(),
         this.db.obtenerTodosLosRegistros(),
       ]);
-      const hallazgos = revisarIntegridad(alumnos, registros);
+      const hallazgos = revisarIntegridad(alumnos, registros, new Date(), {
+        moduloSalidaActivo: this.config.registroSalidaActivo,
+      });
       this.problemas.set(hallazgos);
 
       // Se anotan en la bitácora para que viajen en el archivo exportado:

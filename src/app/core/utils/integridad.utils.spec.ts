@@ -125,6 +125,24 @@ describe('revisarIntegridad', () => {
     expect(tipos(revisarIntegridad(dos, [], AHORA))).toContain('matricula-duplicada');
   });
 
+  it('señala entradas de días anteriores sin salida, solo con el módulo de salida activo', () => {
+    const ayer = new Date(AHORA);
+    ayer.setDate(ayer.getDate() - 1);
+    const vieja = registro('r1', { fechaHora: ayer, horaSalida: undefined, duracionMinutos: undefined });
+    expect(tipos(revisarIntegridad(ALUMNOS, [vieja], AHORA))).not.toContain('entrada-abierta-antigua');
+    expect(tipos(revisarIntegridad(ALUMNOS, [vieja], AHORA, { moduloSalidaActivo: true })))
+      .toContain('entrada-abierta-antigua');
+  });
+
+  it('señala cierres automáticos de días anteriores que nadie confirmó', () => {
+    const ayer = new Date(AHORA);
+    ayer.setDate(ayer.getDate() - 1);
+    const pendiente = registro('r1', { fechaHora: ayer, cierreAutomatico: true });
+    expect(tipos(revisarIntegridad(ALUMNOS, [pendiente], AHORA))).toContain('cierre-automatico-sin-revisar');
+    const deHoy = registro('r2', { fechaHora: new Date(AHORA.getTime() - 60_000), cierreAutomatico: true });
+    expect(tipos(revisarIntegridad(ALUMNOS, [deHoy], AHORA))).not.toContain('cierre-automatico-sin-revisar');
+  });
+
   it('detecta fechas inválidas sin reventar el resto de la revisión', () => {
     const registros = [
       registro('r1', { fechaHora: 'no-es-fecha' as any }),

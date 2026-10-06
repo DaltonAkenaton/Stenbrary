@@ -60,6 +60,12 @@ export interface OpcionesReporte {
   topAlumnos?: TopAlumnoReporte[];
   /** v3.16.0: control granular de qué secciones incluir. */
   secciones?: SeccionesReporte;
+  /**
+   * Título de la tabla de detalle. Lo decide quien sabe QUÉ registros manda:
+   * antes, con un Top presente, la tabla se titulaba "Detalle de Visitas del
+   * Top" aunque contuviera todas las visitas del período (auditoría, O8).
+   */
+  tituloTabla?: string;
 }
 
 const SECCIONES_DEFAULT: Required<SeccionesReporte> = {
@@ -168,9 +174,7 @@ export class ReportService {
 
     if (secciones.tablaRegistros) {
       y = this.verificarEspacioPagina(doc, y, 60);
-      const tituloRegistros = secciones.topAlumnos && opciones.topAlumnos && opciones.topAlumnos.length > 0
-        ? 'Detalle de Visitas del Top'
-        : 'Detalle de Registros';
+      const tituloRegistros = opciones.tituloTabla ?? 'Detalle de Registros';
       y = this.dibujarTablaRegistros(doc, registros, y, margin, tituloRegistros);
     }
 

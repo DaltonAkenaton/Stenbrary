@@ -289,11 +289,22 @@ export class InactivosComponent implements OnInit {
       return;
     }
     const alumnos = lista.map(i => i.alumno);
+    const porMatricula = new Map(lista.map(i => [i.alumno.matricula, i]));
     const fecha = fechaLocalISO();
     try {
+      // Sin "Última visita" ni "Días sin venir", el Excel de inactivos era
+      // una lista de alumnos cualquiera (M13).
       await this.exportService.exportarAlumnosXLSX(
         alumnos,
         `inactivos_${this.umbralDias()}d_${fecha}`,
+        a => {
+          const i = porMatricula.get(a.matricula);
+          const nunca = !i || !Number.isFinite(i.diasSinVenir);
+          return {
+            'Última visita': nunca ? 'Nunca' : i!._ultimaVisitaStr,
+            'Días sin venir': nunca ? '—' : i!.diasSinVenir,
+          };
+        },
       );
       this.toast.success(`${alumnos.length} alumnos exportados a Excel`);
     } catch {

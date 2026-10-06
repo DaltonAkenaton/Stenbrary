@@ -93,12 +93,11 @@ export class OperacionCategoriaComponent {
 
   setHorasAutoSalida(horas: number): void {
     this.configService.setHorasAutoSalida(horas);
-    const etiqueta = this.opcionesAutoSalida.find(o => o.valor === horas)?.etiqueta ?? `${horas}h`;
-    this.toastService.info(
-      horas === 0
-        ? 'Cierre automático desactivado'
-        : `Cierre automático configurado a ${etiqueta}`
-    );
+    const valor = this.configService.horasAutoSalida;
+    const etiqueta = this.opcionesAutoSalida.find(o => o.valor === valor)?.etiqueta ?? `${valor}h`;
+    // Un solo aviso al terminar de escribir, no uno por tecla.
+    this.avisoDiferido('auto-salida',
+      valor === 0 ? 'Cierre automático desactivado' : `Cierre automático configurado a ${etiqueta}`);
     this.cdr.markForCheck();
   }
 
@@ -144,9 +143,23 @@ export class OperacionCategoriaComponent {
   }
 
   // ─── Duplicados ─────────────────────────────────────
-  setUmbralDuplicado(minutos: number): void {
-    this.configService.setUmbralDuplicadoMin(minutos);
-    this.toastService.info(`Umbral de duplicados: ${minutos} minutos`);
+  setUmbralDuplicado(minutos: number | string): void {
+    this.configService.setUmbralDuplicadoMin(Number(minutos));
+    const valor = this.configService.umbralDuplicadoMin;
+    this.avisoDiferido('duplicados',
+      valor === 0 ? 'Detección de duplicados desactivada' : `Umbral de duplicados: ${valor} minutos`);
     this.cdr.markForCheck();
+  }
+
+  private avisosPendientes = new Map<string, ReturnType<typeof setTimeout>>();
+
+  /** Muestra el aviso 700 ms después del último cambio (inputs numéricos). */
+  private avisoDiferido(clave: string, mensaje: string): void {
+    const previo = this.avisosPendientes.get(clave);
+    if (previo) clearTimeout(previo);
+    this.avisosPendientes.set(clave, setTimeout(() => {
+      this.toastService.info(mensaje);
+      this.avisosPendientes.delete(clave);
+    }, 700));
   }
 }
