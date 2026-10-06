@@ -9,7 +9,7 @@
 |---|---|---|
 | 1 — R1, R2, R3, R4, R5, O5, O14, O15, O16, M10, M12 | ✅ Hecha (2026-10-06) | v3.41.1 |
 | 2 — R6, O1, O2, O3, O9, O10, O11, O12, M1, M7 + horario de verano | ✅ Hecha (2026-10-06) | v3.42.0 |
-| 2b — calendario escolar (P7): periodos y días inhábiles UAT | ⏳ Calendario 2026 recibido | |
+| 2b — calendario escolar (P7): periodos y días inhábiles UAT | ✅ Hecha (2026-10-06) | v3.43.0 |
 | 3 — blindaje y resto de 🟠/🟡 | ⏳ | |
 
 **Hallazgo nuevo durante la Tanda 1 (corregido):** el PDF de `/registros` calculaba su propio período
@@ -22,7 +22,8 @@ P3 → las salidas estimadas no cuentan en promedios, horas ni constancia.
 P4 → promedio entre días con al menos un registro.
 P5 → los invitados no cuentan en carreras, turnos ni grados.
 P6 → comparar al mismo avance (mismo día relativo y hora).
-P7 → la UAT tiene 3 periodos (Primavera, Verano, Otoño): calendario configurable en la Tanda 2b.
+P7 → la UAT tiene 3 periodos (Primavera, Verano, Otoño): calendario configurable a mano, precargado con
+el PDF oficial 2026, periodos sin huecos (en un hueco, "Este periodo" = el último que terminó).
 P8 → el usuario delegó la decisión: proyección con el historial real, oculta sin base.
 
 **Hallazgos nuevos durante la Tanda 2 (corregidos):**

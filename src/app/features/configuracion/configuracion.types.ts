@@ -14,6 +14,7 @@ export type CategoriaConfigId =
   | 'operacion'
   | 'quiosco'
   | 'experiencia'
+  | 'calendario'
   | 'datos'
   | 'avanzado';
 
@@ -84,6 +85,16 @@ export const CATEGORIAS_CONFIG: CategoriaConfig[] = [
       'celebracion', 'animacion', 'confetti', 'confeti', 'frecuencia',
       'exito', 'pantalla', 'tiempo', 'segundos',
       'inactividad', 'inactivos', 'alerta', 'dias',
+    ],
+  },
+  {
+    id: 'calendario',
+    nombre: 'Calendario escolar',
+    icono: 'event',
+    descripcion: 'Periodos (Primavera, Verano, Otoño) y días inhábiles',
+    keywords: [
+      'calendario', 'periodo', 'semestre', 'primavera', 'verano', 'otono', 'otoño',
+      'festivo', 'feriado', 'inhabil', 'vacaciones', 'ciclo', 'escolar', 'uat',
     ],
   },
   {

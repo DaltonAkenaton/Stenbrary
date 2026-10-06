@@ -17,6 +17,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable, signal } from '@angular/core';
+import { CALENDARIO_UAT_2026, CalendarioEscolar } from '../utils/calendario.utils';
 
 /**
  * Modos de control de aforo:
@@ -139,6 +140,18 @@ interface AppConfig {
   zoomScannerDefault: number;
   /** Preferencia de cámara (auto/trasera/frontal). Default 'auto'. */
   camaraPreferida: CamaraPreferida;
+
+  // ── Calendario escolar (v3.43.0) ──
+  /** Periodos y días inhábiles, capturados a mano. Default: UAT 2026. */
+  calendarioEscolar: CalendarioEscolar;
+}
+
+/** Copia profunda: el calendario por defecto no debe mutarse al editar. */
+function copiarCalendario(c: CalendarioEscolar): CalendarioEscolar {
+  return {
+    periodos: c.periodos.map(p => ({ ...p })),
+    diasInhabiles: c.diasInhabiles.map(d => ({ ...d })),
+  };
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -170,9 +183,16 @@ const DEFAULT_CONFIG: AppConfig = {
   cierreAutoConfirmar: false,
   zoomScannerDefault: 1,
   camaraPreferida: 'auto',
+  calendarioEscolar: CALENDARIO_UAT_2026,
 };
 
 const STORAGE_KEY = 'stenbrary-config';
+
+/** Defensa contra un localStorage editado a mano o corrupto. */
+function esCalendarioValido(c: unknown): c is CalendarioEscolar {
+  const x = c as CalendarioEscolar | undefined;
+  return !!x && Array.isArray(x.periodos) && Array.isArray(x.diasInhabiles);
+}
 
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
@@ -191,6 +211,10 @@ export class ConfigService {
   private _ultimoRespaldoTs = signal(0);
   readonly ultimoRespaldoSignal = this._ultimoRespaldoTs.asReadonly();
 
+  // Signal del calendario: Estadísticas y Resumen reaccionan al editarlo.
+  private _calendario = signal<CalendarioEscolar>(copiarCalendario(CALENDARIO_UAT_2026));
+  readonly calendarioSignal = this._calendario.asReadonly();
+
   setHayAutoClose(valor: boolean): void {
     this._hayAutoClose.set(valor);
   }
@@ -199,6 +223,22 @@ export class ConfigService {
     this.config = this.cargar();
     this._modoQuiosco.set(this.config.modoQuiosco);
     this._ultimoRespaldoTs.set(this.config.ultimoRespaldoTs);
+    this._calendario.set(copiarCalendario(this.config.calendarioEscolar));
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // CALENDARIO ESCOLAR (v3.43.0)
+  // ═══════════════════════════════════════════════════════
+
+  get calendarioEscolar(): CalendarioEscolar {
+    return this._calendario();
+  }
+
+  /** Reemplaza el calendario completo (la pantalla edita una copia y la guarda entera). */
+  setCalendarioEscolar(cal: CalendarioEscolar): void {
+    this.config.calendarioEscolar = copiarCalendario(cal);
+    this._calendario.set(copiarCalendario(cal));
+    this.guardar();
   }
 
   get registroSalidaActivo(): boolean {
@@ -606,8 +646,13 @@ export class ConfigService {
    * (modo quiosco, PIN, aforo) hasta que alguien recargara la página.
    */
   restablecerTodo(): void {
-    this.config = { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS } };
+    this.config = {
+      ...DEFAULT_CONFIG,
+      horarios: { ...DEFAULT_HORARIOS },
+      calendarioEscolar: copiarCalendario(CALENDARIO_UAT_2026),
+    };
     this.guardar();
+    this._calendario.set(copiarCalendario(this.config.calendarioEscolar));
     this._modoQuiosco.set(this.config.modoQuiosco);
     this._ultimoRespaldoTs.set(this.config.ultimoRespaldoTs);
     this._hayAutoClose.set(false);
@@ -620,10 +665,15 @@ export class ConfigService {
         const parsed = JSON.parse(stored);
         // Merge profundo para horarios (cubre instalaciones viejas sin la clave)
         const horarios: HorariosSemana = { ...DEFAULT_HORARIOS, ...(parsed.horarios || {}) };
-        return { ...DEFAULT_CONFIG, ...parsed, horarios };
+        // Instalaciones previas a v3.43.0 no tienen calendario: reciben el de
+        // la UAT 2026 como punto de partida, igual que una instalación nueva.
+        const calendarioEscolar = copiarCalendario(
+          esCalendarioValido(parsed.calendarioEscolar) ? parsed.calendarioEscolar : CALENDARIO_UAT_2026,
+        );
+        return { ...DEFAULT_CONFIG, ...parsed, horarios, calendarioEscolar };
       }
     } catch { /* silenciar */ }
-    return { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS } };
+    return { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS }, calendarioEscolar: copiarCalendario(CALENDARIO_UAT_2026) };
   }
 
   private guardar(): void {

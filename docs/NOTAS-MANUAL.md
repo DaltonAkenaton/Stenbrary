@@ -104,7 +104,32 @@ parejo todo el día.
   (marzo y noviembre) duran 23 y 25 horas, y el sistema los cuenta como un día
   normal (rachas, reportes semanales, comparaciones).
 
-## Pendiente de documentar cuando exista
+## Calendario escolar (v3.43.0, 2026-10-06)
 
-- Calendario escolar configurable (periodos Primavera / Verano / Otoño y días
-  inhábiles de la UAT): Tanda 2b de la auditoría.
+Configuración → **Calendario escolar**. Todo se captura a mano.
+
+- **Periodos:** nombre, fecha de inicio y de fin. Viene precargado el
+  calendario UAT 2026 (Primavera 5 ene–31 may, Verano 1 jun–16 ago, Otoño
+  17 ago–31 dic). Se recomienda capturarlos **sin huecos**: cada periodo
+  empieza el día después de que termina el anterior, para que siempre haya
+  uno en curso. Si queda un hueco, "Este periodo" muestra el último que
+  terminó, marcado "terminado".
+- **Días inhábiles:** un día o un rango (vacaciones) con descripción. La UAT
+  *suele* recorrer los festivos al lunes o al viernes, pero no siempre: por eso
+  es una lista editable y no una regla. Si recorren un festivo, se cambia la
+  fecha.
+- Los cambios se hacen sobre un borrador: no cuentan hasta pulsar
+  **Guardar**. "Descartar cambios" vuelve a lo guardado; "Cargar UAT 2026"
+  reemplaza lo que se ve por el calendario oficial (tampoco se guarda solo).
+- La pantalla avisa si hay periodos encimados, huecos entre periodos, fechas
+  al revés, y cuando el calendario ya no cubre la fecha de hoy (cambio de
+  año: **cada año hay que capturar el calendario nuevo**).
+
+**Dónde se usa:**
+- Estadísticas y Comparar: botones "Este periodo (nombre)" y "Periodo
+  anterior (nombre)". Sustituyen a "Este semestre", que suponía enero–junio /
+  julio–diciembre y no corresponde a la UAT.
+- Resumen: un día inhábil sin registros muestra "Hoy es día inhábil" en vez
+  de la alerta "verifica que el escáner esté operando".
+- Los promedios **no** dependen del calendario: ya excluyen solos los días
+  sin registros.

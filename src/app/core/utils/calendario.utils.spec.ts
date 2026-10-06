@@ -1,0 +1,148 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  calendario.utils.spec.ts                             ║
+// ║  Calendario escolar configurable (v3.43.0)            ║
+// ╚══════════════════════════════════════════════════════╝
+
+import {
+  CALENDARIO_UAT_2026,
+  CalendarioEscolar,
+  diaInhabilEn,
+  periodoActual,
+  periodoAnterior,
+  revisarCalendario,
+} from './calendario.utils';
+
+const cal: CalendarioEscolar = {
+  periodos: [
+    // Desordenados a propósito: el orden de captura no debe importar.
+    { id: 'o', nombre: 'Otoño', inicio: '2026-08-17', fin: '2026-12-04' },
+    { id: 'p', nombre: 'Primavera', inicio: '2026-01-19', fin: '2026-05-22' },
+    { id: 'v', nombre: 'Verano', inicio: '2026-06-01', fin: '2026-07-17' },
+  ],
+  diasInhabiles: [
+    { id: 'd1', desde: '2026-11-02', hasta: '2026-11-02', descripcion: 'Día de Muertos' },
+    { id: 'd2', desde: '2026-07-20', hasta: '2026-07-31', descripcion: 'Vacaciones de verano' },
+  ],
+};
+
+describe('calendario.utils', () => {
+  describe('periodoActual', () => {
+    it('devuelve el periodo que contiene hoy, incluidos el primer y el último día completos', () => {
+      expect(periodoActual(cal, new Date(2026, 9, 6, 12))!.periodo.nombre).toBe('Otoño');
+      expect(periodoActual(cal, new Date(2026, 7, 17, 0, 0))!.periodo.nombre).toBe('Otoño');
+      const ultimoDia = periodoActual(cal, new Date(2026, 11, 4, 23, 59))!;
+      expect(ultimoDia.periodo.nombre).toBe('Otoño');
+      expect(ultimoDia.terminado).toBe(false);
+    });
+
+    it('en un hueco entre periodos devuelve el último que terminó, marcado', () => {
+      const p = periodoActual(cal, new Date(2026, 4, 27))!; // 27 de mayo
+      expect(p.periodo.nombre).toBe('Primavera');
+      expect(p.terminado).toBe(true);
+    });
+
+    it('el rango cubre días completos en hora local', () => {
+      const p = periodoActual(cal, new Date(2026, 1, 10))!;
+      expect(p.rango.inicio.getDate()).toBe(19);
+      expect(p.rango.inicio.getHours()).toBe(0);
+      expect(p.rango.fin.getDate()).toBe(22);
+      expect(p.rango.fin.getHours()).toBe(23);
+    });
+
+    it('sin periodos, o si todos son futuros, devuelve null', () => {
+      expect(periodoActual({ periodos: [], diasInhabiles: [] })).toBeNull();
+      expect(periodoActual(cal, new Date(2025, 5, 1))).toBeNull();
+    });
+
+    it('ignora periodos con fechas inválidas en vez de tronar', () => {
+      const roto: CalendarioEscolar = {
+        periodos: [...cal.periodos, { id: 'x', nombre: 'Roto', inicio: 'nada', fin: '2026-13-40' }],
+        diasInhabiles: [],
+      };
+      expect(periodoActual(roto, new Date(2026, 9, 6))!.periodo.nombre).toBe('Otoño');
+    });
+  });
+
+  describe('periodoAnterior', () => {
+    it('es el que terminó justo antes de que empezara el de referencia', () => {
+      const otono = cal.periodos[0];
+      expect(periodoAnterior(cal, otono)!.periodo.nombre).toBe('Verano');
+      const primavera = cal.periodos[1];
+      expect(periodoAnterior(cal, primavera)).toBeNull();
+    });
+  });
+
+  describe('diaInhabilEn', () => {
+    it('reconoce días sueltos y rangos, todo el día', () => {
+      expect(diaInhabilEn(cal, new Date(2026, 10, 2, 8))!.descripcion).toBe('Día de Muertos');
+      expect(diaInhabilEn(cal, new Date(2026, 10, 2, 23, 30))).not.toBeNull();
+      expect(diaInhabilEn(cal, new Date(2026, 6, 25))!.descripcion).toBe('Vacaciones de verano');
+      expect(diaInhabilEn(cal, new Date(2026, 6, 31, 22))).not.toBeNull();
+      expect(diaInhabilEn(cal, new Date(2026, 7, 1, 9))).toBeNull();
+      expect(diaInhabilEn(cal, new Date(2026, 10, 3, 9))).toBeNull();
+    });
+  });
+
+  describe('revisarCalendario', () => {
+    const hoy = new Date(2026, 9, 6);
+
+    it('marca como error lo que impide usar un periodo', () => {
+      const avisos = revisarCalendario({
+        periodos: [
+          { id: '1', nombre: '', inicio: '2026-01-01', fin: '2026-02-01' },
+          { id: '2', nombre: 'Al revés', inicio: '2026-05-01', fin: '2026-04-01' },
+          { id: '3', nombre: 'Inválido', inicio: '', fin: '2026-04-01' },
+        ],
+        diasInhabiles: [{ id: 'd', desde: '2026-03-10', hasta: '2026-03-01', descripcion: 'X' }],
+      }, hoy);
+      const errores = avisos.filter(a => a.tipo === 'error').map(a => a.mensaje);
+      expect(errores.length).toBe(4);
+      expect(errores.some(m => m.includes('sin nombre'))).toBe(true);
+      expect(errores.some(m => m.includes('Al revés'))).toBe(true);
+      expect(errores.some(m => m.includes('Inválido'))).toBe(true);
+    });
+
+    it('avisa (sin bloquear) de huecos y encimados entre periodos', () => {
+      const avisos = revisarCalendario(cal, hoy);
+      expect(avisos.every(a => a.tipo === 'aviso')).toBe(true);
+      // Primavera→Verano (23–31 may) y Verano→Otoño (18 jul–16 ago).
+      expect(avisos.filter(a => a.mensaje.includes('sin periodo')).length).toBe(2);
+
+      const encimados = revisarCalendario({
+        periodos: [
+          { id: 'a', nombre: 'A', inicio: '2026-01-01', fin: '2026-06-30' },
+          { id: 'b', nombre: 'B', inicio: '2026-06-15', fin: '2026-12-31' },
+        ],
+        diasInhabiles: [],
+      }, hoy);
+      expect(encimados.some(a => a.mensaje.includes('se enciman'))).toBe(true);
+    });
+
+    it('periodos pegados (uno empieza al día siguiente del otro) no son hueco', () => {
+      const pegados = revisarCalendario({
+        periodos: [
+          { id: 'a', nombre: 'A', inicio: '2026-01-01', fin: '2026-05-31' },
+          { id: 'b', nombre: 'B', inicio: '2026-06-01', fin: '2026-12-31' },
+        ],
+        diasInhabiles: [],
+      }, hoy);
+      expect(pegados).toEqual([]);
+    });
+
+    it('avisa cuando el calendario ya no cubre hoy (cambio de año)', () => {
+      const avisos = revisarCalendario(CALENDARIO_UAT_2026, new Date(2027, 0, 10));
+      expect(avisos.some(a => a.mensaje.includes('ya no cubre'))).toBe(true);
+    });
+  });
+
+  describe('CALENDARIO_UAT_2026', () => {
+    it('no tiene errores ni huecos durante 2026', () => {
+      expect(revisarCalendario(CALENDARIO_UAT_2026, new Date(2026, 9, 6))).toEqual([]);
+    });
+
+    it('el 13 de octubre es inhábil y el 10 de diciembre no (resultados de admisión)', () => {
+      expect(diaInhabilEn(CALENDARIO_UAT_2026, new Date(2026, 9, 13, 10))).not.toBeNull();
+      expect(diaInhabilEn(CALENDARIO_UAT_2026, new Date(2026, 11, 10, 10))).toBeNull();
+    });
+  });
+});

@@ -232,7 +232,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Comparar dos períodos',
     descripcion:
-      'Este semestre contra el anterior, marzo contra abril, esta semana contra la pasada. Lado a lado.',
+      'Este periodo contra el anterior, marzo contra abril, esta semana contra la pasada. Lado a lado.',
     icono: 'compare_arrows',
     area: 'consulta',
     donde: 'Estadísticas',

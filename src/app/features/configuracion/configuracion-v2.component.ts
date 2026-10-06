@@ -31,6 +31,7 @@ import { OperacionCategoriaComponent } from './categorias/operacion.component';
 import { QuioscoCategoriaComponent } from './categorias/quiosco.component';
 import { ExperienciaCategoriaComponent } from './categorias/experiencia.component';
 import { DatosCategoriaComponent } from './categorias/datos.component';
+import { CalendarioCategoriaComponent } from './categorias/calendario.component';
 import { AvanzadoCategoriaComponent } from './categorias/avanzado.component';
 
 const STORAGE_KEY = 'stenbrary-config-categoria-activa';
@@ -49,6 +50,7 @@ const DEFAULT_CATEGORIA: CategoriaConfigId = 'general';
     QuioscoCategoriaComponent,
     ExperienciaCategoriaComponent,
     DatosCategoriaComponent,
+    CalendarioCategoriaComponent,
     AvanzadoCategoriaComponent,
   ],
   templateUrl: './configuracion-v2.component.html',
@@ -59,11 +61,11 @@ export class ConfiguracionV2Component implements OnInit, OnDestroy {
 
   readonly categorias = CATEGORIAS_CONFIG;
 
-  // Las 7 categorías están migradas. La constante se mantiene para que el shell
+  // Todas las categorías están migradas. La constante se mantiene para que el shell
   // pueda volver a marcar alguna como "beta" si en el futuro se añade una nueva.
   readonly migradas = new Set<CategoriaConfigId>([
     'general', 'escaner', 'operacion', 'quiosco',
-    'experiencia', 'datos', 'avanzado',
+    'experiencia', 'calendario', 'datos', 'avanzado',
   ]);
 
   /** Callback del sub-componente Datos para refrescar conteos en otras categorías. */

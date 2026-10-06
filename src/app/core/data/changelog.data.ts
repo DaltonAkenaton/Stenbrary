@@ -49,6 +49,37 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.43.0',
+    fecha: '2026-10-06',
+    titulo: 'Calendario escolar',
+    resumen: 'Ahora puedes capturar los periodos y los días inhábiles de la universidad. Las estadísticas los usan para mostrar "Este periodo" y "Periodo anterior", y el Resumen deja de alarmarse en días festivos.',
+    destacado: true,
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva sección Configuración → Calendario escolar: periodos (Primavera, Verano, Otoño) y días inhábiles, ' +
+          'todo editable a mano. Viene precargado con el calendario oficial UAT 2026.',
+      },
+      {
+        tipo: 'cambio',
+        texto:
+          'En Estadísticas y en Comparar, "Este semestre" y "Semestre anterior" pasan a "Este periodo" y "Periodo anterior", ' +
+          'con las fechas de tu calendario y el nombre del periodo en el botón.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'En un día inhábil sin registros, el Resumen indica que es día inhábil en lugar de pedirte revisar el escáner.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La pantalla del calendario avisa si hay periodos encimados, días sin periodo o si el calendario ya no cubre la fecha de hoy.',
+      },
+    ],
+  },
+  {
     version: '3.42.0',
     fecha: '2026-10-06',
     titulo: 'Estadísticas con reglas claras',

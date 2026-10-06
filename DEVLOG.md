@@ -9,6 +9,35 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-06 — Tanda 2b: calendario escolar capturado a mano
+
+El preset "Este semestre" suponía enero–junio / julio–diciembre; la UAT tiene
+tres periodos (Primavera, Verano, Otoño). Con el PDF oficial 2026 que mandó el
+usuario se armó `core/utils/calendario.utils.ts` (tipos, `CALENDARIO_UAT_2026`
+y funciones puras) y la categoría **Configuración → Calendario escolar**.
+
+**Qué se decidió.**
+- **Lista editable, no reglas.** La UAT "usualmente" recorre los festivos al
+  lunes o viernes, pero no siempre: ninguna regla lo cubre.
+- **Periodos sin huecos** (decisión del usuario): Primavera arranca el 5 de
+  enero (inicio de actividades administrativas) y no el 19 (clases), para
+  que siempre haya un periodo en curso. Si aun así hay hueco, "Este periodo"
+  devuelve el último que terminó, marcado.
+- **Borrador + Guardar** en la pantalla: editar fechas a mano produce estados
+  intermedios inválidos, y las estadísticas no deben apuntar a ellos.
+- Vive en `ConfigService` (localStorage) como el resto de la configuración.
+  Las instalaciones previas reciben el calendario UAT al cargar. Cuando la
+  configuración viaje a la nube (Fase 2), el calendario va con ella.
+- Fechas como `'YYYY-MM-DD'`, siempre vía `parseFechaLocal`: la lección de la
+  Tanda 1.
+
+Se verificó en el navegador con Playwright: la categoría renderiza con el
+calendario precargado, el borrador marca "Cambios sin guardar" y Estadísticas
+muestra "Este periodo (Otoño 2026)". En la misma pasada se vio el comparador
+recortar "Mes pasado" al mismo avance (P6). Sin errores en consola.
+
+---
+
 ## 2026-10-06 — Tanda 2: una definición por métrica, y la frontera tiene horario de verano
 
 Con las decisiones P1–P8 del usuario, cada número que aparece en más de una

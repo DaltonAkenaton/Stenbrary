@@ -72,11 +72,18 @@ import {
   resumirEstancia,
 } from '../../core/utils/estadisticas.utils';
 import { Motivo } from '../../core/models';
+import { periodoActual, periodoAnterior, PeriodoResuelto } from '../../core/utils/calendario.utils';
 import { desplazarDias, fechaLocalISO } from '../../core/utils/tiempo.utils';
 
 Chart.register(...registerables);
 
-type PresetRango = 'hoy' | 'ayer' | 'semana' | 'semana-pasada' | 'mes-actual' | 'mes-pasado' | 'ultimos7' | 'ultimos14' | 'ultimos30' | 'ultimos90' | 'anio' | 'anio-pasado' | 'semestre-actual' | 'semestre-pasado' | 'todo' | 'personalizado';
+type PresetRango = 'hoy' | 'ayer' | 'semana' | 'semana-pasada' | 'mes-actual' | 'mes-pasado' | 'ultimos7' | 'ultimos14' | 'ultimos30' | 'ultimos90' | 'anio' | 'anio-pasado' | 'periodo-actual' | 'periodo-anterior' | 'todo' | 'personalizado';
+
+/** Enlaces viejos (?p=semestre-actual) siguen funcionando: ahora son periodos del calendario. */
+const PRESETS_RENOMBRADOS: Record<string, PresetRango> = {
+  'semestre-actual': 'periodo-actual',
+  'semestre-pasado': 'periodo-anterior',
+};
 
 /** Pestañas del Dashboard Ejecutivo (v3.18.0). */
 export type TabKey = 'resumen' | 'calor' | 'personas' | 'comparar' | 'reportes';
@@ -285,6 +292,7 @@ formatHora(h: number): string {
     { key: 'hoy', label: 'Hoy' },
     { key: 'semana', label: 'Esta semana' },
     { key: 'mes-actual', label: 'Este mes' },
+    { key: 'periodo-actual', label: 'Este periodo' },
     { key: 'ultimos7', label: '7 días' },
     { key: 'ultimos30', label: '30 días' },
     { key: 'ultimos90', label: '90 días' },
@@ -362,8 +370,8 @@ formatHora(h: number): string {
     { key: 'semana-pasada', label: 'Semana pasada' },
     { key: 'mes-actual', label: 'Este mes' },
     { key: 'mes-pasado', label: 'Mes pasado' },
-    { key: 'semestre-actual', label: 'Este semestre' },
-    { key: 'semestre-pasado', label: 'Semestre anterior' },
+    { key: 'periodo-actual', label: 'Este periodo' },
+    { key: 'periodo-anterior', label: 'Periodo anterior' },
     { key: 'ultimos7', label: 'Últimos 7 días' },
     { key: 'ultimos30', label: 'Últimos 30 días' },
     { key: 'ultimos90', label: 'Últimos 90 días' },
@@ -399,6 +407,7 @@ formatHora(h: number): string {
   async ngOnInit(): Promise<void> {
     try {
       this.kpiUmbralInactividad = this.configService.umbralInactividadDias || 30;
+      this.actualizarEtiquetasPeriodo();
       this.leerUrlParams();
       // La caché del servicio sobrevive a la navegación y no ve lo que
       // escribió otra pestaña (quiosco abierto aparte): al entrar, datos frescos.
@@ -564,37 +573,20 @@ formatHora(h: number): string {
         };
       }
 
-      case 'semestre-actual': {
-        // Convención genérica: 1er semestre = ene-jun, 2do semestre = jul-dic
-        const m = hoy.getMonth();
-        const y = hoy.getFullYear();
-        if (m < 6) {
-          return {
-            inicio: new Date(y, 0, 1, 0, 0, 0, 0),
-            fin: new Date(y, 5, 30, 23, 59, 59, 999),
-          };
-        }
-        return {
-          inicio: new Date(y, 6, 1, 0, 0, 0, 0),
-          fin: new Date(y, 11, 31, 23, 59, 59, 999),
-        };
+      // Periodos del calendario escolar (Configuración → Calendario escolar).
+      // Antes era "semestre" fijo ene–jun / jul–dic, que no corresponde a la
+      // UAT (Primavera, Verano, Otoño). Sin periodos capturados, cae a "este
+      // mes" y lo avisa en vez de inventar fechas.
+      case 'periodo-actual': {
+        const p = periodoActual(this.configService.calendarioEscolar, hoy);
+        return p ? this.rangoDePeriodoResuelto(p) : this.sinCalendario();
       }
 
-      case 'semestre-pasado': {
-        const m = hoy.getMonth();
-        const y = hoy.getFullYear();
-        if (m < 6) {
-          // Estamos en 1er sem; el anterior es 2do sem del año pasado
-          return {
-            inicio: new Date(y - 1, 6, 1, 0, 0, 0, 0),
-            fin: new Date(y - 1, 11, 31, 23, 59, 59, 999),
-          };
-        }
-        // Estamos en 2do sem; el anterior es 1er sem de este año
-        return {
-          inicio: new Date(y, 0, 1, 0, 0, 0, 0),
-          fin: new Date(y, 5, 30, 23, 59, 59, 999),
-        };
+      case 'periodo-anterior': {
+        const cal = this.configService.calendarioEscolar;
+        const actual = periodoActual(cal, hoy);
+        const anterior = actual ? periodoAnterior(cal, actual.periodo) : null;
+        return anterior ? this.rangoDePeriodoResuelto(anterior) : this.sinCalendario();
       }
 
       case 'todo':
@@ -608,6 +600,36 @@ formatHora(h: number): string {
           new Date(fi + 'T00:00:00'),
           new Date(ff + 'T00:00:00'),
         );
+      }
+    }
+  }
+
+  private rangoDePeriodoResuelto(p: PeriodoResuelto): RangoFechas {
+    return { inicio: p.rango.inicio, fin: p.rango.fin };
+  }
+
+  /** Sin periodo que mostrar: "este mes" y un aviso con la salida. */
+  private sinCalendario(): RangoFechas {
+    this.toastService.warning(
+      'No hay un periodo capturado para esa fecha. Mostrando este mes. ' +
+      'Captúralo en Configuración → Calendario escolar.',
+    );
+    return this.estadisticasService.crearRangoMesActual();
+  }
+
+  /** Pone el nombre real en los botones: "Este periodo (Otoño 2026)". */
+  private actualizarEtiquetasPeriodo(): void {
+    const cal = this.configService.calendarioEscolar;
+    const actual = periodoActual(cal);
+    const anterior = actual ? periodoAnterior(cal, actual.periodo) : null;
+    const etiquetaActual = actual
+      ? `Este periodo (${actual.periodo.nombre}${actual.terminado ? ', terminado' : ''})`
+      : 'Este periodo';
+    const etiquetaAnterior = anterior ? `Periodo anterior (${anterior.periodo.nombre})` : 'Periodo anterior';
+    for (const lista of [this.opcionesPreset, this.opcionesComparador]) {
+      for (const op of lista) {
+        if (op.key === 'periodo-actual') op.label = etiquetaActual;
+        if (op.key === 'periodo-anterior') op.label = etiquetaAnterior;
       }
     }
   }
@@ -876,8 +898,8 @@ formatHora(h: number): string {
   /** Tier D25: lee el estado inicial desde query params. */
   private leerUrlParams(): void {
     const qp = this.activatedRoute.snapshot.queryParamMap;
-    const p = qp.get('p') as PresetRango | null;
-    if (p) this.presetSeleccionado = p;
+    const p = qp.get('p');
+    if (p) this.presetSeleccionado = PRESETS_RENOMBRADOS[p] ?? (p as PresetRango);
     const ini = qp.get('ini'); if (ini) this.fechaInicio = ini;
     const fin = qp.get('fin'); if (fin) this.fechaFin = fin;
     const hd = qp.get('hd'); const hh = qp.get('hh');

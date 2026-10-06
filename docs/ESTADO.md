@@ -245,14 +245,16 @@ Suite: **184 unitarios + 20 E2E**.
 - [ ] **Activity Log / Audit Trail** (`/actividad`): registrar mutaciones (alumno creado/editado/desactivado, registro editado/eliminado, cambios de config) con usuario + timestamp. Requiere store `audit`. Inspirado en Fishbowl.
 - [ ] **`crearRegistrosBatch()`** en `DatabaseService`: transacción única para N registros, reduce tiempo de generación Histórico 30m de ~20 min a ~2–3 min.
 
-### 2.2 Calendario escolar configurable 🔴 (bloquea venta a otras universidades)
+### 2.2 Calendario escolar configurable 🟡 (base hecha en v3.43.0; lo que falta bloquea venta)
 
-- [ ] **`CalendarioEscolarService`**: abstraer las constantes UAT del `DatosPruebaService` a un servicio reactivo con persistencia en `localStorage`.
-- [ ] **UI en `/configuracion`**: editor de períodos lectivos (nombre, inicioMMDD, finMMDD, densidadFactor), festivos (lista editable), Semana Santa, horario apertura/cierre, probabilidad de asistencia en verano, ponderación de turnos.
-- [ ] **Defaults UAT** disponibles como preset al instalar.
+- [x] **Periodos y días inhábiles editables** (v3.43.0): `calendarioEscolar` en `ConfigService` + funciones puras en `core/utils/calendario.utils.ts` + Configuración → Calendario escolar. Fechas absolutas por año (`'YYYY-MM-DD'`), no `MMDD` recurrente: la UAT mueve festivos de un año a otro.
+- [x] **Defaults UAT 2026** precargados (PDF oficial), botón "Cargar UAT 2026".
+- [x] Presets "Este periodo / Periodo anterior" en Estadísticas y Comparar; el Resumen reconoce días inhábiles.
+- [ ] **`DatosPruebaService`** sigue con su calendario UAT propio hardcoded: debería leer `calendarioEscolar`.
+- [ ] Parámetros del generador de datos de prueba (densidad por periodo, horario, ponderación de turnos) — solo importan para el seed.
 - [ ] **Plantillas preconfiguradas** para otras universidades comunes (a llenar cuando se tenga el primer cliente).
 - [ ] **Modalidad de períodos:** soporte para semestres (2/año), trimestres (3/año, ene-mar/abr-jun/jul-sep/oct-dic), cuatrimestres (3/año pero distintos), bimestres y módulos. El comparador del Dashboard Ejecutivo y los presets de período usan este servicio. Hoy "Semestre actual / Semestre anterior" en el comparador asume convención genérica ene-jun / jul-dic — al implementar este servicio, esos atajos se vuelven dinámicos según la modalidad configurada.
-- [ ] **Configurar días/meses con clases:** marcar qué meses hay actividad lectiva y cuáles son receso (vacaciones intersemestrales, festivos locales). Lo usan: el generador de seed (no inventa visitas en días sin clases), los reportes (resaltan/excluyen recesos), el dashboard (cálculo de promedios por día lectivo en lugar de día calendario).
+- [x] ~~Configurar días con clases~~ — cubierto por los días inhábiles. El promedio por día ya no depende del calendario: desde v3.42.0 divide entre días con al menos un registro (decisión P4 de `docs/AUDITORIA-2026-10.md`).
 
 ### 2.3 UX y analítica 🟡
 

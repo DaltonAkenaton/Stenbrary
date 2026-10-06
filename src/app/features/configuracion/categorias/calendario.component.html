@@ -1,0 +1,129 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/calendario.component.html                ║ -->
+<!-- ║  Periodos + días inhábiles (captura manual)          ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── ESTADO ACTUAL ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>event</mat-icon>
+    <h2>Calendario escolar</h2>
+  </div>
+  <p class="section-desc">
+    Los <strong style="color:#E8F4F8">periodos</strong> alimentan los botones "Este periodo" y
+    "Periodo anterior" de Estadísticas. Los <strong style="color:#E8F4F8">días inhábiles</strong>
+    evitan que el Resumen te alerte de "sin registros" un día festivo. Todo se captura a mano:
+    si la UAT recorre un festivo, solo cambia la fecha.
+  </p>
+
+  <p class="section-hint">
+    <mat-icon>today</mat-icon>
+    @if (periodoHoy(); as p) {
+      Hoy las estadísticas toman <strong>&nbsp;{{ p.periodo.nombre }}&nbsp;</strong>
+      ({{ fechaLegible(p.periodo.inicio) }} – {{ fechaLegible(p.periodo.fin) }})
+      @if (p.terminado) { — ya terminó: no hay periodo en curso. }
+    } @else {
+      No hay periodos capturados que incluyan o precedan a hoy.
+    }
+  </p>
+
+  @if (avisos().length > 0) {
+    <ul class="cal-avisos">
+      @for (a of avisos(); track $index) {
+        <li [class.cal-error]="a.tipo === 'error'">
+          <mat-icon>{{ a.tipo === 'error' ? 'error' : 'info' }}</mat-icon>
+          {{ a.mensaje }}
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="cal-acciones">
+    <button class="btn-inline btn-inline-active" (click)="guardar()"
+            [disabled]="!hayCambios() || hayErrores()">
+      <mat-icon>save</mat-icon> Guardar
+    </button>
+    <button class="btn-inline" (click)="descartar()" [disabled]="!hayCambios()">
+      <mat-icon>undo</mat-icon> Descartar cambios
+    </button>
+    <button class="btn-inline" (click)="restaurarUat()"
+            matTooltip="Reemplaza lo que ves por el calendario oficial UAT 2026">
+      <mat-icon>event_repeat</mat-icon> Cargar UAT 2026
+    </button>
+    @if (hayCambios()) {
+      <span class="cal-pendiente">Cambios sin guardar</span>
+    }
+  </div>
+</div>
+
+<!-- ── PERIODOS ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>date_range</mat-icon>
+    <h2>Periodos</h2>
+  </div>
+  <p class="section-desc">
+    Recomendado: <strong style="color:#E8F4F8">sin huecos</strong> — que cada periodo empiece el día
+    después de que termina el anterior. Así siempre hay un periodo en curso.
+  </p>
+
+  <div class="cal-tabla">
+    @for (p of borrador().periodos; track p.id) {
+      <div class="cal-fila">
+        <input class="cal-input cal-nombre" type="text" placeholder="Nombre (p. ej. Primavera 2027)"
+               [ngModel]="p.nombre" (ngModelChange)="actualizarPeriodo(p.id, 'nombre', $event)"
+               aria-label="Nombre del periodo">
+        <input class="cal-input" type="date" [ngModel]="p.inicio"
+               (ngModelChange)="actualizarPeriodo(p.id, 'inicio', $event)" aria-label="Inicio">
+        <span class="cal-sep">→</span>
+        <input class="cal-input" type="date" [ngModel]="p.fin" [min]="p.inicio"
+               (ngModelChange)="actualizarPeriodo(p.id, 'fin', $event)" aria-label="Fin">
+        <button class="stepper-btn" (click)="quitarPeriodo(p.id)" matTooltip="Quitar periodo"
+                aria-label="Quitar periodo">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </div>
+    } @empty {
+      <p class="cal-vacio">Sin periodos. Estadísticas no mostrará "Este periodo" hasta que agregues uno.</p>
+    }
+  </div>
+  <button class="btn-inline" (click)="agregarPeriodo()">
+    <mat-icon>add</mat-icon> Agregar periodo
+  </button>
+</div>
+
+<!-- ── DÍAS INHÁBILES ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>event_busy</mat-icon>
+    <h2>Días inhábiles</h2>
+  </div>
+  <p class="section-desc">
+    Festivos y vacaciones. Para un solo día deja la misma fecha en ambos campos; para vacaciones,
+    captura el rango completo.
+  </p>
+
+  <div class="cal-tabla">
+    @for (d of borrador().diasInhabiles; track d.id) {
+      <div class="cal-fila">
+        <input class="cal-input" type="date" [ngModel]="d.desde"
+               (ngModelChange)="actualizarDiaInhabil(d.id, 'desde', $event)" aria-label="Desde">
+        <span class="cal-sep">→</span>
+        <input class="cal-input" type="date" [ngModel]="d.hasta" [min]="d.desde"
+               (ngModelChange)="actualizarDiaInhabil(d.id, 'hasta', $event)" aria-label="Hasta">
+        <input class="cal-input cal-nombre" type="text" placeholder="Descripción (p. ej. Día de Muertos)"
+               [ngModel]="d.descripcion" (ngModelChange)="actualizarDiaInhabil(d.id, 'descripcion', $event)"
+               aria-label="Descripción">
+        <button class="stepper-btn" (click)="quitarDiaInhabil(d.id)" matTooltip="Quitar"
+                aria-label="Quitar día inhábil">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </div>
+    } @empty {
+      <p class="cal-vacio">Sin días inhábiles capturados.</p>
+    }
+  </div>
+  <button class="btn-inline" (click)="agregarDiaInhabil()">
+    <mat-icon>add</mat-icon> Agregar día o rango
+  </button>
+</div>

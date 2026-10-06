@@ -37,6 +37,7 @@ import { verificarHorario } from '../../core/utils/horarios.utils';
 import { logError } from '../../core/utils/logger';
 import { contarHastaMismaHora } from '../../core/utils/tiempo.utils';
 import { contarMotivos } from '../../core/utils/estadisticas.utils';
+import { diaInhabilEn } from '../../core/utils/calendario.utils';
 
 const FMT_HORA_DASH = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
 
@@ -673,6 +674,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private calcularInsightDia(registrosHoy: Registro[]): InsightDia | null {
     const ahora = new Date();
     const horaActual = ahora.getHours();
+
+    // ─── Regla 0: día inhábil del calendario escolar ─
+    // Un festivo sin registros es lo esperado: no hay que alarmar con
+    // "verifica el escáner". Se captura en Configuración → Calendario escolar.
+    const inhabil = diaInhabilEn(this.configService.calendarioEscolar, ahora);
+    if (inhabil && registrosHoy.length === 0) {
+      return {
+        texto: `Hoy es día inhábil${inhabil.descripcion ? ` (${inhabil.descripcion})` : ''} — sin registros es lo normal.`,
+        icono: 'event_busy',
+        tono: 'neutro',
+      };
+    }
 
     // ─── Regla 1: sin registros aún (alerta si ya pasó la apertura) ─
     if (registrosHoy.length === 0) {

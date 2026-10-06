@@ -1,0 +1,111 @@
+// Estilos propios de la categoría Calendario. Lo común (section-card,
+// btn-inline, stepper-btn…) viene de ../configuracion.styles.scss.
+
+// El `gap` del panel separa categorías, no las tarjetas DENTRO de esta.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cal-tabla {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+
+.cal-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cal-input {
+  background: rgba(200, 230, 240, 0.05);
+  border: 1px solid rgba(200, 230, 240, 0.14);
+  border-radius: 8px;
+  color: #E8F4F8;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  color-scheme: dark;
+  min-width: 0;
+
+  &:focus {
+    outline: none;
+    border-color: #00C8D7;
+  }
+}
+
+.cal-nombre {
+  flex: 1 1 200px;
+}
+
+.cal-sep {
+  color: rgba(200, 230, 240, 0.4);
+}
+
+.cal-vacio {
+  color: rgba(200, 230, 240, 0.5);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.cal-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+
+  button[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.cal-pendiente {
+  color: #F5A623;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.cal-avisos {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 0.84rem;
+    color: #F5A623;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+  }
+
+  li.cal-error {
+    color: #F05252;
+  }
+}
+
+// Móvil: cada fila se apila — fechas arriba, texto abajo.
+@media (max-width: 576px) {
+  .cal-fila .cal-input[type='date'] {
+    flex: 1 1 40%;
+  }
+  .cal-sep {
+    display: none;
+  }
+}
