@@ -247,6 +247,23 @@ export class DatabaseService {
     this.cambiosSyncSignal.update(n => n + 1);
   }
 
+  // ── Versión de los datos (cachés de estadísticas) ─────────────
+  // Distinta de `cambiosSync`: aquella se dispara al MARCAR una fila
+  // pendiente, antes de que la escritura termine. Esta se incrementa
+  // DESPUÉS de que la escritura se confirmó, así que quien relea al verla
+  // cambiar ya encuentra el dato nuevo. Cubre también los borrados y los
+  // cierres automáticos, que no pasan por `markPending`.
+  //
+  // Solo ve las escrituras de esta pestaña: otra pestaña sobre la misma
+  // base (quiosco abierto aparte) no la mueve. Por eso las vistas de
+  // estadísticas además releen al entrar y al volver a la pestaña.
+  private readonly versionDatosSignal = signal(0);
+  readonly versionDatos = this.versionDatosSignal.asReadonly();
+
+  private notificarCambioDatos(): void {
+    this.versionDatosSignal.update(n => n + 1);
+  }
+
   async crearAlumno(alumno: Omit<Alumno, 'id' | 'fechaRegistro'>): Promise<Alumno> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
@@ -259,6 +276,7 @@ export class DatabaseService {
     });
 
     await this.db.add('alumnos', nuevoAlumno);
+    this.notificarCambioDatos();
     log('✅ Alumno creado:', nuevoAlumno.matricula);
     return nuevoAlumno;
   }
@@ -282,6 +300,7 @@ export class DatabaseService {
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     await this.db.delete('alumnos', id);
+    this.notificarCambioDatos();
     log('✅ Alumno eliminado:', id);
   }
 
@@ -299,6 +318,7 @@ export class DatabaseService {
     });
 
     await this.db.add('registros', nuevoRegistro);
+    this.notificarCambioDatos();
     log('✅ Registro creado para:', nuevoRegistro.matricula);
     return nuevoRegistro;
   }
@@ -367,6 +387,7 @@ export class DatabaseService {
     }, origen);
 
     await this.db.put('alumnos', restaurado);
+    this.notificarCambioDatos();
     return restaurado;
   }
 
@@ -391,6 +412,7 @@ export class DatabaseService {
     }, origen);
 
     await this.db.put('motivos', restaurado);
+    this.notificarCambioDatos();
     return restaurado;
   }
 
@@ -413,6 +435,7 @@ export class DatabaseService {
     }, origen);
 
     await this.db.put('registros', restaurado);
+    this.notificarCambioDatos();
     return restaurado;
   }
 
@@ -555,6 +578,7 @@ export class DatabaseService {
     await this.db.clear('alumnos');
     await this.db.clear('registros');
     await this.db.clear('motivos');
+    this.notificarCambioDatos();
 
     // Recrear motivos por defecto
     await this.crearMotivosDefault();
@@ -649,6 +673,7 @@ export class DatabaseService {
 
       const aGuardar: Alumno = this.markPending({ ...alumnoActualizado, id });
       await this.db.put('alumnos', aGuardar);
+      this.notificarCambioDatos();
 
       log('✅ Alumno actualizado exitosamente:', aGuardar.matricula);
     } catch (error) {
@@ -677,6 +702,7 @@ export class DatabaseService {
       alumno.activo = false;
       await store.put(alumno);
       await tx.done;
+      this.notificarCambioDatos();
 
       log('✅ Alumno desactivado:', alumno.matricula);
     } catch (error) {
@@ -705,6 +731,7 @@ export class DatabaseService {
       alumno.activo = true;
       await store.put(alumno);
       await tx.done;
+      this.notificarCambioDatos();
 
       log('✅ Alumno reactivado:', alumno.matricula);
     } catch (error) {
@@ -795,6 +822,7 @@ export class DatabaseService {
     });
 
     await this.db.add('motivos', nuevoMotivo);
+    this.notificarCambioDatos();
     log('✅ Motivo creado:', nuevoMotivo.nombre);
     return nuevoMotivo;
   }
@@ -809,6 +837,7 @@ export class DatabaseService {
 
     const aGuardar: Motivo = this.markPending({ ...motivo, id });
     await this.db.put('motivos', aGuardar);
+    this.notificarCambioDatos();
     log('✅ Motivo actualizado:', aGuardar.nombre);
   }
 
@@ -820,6 +849,7 @@ export class DatabaseService {
     if (!this.db) throw new Error('Base de datos no inicializada');
 
     await this.db.delete('motivos', id);
+    this.notificarCambioDatos();
     log('✅ Motivo eliminado:', id);
   }
 
@@ -1022,6 +1052,7 @@ export class DatabaseService {
       await this.inicializar();
       if (!this.db) throw new Error('Base de datos no inicializada');
       await this.db.delete('registros', registroId);
+      this.notificarCambioDatos();
     } catch (error) {
       logError('❌ Error al eliminar registro:', error);
       throw error;
@@ -1082,6 +1113,7 @@ export class DatabaseService {
 
       await store.put(registro);
       await tx.done;
+      this.notificarCambioDatos();
       return registro;
     } catch (error) {
       logError('❌ Error al actualizar registro:', error);
@@ -1147,6 +1179,7 @@ export class DatabaseService {
 
       await store.put(registro);
       await tx.done;
+      this.notificarCambioDatos();
 
       log(
         `✅ Salida registrada para ${registro.matricula}: ` +
@@ -1275,6 +1308,7 @@ export class DatabaseService {
       }
 
       await tx.done;
+      this.notificarCambioDatos();
 
       if (cerrados > 0) {
         log(`🔒 Cierre automático: ${cerrados} entrada(s) cerrada(s) tras ${horasUmbral}h${autoConfirmar ? ' (auto-confirmadas)' : ''}`);
@@ -1319,6 +1353,7 @@ export class DatabaseService {
       }
 
       await tx.done;
+      this.notificarCambioDatos();
       if (cerrados > 0) {
         log(`🔒 Cierre por horario: ${cerrados} entrada(s) cerrada(s)${autoConfirmar ? ' (auto-confirmadas)' : ''}`);
       }
@@ -1348,6 +1383,7 @@ export class DatabaseService {
         await store.put(r);
       }
       await tx.done;
+      this.notificarCambioDatos();
     } catch (error) {
       logError('❌ Error al confirmar cierre automático:', error);
       throw error;
@@ -1398,6 +1434,7 @@ export class DatabaseService {
         ...registrosAEliminar.map(registro => tx.store.delete(registro.id)),
         tx.done,
       ]);
+      this.notificarCambioDatos();
 
       log(`🗑️ ${registrosAEliminar.length} registros eliminados (${inicio.toLocaleDateString()} — ${fin.toLocaleDateString()})`);
 

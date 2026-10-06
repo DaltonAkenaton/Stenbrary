@@ -27,7 +27,7 @@ import { Registro, Alumno, Motivo } from '../../core/models';
 import { ExportService } from '../../core/services/export.service';
 import { RegistroDetalleDialogComponent } from '../detalle-alumno/registro-detalle-dialog/registro-detalle-dialog.component';
 import { RegistroEditarDialogComponent, RegistroEditarResultado } from '../detalle-alumno/registro-editar-dialog/registro-editar-dialog.component';
-import { formatearDuracion } from '../../core/utils/tiempo.utils';
+import { formatearDuracion, parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
 import { logError } from '../../core/utils/logger';
 
 type RangoFecha = 'hoy' | 'ayer' | 'semana' | 'mes' | 'todo' | 'personalizado';
@@ -242,11 +242,12 @@ columnas: string[] = [
   }
 
   // ─── FILTRADO (memoizado con computed) ─────────────────
-  // Una sola pasada por los 90k registros por cambio de filtro/data.
-  registrosFiltradosSig = computed<RegistroRender[]>(() => {
-    const f = this.filtros();
-    const todos = this.todosRegistros();
-
+  /**
+   * Rango de fechas del filtro activo, en ms. Lo comparten la lista y el
+   * PDF: antes el PDF calculaba su propio "período" (o ponía la fecha de
+   * hoy) y la cabecera no coincidía con las filas.
+   */
+  private rangoFiltroTs(f = this.filtros()): { tsMin: number; tsMax: number } {
     const inicioHoy = new Date();
     inicioHoy.setHours(0, 0, 0, 0);
 
@@ -260,17 +261,29 @@ columnas: string[] = [
       tsMin = ayer.getTime();
       tsMax = inicioHoy.getTime() - 1;
     } else if (f.rangoFecha === 'semana') {
-      const d = new Date(inicioHoy); d.setDate(d.getDate() - 7);
-      tsMin = d.getTime();
+      // "7 días" = hoy y los 6 anteriores (antes salían 8).
+      tsMin = rangoUltimosDias(7).inicio.getTime();
     } else if (f.rangoFecha === 'mes') {
-      const d = new Date(inicioHoy); d.setDate(d.getDate() - 30);
-      tsMin = d.getTime();
+      tsMin = rangoUltimosDias(30).inicio.getTime();
     } else if (f.rangoFecha === 'personalizado') {
-      const ini = this.fechaPersonalizadaInicioSig();
-      const fin = this.fechaPersonalizadaFinSig();
-      if (ini) { const d = new Date(ini); d.setHours(0, 0, 0, 0); tsMin = d.getTime(); }
-      if (fin) { const d = new Date(fin); d.setHours(23, 59, 59, 999); tsMax = d.getTime(); }
+      // Hora LOCAL: `new Date('YYYY-MM-DD')` es medianoche UTC y en México
+      // mostraba el día anterior — incluidos todos los drill-down del
+      // dashboard ejecutivo (auditoría 2026-10, R1).
+      const ini = parseFechaLocal(this.fechaPersonalizadaInicioSig());
+      const fin = parseFechaLocal(this.fechaPersonalizadaFinSig());
+      if (ini) tsMin = ini.getTime();
+      if (fin) { fin.setHours(23, 59, 59, 999); tsMax = fin.getTime(); }
     }
+
+    return { tsMin, tsMax };
+  }
+
+  // Una sola pasada por los 90k registros por cambio de filtro/data.
+  // rangoFiltroTs() lee los signals de fechas: el computed depende de ellos.
+  registrosFiltradosSig = computed<RegistroRender[]>(() => {
+    const f = this.filtros();
+    const todos = this.todosRegistros();
+    const { tsMin, tsMax } = this.rangoFiltroTs(f);
 
     const termino = f.busqueda.trim().toLowerCase();
     const motivoFiltro = f.motivo;
@@ -456,8 +469,17 @@ columnas: string[] = [
     const f = this.filtros();
     const tipo = tipoMap[f.rangoFecha] || 'personalizado';
 
+    // Mismo rango que la lista. Sin límite (p. ej. "Todo"), el período
+    // real son las fechas de los datos — `datos` viene de más nuevo a más viejo.
+    const { tsMin, tsMax } = this.rangoFiltroTs(f);
+    const fechaInicio = Number.isFinite(tsMin)
+      ? new Date(tsMin) : new Date(datos[datos.length - 1]._fechaTs);
+    const fechaFin = Number.isFinite(tsMax) ? new Date(tsMax) : new Date(datos[0]._fechaTs);
+
     this.reportService.generarReporteAccesos(datos, {
       tipo,
+      fechaInicio,
+      fechaFin,
       filtros: {
         busqueda: f.busqueda || undefined,
         carrera: f.carrera || undefined,

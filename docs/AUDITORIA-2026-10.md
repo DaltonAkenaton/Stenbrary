@@ -3,6 +3,20 @@
 > Fecha: 2026-10-05 · Versión auditada: v3.41.0 (`e2ffe7e`) · Modo: **solo reporte, sin cambios de código.**
 > Los arreglos van después, por severidad, cada uno en su propio commit con su test.
 
+## Estado
+
+| Tanda | Estado | Versión |
+|---|---|---|
+| 1 — R1, R2, R3, R4, R5, O5, O14, O15, O16, M10, M12 | ✅ Hecha (2026-10-06) | v3.41.1 |
+| 2 — tras decisiones | ⏳ Esperando P1, P3, P4, P6, P7, P8 | |
+| 3 — blindaje | ⏳ | |
+
+**Hallazgo nuevo durante la Tanda 1 (corregido):** el PDF de `/registros` calculaba su propio período
+para la cabecera (con el filtro "ayer" decía "Fecha: hoy"). Ahora usa el mismo rango que la lista.
+
+**Decisiones tomadas:** P2 → cada motivo de una visita suma (2026-10-06). P5 → los invitados no cuentan
+en carreras, turnos ni grados (2026-10-06).
+
 ## Resumen
 
 | Severidad | Cantidad | Significado |

@@ -16,6 +16,7 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { DatabaseService } from './database.service';
 import { Alumno, Registro } from '../models';
+import { parseFechaLocal } from '../utils/tiempo.utils';
 
 /**
  * Reemplaza el indexedDB global por una instancia fresca entre tests
@@ -67,6 +68,64 @@ describe('DatabaseService', () => {
     resetIndexedDB();
     db = new DatabaseService();
     await db.inicializar();
+  });
+
+  describe('eliminarRegistrosPorRango con fechas de un <input type="date">', () => {
+    // Regresión de la auditoría 2026-10 (R2): el componente convertía
+    // '2026-03-10' con new Date(), que es medianoche UTC; en México eso
+    // corría el borrado un día hacia atrás. Con parseFechaLocal, elegir
+    // 10 → 12 de marzo borra exactamente esos tres días.
+    it('borra los días elegidos y ni uno más', async () => {
+      const dias = [9, 10, 11, 12, 13];
+      for (const d of dias) {
+        await crearRegistroConFecha(db, '1000001', new Date(2026, 2, d, 12, 0));
+      }
+      const eliminados = await db.eliminarRegistrosPorRango(
+        parseFechaLocal('2026-03-10')!,
+        parseFechaLocal('2026-03-12')!,
+      );
+      expect(eliminados).toBe(3);
+      const quedan = (await db.obtenerTodosLosRegistros())
+        .map(r => new Date(r.fechaHora).getDate())
+        .sort((a, b) => a - b);
+      expect(quedan).toEqual([9, 13]);
+    });
+
+    it('incluye registros a primera y última hora de los días límite', async () => {
+      await crearRegistroConFecha(db, '1000001', new Date(2026, 2, 10, 0, 5));
+      await crearRegistroConFecha(db, '1000001', new Date(2026, 2, 12, 23, 55));
+      const eliminados = await db.eliminarRegistrosPorRango(
+        parseFechaLocal('2026-03-10')!,
+        parseFechaLocal('2026-03-12')!,
+      );
+      expect(eliminados).toBe(2);
+    });
+  });
+
+  describe('versionDatos', () => {
+    it('sube después de cada escritura que cambia lo que muestran las estadísticas', async () => {
+      const v0 = db.versionDatos();
+      const r = await db.crearRegistro({
+        alumnoId: 'a-1', matricula: '1000001', nombreCompleto: 'Test',
+        carrera: 'ISC', motivoId: 'm1', motivoNombre: 'Estudiar',
+      });
+      const v1 = db.versionDatos();
+      expect(v1).toBeGreaterThan(v0);
+
+      await db.registrarSalida(r.id);
+      const v2 = db.versionDatos();
+      expect(v2).toBeGreaterThan(v1);
+
+      await db.eliminarRegistro(r.id);
+      expect(db.versionDatos()).toBeGreaterThan(v2);
+    });
+
+    it('no sube en lecturas', async () => {
+      const v0 = db.versionDatos();
+      await db.obtenerTodosLosRegistros();
+      await db.obtenerRegistrosDeHoy();
+      expect(db.versionDatos()).toBe(v0);
+    });
   });
 
   describe('obtenerRegistrosDeHoy', () => {

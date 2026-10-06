@@ -30,6 +30,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { fechaLocalISO } from '../../core/utils/tiempo.utils';
 
 @Component({
   selector: 'app-diagnostico',
@@ -132,7 +133,7 @@ export class DiagnosticoComponent {
       const contenido = this.diagnostico.construirReporte();
       const blob = new Blob([contenido], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const fecha = new Date().toISOString().slice(0, 10);
+      const fecha = fechaLocalISO();
 
       const a = document.createElement('a');
       a.href = url;

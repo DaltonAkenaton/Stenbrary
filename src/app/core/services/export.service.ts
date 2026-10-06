@@ -12,6 +12,7 @@
 
 import { Injectable } from '@angular/core';
 import { Registro, Alumno } from '../models';
+import { fechaLocalISO } from '../utils/tiempo.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -109,6 +110,6 @@ export class ExportService {
   }
 
   private fechaHoy(): string {
-    return new Date().toISOString().split('T')[0];
+    return fechaLocalISO();
   }
 }

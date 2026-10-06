@@ -9,6 +9,46 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-06 — Auditoría de estadísticas y Tanda 1: las fechas mentían un día
+
+Antes de seguir con la nube, el usuario pidió una auditoría "brutal" de todo
+lo que muestra números. Informe completo en `docs/AUDITORIA-2026-10.md`
+(6 🔴, 16 🟠, 19 🟡, 8 decisiones de producto).
+
+**Lo que se descubrió.** La causa de los dos 🔴 más graves es una sola línea
+repetida: `new Date('2026-10-03')`. El estándar la lee como medianoche **UTC**,
+que en México son las 18:00 del día anterior; luego `setHours(0,0,0,0)` la
+deja en el 2 de octubre. Resultado: todos los drill-down de Estadísticas
+abrían `/registros` en el día equivocado, y "Eliminar registros"
+personalizado **borraba un día que nadie eligió**. El viaje inverso,
+`toISOString().split('T')[0]`, daba la fecha de mañana después de las 18:00
+(13 sitios). **Ningún test lo vio porque CI corre en UTC**, donde el desfase
+es cero.
+
+**Qué se hizo (Tanda 1, v3.41.1):**
+- `parseFechaLocal` / `fechaLocalISO` / `rangoUltimosDias` /
+  `contarHastaMismaHora` en `tiempo.utils.ts`, con la regla escrita en la
+  cabecera: ningún `new Date(string)` ni `toISOString().split`.
+- CI corre los unitarios con `TZ=America/Mexico_City`; Playwright con
+  `timezoneId`. Así los tests de fechas sí muerden.
+- `DatabaseService.versionDatos`: señal que sube **después** de cada
+  escritura confirmada (no se reutilizó `cambiosSync` porque se dispara antes
+  de escribir y no cubre borrados). La caché de estadísticas compara versión;
+  además relee al entrar y al volver a la pestaña (otra pestaña no mueve la
+  señal).
+- Tendencia y comparador con `sinReferencia`: sin base no se inventa un %.
+- Resumen compara "lo que va de hoy" contra el mismo día de la semana pasada
+  **a la misma hora**.
+- Hallazgo nuevo durante el arreglo: el PDF de `/registros` ponía en la
+  cabecera un período propio ("Fecha: hoy" con el filtro "ayer"). Ahora
+  comparte `rangoFiltroTs()` con la lista.
+
+**Pendiente:** R6 y los 🟠 que dependen de definiciones (P1–P8). El usuario
+decidió P2 (cada motivo suma) y P5 (invitados fuera de carreras/turnos/grados);
+P3 está argumentado y pendiente de su confirmación.
+
+---
+
 ## 2026-09-04 — La nube se enciende con un interruptor, no con un deploy
 
 Primera tanda de Fase 2 después de cerrar Fase 1. El objetivo era el punto con

@@ -13,6 +13,7 @@ import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
 import { Alumno, Registro, Motivo } from '../models';
+import { fechaLocalISO } from '../utils/tiempo.utils';
 
 export interface BackupData {
   meta: {
@@ -83,7 +84,7 @@ export class BackupService {
   async descargarBackup(): Promise<{ exito: boolean; nombreArchivo: string }> {
     try {
       const backup = await this.exportarBackup();
-      const fecha = new Date().toISOString().split('T')[0];
+      const fecha = fechaLocalISO();
       const hora = new Date().toLocaleTimeString('es-MX', {
         hour: '2-digit', minute: '2-digit',
       }).replace(':', '');

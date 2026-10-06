@@ -35,6 +35,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { Registro, Motivo } from '../../core/models';
 import { verificarHorario } from '../../core/utils/horarios.utils';
 import { logError } from '../../core/utils/logger';
+import { contarHastaMismaHora } from '../../core/utils/tiempo.utils';
 
 const FMT_HORA_DASH = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
 
@@ -171,10 +172,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   /** Fecha (YYYY-MM-DD) usada en la última comparativa, para detectar cambio de día. */
   private fechaComparativaCacheada = '';
-  /** Conteo del mismo día de la semana pasada (referencia principal). */
-  private registrosSemanaPasadaCount = 0;
-  /** Conteo de ayer (fallback si la semana pasada no tiene datos). */
-  private registrosAyerCount = 0;
+  /** Horas de entrada del mismo día de la semana pasada (referencia principal). */
+  private fechasSemanaPasada: Date[] = [];
+  /** Horas de entrada de ayer (fallback si la semana pasada no tiene datos). */
+  private fechasAyer: Date[] = [];
 
   constructor(
     private databaseService: DatabaseService,
@@ -409,12 +410,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.databaseService.obtenerRegistrosPorFecha(semanaPasada),
             this.databaseService.obtenerRegistrosPorFecha(ayer),
           ]);
-          this.registrosSemanaPasadaCount = regsSemana.length;
-          this.registrosAyerCount = regsAyer.length;
+          this.fechasSemanaPasada = regsSemana.map(r => new Date(r.fechaHora));
+          this.fechasAyer = regsAyer.map(r => new Date(r.fechaHora));
           this.fechaComparativaCacheada = hoyKey;
         } catch {
-          this.registrosSemanaPasadaCount = 0;
-          this.registrosAyerCount = 0;
+          this.fechasSemanaPasada = [];
+          this.fechasAyer = [];
         }
       }
 
@@ -529,24 +530,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Calcula el delta vs la mejor referencia disponible:
-   * - Si la semana pasada tiene datos, compara vs ese mismo día (más
-   *   relevante porque elimina estacionalidad semanal — lunes vs lunes).
+   * Calcula el delta vs la mejor referencia disponible, AL MISMO AVANCE:
+   * lo que va de hoy contra lo que llevaba el día de referencia a esta
+   * misma hora. Antes se comparaba contra el día de referencia completo y
+   * a media mañana salía "↓ 75 %" casi siempre (auditoría 2026-10, R5).
+   * - Si la semana pasada tuvo datos, compara vs ese mismo día (lunes vs
+   *   lunes elimina la estacionalidad semanal).
    * - Si no, cae a "ayer" (sistema nuevo o semana atípica).
-   * - Si tampoco hay ayer, no muestra delta (devuelve undefined).
+   * - Si la referencia a esta hora es 0, no hay base para un porcentaje y no
+   *   se muestra delta (antes salía un "+100 %" inventado).
    */
   private calcularDeltaComparativa(actual: number): QuickStat['delta'] {
-    const usarSemana = this.registrosSemanaPasadaCount > 0;
-    const referenciaValor = usarSemana ? this.registrosSemanaPasadaCount : this.registrosAyerCount;
+    const usarSemana = this.fechasSemanaPasada.length > 0;
+    const referenciaValor = contarHastaMismaHora(usarSemana ? this.fechasSemanaPasada : this.fechasAyer);
     const nombreDia = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][new Date().getDay()];
-    const referenciaTexto = usarSemana ? `vs ${nombreDia} pasado` : 'vs ayer';
+    const referenciaTexto = usarSemana ? `vs ${nombreDia} pasado a esta hora` : 'vs ayer a esta hora';
 
-    if (referenciaValor === 0 && actual === 0) {
-      return undefined; // sin contexto, no mostrar delta
-    }
-    if (referenciaValor === 0) {
-      return { porcentaje: 100, direccion: 'up', referencia: referenciaTexto, valorReferencia: 0 };
-    }
+    if (referenciaValor === 0) return undefined;
+
     const pct = Math.round(((actual - referenciaValor) / referenciaValor) * 100);
     let direccion: 'up' | 'down' | 'igual' = 'igual';
     if (pct > 0) direccion = 'up';
@@ -706,22 +707,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     // ─── Regla 2: día atípico vs semana pasada (>30% diferencia) ─
-    if (this.registrosSemanaPasadaCount > 0) {
-      const pctDif = Math.round(
-        ((registrosHoy.length - this.registrosSemanaPasadaCount) / this.registrosSemanaPasadaCount) * 100,
-      );
+    // Al mismo avance del día (ver calcularDeltaComparativa). Con menos de
+    // 10 accesos de referencia el porcentaje es ruido (2 vs 3 = "+50 %").
+    const refSemana = contarHastaMismaHora(this.fechasSemanaPasada, ahora);
+    if (refSemana >= 10) {
+      const pctDif = Math.round(((registrosHoy.length - refSemana) / refSemana) * 100);
       const nombreDia = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][ahora.getDay()];
 
       if (pctDif >= 30) {
         return {
-          texto: `Día activo: ${pctDif}% más accesos que el ${nombreDia} pasado.`,
+          texto: `Día activo: ${pctDif}% más accesos que el ${nombreDia} pasado a esta hora.`,
           icono: 'trending_up',
           tono: 'positivo',
         };
       }
       if (pctDif <= -30) {
         return {
-          texto: `Día tranquilo: ${Math.abs(pctDif)}% menos accesos que el ${nombreDia} pasado.`,
+          texto: `Día tranquilo: ${Math.abs(pctDif)}% menos accesos que el ${nombreDia} pasado a esta hora.`,
           icono: 'trending_down',
           tono: 'neutro',
         };

@@ -15,6 +15,14 @@
       <div class="header-title-row">
         <h1>Dashboard Ejecutivo</h1>
         <button mat-icon-button class="header-help-btn"
+                (click)="refrescarDatos()"
+                [disabled]="cargando || recargando"
+                matTooltip="Volver a leer los datos (por si registraste algo en otra pestaña)"
+                matTooltipPosition="left"
+                aria-label="Actualizar datos">
+          <mat-icon>refresh</mat-icon>
+        </button>
+        <button mat-icon-button class="header-help-btn"
                 (click)="abrirInfoFormulas()"
                 matTooltip="¿Cómo se calculan los números? Ver fórmulas"
                 matTooltipPosition="left"
@@ -94,13 +102,13 @@
           <span class="hora-label">Desde</span>
           <select [(ngModel)]="filtroHoraDesde" (change)="setFiltroHora()" class="hora-select">
             @for (h of opcionesHoras; track h.v) {
-              <option [value]="h.v">{{ h.label }}</option>
+              <option [ngValue]="h.v">{{ h.label }}</option>
             }
           </select>
           <span class="hora-label">Hasta</span>
           <select [(ngModel)]="filtroHoraHasta" (change)="setFiltroHora()" class="hora-select">
             @for (h of opcionesHoras; track h.v) {
-              <option [value]="h.v">{{ h.label }}</option>
+              <option [ngValue]="h.v">{{ h.label }}</option>
             }
           </select>
         </div>
@@ -1101,7 +1109,9 @@
                 {{ comparativa.diferencia.cambio > 0 ? '+' : '' }}{{ comparativa.diferencia.cambio }}
               </div>
               <div class="dif-porcentaje">
-                @if (comparativa.diferencia.direccion !== 'igual') {
+                @if (comparativa.diferencia.sinReferencia) {
+                  B sin registros
+                } @else if (comparativa.diferencia.direccion !== 'igual') {
                   {{ comparativa.diferencia.porcentaje > 0 ? '+' : '' }}{{ comparativa.diferencia.porcentaje | number:'1.0-1' }}%
                 } @else {
                   Sin cambio

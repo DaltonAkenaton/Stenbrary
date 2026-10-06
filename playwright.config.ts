@@ -26,6 +26,9 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // El navegador vive en la zona horaria de la biblioteca, no en la del
+    // runner (UTC): los errores de fecha "un día antes" solo existen aquí.
+    timezoneId: 'America/Mexico_City',
   },
 
   projects: [

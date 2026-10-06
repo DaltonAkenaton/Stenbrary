@@ -15,6 +15,7 @@ import { Alumno, Registro } from '../models';
 // jspdf (~150 KB) + autotable (~30 KB) on-demand.
 import type jsPDF from 'jspdf';
 import type autoTableT from 'jspdf-autotable';
+import { fechaLocalISO } from '../utils/tiempo.utils';
 
 export type TipoReporte = 'diario' | 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
@@ -719,7 +720,7 @@ export class ReportService {
   }
 
   private generarNombreArchivo(opciones: OpcionesReporte): string {
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = fechaLocalISO();
     return `reporte_${opciones.tipo}_stenbrary_${fecha}.pdf`;
   }
 
@@ -943,7 +944,7 @@ export class ReportService {
     // Footer
     this.dibujarFooterTodasPaginas(doc, pageWidth, margin);
 
-    const fechaSlug = ahora.toISOString().split('T')[0];
+    const fechaSlug = fechaLocalISO(ahora);
     doc.save(`constancia_${alumno.matricula}_${fechaSlug}.pdf`);
   }
 }

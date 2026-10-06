@@ -47,3 +47,79 @@ export function inicioDelDia(fecha: Date = new Date()): Date {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+
+// ═══════════════════════════════════════════════════════
+// FECHAS DE CALENDARIO ('YYYY-MM-DD') — SIEMPRE EN HORA LOCAL
+// ═══════════════════════════════════════════════════════
+//
+// `new Date('2026-10-03')` NO es el 3 de octubre a medianoche local: el
+// estándar interpreta las fechas sin hora como medianoche UTC, que en
+// México son las 18:00 del día ANTERIOR. Y `toISOString()` hace el viaje
+// inverso: después de las 18:00 locales devuelve la fecha de mañana.
+//
+// Eso desfasaba un día los filtros de /registros (todos los "clic para ver
+// registros" de Estadísticas mostraban el día anterior) y el borrado por
+// rango de Configuración (borraba un día que no se eligió). Auditoría
+// 2026-10, R1/R2/O15. Los tests de CI corrían en UTC, donde el desfase
+// es cero, y por eso nunca falló nada.
+//
+// Regla: todo string de un <input type="date"> o de la URL entra por
+// `parseFechaLocal`, y todo string de fecha que se genere sale de
+// `fechaLocalISO`. Nunca `new Date(string)` ni `toISOString().split('T')`.
+
+/**
+ * Convierte 'YYYY-MM-DD' en la medianoche LOCAL de ese día.
+ * Devuelve `null` si el texto no es una fecha de calendario válida
+ * (incluye fechas imposibles como '2026-02-31').
+ */
+export function parseFechaLocal(texto: string | null | undefined): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((texto ?? '').trim());
+  if (!m) return null;
+  const [anio, mes, dia] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const d = new Date(anio, mes - 1, dia, 0, 0, 0, 0);
+  // new Date(2026, 1, 31) "rueda" al 3 de marzo: se rechaza en vez de aceptar otro día.
+  if (d.getFullYear() !== anio || d.getMonth() !== mes - 1 || d.getDate() !== dia) return null;
+  return d;
+}
+
+/** 'YYYY-MM-DD' del día LOCAL de `fecha` (default: hoy). */
+export function fechaLocalISO(fecha: Date = new Date()): string {
+  const y = fecha.getFullYear();
+  const m = String(fecha.getMonth() + 1).padStart(2, '0');
+  const d = String(fecha.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Rango [00:00 del primer día, 23:59:59.999 de hoy] que cubre `dias` días
+ * de calendario contando hoy. "Últimos 7 días" = hoy y los 6 anteriores;
+ * antes se restaban 7 y salían 8 días (auditoría 2026-10, O14).
+ */
+export function rangoUltimosDias(dias: number, hoy: Date = new Date()): { inicio: Date; fin: Date } {
+  const inicio = new Date(hoy);
+  inicio.setDate(inicio.getDate() - (Math.max(1, Math.floor(dias)) - 1));
+  inicio.setHours(0, 0, 0, 0);
+  const fin = new Date(hoy);
+  fin.setHours(23, 59, 59, 999);
+  return { inicio, fin };
+}
+
+/**
+ * Cuántas de `fechas` ocurrieron, dentro de su propio día, a la misma hora
+ * del día que `referencia` o antes. Sirve para comparar "lo que va de hoy"
+ * contra otro día al MISMO avance: comparar 30 accesos a las 10:00 contra
+ * el lunes pasado COMPLETO daba "−75 %" todas las mañanas (auditoría
+ * 2026-10, R5).
+ */
+export function contarHastaMismaHora(fechas: Date[], referencia: Date = new Date()): number {
+  const corte = minutosDelDia(referencia);
+  let n = 0;
+  for (const f of fechas) {
+    if (minutosDelDia(f) <= corte) n++;
+  }
+  return n;
+}
+
+function minutosDelDia(d: Date): number {
+  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+}

@@ -32,6 +32,7 @@ import { LoadingService } from '../../core/services/loading.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { coincide } from '../../core/utils/invariante.utils';
+import { parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
 
 type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6meses' | 'todo';
 
@@ -495,13 +496,12 @@ export class LimpiezaRegistrosComponent {
       case 'hoy':
         inicio = new Date(hoy);
         break;
+      // Hoy y los N−1 días anteriores: restar N borraba un día de más.
       case 'semana':
-        inicio = new Date(hoy);
-        inicio.setDate(inicio.getDate() - 7);
+        inicio = rangoUltimosDias(7, hoy).inicio;
         break;
       case 'mes':
-        inicio = new Date(hoy);
-        inicio.setDate(inicio.getDate() - 30);
+        inicio = rangoUltimosDias(30, hoy).inicio;
         break;
       case '3meses':
         inicio = new Date(hoy);
@@ -518,10 +518,15 @@ export class LimpiezaRegistrosComponent {
         // contaba ni se borraba, y la pantalla parecía mentir.
         inicio = new Date(1970, 0, 1);
         return { inicio, fin: new Date(2100, 0, 1) };
-      case 'personalizado':
-        if (!this.fechaDesde || !this.fechaHasta) return null;
-        inicio = new Date(this.fechaDesde);
-        return { inicio, fin: new Date(this.fechaHasta) };
+      case 'personalizado': {
+        // Hora LOCAL. `new Date('YYYY-MM-DD')` es medianoche UTC: en México
+        // corría el rango un día hacia atrás y se borraba un día que el
+        // coordinador no eligió (auditoría 2026-10, R2).
+        const desde = parseFechaLocal(this.fechaDesde);
+        const hasta = parseFechaLocal(this.fechaHasta);
+        if (!desde || !hasta || desde > hasta) return null;
+        return { inicio: desde, fin: hasta };
+      }
       default:
         return null;
     }

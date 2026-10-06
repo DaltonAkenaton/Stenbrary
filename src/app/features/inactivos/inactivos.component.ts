@@ -27,6 +27,7 @@ import { LoadingService } from '../../core/services/loading.service';
 import { ExportService } from '../../core/services/export.service';
 import { Alumno } from '../../core/models';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { fechaLocalISO } from '../../core/utils/tiempo.utils';
 
 interface AlumnoInactivo {
   alumno: Alumno;
@@ -274,7 +275,7 @@ export class InactivosComponent implements OnInit {
       return;
     }
     const alumnos = lista.map(i => i.alumno);
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = fechaLocalISO();
     try {
       await this.exportService.exportarAlumnosXLSX(
         alumnos,

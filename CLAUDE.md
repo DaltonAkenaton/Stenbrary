@@ -78,10 +78,17 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **184 specs unitarios en verde**, en 10 archivos —
+Suite activa: **202 specs unitarios en verde**, en 11 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
-`invariante.utils`, `descarga.utils`, `database.service`, `backup.service`,
-`estadisticas-avanzadas.service`, `supabase.client`. **20 tests E2E** con
+`invariante.utils`, `descarga.utils`, `tiempo.utils`, `database.service`,
+`backup.service`, `estadisticas-avanzadas.service`, `supabase.client`.
+CI corre los unitarios con `TZ=America/Mexico_City` y Playwright con
+`timezoneId` igual: los errores de fecha "un día antes" no existen en UTC.
+
+**Fechas de calendario:** nunca `new Date('YYYY-MM-DD')` (es medianoche UTC:
+en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
+18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
+`core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`. **20 tests E2E** con
 Playwright (12 en `smoke.spec.ts`, 8 en `responsive.spec.ts`). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
 type-check app/spec).

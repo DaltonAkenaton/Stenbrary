@@ -49,6 +49,55 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.41.1',
+    fecha: '2026-10-06',
+    titulo: 'Números que dicen la verdad',
+    resumen: 'Revisamos a fondo las estadísticas y encontramos varios lugares donde la pantalla mostraba un dato que no era cierto. Esta versión corrige los más graves.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Al elegir fechas a mano, el sistema tomaba el día anterior. Afectaba a "Eliminar registros", ' +
+          'que borraba un día que no elegiste y conservaba el último que sí, y a la lista de Registros. ' +
+          'Esa lista es la que se abre al hacer clic en una gráfica de Estadísticas, así que también enseñaba el día equivocado.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Estadísticas ya no se queda con datos viejos: al volver del escáner, o tras registrar, borrar o importar, ' +
+          'los números se actualizan solos. Además hay un botón de actualizar junto al título.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'En el Resumen, "Accesos hoy" se compara contra lo que llevaba el mismo día de la semana pasada a esta misma hora. ' +
+          'Antes se comparaba contra el día completo y por las mañanas siempre parecía una caída.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'Cuando el período anterior no tuvo visitas, ya no aparece "↑ 0 % más" ni un "+100 %" inventado: ' +
+          'se indica que no hay con qué comparar.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          '"Últimos 7 días" abarca ahora 7 días (antes eran 8), tanto en Registros como al eliminar registros.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El PDF de Registros indica en la cabecera el período que de verdad contiene. Después de las 6 de la tarde, ' +
+          'las fechas y los nombres de archivo ya no salen con la fecha de mañana.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El filtro por hora de Estadísticas ya no rechaza rangos válidos (por ejemplo, de 9:00 a 12:00).',
+      },
+    ],
+  },
+  {
     version: '3.41.0',
     fecha: '2026-09-04',
     titulo: 'La nube, cuando tú lo decidas',

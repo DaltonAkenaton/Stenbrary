@@ -32,6 +32,12 @@ export interface TendenciaComparativa {
   cambio: number;
   porcentajeCambio: number;
   direccion: 'up' | 'down' | 'igual';
+  /**
+   * True cuando el período anterior tuvo 0 registros y el actual no: no hay
+   * base para un porcentaje. La UI NO debe mostrar `porcentajeCambio` (vale 0
+   * por convención) — antes se leía "↑ 0.0 % más que el período anterior".
+   */
+  sinReferencia: boolean;
   /** Rango contra el que se está comparando (período anterior de la misma duración). */
   rangoAnterior: RangoFechas;
 }
@@ -44,6 +50,8 @@ export interface ComparativaDosRangos {
     cambio: number;
     porcentaje: number;
     direccion: 'up' | 'down' | 'igual';
+    /** B tuvo 0 registros y A no: el porcentaje no significa nada. Ver `TendenciaComparativa`. */
+    sinReferencia: boolean;
   };
 }
 
@@ -127,6 +135,7 @@ export class EstadisticasAvanzadasService {
    * para evitar N queries simultáneas a IndexedDB.
    */
   private async obtenerRegistrosConCache(): Promise<Registro[]> {
+    this.descartarCacheSiCambiaronLosDatos();
     const ahora = Date.now();
     if (this.registrosCache && (ahora - this.cacheTimestamp) < this.CACHE_TTL) {
       return this.registrosCache;
@@ -134,10 +143,12 @@ export class EstadisticasAvanzadasService {
     if (this.cacheInFlight) {
       return this.cacheInFlight;
     }
+    const version = this.versionActual();
     this.cacheInFlight = this.databaseService.obtenerTodosLosRegistros()
       .then(registros => {
         this.registrosCache = registros;
         this.cacheTimestamp = Date.now();
+        this.versionCache = version;
         return registros;
       })
       .finally(() => {
@@ -146,8 +157,29 @@ export class EstadisticasAvanzadasService {
     return this.cacheInFlight;
   }
 
+  /** Versión de los datos con la que se llenó la caché (ver `DatabaseService.versionDatos`). */
+  private versionCache = -1;
+
+  /** Tolerante a mocks sin la señal: sin versión, la caché solo vence por TTL. */
+  private versionActual(): number {
+    return this.databaseService.versionDatos?.() ?? 0;
+  }
+
+  /**
+   * Una escritura en esta pestaña (escaneo, salida, borrado, importación)
+   * deja la caché vieja aunque no haya vencido el TTL. Antes de esto, volver
+   * del escáner a /estadisticas mostraba hasta 5 minutos de datos atrasados
+   * (auditoría 2026-10, R3).
+   */
+  private descartarCacheSiCambiaronLosDatos(): void {
+    if (this.versionCache !== -1 && this.versionCache !== this.versionActual()) {
+      this.invalidarCache();
+    }
+  }
+
   /** Invalida el caché manualmente */
   invalidarCache(): void {
+    this.versionCache = -1;
     this.registrosCache = null;
     this.cacheTimestamp = 0;
     this.cacheInFlight = null;
@@ -180,10 +212,13 @@ export class EstadisticasAvanzadasService {
       inicio.setHours(0, 0, 0, 0);
       return { inicio, fin };
     }
-    const minTs = todos.reduce(
-      (min, r) => Math.min(min, new Date(r.fechaHora).getTime()),
-      Date.now(),
-    );
+    // Una sola fecha inválida volvía NaN el mínimo y dejaba todo el preset
+    // "Todo el historial" en 0 (auditoría 2026-10, O16). Se ignoran: el
+    // Diagnóstico ya las reporta aparte.
+    const minTs = todos.reduce((min, r) => {
+      const t = new Date(r.fechaHora).getTime();
+      return Number.isFinite(t) ? Math.min(min, t) : min;
+    }, Date.now());
     const inicio = new Date(minTs);
     inicio.setHours(0, 0, 0, 0);
     return { inicio, fin };
@@ -456,7 +491,8 @@ export class EstadisticasAvanzadasService {
     if (cambio > 0) direccion = 'up';
     if (cambio < 0) direccion = 'down';
 
-    return { actual, anterior, cambio, porcentajeCambio, direccion, rangoAnterior };
+    const sinReferencia = anterior === 0 && actual > 0;
+    return { actual, anterior, cambio, porcentajeCambio, direccion, sinReferencia, rangoAnterior };
   }
 
   /**
@@ -524,7 +560,7 @@ export class EstadisticasAvanzadasService {
         horaPico: this.calcularHoraPicoDesdeRegistros(regsB),
         motivos: distribucion(regsB),
       },
-      diferencia: { cambio, porcentaje, direccion },
+      diferencia: { cambio, porcentaje, direccion, sinReferencia: totalB === 0 && totalA > 0 },
     };
   }
 
@@ -588,6 +624,7 @@ export class EstadisticasAvanzadasService {
   private alumnosCache: Alumno[] | null = null;
   private alumnosCacheTs = 0;
   private async obtenerAlumnosConCache(): Promise<Alumno[]> {
+    this.descartarCacheSiCambiaronLosDatos();
     const ahora = Date.now();
     if (this.alumnosCache && (ahora - this.alumnosCacheTs) < this.CACHE_TTL) {
       return this.alumnosCache;

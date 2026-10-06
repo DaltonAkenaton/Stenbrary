@@ -63,6 +63,7 @@ import { ExportService } from '../../core/services/export.service';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfigService } from '../../core/services/config.service';
+import { fechaLocalISO } from '../../core/utils/tiempo.utils';
 
 Chart.register(...registerables);
 
@@ -380,6 +381,9 @@ formatHora(h: number): string {
     try {
       this.kpiUmbralInactividad = this.configService.umbralInactividadDias || 30;
       this.leerUrlParams();
+      // La caché del servicio sobrevive a la navegación y no ve lo que
+      // escribió otra pestaña (quiosco abierto aparte): al entrar, datos frescos.
+      this.estadisticasService.invalidarCache();
       const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
       for (const a of todosAlumnos) {
         if (a.turno) this.turnoPorMatricula.set(a.matricula, a.turno);
@@ -412,10 +416,12 @@ formatHora(h: number): string {
     }
     this.esMovilActual = this.esMovilViewport();
     window.addEventListener('resize', this.onResize);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.onResize);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
     this.chartDiario?.destroy();
     this.chartMotivos?.destroy();
@@ -423,6 +429,17 @@ formatHora(h: number): string {
     this.chartCompararA?.destroy();
     this.chartCompararB?.destroy();
   }
+
+  /**
+   * Al volver a esta pestaña (p. ej. tras escanear en el quiosco abierto en
+   * otra), lo que se ve puede estar atrasado: se relee sin pedirlo.
+   */
+  private onVisibilityChange = (): void => {
+    if (document.hidden || !this.datosListos) return;
+    this.estadisticasService.invalidarCache();
+    void this.cargarDatos();
+    void this.cargarCrecimiento12m().then(() => this.cdr.markForCheck());
+  };
 
   /** Estado actual del breakpoint móvil; se re-evalúa en resize. */
   private esMovilActual = false;
@@ -643,7 +660,8 @@ formatHora(h: number): string {
   /** Tier C22: refresca explícitamente desde la BD. */
   async refrescarDatos(): Promise<void> {
     this.estadisticasService.invalidarCache();
-    await this.cargarDatos();
+    await Promise.all([this.cargarDatos(), this.cargarCrecimiento12m()]);
+    this.cdr.markForCheck();
     this.toastService.success('Datos actualizados');
   }
 
@@ -779,8 +797,8 @@ formatHora(h: number): string {
         const hoy = new Date();
         const hace30 = new Date(hoy);
         hace30.setDate(hoy.getDate() - 30);
-        this.fechaFin = hoy.toISOString().split('T')[0];
-        this.fechaInicio = hace30.toISOString().split('T')[0];
+        this.fechaFin = fechaLocalISO(hoy);
+        this.fechaInicio = fechaLocalISO(hace30);
       }
       // No recargar hasta que aplique
       return;
@@ -906,7 +924,7 @@ formatHora(h: number): string {
   }
 
   get fechaMaxima(): string {
-    return new Date().toISOString().split('T')[0];
+    return fechaLocalISO();
   }
 
   // ─── Heatmap período ─────────────────────────────
@@ -923,8 +941,8 @@ formatHora(h: number): string {
       const hoy = new Date();
       const hace30 = new Date(hoy);
       hace30.setDate(hoy.getDate() - 30);
-      this.heatmapFechaFin = hoy.toISOString().split('T')[0];
-      this.heatmapFechaInicio = hace30.toISOString().split('T')[0];
+      this.heatmapFechaFin = fechaLocalISO(hoy);
+      this.heatmapFechaInicio = fechaLocalISO(hace30);
     }
     this.cdr.markForCheck();
   }
@@ -1107,8 +1125,8 @@ formatHora(h: number): string {
       const hoy = new Date();
       const hace90 = new Date(hoy);
       hace90.setDate(hoy.getDate() - 90);
-      this.topFechaFin = hoy.toISOString().split('T')[0];
-      this.topFechaInicio = hace90.toISOString().split('T')[0];
+      this.topFechaFin = fechaLocalISO(hoy);
+      this.topFechaInicio = fechaLocalISO(hace90);
     }
     this.cdr.markForCheck();
   }
@@ -1890,8 +1908,8 @@ this.sparkRegistros = counts;
       const hoy = new Date();
       const hace30 = new Date(hoy);
       hace30.setDate(hoy.getDate() - 30);
-      const hoyStr = hoy.toISOString().split('T')[0];
-      const hace30Str = hace30.toISOString().split('T')[0];
+      const hoyStr = fechaLocalISO(hoy);
+      const hace30Str = fechaLocalISO(hace30);
       if (slot === 'a') {
         this.fechaInicioA ||= hace30Str;
         this.fechaFinA ||= hoyStr;
@@ -2189,7 +2207,7 @@ this.sparkRegistros = counts;
     const registros = await this.obtenerRegistrosTopAlumnos();
     await this.exportService.exportarRegistrosXLSX(
       registros,
-      `top_alumnos_stenbrary_${new Date().toISOString().split('T')[0]}`
+      `top_alumnos_stenbrary_${fechaLocalISO()}`
     );
     this.toastService.success('Excel exportado correctamente');
   }
@@ -2695,6 +2713,7 @@ this.sparkRegistros = counts;
 
   obtenerIconoTendencia(): string {
     if (!this.tendencia) return 'trending_flat';
+    if (this.tendencia.sinReferencia) return 'fiber_new';
     switch (this.tendencia.direccion) {
       case 'up': return 'trending_up';
       case 'down': return 'trending_down';
@@ -2704,6 +2723,7 @@ this.sparkRegistros = counts;
 
   obtenerColorTendencia(): string {
     if (!this.tendencia) return 'neutral';
+    if (this.tendencia.sinReferencia) return 'neutral';
     switch (this.tendencia.direccion) {
       case 'up': return 'success';
       case 'down': return 'warning';
@@ -2713,6 +2733,9 @@ this.sparkRegistros = counts;
 
   obtenerTextoTendencia(): string {
     if (!this.tendencia) return 'Sin cambios';
+    // Sin registros antes no hay base para un porcentaje: cualquier número
+    // (0 %, 100 %, ∞) sería inventado. Se dice lo que pasó, sin cifra.
+    if (this.tendencia.sinReferencia) return 'Sin registros en el período anterior para comparar';
     const p = Math.abs(this.tendencia.porcentajeCambio).toFixed(1);
     if (this.tendencia.direccion === 'up') return `↑ ${p}% más que el período anterior`;
     if (this.tendencia.direccion === 'down') return `↓ ${p}% menos que el período anterior`;

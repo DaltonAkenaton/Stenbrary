@@ -305,6 +305,28 @@ describe('EstadisticasAvanzadasService', () => {
       expect(t.porcentajeCambio).toBe(0);
     });
 
+    it('marca sinReferencia cuando antes hubo 0 y ahora no, para que la UI no diga "↑ 0 %"', async () => {
+      // El 5 de enero tiene 1 registro (x01) y el 4 de enero ninguno.
+      const enero = service.normalizarRango(new Date(2026, 0, 5), new Date(2026, 0, 5));
+      const t = await service.compararTendencias(enero);
+      expect(t.actual).toBe(1);
+      expect(t.sinReferencia).toBe(true);
+
+      const conBase = await service.compararTendencias(semana);
+      expect(conBase.sinReferencia).toBe(false);
+
+      // 0 contra 0 no es "nuevo": es "sin cambios".
+      const vacio = service.normalizarRango(new Date(2025, 5, 1), new Date(2025, 5, 7));
+      expect((await service.compararTendencias(vacio)).sinReferencia).toBe(false);
+    });
+
+    it('el comparador A vs B también marca sinReferencia si B está vacío', async () => {
+      const vacioB = service.normalizarRango(new Date(2025, 5, 1), new Date(2025, 5, 7));
+      const c = await service.compararDosRangos(semana, vacioB);
+      expect(c.diferencia.sinReferencia).toBe(true);
+      expect((await service.compararDosRangos(semana, semana)).diferencia.sinReferencia).toBe(false);
+    });
+
     it('marca dirección "igual" cuando no hay cambio', async () => {
       const vacio = service.normalizarRango(new Date(2025, 5, 1), new Date(2025, 5, 7));
       const t = await service.compararTendencias(vacio);
@@ -508,6 +530,40 @@ describe('EstadisticasAvanzadasService', () => {
       service.invalidarCache();
       await service.contarRegistrosEnRango(semana);
       expect(mockDb.llamadasRegistros).toBe(2);
+    });
+
+    it('una escritura en la BD descarta la caché aunque no haya vencido el TTL', async () => {
+      // Antes: volver del escáner a /estadisticas mostraba hasta 5 min de
+      // datos viejos porque nadie invalidaba (auditoría 2026-10, R3).
+      let version = 0;
+      const db = { ...crearMockDb(), llamadasRegistros: 0, versionDatos: () => version };
+      const svc = new EstadisticasAvanzadasService(db as any);
+
+      await svc.contarRegistrosEnRango(semana);
+      await svc.contarRegistrosEnRango(semana);
+      expect(db.llamadasRegistros).toBe(1);
+
+      version++; // p. ej. se escaneó un alumno
+      await svc.contarRegistrosEnRango(semana);
+      expect(db.llamadasRegistros).toBe(2);
+
+      await svc.contarRegistrosEnRango(semana);
+      expect(db.llamadasRegistros).toBe(2); // sin más cambios, vuelve a servir de caché
+    });
+  });
+
+  describe('crearRangoHistorico', () => {
+    it('ignora fechas inválidas en vez de dejar todo el histórico en 0', async () => {
+      const conBasura = [
+        ...REGISTROS,
+        reg('bad', '2000000001', 'ISC', 'Estudiar', new Date('no-es-fecha')),
+      ];
+      const svc = new EstadisticasAvanzadasService(crearMockDb(conBasura) as any);
+      const rango = await svc.crearRangoHistorico();
+      expect(Number.isFinite(rango.inicio.getTime())).toBe(true);
+      // El registro más viejo válido es x01, del 5 de enero.
+      expect(rango.inicio.getTime()).toBe(new Date(2026, 0, 5).getTime());
+      expect(await svc.contarRegistrosEnRango(rango)).toBe(REGISTROS.length);
     });
   });
 

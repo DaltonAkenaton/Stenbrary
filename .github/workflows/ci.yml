@@ -38,7 +38,13 @@ jobs:
       - name: Type-check (tsc --noEmit)
         run: npx tsc --noEmit -p tsconfig.json
 
-      - name: Unit tests (headless Chrome)
+      # Zona horaria de México a propósito. En UTC (la del runner) parsear
+      # 'YYYY-MM-DD' como medianoche UTC coincide con la local y los bugs de
+      # "el día anterior" son invisibles: así pasaron meses sin que ningún
+      # test fallara (docs/AUDITORIA-2026-10.md, R1/R2).
+      - name: Unit tests (headless Chrome, hora de México)
+        env:
+          TZ: America/Mexico_City
         run: npm run test:ci
 
       - name: Production build
