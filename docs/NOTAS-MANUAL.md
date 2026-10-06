@@ -120,6 +120,17 @@ parejo todo el día.
 - **Actividades:** no se permiten dos con el mismo nombre (sin distinguir
   mayúsculas ni acentos).
 
+## Escáner: lector físico primero (v3.45.0)
+
+El sistema está pensado para un **lector de código de barras** (USB o Bluetooth, unos 340 pesos):
+lee al instante y no falla con poca luz, a diferencia de la webcam. El lector se comporta como un
+teclado: no necesita instalar nada.
+- El escáner **escucha el lector todo el tiempo** en su pantalla; no hay que hacer clic antes.
+- Con el lector no aparece "¿confirmas la matrícula?": el código de barras trae verificación propia.
+- Sin lector, siempre queda la **captura manual**.
+- Configuración → Escáner → **Botón "Usar la cámara"**: mostrar u ocultar el respaldo por cámara.
+  Visible por defecto.
+
 ## Fechas y zona horaria (v3.41.1 – v3.42.0)
 
 - Las fechas elegidas a mano (Registros, Eliminar registros, Estadísticas)

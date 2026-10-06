@@ -113,6 +113,17 @@ export class EscanerCategoriaComponent {
     this.cdr.markForCheck();
   }
 
+  onToggleBotonCamara(): void {
+    const nuevo = !this.configService.mostrarBotonCamara;
+    this.configService.setMostrarBotonCamara(nuevo);
+    this.toastService.success(
+      nuevo
+        ? 'El escáner muestra la opción de usar la cámara'
+        : 'Botón de cámara oculto: el escáner solo usa el lector y la captura manual',
+    );
+    this.cdr.markForCheck();
+  }
+
   onToggleEscanerSaltarConfirmacion(): void {
     const nuevo = !this.configService.escanerSaltarConfirmacion;
     this.configService.setEscanerSaltarConfirmacion(nuevo);

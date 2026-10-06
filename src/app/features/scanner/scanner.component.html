@@ -165,16 +165,19 @@
       </div>
 
       <!-- Respaldo: cámara. Fuera del flujo principal — solo cuando no hay
-           lector disponible. Deliberadamente discreto. -->
-      <div class="fallback-row">
-        <button
-          class="btn-camera-link"
-          (click)="iniciarScanner()"
-          [disabled]="cargando">
-          <mat-icon>photo_camera</mat-icon>
-          ¿Sin lector? Usar la cámara
-        </button>
-      </div>
+           lector disponible. Deliberadamente discreto, y se puede ocultar
+           en Configuración → Escáner (v3.45.0). -->
+      @if (configService.mostrarBotonCamara) {
+        <div class="fallback-row">
+          <button
+            class="btn-camera-link"
+            (click)="iniciarScanner()"
+            [disabled]="cargando">
+            <mat-icon>photo_camera</mat-icon>
+            ¿Sin lector? Usar la cámara
+          </button>
+        </div>
+      }
 
     </div>
   }

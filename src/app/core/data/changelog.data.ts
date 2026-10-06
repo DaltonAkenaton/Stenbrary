@@ -49,6 +49,19 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.45.0',
+    fecha: '2026-10-06',
+    titulo: 'El lector manda',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Nueva opción en Configuración → Escáner para mostrar u ocultar el botón "Usar la cámara". ' +
+          'El sistema está pensado para un lector físico (USB o Bluetooth), más rápido y fiable; la cámara queda como respaldo.',
+      },
+    ],
+  },
+  {
     version: '3.44.1',
     fecha: '2026-10-06',
     titulo: 'Probado con un año de datos',

@@ -118,6 +118,25 @@
     </div>
   </div>
 
+  <!-- Mostrar/ocultar el botón de cámara (v3.45.0) -->
+  <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
+    <strong style="font-size: .9rem; color:#E8F4F8;">Botón "Usar la cámara"</strong>
+    <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 4px 0 10px;">
+      El escáner está pensado para un <strong style="color:#E8F4F8">lector físico</strong> (USB o Bluetooth):
+      es más rápido y no falla con poca luz. La cámara queda como respaldo por si el lector se
+      descompone. Ocúltala si no la van a usar; la captura manual sigue disponible siempre.
+    </p>
+    <div class="sound-toggle">
+      <span class="sound-status">{{ configService.mostrarBotonCamara ? 'Visible' : 'Oculto' }}</span>
+      <button class="btn-inline"
+              [class.btn-inline-active]="configService.mostrarBotonCamara"
+              (click)="onToggleBotonCamara()">
+        <mat-icon>{{ configService.mostrarBotonCamara ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+        {{ configService.mostrarBotonCamara ? 'Ocultar' : 'Mostrar' }}
+      </button>
+    </div>
+  </div>
+
   <!-- Saltar confirmación -->
   <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(200,230,240,.08);">
     <strong style="font-size: .9rem; color:#E8F4F8;">Saltar diálogo de confirmación</strong>

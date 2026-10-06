@@ -403,7 +403,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     private toastService: ToastService,
     private loadingService: LoadingService,
     private soundService: SoundService,
-    private configService: ConfigService,
+    public configService: ConfigService,
     public aforoService: AforoService,
     private ngZone: NgZone
   ) {}

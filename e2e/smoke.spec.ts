@@ -215,3 +215,21 @@ async function terminarAsistente(page: import('@playwright/test').Page): Promise
   await page.getByRole('button', { name: /Empezar a usar Stenbrary/ }).click();
   await page.locator('.arranque').waitFor({ state: 'visible' });
 }
+
+test.describe('Escáner: botón de cámara configurable (v3.45.0)', () => {
+  test('por defecto se ofrece la cámara como respaldo', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+    await page.goto('/scanner');
+    await expect(page.getByRole('button', { name: /Usar la cámara/ })).toBeVisible();
+  });
+
+  test('si se oculta en Configuración, no aparece y la captura manual sigue', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+      localStorage.setItem('stenbrary-config', JSON.stringify({ mostrarBotonCamara: false }));
+    });
+    await page.goto('/scanner');
+    await expect(page.locator('app-scanner')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Usar la cámara/ })).toHaveCount(0);
+  });
+});

@@ -126,6 +126,13 @@ interface AppConfig {
   escanerCooldownMs: number;
   /** Si true, no muestra el dialog de confirmación; procesa la matrícula directamente. */
   escanerSaltarConfirmacion: boolean;
+  /**
+   * Muestra el botón "¿Sin lector? Usar la cámara" en el escáner (v3.45.0).
+   * El producto usa lector físico (más rápido y fiable que una webcam); la
+   * cámara queda como respaldo y se puede ocultar. Default true: nadie se
+   * queda sin forma de escanear al actualizar.
+   */
+  mostrarBotonCamara: boolean;
   /** Volumen del beep de escaneo. 0 = silencio, 1 = máximo. Default 0.15. */
   volumenBeep: number;
 
@@ -178,6 +185,7 @@ const DEFAULT_CONFIG: AppConfig = {
   escanerVelocidadMs: 0,
   escanerCooldownMs: 1500,
   escanerSaltarConfirmacion: false,
+  mostrarBotonCamara: true,
   volumenBeep: 0.15,
   cierreAlHorario: false,
   cierreAutoConfirmar: false,
@@ -566,6 +574,15 @@ export class ConfigService {
 
   setEscanerCooldownMs(ms: number): void {
     this.config.escanerCooldownMs = Math.max(0, Math.floor(ms) || 0);
+    this.guardar();
+  }
+
+  get mostrarBotonCamara(): boolean {
+    return this.config.mostrarBotonCamara;
+  }
+
+  setMostrarBotonCamara(valor: boolean): void {
+    this.config.mostrarBotonCamara = valor;
     this.guardar();
   }
 
