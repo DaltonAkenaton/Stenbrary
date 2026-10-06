@@ -376,4 +376,4 @@ En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la cl
 
 ## Deployment
 
-Netlify. `public/_redirects` contiene `/* /index.html 200` para el routing SPA. El build output es `dist/stenbrary/browser/`. Service Worker con `registrationStrategy: 'registerWhenStable:30000'` (`app.config.ts`). Configuración PWA en `ngsw-config.json` y manifiesto en `public/manifest.webmanifest`.
+**Migrando de Netlify a Cloudflare Pages** (guía: `docs/DESPLIEGUE-CLOUDFLARE.md`; Netlify cobra créditos por despliegue). Mientras convivan: `public/_redirects` (`/* /index.html 200`) es solo para Netlify — Cloudflare lo ignora con un aviso y hace el fallback SPA solo —; `public/_headers` sirve a los dos (sin caché para `index.html`/`ngsw.json`/workers, un año para lo que lleva hash; no añadir un `/*.js` genérico: Cloudflare combina cabeceras). `.nvmrc` fija Node 20. El build output es `dist/stenbrary/browser/`. Service Worker con `registrationStrategy: 'registerWhenStable:30000'` (`app.config.ts`). Configuración PWA en `ngsw-config.json` y manifiesto en `public/manifest.webmanifest`.

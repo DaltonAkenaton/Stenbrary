@@ -48,3 +48,7 @@ Thumbs.db
 /test-results
 /playwright-report
 /playwright/.cache
+
+# Temporales de herramientas de despliegue (no se versionan)
+.wrangler/
+supabase/.temp/

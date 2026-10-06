@@ -9,6 +9,24 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-06 — Preparación de Cloudflare Pages
+
+Lo que no necesita la cuenta del usuario quedó en el repo; los pasos del panel,
+en `docs/DESPLIEGUE-CLOUDFLARE.md`.
+
+- `public/_headers`, válido en Netlify y en Cloudflare: sin caché para
+  `index.html`, `ngsw.json` y los workers (la lección de la ronda de pruebas:
+  si el service worker no ve el `ngsw.json` fresco, el equipo se queda con la
+  versión vieja) y un año, `immutable`, para lo que lleva hash. Sin regla
+  `/*.js` genérica: Cloudflare **combina** las cabeceras de todas las reglas
+  que coinciden, y `ngsw-worker.js` heredaría el `immutable`.
+- `.nvmrc` = 20, el mismo Node que CI; Cloudflare lo lee solo.
+- Verificado con `npx wrangler pages dev`: fallback SPA automático (200 en
+  `/estadisticas`), cabeceras aplicadas y la regla de `_redirects` de Netlify
+  ignorada con "Infinite loop detected". Se borra al apagar Netlify.
+
+---
+
 ## 2026-10-06 — Ronda de pruebas: cuadre, volumen y exportes
 
 Informe en `docs/PRUEBAS-RONDA-2026-10.md`. Todo con Playwright sobre el

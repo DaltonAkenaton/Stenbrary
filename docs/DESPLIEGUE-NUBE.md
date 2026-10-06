@@ -65,8 +65,9 @@ con el candado de RLS.
 
 Authentication → URL Configuration:
 
-- **Site URL**: la URL de producción (`https://<tu-sitio>.netlify.app`).
-- **Redirect URLs**: añadir `https://<tu-sitio>.netlify.app/login` y también
+- **Site URL**: la URL de producción. Desde la migración (`docs/DESPLIEGUE-CLOUDFLARE.md`) es
+  `https://stenbrary.pages.dev`, o el dominio propio si se compra.
+- **Redirect URLs**: añadir `https://stenbrary.pages.dev/login` y también
   `http://localhost:4200/login` si vas a probar el proyecto de PROD desde tu
   máquina.
 
@@ -122,7 +123,7 @@ supabase: {
 La clave es pública por diseño y respeta RLS — por eso vive en Git, igual que
 la de dev. **La `service_role` no entra aquí ni en ningún archivo del repo.**
 
-Commit y push: Netlify reconstruye solo.
+Commit y push: Cloudflare Pages reconstruye solo.
 
 ## 7. Keep-alive del proyecto de PROD
 
