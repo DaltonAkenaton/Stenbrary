@@ -88,7 +88,9 @@ CI corre los unitarios con `TZ=America/Mexico_City` y Playwright con
 **Fechas de calendario:** nunca `new Date('YYYY-MM-DD')` (es medianoche UTC:
 en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
-`core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`. **20 tests E2E** con
+`core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
+
+**20 tests E2E** con
 Playwright (12 en `smoke.spec.ts`, 8 en `responsive.spec.ts`). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
 type-check app/spec).
