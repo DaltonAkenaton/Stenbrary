@@ -17,7 +17,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable, signal } from '@angular/core';
-import { CALENDARIO_UAT_2026, CalendarioEscolar } from '../utils/calendario.utils';
+import { CalendarioEscolar, calendarioInicial } from '../utils/calendario.utils';
 
 /**
  * Modos de control de aforo:
@@ -191,7 +191,7 @@ const DEFAULT_CONFIG: AppConfig = {
   cierreAutoConfirmar: false,
   zoomScannerDefault: 1,
   camaraPreferida: 'auto',
-  calendarioEscolar: CALENDARIO_UAT_2026,
+  calendarioEscolar: calendarioInicial(),
 };
 
 const STORAGE_KEY = 'stenbrary-config';
@@ -220,7 +220,7 @@ export class ConfigService {
   readonly ultimoRespaldoSignal = this._ultimoRespaldoTs.asReadonly();
 
   // Signal del calendario: Estadísticas y Resumen reaccionan al editarlo.
-  private _calendario = signal<CalendarioEscolar>(copiarCalendario(CALENDARIO_UAT_2026));
+  private _calendario = signal<CalendarioEscolar>(copiarCalendario(calendarioInicial()));
   readonly calendarioSignal = this._calendario.asReadonly();
 
   setHayAutoClose(valor: boolean): void {
@@ -670,7 +670,7 @@ export class ConfigService {
     this.config = {
       ...DEFAULT_CONFIG,
       horarios: { ...DEFAULT_HORARIOS },
-      calendarioEscolar: copiarCalendario(CALENDARIO_UAT_2026),
+      calendarioEscolar: copiarCalendario(calendarioInicial()),
     };
     this.guardar();
     this._calendario.set(copiarCalendario(this.config.calendarioEscolar));
@@ -686,15 +686,15 @@ export class ConfigService {
         const parsed = JSON.parse(stored);
         // Merge profundo para horarios (cubre instalaciones viejas sin la clave)
         const horarios: HorariosSemana = { ...DEFAULT_HORARIOS, ...(parsed.horarios || {}) };
-        // Instalaciones previas a v3.43.0 no tienen calendario: reciben el de
-        // la UAT 2026 como punto de partida, igual que una instalación nueva.
+        // Instalaciones previas a v3.43.0 no tienen calendario: reciben el del
+        // año en curso (oficial 2026 o el típico calculado), igual que una nueva.
         const calendarioEscolar = copiarCalendario(
-          esCalendarioValido(parsed.calendarioEscolar) ? parsed.calendarioEscolar : CALENDARIO_UAT_2026,
+          esCalendarioValido(parsed.calendarioEscolar) ? parsed.calendarioEscolar : calendarioInicial(),
         );
         return { ...DEFAULT_CONFIG, ...parsed, horarios, calendarioEscolar };
       }
     } catch { /* silenciar */ }
-    return { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS }, calendarioEscolar: copiarCalendario(CALENDARIO_UAT_2026) };
+    return { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS }, calendarioEscolar: copiarCalendario(calendarioInicial()) };
   }
 
   private guardar(): void {

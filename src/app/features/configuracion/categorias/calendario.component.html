@@ -13,7 +13,9 @@
     Los <strong style="color:#E8F4F8">periodos</strong> alimentan los botones "Este periodo" y
     "Periodo anterior" de Estadísticas. Los <strong style="color:#E8F4F8">días inhábiles</strong>
     evitan que el Resumen te alerte de "sin registros" un día festivo. Todo se captura a mano:
-    si la UAT recorre un festivo, solo cambia la fecha.
+    si la UAT recorre un festivo, solo cambia la fecha. Para empezar un año nuevo, elige el año
+    y pulsa <strong style="color:#E8F4F8">Cargar calendario UAT</strong>: carga una aproximación
+    con las reglas habituales de la universidad, que luego ajustas con el calendario oficial.
   </p>
 
   <p class="section-hint">
@@ -46,9 +48,14 @@
     <button class="btn-inline" (click)="descartar()" [disabled]="!hayCambios()">
       <mat-icon>undo</mat-icon> Descartar cambios
     </button>
-    <button class="btn-inline" (click)="restaurarUat()"
-            matTooltip="Reemplaza lo que ves por el calendario oficial UAT 2026">
-      <mat-icon>event_repeat</mat-icon> Cargar UAT 2026
+    <select class="cal-input" [(ngModel)]="anioACargar" aria-label="Año del calendario a cargar">
+      @for (a of aniosDisponibles; track a) {
+        <option [ngValue]="a">{{ a }}</option>
+      }
+    </select>
+    <button class="btn-inline" (click)="cargarCalendarioUat()"
+            matTooltip="Oficial para 2026; para otros años, una aproximación con las reglas de la UAT que luego puedes ajustar">
+      <mat-icon>event_repeat</mat-icon> Cargar calendario UAT
     </button>
     @if (hayCambios()) {
       <span class="cal-pendiente">Cambios sin guardar</span>

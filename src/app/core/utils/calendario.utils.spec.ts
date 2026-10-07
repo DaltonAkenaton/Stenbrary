@@ -6,11 +6,15 @@
 import {
   CALENDARIO_UAT_2026,
   CalendarioEscolar,
+  calendarioInicial,
+  calendarioTipicoUat,
+  domingoDePascua,
   diaInhabilEn,
   periodoActual,
   periodoAnterior,
   revisarCalendario,
 } from './calendario.utils';
+import { fechaLocalISO } from './tiempo.utils';
 
 const cal: CalendarioEscolar = {
   periodos: [
@@ -143,6 +147,54 @@ describe('calendario.utils', () => {
     it('el 13 de octubre es inhábil y el 10 de diciembre no (resultados de admisión)', () => {
       expect(diaInhabilEn(CALENDARIO_UAT_2026, new Date(2026, 9, 13, 10))).not.toBeNull();
       expect(diaInhabilEn(CALENDARIO_UAT_2026, new Date(2026, 11, 10, 10))).toBeNull();
+    });
+  });
+
+  describe('calendario típico UAT', () => {
+    const inhabil = (cal: CalendarioEscolar, clave: string) =>
+      cal.diasInhabiles.find(d => d.id.endsWith(clave))!;
+
+    it('calcula bien el domingo de Pascua', () => {
+      expect(fechaLocalISO(domingoDePascua(2026))).toBe('2026-04-05');
+      expect(fechaLocalISO(domingoDePascua(2027))).toBe('2027-03-28');
+      expect(fechaLocalISO(domingoDePascua(2024))).toBe('2024-03-31');
+    });
+
+    it('para 2026 reproduce las fechas del calendario oficial', () => {
+      const tipico = calendarioTipicoUat(2026);
+      const oficial = (desde: string) => CALENDARIO_UAT_2026.diasInhabiles.find(d => d.desde === desde);
+      // Cada festivo del típico existe en el oficial con el mismo rango.
+      for (const d of tipico.diasInhabiles) {
+        const o = oficial(d.desde);
+        expect(o).withContext(d.descripcion).toBeDefined();
+        expect(o?.hasta).withContext(d.descripcion).toBe(d.hasta);
+      }
+      // Otoño arranca el día de inicio de clases del PDF.
+      expect(tipico.periodos[2].inicio).toBe('2026-08-17');
+    });
+
+    it('para 2027 recorre los festivos de ley y mueve Semana Santa', () => {
+      const c = calendarioTipicoUat(2027);
+      expect(inhabil(c, 'constitucion').desde).toBe('2027-02-01');   // primer lunes de febrero
+      expect(inhabil(c, 'juarez').desde).toBe('2027-03-15');         // tercer lunes de marzo
+      expect(inhabil(c, 'revolucion').desde).toBe('2027-11-15');     // tercer lunes de noviembre
+      expect(inhabil(c, 'semana-santa').desde).toBe('2027-03-22');   // Pascua 28 mar − 6
+      expect(inhabil(c, 'semana-santa').hasta).toBe('2027-04-02');
+      expect(inhabil(c, 'verano').desde).toBe('2027-07-19');         // dos semanas antes del 2 ago
+      expect(inhabil(c, 'verano').hasta).toBe('2027-07-30');
+      expect(c.periodos[2].inicio).toBe('2027-08-16');               // tercer lunes de agosto
+      expect(c.periodos[1].fin).toBe('2027-08-15');
+    });
+
+    it('no tiene errores ni huecos entre periodos', () => {
+      for (const anio of [2027, 2028, 2030]) {
+        expect(revisarCalendario(calendarioTipicoUat(anio), new Date(anio, 5, 1))).withContext(String(anio)).toEqual([]);
+      }
+    });
+
+    it('al arrancar usa el oficial en 2026 y el típico en otros años', () => {
+      expect(calendarioInicial(new Date(2026, 9, 6))).toBe(CALENDARIO_UAT_2026);
+      expect(calendarioInicial(new Date(2027, 0, 10)).periodos[0].nombre).toBe('Primavera 2027');
     });
   });
 });

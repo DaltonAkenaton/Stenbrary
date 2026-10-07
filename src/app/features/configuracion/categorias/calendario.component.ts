@@ -23,6 +23,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import {
   CALENDARIO_UAT_2026,
   CalendarioEscolar,
+  calendarioTipicoUat,
   DiaInhabil,
   PeriodoEscolar,
   periodoActual,
@@ -143,21 +144,34 @@ export class CalendarioCategoriaComponent {
     this.borrador.set(copiar(this.configService.calendarioEscolar));
   }
 
-  async restaurarUat(): Promise<void> {
+  /** Años que se ofrecen: el actual y el siguiente (para preparar el ciclo nuevo). */
+  readonly aniosDisponibles = [new Date().getFullYear(), new Date().getFullYear() + 1];
+  anioACargar = new Date().getFullYear();
+
+  /**
+   * Carga el calendario de la UAT para el año elegido: el OFICIAL si lo
+   * tenemos capturado (2026) y, si no, el TÍPICO calculado con las reglas
+   * del calendario oficial (festivos recorridos, Semana Santa, vacaciones).
+   */
+  async cargarCalendarioUat(): Promise<void> {
+    const anio = Number(this.anioACargar);
+    const oficial = anio === 2026;
     const ref = this.dialog.open(ConfirmDialogComponent, {
-      width: '420px',
+      width: '440px',
       data: {
-        titulo: '¿Cargar el calendario UAT 2026?',
-        mensaje:
-          'Se reemplazarán los periodos y días inhábiles que tienes en pantalla por los del ' +
-          'calendario oficial UAT 2026. No se guarda hasta que pulses "Guardar".',
+        titulo: oficial ? '¿Cargar el calendario oficial UAT 2026?' : `¿Cargar el calendario típico UAT ${anio}?`,
+        mensaje: (oficial
+          ? 'Se usará el calendario oficial UAT 2026.'
+          : `Es una APROXIMACIÓN calculada con las reglas habituales de la UAT (festivos que se recorren a lunes, ` +
+            `Semana Santa, vacaciones). Compárala con el calendario oficial ${anio} y ajusta lo que la universidad haya movido.`) +
+          ' Reemplaza lo que tienes en pantalla y no se guarda hasta que pulses "Guardar".',
         variante: 'warning',
         textoConfirmar: 'Cargar',
         icono: 'event_repeat',
       } as ConfirmDialogData,
     });
     if (!(await ref.afterClosed().toPromise())) return;
-    this.borrador.set(copiar(CALENDARIO_UAT_2026));
+    this.borrador.set(copiar(oficial ? CALENDARIO_UAT_2026 : calendarioTipicoUat(anio)));
   }
 
   // ─── Helpers de vista ──────────────────────────────────

@@ -200,3 +200,110 @@ export function revisarCalendario(cal: CalendarioEscolar, hoy: Date = new Date()
   }
   return avisos;
 }
+
+// ═══════════════════════════════════════════════════════
+// CALENDARIO TÍPICO UAT PARA CUALQUIER AÑO (v3.46.0)
+// ═══════════════════════════════════════════════════════
+// El PDF oficial sale una vez al año y no siempre a tiempo. Este generador
+// reproduce el patrón del calendario 2026 con reglas, para que el
+// coordinador arranque con fechas cercanas a las reales y solo ajuste lo
+// que la UAT haya movido ese año. ES UNA APROXIMACIÓN: la pantalla lo dice.
+//
+// Reglas (sacadas del PDF 2026; verificadas contra él en los tests):
+// - Periodos sin huecos: Primavera 1 ene–31 may; Verano 1 jun hasta el día
+//   antes del inicio de Otoño; Otoño desde el TERCER lunes de agosto
+//   (inicio de clases) hasta el 31 dic.
+// - Festivos de ley con lunes "recorridos": primer lunes de febrero,
+//   tercer lunes de marzo y tercer lunes de noviembre.
+// - Semana Santa: del lunes de la semana santa al viernes de la semana
+//   siguiente (la UAT suma días del contrato colectivo). Depende de la
+//   fecha de Pascua, que se calcula.
+// - Verano: las dos semanas antes del primer lunes de agosto.
+// - Invierno: 16–31 de diciembre. Año Nuevo: del 1 de enero al viernes
+//   anterior al primer lunes de clases.
+
+function iso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function sumarDias(d: Date, n: number): Date {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+/** El n-ésimo lunes (1 = primero) del mes. `mes` 0–11. */
+function lunesNumero(anio: number, mes: number, n: number): Date {
+  const primero = new Date(anio, mes, 1);
+  const hastaLunes = (8 - primero.getDay()) % 7; // 0 si el 1 ya es lunes
+  return new Date(anio, mes, 1 + hastaLunes + (n - 1) * 7);
+}
+
+/** Domingo de Pascua (algoritmo anónimo gregoriano / Meeus). */
+export function domingoDePascua(anio: number): Date {
+  const a = anio % 19;
+  const b = Math.floor(anio / 100);
+  const c = anio % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mes = Math.floor((h + l - 7 * m + 114) / 31); // 3 = marzo, 4 = abril
+  const dia = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(anio, mes - 1, dia);
+}
+
+/** Calendario aproximado de la UAT para `anio`, con las reglas de arriba. */
+export function calendarioTipicoUat(anio: number): CalendarioEscolar {
+  const inicioOtono = lunesNumero(anio, 7, 3);
+  const primerLunesAgosto = lunesNumero(anio, 7, 1);
+  const pascua = domingoDePascua(anio);
+  // Primer lunes con clases tras Año Nuevo (el 1 y el 2 son de vacaciones).
+  const primerLunesHabil = sumarDias(new Date(anio, 0, 3), (8 - new Date(anio, 0, 3).getDay()) % 7);
+  const dia = (mes: number, d: number) => iso(new Date(anio, mes, d));
+  const un = (id: string, f: Date | string, descripcion: string): DiaInhabil => {
+    const x = typeof f === 'string' ? f : iso(f);
+    return { id: `tipico-${anio}-${id}`, desde: x, hasta: x, descripcion };
+  };
+  const rango = (id: string, desde: Date, hasta: Date, descripcion: string): DiaInhabil =>
+    ({ id: `tipico-${anio}-${id}`, desde: iso(desde), hasta: iso(hasta), descripcion });
+
+  return {
+    periodos: [
+      { id: `tipico-${anio}-primavera`, nombre: `Primavera ${anio}`, inicio: dia(0, 1), fin: dia(4, 31) },
+      { id: `tipico-${anio}-verano`, nombre: `Verano ${anio}`, inicio: dia(5, 1), fin: iso(sumarDias(inicioOtono, -1)) },
+      { id: `tipico-${anio}-otono`, nombre: `Otoño ${anio}`, inicio: iso(inicioOtono), fin: dia(11, 31) },
+    ],
+    diasInhabiles: [
+      // Hasta el viernes anterior al primer lunes de clases (nunca antes del 1 de enero).
+      rango('anio-nuevo', new Date(anio, 0, 1),
+        sumarDias(primerLunesHabil, -3) < new Date(anio, 0, 1) ? new Date(anio, 0, 1) : sumarDias(primerLunesHabil, -3),
+        'Año Nuevo y vacaciones'),
+      un('constitucion', lunesNumero(anio, 1, 1), 'Día de la Constitución'),
+      un('juarez', lunesNumero(anio, 2, 3), 'Natalicio de Benito Juárez'),
+      rango('semana-santa', sumarDias(pascua, -6), sumarDias(pascua, 5), 'Semana Santa y días del contrato colectivo'),
+      un('trabajo', dia(4, 1), 'Día del Trabajo'),
+      un('puebla', dia(4, 5), 'Batalla de Puebla'),
+      un('maestro', dia(4, 15), 'Día del Maestro'),
+      rango('verano', sumarDias(primerLunesAgosto, -14), sumarDias(primerLunesAgosto, -3), 'Vacaciones de verano'),
+      un('independencia', dia(8, 16), 'Día de la Independencia'),
+      un('uat', dia(9, 13), 'Día libre UAT (verificar con el calendario oficial)'),
+      un('muertos', dia(10, 2), 'Día de Muertos'),
+      un('revolucion', lunesNumero(anio, 10, 3), 'Día de la Revolución'),
+      rango('invierno', new Date(anio, 11, 16), new Date(anio, 11, 31), 'Vacaciones de invierno'),
+    ],
+  };
+}
+
+/**
+ * Calendario con el que arranca una instalación: el oficial si es el año
+ * que tenemos capturado del PDF (2026), el típico calculado si no.
+ */
+export function calendarioInicial(hoy: Date = new Date()): CalendarioEscolar {
+  return hoy.getFullYear() === 2026 ? CALENDARIO_UAT_2026 : calendarioTipicoUat(hoy.getFullYear());
+}
