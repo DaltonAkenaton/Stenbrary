@@ -46,7 +46,7 @@
      la app se comporta igual que antes de Fase 2 (sin login, sin roles,
      sin sondeos de red). Encenderlo es una decisión del coordinador, no
      una consecuencia de haber desplegado una versión nueva. -->
-@if (hayCredenciales) {
+@if (mostrarSeccionNube) {
   <div class="section-card">
     <div class="section-header">
       <mat-icon>{{ nubeActiva ? 'cloud_done' : 'cloud_off' }}</mat-icon>

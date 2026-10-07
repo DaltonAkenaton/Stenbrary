@@ -21,6 +21,52 @@
     </div>
   </header>
 
+  <!-- ══════════ ¿QUÉ ES ESTA PANTALLA? (v3.46.0) ══════════ -->
+  <!-- Plegada por defecto: quien viene a mandar el reporte no tiene que
+       leerla, quien quiere entender qué revisa el sistema la abre. -->
+  <details class="panel ayuda">
+    <summary>
+      <mat-icon>help_outline</mat-icon>
+      ¿Qué es esta pantalla y qué revisa?
+    </summary>
+    <div class="ayuda-cuerpo">
+      <p>
+        Es el "botiquín" del sistema. No cambia ningún dato: solo observa y avisa. Tiene tres partes:
+      </p>
+
+      <h3>1. Revisar los datos</h3>
+      <p>Recorre todas las visitas y alumnos buscando información que no puede ser correcta:</p>
+      <ul>
+        <li><strong>Fecha inválida:</strong> una visita sin fecha legible. No aparece en las estadísticas.</li>
+        <li><strong>Fecha en el futuro:</strong> casi siempre, el reloj del equipo estaba mal puesto.</li>
+        <li><strong>Salida antes de la entrada</strong> o <strong>duración negativa:</strong> una hora capturada al revés. Las estadísticas la ignoran, pero conviene corregirla desde el perfil del alumno.</li>
+        <li><strong>Estancia de más de 14 horas:</strong> una entrada que nadie cerró a tiempo.</li>
+        <li><strong>Visita de una matrícula que ya no existe:</strong> se borró al alumno pero no sus visitas.</li>
+        <li><strong>Matrícula repetida:</strong> dos alumnos con la misma matrícula; sus visitas se mezclan.</li>
+        <li><strong>Entradas de días anteriores sin salida</strong> (con el registro de salida activo): no aparecen en "En Biblioteca" ni las cierra el cierre automático.</li>
+        <li><strong>Cierres automáticos sin confirmar de días anteriores:</strong> ya no se pueden revisar desde "En Biblioteca".</li>
+      </ul>
+
+      <h3>2. Bitácora de incidencias</h3>
+      <p>
+        Se llena sola cuando algo falla por dentro (un error al guardar, una duración imposible…),
+        aunque en pantalla todo parezca normal. Sirve para que quien da soporte sepa qué pasó y cuándo.
+      </p>
+
+      <h3>3. Descargar el reporte</h3>
+      <p>
+        Genera un archivo con la bitácora y datos técnicos del equipo (navegador, tamaño de pantalla)
+        para mandárselo a quien da soporte. <strong>Puede incluir algunas matrículas</strong> como
+        ejemplo de los problemas encontrados: compártelo solo con soporte, no lo publiques.
+      </p>
+
+      <p class="ayuda-nota">
+        <mat-icon>info</mat-icon>
+        Recomendación: revisa los datos una vez al mes, o cuando una cifra de Estadísticas te parezca rara.
+      </p>
+    </div>
+  </details>
+
   <!-- ══════════ REVISIÓN DE DATOS ══════════ -->
   <!-- La bitácora se llena sola cuando algo falla. Esto es distinto: busca
        datos que no pueden ser correctos aunque nunca haya saltado un error. -->

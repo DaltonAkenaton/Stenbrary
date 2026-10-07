@@ -24,6 +24,7 @@ import { RestablecerDialogComponent } from '../restablecer-dialog.component';
 import { RemoteDatabaseService } from '../../../core/services/remote-database.service';
 import { SubirSupabaseDialogComponent } from '../dialogs/subir-supabase-dialog.component';
 import { hayCredencialesNube, isNubeActiva, setNubeActiva } from '../../../core/auth/supabase.client';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-config-avanzado',
@@ -59,6 +60,14 @@ export class AvanzadoCategoriaComponent {
    * recarga la página, así que no necesita ser reactivo.
    */
   readonly nubeActiva = isNubeActiva();
+
+  /**
+   * La sección de la nube se ve si el build trae credenciales Y está
+   * habilitada en `environment.mostrarConexionNube`, o si esta instalación
+   * ya la tiene encendida (para que siempre se pueda apagar).
+   */
+  readonly mostrarSeccionNube =
+    this.hayCredenciales && (environment.mostrarConexionNube || this.nubeActiva);
 
   constructor(
     private databaseService: DatabaseService,
