@@ -36,6 +36,7 @@ import { ToastService } from './core/services/toast.service';
 import { DiagnosticoService } from './core/services/diagnostico.service';
 import { RestablecerService } from './core/services/restablecer.service';
 import { registrarDiagnostico } from './core/utils/invariante.utils';
+import { PwaUpdateService } from './core/services/pwa-update.service';
 
 interface NavItem {
   icon: string;
@@ -147,6 +148,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // en /login). Si Supabase no está configurado, queda en local-only.
     public authService: AuthService,
     public permisos: PermissionsService,
+    private pwaUpdateService: PwaUpdateService,
   ) {
     // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
     effect(() => {
@@ -229,6 +231,10 @@ export class AppComponent implements OnInit, OnDestroy {
     // `invariante.utils`. Se hace aquí, en el arranque, porque esos helpers
     // se llaman desde código sin contexto de inyección de Angular.
     registrarDiagnostico(this.diagnosticoService);
+
+    // Revisión periódica de versiones nuevas (el aviso lo pinta el listener
+    // de `versionUpdates` de más abajo). Antes no se arrancaba nunca.
+    this.pwaUpdateService.iniciar();
 
     // Evaluar de entrada: si se llega directo a /bienvenida por URL, el
     // NavigationEnd de abajo puede haber ocurrido ya.

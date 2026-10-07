@@ -1,15 +1,28 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  RUTA: src/app/core/services/pwa-update.service.ts   ║
-// ║  Stenbrary v3.6 — Notificación de actualización PWA  ║
+// ║  Stenbrary v3.46.0 — Notificación de actualización PWA║
 // ║                                                      ║
-// ║  Detecta cuando hay una nueva versión desplegada en   ║
-// ║  Netlify y muestra un banner para que el usuario      ║
-// ║  actualice. Usa SwUpdate de @angular/service-worker.  ║
+// ║  Detecta cuando hay una nueva versión desplegada y    ║
+// ║  muestra un banner para que el usuario actualice.     ║
+// ║  Usa SwUpdate de @angular/service-worker.             ║
+// ║                                                      ║
+// ║  FIX v3.46.0: `iniciar()` no lo llamaba nadie y,      ║
+// ║  además, esperaba a que la app estuviera "estable",   ║
+// ║  cosa que con los temporizadores de la app (auto-     ║
+// ║  refresco, cierre por horario) puede no pasar nunca.  ║
+// ║  Una tablet en quiosco abierta todo el día no se      ║
+// ║  enteraba de las versiones nuevas. Comprobado con un  ║
+// ║  despliegue A → B real (ronda de pruebas 2026-10).    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable, ApplicationRef } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { BehaviorSubject, filter, first, interval, concat } from 'rxjs';
+import { BehaviorSubject, filter, timer } from 'rxjs';
+
+/** Primera revisión tras arrancar (deja que el SW termine de registrarse). */
+const PRIMERA_REVISION_MS = 60_000;
+/** Cada cuánto se pregunta al servidor si hay versión nueva (solo baja ngsw.json). */
+const REVISION_CADA_MS = 15 * 60_000;
 
 @Injectable({
   providedIn: 'root',
@@ -20,16 +33,17 @@ export class PwaUpdateService {
   private hayActualizacion$ = new BehaviorSubject<boolean>(false);
   public actualizacionDisponible$ = this.hayActualizacion$.asObservable();
 
-  constructor(
-    private swUpdate: SwUpdate,
-    private appRef: ApplicationRef,
-  ) {}
+  private iniciado = false;
+
+  constructor(private swUpdate: SwUpdate) {}
 
   /**
    * Inicializar el listener de actualizaciones.
    * Llamar una vez desde AppComponent.ngOnInit().
    */
   iniciar(): void {
+    if (this.iniciado) return;
+    this.iniciado = true;
     if (!this.swUpdate.isEnabled) {
       console.log('⚙️ Service Worker no habilitado (modo desarrollo)');
       return;
@@ -43,19 +57,33 @@ export class PwaUpdateService {
         this.hayActualizacion$.next(true);
       });
 
-    // Revisar periódicamente (cada 60 segundos después de que la app esté estable)
-    const appEstable$ = this.appRef.isStable.pipe(first(isStable => isStable));
-    const cadaMinuto$ = interval(60_000);
-
-    concat(appEstable$, cadaMinuto$).subscribe(async () => {
+    // Revisión periódica por reloj, NO por `isStable`: con intervalos vivos
+    // la app no se estabiliza nunca y la revisión no arrancaba.
+    const cada = this.intervaloDeRevision();
+    timer(Math.min(PRIMERA_REVISION_MS, cada), cada).subscribe(async () => {
       try {
-        await this.swUpdate.checkForUpdate();
-      } catch {
-        // Silenciar — puede fallar si el SW no está registrado
+        const hay = await this.swUpdate.checkForUpdate();
+        console.log(`🔎 Revisión de versión: ${hay ? 'hay una nueva' : 'sin cambios'}`);
+      } catch (e) {
+        // No es grave (sin red, SW aún registrándose); se reintenta en la próxima.
+        console.warn('Revisión de versión fallida:', e);
       }
     });
 
     console.log('✅ PWA Update Service inicializado');
+  }
+
+  /**
+   * Intervalo de revisión. Se puede acortar SOLO para pruebas con la clave
+   * `stenbrary-sw-revision-ms` en localStorage (mínimo 10 s): esperar 15 min
+   * por cada prueba del aviso de actualización no es viable.
+   */
+  private intervaloDeRevision(): number {
+    try {
+      const n = Number(localStorage.getItem('stenbrary-sw-revision-ms'));
+      if (Number.isFinite(n) && n >= 10_000) return n;
+    } catch { /* localStorage bloqueado: se usa el intervalo normal */ }
+    return REVISION_CADA_MS;
   }
 
   /** True si el Service Worker está activo (false en `ng serve`). */
