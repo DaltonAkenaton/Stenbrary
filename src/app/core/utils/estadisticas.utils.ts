@@ -22,7 +22,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Alumno, Motivo, Registro } from '../models';
-import { contarHastaMismaHora, diasCalendarioEntre } from './tiempo.utils';
+import { contarHastaMismaHora, desplazarDias, diasCalendarioEntre } from './tiempo.utils';
 
 export const MATRICULA_INVITADO = 'INVITADO';
 
@@ -607,4 +607,81 @@ export function nivelDeIntensidad(cantidad: number, c: { p25: number; p50: numbe
   if (cantidad <= c.p50) return 2;
   if (cantidad <= c.p75) return 3;
   return 4;
+}
+
+// ═══════════════════════════════════════════════════════
+// PERÍODO ANTERIOR POR UNIDAD (v3.46.0)
+// ═══════════════════════════════════════════════════════
+// "Esta semana" (lunes–martes) se comparaba con los 2 días previos: el
+// sábado y el domingo. "Este mes" (1–6) con los últimos 6 días del mes
+// anterior. "Este periodo" (Otoño) con un trozo de Primavera. La regla de
+// "misma cantidad de días hacia atrás" solo tiene sentido para rangos
+// móviles (7/30/90 días, hoy). Para unidades de calendario lo que se
+// compara es la UNIDAD ANTERIOR AL MISMO AVANCE (reportado por el usuario
+// con capturas, 2026-10-06).
+
+export type UnidadDeComparacion =
+  | { tipo: 'semana' }
+  | { tipo: 'mes' }
+  | { tipo: 'anio' }
+  /** `anterior` = rango del periodo escolar previo; null si no hay. */
+  | { tipo: 'periodo'; anterior: { inicio: Date; fin: Date } | null };
+
+function ultimoDiaDelMes(anio: number, mes: number): number {
+  return new Date(anio, mes + 1, 0).getDate();
+}
+
+/** Misma hora, `meses` meses atrás/adelante; el día se recorta al último del mes (31 mar → 28 feb). */
+function desplazarMeses(fecha: Date, meses: number): Date {
+  const objetivo = new Date(fecha.getFullYear(), fecha.getMonth() + meses, 1,
+    fecha.getHours(), fecha.getMinutes(), fecha.getSeconds(), fecha.getMilliseconds());
+  objetivo.setDate(Math.min(fecha.getDate(), ultimoDiaDelMes(objetivo.getFullYear(), objetivo.getMonth())));
+  return objetivo;
+}
+
+function esFinDeMes(d: Date): boolean {
+  return d.getDate() === ultimoDiaDelMes(d.getFullYear(), d.getMonth()) && d.getHours() === 23;
+}
+
+/**
+ * El rango con el que se compara `actual` cuando es una unidad de
+ * calendario, AL MISMO AVANCE: si `actual` todavía no termina, el anterior
+ * se corta en el mismo punto relativo (mismo día de la semana / del mes /
+ * del año / del periodo, misma hora).
+ */
+export function rangoAnteriorDeUnidad(
+  unidad: UnidadDeComparacion,
+  actual: { inicio: Date; fin: Date },
+  ahora: Date = new Date(),
+): { inicio: Date; fin: Date } | null {
+  const finEfectivo = actual.fin.getTime() > ahora.getTime() ? ahora : actual.fin;
+
+  switch (unidad.tipo) {
+    case 'semana':
+      return { inicio: desplazarDias(actual.inicio, -7), fin: desplazarDias(finEfectivo, -7) };
+
+    case 'mes': {
+      const inicio = desplazarMeses(actual.inicio, -1);
+      // Mes completo contra mes completo: el 30 de abril se compara con el 31 de marzo, no con el 30.
+      const fin = esFinDeMes(finEfectivo)
+        ? new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0, 23, 59, 59, 999)
+        : desplazarMeses(finEfectivo, -1);
+      return { inicio, fin };
+    }
+
+    case 'anio':
+      return { inicio: desplazarMeses(actual.inicio, -12), fin: desplazarMeses(finEfectivo, -12) };
+
+    case 'periodo': {
+      if (!unidad.anterior) return null;
+      // Mismo número de días desde el inicio de cada periodo, misma hora.
+      const dias = diasCalendarioEntre(actual.inicio, finEfectivo);
+      const fin = desplazarDias(unidad.anterior.inicio, dias);
+      fin.setHours(finEfectivo.getHours(), finEfectivo.getMinutes(), finEfectivo.getSeconds(), finEfectivo.getMilliseconds());
+      return {
+        inicio: new Date(unidad.anterior.inicio),
+        fin: fin.getTime() < unidad.anterior.fin.getTime() ? fin : new Date(unidad.anterior.fin),
+      };
+    }
+  }
 }

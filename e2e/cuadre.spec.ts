@@ -66,6 +66,16 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     expect(iq).not.toMatch(/Hoy al cierre/);                                 // < 4 miércoles de historial (P8)
   });
 
+  test('Esta semana se compara con lunes–miércoles de la semana pasada', async ({ page }) => {
+    // Antes: los 3 días previos (vie–dom), que no tienen nada que ver.
+    await page.goto('/estadisticas?p=semana&tab=resumen');
+    await expect(page.locator('.kpis-hero')).toContainText(/alumnos únicos/i, { timeout: 15000 });
+    const banner = await texto(page, '.rango-activo-banner');
+    expect(banner).toMatch(/del 28-sep al 30-sep hasta las 12:00/);
+    // 6 (lun 3 + mar 2 + mié 1) contra 2 (lun 28 + mar 29; la del mié 30 a las 15:00 aún no).
+    expect(await texto(page, '.kpis-hero')).toMatch(/200\.0% más que el período anterior/);
+  });
+
   test('Estadísticas, personas', async ({ page }) => {
     await page.goto('/estadisticas?p=ultimos7&tab=personas');
     await expect(page.getByText(/visitas de invitados/)).toBeVisible({ timeout: 15000 });

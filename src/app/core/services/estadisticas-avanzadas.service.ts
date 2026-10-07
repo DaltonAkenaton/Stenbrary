@@ -513,8 +513,14 @@ export class EstadisticasAvanzadasService {
     rangoActual: RangoFechas,
     horaFiltro?: { desde: number; hasta: number } | null,
     ahora: Date = new Date(),
+    /**
+     * Rango contra el que comparar. Para unidades de calendario (semana,
+     * mes, año, periodo) lo calcula quien sabe cuál es la unidad
+     * (`rangoAnteriorDeUnidad`); si no se pasa, los mismos días hacia atrás.
+     */
+    rangoAnteriorDado?: RangoFechas | null,
   ): Promise<TendenciaComparativa> {
-    const rangoAnterior = this.rangoAnteriorMismaLongitud(rangoActual, ahora);
+    const rangoAnterior = rangoAnteriorDado ?? this.rangoAnteriorMismaLongitud(rangoActual, ahora);
     const todosRegistros = await this.obtenerRegistrosConCache();
 
     const actual = this.filtrarPorRango(todosRegistros, rangoActual, horaFiltro).length;

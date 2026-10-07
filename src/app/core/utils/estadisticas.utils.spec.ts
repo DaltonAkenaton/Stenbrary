@@ -11,6 +11,7 @@
 import { Alumno, Motivo, Registro } from '../models';
 import {
   calcularInactividad,
+  rangoAnteriorDeUnidad,
   combinacionesDeMotivos,
   conteoMensual,
   cuartilesDeCeldas,
@@ -358,6 +359,72 @@ describe('estadisticas.utils', () => {
       expect(nivelDeIntensidad(4, c)).toBe(3);
       // La celda atípica no aplasta a las demás: solo ella es "muy alto".
       expect(nivelDeIntensidad(100, c)).toBe(4);
+    });
+  });
+
+  // ─── Comparación por unidad (v3.46.0) ─────────────────
+  describe('rangoAnteriorDeUnidad', () => {
+    const iso = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ` +
+      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const dia = (a: number, m: number, d: number, h = 0, min = 0) => new Date(a, m - 1, d, h, min);
+    const finDe = (a: number, m: number, d: number) => new Date(a, m - 1, d, 23, 59, 59, 999);
+
+    it('esta semana (lun–mar) contra lun–mar de la semana pasada, no contra el fin de semana', () => {
+      // Captura del usuario: martes 6 oct 2026 19:59; antes salía "del 03-oct al 04-oct".
+      const ahora = dia(2026, 10, 6, 19, 59);
+      const r = rangoAnteriorDeUnidad({ tipo: 'semana' }, { inicio: dia(2026, 10, 5), fin: finDe(2026, 10, 6) }, ahora)!;
+      expect(iso(r.inicio)).toBe('2026-09-28 00:00');
+      expect(iso(r.fin)).toBe('2026-09-29 19:59');
+    });
+
+    it('este mes (1–6) contra el 1–6 del mes pasado', () => {
+      const ahora = dia(2026, 10, 6, 10, 0);
+      const r = rangoAnteriorDeUnidad({ tipo: 'mes' }, { inicio: dia(2026, 10, 1), fin: finDe(2026, 10, 6) }, ahora)!;
+      expect(iso(r.inicio)).toBe('2026-09-01 00:00');
+      expect(iso(r.fin)).toBe('2026-09-06 10:00');
+    });
+
+    it('un mes completo contra el mes anterior completo, aunque tengan distintos días', () => {
+      const r = rangoAnteriorDeUnidad({ tipo: 'mes' }, { inicio: dia(2026, 3, 1), fin: finDe(2026, 3, 31) }, dia(2026, 10, 6))!;
+      expect(iso(r.inicio)).toBe('2026-02-01 00:00');
+      expect(iso(r.fin)).toBe('2026-02-28 23:59');
+      const abril = rangoAnteriorDeUnidad({ tipo: 'mes' }, { inicio: dia(2026, 4, 1), fin: finDe(2026, 4, 30) }, dia(2026, 10, 6))!;
+      expect(iso(abril.fin)).toBe('2026-03-31 23:59');
+    });
+
+    it('el 31 de marzo a media jornada se compara con el 28 de febrero', () => {
+      const r = rangoAnteriorDeUnidad({ tipo: 'mes' }, { inicio: dia(2026, 3, 1), fin: finDe(2026, 3, 31) }, dia(2026, 3, 31, 12))!;
+      expect(iso(r.fin)).toBe('2026-02-28 12:00');
+    });
+
+    it('este año contra el mismo tramo del año pasado', () => {
+      const ahora = dia(2026, 10, 6, 9, 30);
+      const r = rangoAnteriorDeUnidad({ tipo: 'anio' }, { inicio: dia(2026, 1, 1), fin: finDe(2026, 10, 6) }, ahora)!;
+      expect(iso(r.inicio)).toBe('2025-01-01 00:00');
+      expect(iso(r.fin)).toBe('2025-10-06 09:30');
+    });
+
+    it('este periodo contra el periodo anterior, mismos días desde su inicio', () => {
+      // Otoño desde el 17 ago; hoy 6 oct = día 50. Verano empezó el 1 jun → hasta el 21 jul.
+      const ahora = dia(2026, 10, 6, 19, 57);
+      const verano = { inicio: dia(2026, 6, 1), fin: finDe(2026, 8, 16) };
+      const r = rangoAnteriorDeUnidad({ tipo: 'periodo', anterior: verano },
+        { inicio: dia(2026, 8, 17), fin: finDe(2026, 12, 31) }, ahora)!;
+      expect(iso(r.inicio)).toBe('2026-06-01 00:00');
+      expect(iso(r.fin)).toBe('2026-07-21 19:57');
+    });
+
+    it('si el periodo anterior es más corto que el avance, se toma completo', () => {
+      const corto = { inicio: dia(2026, 6, 1), fin: finDe(2026, 6, 10) };
+      const r = rangoAnteriorDeUnidad({ tipo: 'periodo', anterior: corto },
+        { inicio: dia(2026, 8, 17), fin: finDe(2026, 12, 31) }, dia(2026, 10, 6))!;
+      expect(iso(r.fin)).toBe('2026-06-10 23:59');
+    });
+
+    it('sin periodo anterior no inventa uno', () => {
+      expect(rangoAnteriorDeUnidad({ tipo: 'periodo', anterior: null },
+        { inicio: dia(2026, 8, 17), fin: finDe(2026, 12, 31) })).toBeNull();
     });
   });
 });

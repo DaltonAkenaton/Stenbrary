@@ -76,6 +76,8 @@ import {
   nivelDeIntensidad,
   promedioPorDiaConActividad,
   ProyeccionDia,
+  rangoAnteriorDeUnidad,
+  UnidadDeComparacion,
   resumirCrecimiento,
   resumirEstancia,
   tasaRetencion,
@@ -83,7 +85,7 @@ import {
   variacionDiaria,
 } from '../../core/utils/estadisticas.utils';
 import { Motivo } from '../../core/models';
-import { periodoActual, periodoAnterior, PeriodoResuelto } from '../../core/utils/calendario.utils';
+import { periodoActual, periodoAnterior, PeriodoResuelto, rangoDePeriodo } from '../../core/utils/calendario.utils';
 import { desplazarDias, fechaLocalISO } from '../../core/utils/tiempo.utils';
 
 Chart.register(...registerables);
@@ -646,6 +648,33 @@ formatHora(h: number): string {
     );
     return this.estadisticasService.crearRangoMesActual();
   }
+
+  /**
+   * Unidad de calendario del preset, para comparar contra la unidad anterior
+   * al mismo avance (lunes–martes contra lunes–martes de la semana pasada).
+   * `null` = rango móvil o libre: se compara con los mismos días hacia atrás.
+   */
+  private unidadDelPreset(preset: PresetRango, rango: RangoFechas): UnidadDeComparacion | null {
+    switch (preset) {
+      case 'semana': case 'semana-pasada': return { tipo: 'semana' };
+      case 'mes-actual': case 'mes-pasado': return { tipo: 'mes' };
+      case 'anio': case 'anio-pasado': return { tipo: 'anio' };
+      case 'periodo-actual': case 'periodo-anterior': {
+        const cal = this.configService.calendarioEscolar;
+        const delRango = cal.periodos.find(p => {
+          const r = rangoDePeriodo(p);
+          return r !== null && r.inicio.getTime() === rango.inicio.getTime();
+        });
+        const anterior = delRango ? periodoAnterior(cal, delRango) : null;
+        return { tipo: 'periodo', anterior: anterior ? anterior.rango : null };
+      }
+      default: return null;
+    }
+  }
+
+  /** Rango con el que se compara la tendencia (y la "carrera en crecimiento"). */
+  private rangoAnteriorActivo: RangoFechas | null = null;
+  private unidadActiva: UnidadDeComparacion | null = null;
 
   /** Pone el nombre real en los botones: "Este periodo (Otoño 2026)". */
   private actualizarEtiquetasPeriodo(): void {
@@ -1286,6 +1315,16 @@ formatHora(h: number): string {
       const rango = await Promise.resolve(this.resolverRango(this.presetSeleccionado));
       this.rangoActivo = rango;
       const horaFiltro = this.horaFiltro;
+      const unidad = this.unidadDelPreset(this.presetSeleccionado, rango);
+      this.unidadActiva = unidad;
+      this.rangoAnteriorActivo = unidad ? rangoAnteriorDeUnidad(unidad, rango) : null;
+      if (unidad?.tipo === 'periodo' && !this.rangoAnteriorActivo) {
+        // Sin periodo anterior capturado no hay contra qué comparar. Un rango
+        // vacío da "Sin datos previos" en vez de caer en "los mismos días
+        // hacia atrás", que mezclaba periodos (el bug de la captura).
+        const justoAntes = new Date(rango.inicio.getTime() - 1);
+        this.rangoAnteriorActivo = { inicio: justoAntes, fin: justoAntes };
+      }
 
       const TQ = performance.now();
       // Tier S3 v3.17.0: una sola lectura del cache + las queries que dependen
@@ -1312,7 +1351,7 @@ formatHora(h: number): string {
       const TQ2a = performance.now();
       // Las métricas del rango se derivan del array ya filtrado (rápido, en JS).
       const [tendencia, insights, diarios, motivos, carreras] = await Promise.all([
-        this.estadisticasService.compararTendencias(rango, horaFiltro),
+        this.estadisticasService.compararTendencias(rango, horaFiltro, new Date(), this.rangoAnteriorActivo),
         this.estadisticasService.generarInsights(
           rango, horaFiltro, this.kpiUmbralInactividad, this.inactividadDesactivada),
         this.estadisticasService.obtenerRegistrosPorRango(rango, horaFiltro),
@@ -1398,7 +1437,12 @@ formatHora(h: number): string {
       this.labelFiltroHora = this.filtroHoraActivo ? `Solo ${this.formatHora(this.filtroHoraDesde)}–${this.formatHoraFin(this.filtroHoraHasta)}` : '';
       const g = this.datosDiarios?.granularidad;
       this.labelRegistrosDiarios = `Registros ${g === 'mes' ? 'por mes' : g === 'semana' ? 'por semana' : 'por día'}`;
-      this.labelTendencia = dias <= 14 ? 'Tendencia semanal' : dias <= 90 ? 'Tendencia del período' : 'Tendencia anual';
+      // El título dice CONTRA QUÉ se compara (antes "Tendencia anual" con 4 meses).
+      this.labelTendencia = this.unidadActiva?.tipo === 'semana' ? 'Contra la semana anterior'
+        : this.unidadActiva?.tipo === 'mes' ? 'Contra el mes anterior'
+        : this.unidadActiva?.tipo === 'anio' ? 'Contra el año anterior'
+        : this.unidadActiva?.tipo === 'periodo' ? 'Contra el periodo anterior'
+        : `Contra los ${dias} ${dias === 1 ? 'día' : 'días'} anteriores`;
       this.actualizarLabelsHeatmap();
       this.actualizarLabelTopAlumnos();
 
@@ -1742,7 +1786,7 @@ this.sparkRegistros = counts;
       this.kpiAlumnosUnaSolaVisita = unaSolaReal;
 
       // Tier B10: carrera con mayor crecimiento vs período anterior.
-      const rangoAnterior = this.estadisticasService.rangoAnteriorMismaLongitud(rango);
+      const rangoAnterior = this.rangoAnteriorActivo ?? this.estadisticasService.rangoAnteriorMismaLongitud(rango);
       const inA = rango.inicio.getTime(), fnA = rango.fin.getTime();
       const inB = rangoAnterior.inicio.getTime(), fnB = rangoAnterior.fin.getTime();
 
