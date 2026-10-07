@@ -342,7 +342,13 @@ formatHora(h: number): string {
   // ─── Heatmap config (sub-filtro independiente) ────
   heatmapPeriodo = 30;
   /** Modo de selección: preset (botones) o personalizado (rango libre). */
-  heatmapModo: 'preset' | 'personalizado' = 'preset';
+  /**
+   * 'principal' (por defecto, v3.46.0): el mapa usa el mismo período y filtro
+   * de hora que el resto de la pantalla. Antes tenía su propio rango siempre,
+   * y elegir "Esta semana" arriba mostraba un mapa de 14 días que nadie había
+   * pedido (confundió al usuario). 'preset' / 'personalizado': rango propio.
+   */
+  heatmapModo: 'principal' | 'preset' | 'personalizado' = 'principal';
   heatmapFechaInicio = '';
   heatmapFechaFin = '';
   opcionesHeatmap = [
@@ -1045,6 +1051,17 @@ formatHora(h: number): string {
     this.cargarHeatmap();
   }
 
+  /** Vuelve a usar el período (y el filtro de hora) del filtro principal. */
+  usarPeriodoPrincipalEnHeatmap(): void {
+    this.heatmapModo = 'principal';
+    this.cargarHeatmap();
+  }
+
+  /** Filtro de hora que aplica al mapa: solo cuando sigue al período principal. */
+  private get horaFiltroHeatmap(): { desde: number; hasta: number } | null {
+    return this.heatmapModo === 'principal' ? this.horaFiltro : null;
+  }
+
   /** Activa el modo personalizado del heatmap. Si no hay fechas, prepopula. */
   activarHeatmapPersonalizado(): void {
     this.heatmapModo = 'personalizado';
@@ -1077,7 +1094,7 @@ formatHora(h: number): string {
     // BD por cada cambio de período del heatmap (lag visible).
     const rangoCustom = this.rangoHeatmapPersonalizado();
     const resultado = await this.estadisticasService.generarHeatmap(
-      this.heatmapPeriodo, rangoCustom);
+      this.heatmapPeriodo, rangoCustom, this.horaFiltroHeatmap);
     this.aplicarHeatmap(resultado);
     // Reusar el resultado en vez de re-pedir el heatmap (evita doble query).
     this.diaPredicho = this.estadisticasService.predecirDiaOcupadoDesde(resultado);
@@ -1087,6 +1104,7 @@ formatHora(h: number): string {
 
   /** Devuelve el rango personalizado del heatmap o undefined si está en preset. */
   private rangoHeatmapPersonalizado(): RangoFechas | undefined {
+    if (this.heatmapModo === 'principal') return this.rangoActivo ?? undefined;
     if (this.heatmapModo !== 'personalizado') return undefined;
     if (!this.heatmapFechaInicio || !this.heatmapFechaFin) return undefined;
     return this.estadisticasService.normalizarRango(
@@ -1097,7 +1115,9 @@ formatHora(h: number): string {
 
   /** Actualiza los labels visibles del heatmap (título y fecha bajo el título). */
   private actualizarLabelsHeatmap(): void {
-    if (this.heatmapModo === 'personalizado' && this.heatmapRango) {
+    if (this.heatmapModo === 'principal') {
+      this.labelHeatmap = 'Mapa de calor — mismo período';
+    } else if (this.heatmapModo === 'personalizado' && this.heatmapRango) {
       this.labelHeatmap = `Mapa de calor — Rango personalizado`;
     } else {
       const opHeatmap = this.opcionesHeatmap.find(o => o.dias === this.heatmapPeriodo);
@@ -1332,11 +1352,11 @@ formatHora(h: number): string {
       // v3.18.6: predecirDiaOcupado() reconstruía el heatmap internamente
       // (trabajo duplicado en paralelo). Ahora derivamos la predicción del
       // mismo heatmap que ya cargamos.
-      const rangoHeatmapCustom = this.rangoHeatmapPersonalizado();
+      const rangoHeatmapCustom = this.heatmapModo === 'principal' ? rango : this.rangoHeatmapPersonalizado();
       const rangoTopCustom = this.rangoTopPersonalizado();
       const [registrosCrudos, heatmap, top] = await Promise.all([
         this.estadisticasService.obtenerRegistrosCrudos(rango, horaFiltro),
-        this.estadisticasService.generarHeatmap(this.heatmapPeriodo, rangoHeatmapCustom),
+        this.estadisticasService.generarHeatmap(this.heatmapPeriodo, rangoHeatmapCustom, this.horaFiltroHeatmap),
         this.estadisticasService.obtenerTopAlumnos(
           this.topLimite,
           rangoTopCustom ? undefined : (this.topPeriodo || undefined),

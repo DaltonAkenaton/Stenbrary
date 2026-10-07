@@ -76,6 +76,13 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     expect(await texto(page, '.kpis-hero')).toMatch(/200\.0% más que el período anterior/);
   });
 
+  test('El mapa de calor sigue al período de arriba', async ({ page }) => {
+    // Antes tenía su propio rango (30 días) aunque arriba se eligiera otro.
+    await page.goto('/estadisticas?p=ultimos7&tab=calor');
+    await expect(page.locator('.heatmap-aviso')).toContainText(/mismo período/, { timeout: 15000 });
+    await expect(page.locator('.heatmap-total-grand')).toHaveText(/^\s*6\s*$/);   // las 6 visitas de los 7 días
+  });
+
   test('Estadísticas, personas', async ({ page }) => {
     await page.goto('/estadisticas?p=ultimos7&tab=personas');
     await expect(page.getByText(/visitas de invitados/)).toBeVisible({ timeout: 15000 });

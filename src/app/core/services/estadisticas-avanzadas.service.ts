@@ -618,12 +618,13 @@ export class EstadisticasAvanzadasService {
   async generarHeatmap(
     diasPeriodo = 30,
     rangoCustom?: RangoFechas,
+    horaFiltro?: { desde: number; hasta: number } | null,
   ): Promise<HeatmapResultado> {
-    // Si se pasa un rango explícito (modo personalizado), úsalo;
+    // Si se pasa un rango explícito (el del filtro principal o uno propio), úsalo;
     // si no, deriva el rango de los últimos N días.
     const rango = rangoCustom ?? this.crearRangoUltimosDias(diasPeriodo);
     const todosRegistros = await this.obtenerRegistrosConCache();
-    const registrosPeriodo = this.filtrarPorRango(todosRegistros, rango);
+    const registrosPeriodo = this.filtrarPorRango(todosRegistros, rango, horaFiltro);
 
     const heatmapMap = new Map<string, number>();
     const fechasConActividad = new Map<string, Set<string>>();

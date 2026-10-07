@@ -583,11 +583,21 @@
             }
             <p class="heatmap-aviso">
               <mat-icon>info</mat-icon>
-              Este mapa usa su propio rango — independiente del filtro principal.
+              @if (heatmapModo === 'principal') {
+                Usa el mismo período y filtro de hora que el resto de la pantalla.
+              } @else {
+                Este mapa usa su propio rango — independiente del filtro principal.
+              }
             </p>
           </div>
           <div class="heatmap-controls">
             <div class="mini-periodo-selector">
+              <button class="mini-periodo-btn"
+                      [class.active]="heatmapModo === 'principal'"
+                      (click)="usarPeriodoPrincipalEnHeatmap()"
+                      matTooltip="El mismo período elegido arriba">
+                Igual que arriba
+              </button>
               @for (op of opcionesHeatmap; track op.dias) {
                 <button class="mini-periodo-btn"
                         [class.active]="heatmapModo === 'preset' && heatmapPeriodo === op.dias"
