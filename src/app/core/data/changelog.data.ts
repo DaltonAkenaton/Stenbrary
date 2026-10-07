@@ -49,6 +49,44 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.46.0',
+    fecha: '2026-10-07',
+    titulo: 'Comparaciones que tienen sentido',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Las comparaciones de Estadísticas usan la unidad anterior: esta semana contra la semana pasada, este mes contra ' +
+          'el mes pasado, este periodo contra el periodo anterior, siempre al mismo avance. ' +
+          'Antes, "esta semana" se comparaba con el fin de semana anterior.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          'El aviso "Hay una nueva versión disponible" ahora sí aparece. Antes la app solo se actualizaba al recargarla, ' +
+          'y una tablet en quiosco abierta todo el día no se enteraba.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El mapa de calor usa el mismo período que el resto de la pantalla; se le puede dar un rango propio si se necesita.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'Calendario escolar: elige un año y pulsa "Cargar calendario UAT". Para 2026 carga el oficial; para otros años, ' +
+          'una aproximación con las reglas habituales de la universidad (festivos que se recorren a lunes, Semana Santa, vacaciones) que luego ajustas.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El Reporte del sistema explica qué revisa cada cosa y qué hacer con lo que encuentre.',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'La opción de conexión con la nube queda oculta mientras el sistema funciona en modo local.',
+      },
+    ],
+  },
+  {
     version: '3.45.0',
     fecha: '2026-10-06',
     titulo: 'El lector manda',

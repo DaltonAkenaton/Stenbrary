@@ -21,8 +21,16 @@ tampoco cuenta. En pantalla: "promedio por día con actividad (N días)".
 el promedio no describía un día normal de biblioteca.
 
 ### Comparaciones contra el período anterior
+Se compara con la **unidad anterior** (v3.46.0): esta semana contra la semana
+pasada, este mes contra el mes pasado, este año contra el año pasado, este
+periodo escolar contra el periodo anterior. Con rangos de N días ("7 días",
+"30 días"), contra los N días previos. El título de la tarjeta dice contra qué
+se compara.
+
 Si el período que se ve **todavía no termina** (incluye hoy, "este mes"), el
-período anterior se corta a la misma altura: mismo día relativo y misma hora.
+período anterior se corta a la misma altura: mismo día relativo y misma hora
+(un martes a las 8 p. m., "esta semana" se compara con lunes y martes de la
+semana pasada hasta las 8 p. m.).
 - "Accesos hoy" (Resumen) se compara con el mismo día de la semana pasada
   **a esta misma hora**.
 - "Este mes" contra "Mes pasado" (Comparar) toma el mes pasado solo hasta el
@@ -120,6 +128,22 @@ parejo todo el día.
 - **Actividades:** no se permiten dos con el mismo nombre (sin distinguir
   mayúsculas ni acentos).
 
+## Mapa de calor (v3.46.0)
+Por defecto usa **el mismo período y filtro de hora** que el resto de
+Estadísticas ("Igual que arriba"). Se le puede dar un rango propio (7 a 365
+días o personalizado), por ejemplo para ver el patrón de los últimos 30 días
+mientras arriba se mira solo "Hoy".
+
+## Aviso de nueva versión (v3.46.0)
+La app revisa cada 15 minutos si hay una versión nueva publicada. Cuando la
+hay, aparece "Hay una nueva versión disponible" con un botón para actualizar.
+Si nadie lo pulsa, se actualiza sola la próxima vez que se abra.
+
+## Reporte del sistema (Diagnóstico)
+Sección "¿Qué es esta pantalla y qué revisa?" con cada revisión explicada. El
+reporte descargable es para mandarlo a quien da soporte y **puede incluir
+algunas matrículas** como ejemplo: no se publica.
+
 ## Escáner: lector físico primero (v3.45.0)
 
 El sistema está pensado para un **lector de código de barras** (USB o Bluetooth, unos 340 pesos):
@@ -155,8 +179,13 @@ Configuración → **Calendario escolar**. Todo se captura a mano.
   es una lista editable y no una regla. Si recorren un festivo, se cambia la
   fecha.
 - Los cambios se hacen sobre un borrador: no cuentan hasta pulsar
-  **Guardar**. "Descartar cambios" vuelve a lo guardado; "Cargar UAT 2026"
-  reemplaza lo que se ve por el calendario oficial (tampoco se guarda solo).
+  **Guardar**. "Descartar cambios" vuelve a lo guardado.
+- **Año nuevo:** elegir el año y pulsar **Cargar calendario UAT** (v3.46.0).
+  Para 2026 carga el oficial; para otros años, una **aproximación** calculada
+  con las reglas de la UAT: festivos de ley recorridos a lunes (primer lunes de
+  febrero, tercer lunes de marzo y de noviembre), Semana Santa según la fecha
+  de Pascua, vacaciones de verano e invierno y Otoño desde el tercer lunes de
+  agosto. Se compara con el PDF oficial y se ajusta lo que la UAT haya movido.
 - La pantalla avisa si hay periodos encimados, huecos entre periodos, fechas
   al revés, y cuando el calendario ya no cubre la fecha de hoy (cambio de
   año: **cada año hay que capturar el calendario nuevo**).

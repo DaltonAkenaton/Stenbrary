@@ -78,7 +78,7 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **257 specs unitarios en verde**, en 13 archivos —
+Suite activa: **270 specs unitarios en verde**, en 13 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `database.service`,
@@ -94,8 +94,8 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**28 tests E2E** con
-Playwright (14 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 6 en `cuadre.spec.ts` — este
+**30 tests E2E** con
+Playwright (14 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 8 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
@@ -237,7 +237,8 @@ Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los p
 - `BackupService` — export/import JSON completo. Verifica duplicados de motivos por nombre antes de insertar.
 - `ExportService`, `ReportService` — PDF (`jspdf`/`jspdf-autotable`) y Excel (`xlsx`).
 - `EstadisticasAvanzadasService` — tendencias, heatmap, top alumnos, insights, distribución por motivo/carrera.
-- `PwaUpdateService` — integrado también directamente en `AppComponent` vía `SwUpdate.versionUpdates`.
+- `PwaUpdateService` — `AppComponent.ngOnInit` llama `iniciar()`: revisión por **reloj** (`timer`, 60 s y luego cada 15 min), nunca por `appRef.isStable` (con intervalos vivos la app no se estabiliza y la revisión no arrancaba; v3.46.0). El aviso lo pinta `AppComponent` con `SwUpdate.versionUpdates`. `stenbrary-sw-revision-ms` en localStorage acorta el intervalo solo para pruebas.
+  **Ojo al probar el SW con Playwright:** el Chrome que lanza Playwright (`channel: 'chrome'` o su Chromium con perfil persistente) arranca el SW de Angular en `SAFE_MODE` ("Entry already exists"); el Chrome real del usuario y Edge no. Para pruebas de SW/offline usar `channel: 'msedge'`.
 - `ErrorReporterService` — cola offline en localStorage, drena en evento `online`. Endpoint configurable por environment. Cero costo de bundle si no se configura. Wired al `GlobalErrorHandler`.
 - `GlobalErrorHandler` — provider en `app.config.ts`.
 - `DatosPruebaService` — generador de alumnos/registros sintéticos con modelo UAT (3 períodos, vacaciones, festivos, Semana Santa, horario 7–22, turnos 66/22/12). Matrícula `9000001+` + `dispositivo: 'SEED-TEST'` como marcadores para limpieza selectiva. **Calendario hardcoded** — cuando se venda a otra universidad, abstraer a `CalendarioEscolarService` configurable desde UI (pendiente en `docs/ESTADO.md`).
@@ -279,6 +280,8 @@ Rutas protegidas por `roleGuard`: `/estadisticas`, `/gestion-motivos`,
 `/diagnostico` **no** lleva guard a propósito.
 
 Para desplegar la nube en producción: `docs/DESPLIEGUE-NUBE.md`.
+
+**Mientras el sistema se use en modo local** (decisión 2026-10-06: sin autorización de la UAT no se suben datos de alumnos a la nube), `environment.mostrarConexionNube = false` oculta la sección de Configuración → Avanzado; se muestra igual si una instalación ya tiene la nube encendida, para poder apagarla.
 
 ### Scanner (dual-mode, `features/scanner/scanner.component.ts`)
 

@@ -9,6 +9,33 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-07 — Ajustes antes de la presentación (v3.46.0)
+
+Pedidos del usuario tras revisar el sistema con sus capturas, más lo que
+apareció al verificarlos.
+
+- **Comparación por unidad.** La captura de "Este periodo" (Otoño comparado
+  con 2 abr–22 may) y la de "Esta semana" (lun–mar contra sáb–dom) eran el
+  mismo error: "mismos días hacia atrás" solo vale para rangos móviles.
+  `rangoAnteriorDeUnidad` compara semana/mes/año/periodo con la unidad
+  anterior al mismo avance. E2E en el cuadre con el caso de la semana.
+- **Aviso de nueva versión.** No funcionaba: `PwaUpdateService.iniciar()` no
+  lo llamaba nadie y además esperaba `isStable`. Verificado con un despliegue
+  A → B real.
+- **La trampa de la investigación (40 min perdidos).** Al probar el aviso,
+  el SW de Angular salía en `SAFE_MODE` ("Entry already exists") y la app no
+  abría sin internet en Chrome. Pareció un problema grave de producción; se
+  probó Angular 22, reinicios, políticas… Lo resolvió una prueba de 2 minutos
+  del usuario en su Chrome real: `Driver state: NORMAL`. Era el Chrome que
+  lanza Playwright. Lección (también en memoria): ante un hallazgo grave,
+  reportar y pedir la prueba más barata ANTES de excavar.
+- Mapa de calor sigue al período principal por defecto; calendario típico
+  UAT para cualquier año (Pascua calculada; el típico 2026 coincide festivo
+  por festivo con el PDF); "¿Qué es esta pantalla?" en Diagnóstico;
+  `environment.mostrarConexionNube` para ocultar la nube en modo local.
+
+---
+
 ## 2026-10-06 — Preparación de Cloudflare Pages
 
 Lo que no necesita la cuenta del usuario quedó en el repo; los pasos del panel,
