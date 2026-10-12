@@ -225,3 +225,30 @@
   </div>
   </details>
 </div>
+
+<!-- ── AVISO DE PRIVACIDAD (v3.48.0) ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>privacy_tip</mat-icon>
+    <h2>Aviso de privacidad</h2>
+  </div>
+  <p class="section-desc">
+    Texto corto junto al lector que dice a los alumnos qué se hace con sus datos. Ajústalo a como
+    se maneje tu biblioteca. Si lo dejas vacío, vuelve al texto original.
+  </p>
+  <div class="sound-toggle">
+    <span class="sound-status">{{ configService.avisoPrivacidadActivo ? 'Visible' : 'Oculto' }}</span>
+    <button class="btn-inline"
+            [class.btn-inline-active]="configService.avisoPrivacidadActivo"
+            (click)="onToggleAvisoPrivacidad()">
+      <mat-icon>{{ configService.avisoPrivacidadActivo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+      {{ configService.avisoPrivacidadActivo ? 'Ocultar' : 'Mostrar' }}
+    </button>
+  </div>
+  @if (configService.avisoPrivacidadActivo) {
+    <textarea class="aviso-textarea" rows="3" maxlength="400"
+              aria-label="Texto del aviso de privacidad"
+              [value]="configService.avisoPrivacidadTexto"
+              (change)="onChangeAvisoPrivacidad($any($event.target).value)"></textarea>
+  }
+</div>

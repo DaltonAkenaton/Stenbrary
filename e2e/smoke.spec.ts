@@ -233,3 +233,24 @@ test.describe('Escáner: botón de cámara configurable (v3.45.0)', () => {
     await expect(page.getByRole('button', { name: /Usar la cámara/ })).toHaveCount(0);
   });
 });
+
+test.describe('Escáner: aviso de privacidad (v3.48.0)', () => {
+  test('por defecto se muestra; el texto lo pone el coordinador', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+      localStorage.setItem('stenbrary-config', JSON.stringify({ avisoPrivacidadTexto: 'Texto propio de la biblioteca' }));
+    });
+    await page.goto('/scanner');
+    await expect(page.locator('.aviso-privacidad')).toHaveText(/Texto propio de la biblioteca/);
+  });
+
+  test('si se oculta, no aparece', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+      localStorage.setItem('stenbrary-config', JSON.stringify({ avisoPrivacidadActivo: false }));
+    });
+    await page.goto('/scanner');
+    await expect(page.locator('app-scanner')).toBeVisible();
+    await expect(page.locator('.aviso-privacidad')).toHaveCount(0);
+  });
+});

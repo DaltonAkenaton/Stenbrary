@@ -49,6 +49,19 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.48.0',
+    fecha: '2026-10-12',
+    titulo: 'Aviso de privacidad en el escáner',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Junto al lector aparece un aviso corto que explica a los alumnos para qué se usan sus datos. ' +
+          'El texto se cambia, o el aviso se oculta, en Configuración → Escáner.',
+      },
+    ],
+  },
+  {
     version: '3.47.0',
     fecha: '2026-10-12',
     titulo: 'Estadísticas más claras',

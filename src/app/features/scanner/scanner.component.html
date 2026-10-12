@@ -78,6 +78,15 @@
               <span class="reader-status-label">Lector listo</span>
             }
           </div>
+
+          <!-- Aviso de privacidad (v3.48.0): junto al lector, donde el alumno
+               mira al registrarse. Editable en Configuración → Escáner. -->
+          @if (configService.avisoPrivacidadActivo) {
+            <p class="aviso-privacidad">
+              <mat-icon>privacy_tip</mat-icon>
+              <span>{{ configService.avisoPrivacidadTexto }}</span>
+            </p>
+          }
         </div>
 
       </div>

@@ -273,6 +273,22 @@
   padding-top: $spacing-xs;
 }
 
+// Aviso de privacidad: discreto, legible, sin competir con el escáner.
+.aviso-privacidad {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  max-width: 560px;
+  margin: $spacing-md auto 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: $text-muted;
+  text-align: left;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+}
+
 .btn-camera-link {
   display: inline-flex;
   align-items: center;

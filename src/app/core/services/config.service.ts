@@ -133,6 +133,13 @@ interface AppConfig {
    * queda sin forma de escanear al actualizar.
    */
   mostrarBotonCamara: boolean;
+  /**
+   * Aviso de privacidad bajo el escáner (v3.48.0): qué se hace con los datos
+   * de quien se registra. Texto libre: lo ajusta el coordinador a como se
+   * maneje su biblioteca. Default activo con un texto genérico.
+   */
+  avisoPrivacidadActivo: boolean;
+  avisoPrivacidadTexto: string;
   /** Volumen del beep de escaneo. 0 = silencio, 1 = máximo. Default 0.15. */
   volumenBeep: number;
 
@@ -161,6 +168,11 @@ function copiarCalendario(c: CalendarioEscolar): CalendarioEscolar {
   };
 }
 
+/** Texto inicial del aviso bajo el escáner; editable en Configuración → Escáner. */
+export const AVISO_PRIVACIDAD_DEFAULT =
+  'Registro de visitas de la biblioteca. Tus datos (matrícula, nombre y carrera) se usan únicamente para el control de ' +
+  'acceso y las estadísticas internas de la biblioteca.';
+
 const DEFAULT_CONFIG: AppConfig = {
   registroSalidaActivo: false,
   horasAutoSalida: 3,
@@ -186,6 +198,8 @@ const DEFAULT_CONFIG: AppConfig = {
   escanerCooldownMs: 1500,
   escanerSaltarConfirmacion: false,
   mostrarBotonCamara: true,
+  avisoPrivacidadActivo: true,
+  avisoPrivacidadTexto: AVISO_PRIVACIDAD_DEFAULT,
   volumenBeep: 0.15,
   cierreAlHorario: false,
   cierreAutoConfirmar: false,
@@ -583,6 +597,25 @@ export class ConfigService {
 
   setMostrarBotonCamara(valor: boolean): void {
     this.config.mostrarBotonCamara = valor;
+    this.guardar();
+  }
+
+  get avisoPrivacidadActivo(): boolean {
+    return this.config.avisoPrivacidadActivo;
+  }
+
+  setAvisoPrivacidadActivo(valor: boolean): void {
+    this.config.avisoPrivacidadActivo = valor;
+    this.guardar();
+  }
+
+  get avisoPrivacidadTexto(): string {
+    return this.config.avisoPrivacidadTexto;
+  }
+
+  /** Vacío = vuelve al texto por defecto (un aviso en blanco no informa nada). */
+  setAvisoPrivacidadTexto(texto: string): void {
+    this.config.avisoPrivacidadTexto = texto.trim() || AVISO_PRIVACIDAD_DEFAULT;
     this.guardar();
   }
 

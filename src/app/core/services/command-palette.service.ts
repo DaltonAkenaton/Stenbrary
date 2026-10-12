@@ -114,7 +114,7 @@ export class CommandPaletteService {
 
       // Atajos directos a cada categoría de config
       nav('nav-config-general',     'Configuración → General',     'settings',          '/configuracion#general',     ['general', 'info', 'institucion']),
-      nav('nav-config-escaner',     'Configuración → Escáner',     'qr_code_scanner',   '/configuracion#escaner',     ['escaner', 'sonido', 'camara', 'beep']),
+      nav('nav-config-escaner',     'Configuración → Escáner',     'qr_code_scanner',   '/configuracion#escaner',     ['escaner', 'sonido', 'camara', 'beep', 'privacidad', 'aviso', 'datos']),
       nav('nav-config-operacion',   'Configuración → Operación',   'meeting_room',      '/configuracion#operacion',   ['operacion', 'salida', 'aforo', 'duplicados']),
       nav('nav-config-quiosco',     'Configuración → Quiosco',     'tablet_android',    '/configuracion#quiosco',     ['quiosco', 'kiosk', 'horario', 'pin']),
       nav('nav-config-experiencia', 'Configuración → Experiencia', 'celebration',       '/configuracion#experiencia', ['experiencia', 'celebracion', 'animacion', 'inactividad']),

@@ -214,3 +214,11 @@ Configuración → **Calendario escolar**. Todo se captura a mano.
   hubo registros" en lugar de mostrar ceros.
 - **Grados:** del 1.º al 12.º (la carrera dura 9 semestres, pero hay
   rezagados). El importador ya aceptaba hasta 12.
+
+## Aviso de privacidad (v3.48.0)
+Junto al lector, el escáner muestra un aviso corto: para qué se usan los datos
+de quien se registra. Activo por defecto con un texto genérico; el
+coordinador lo cambia o lo oculta en Configuración → Escáner → Aviso de
+privacidad. Si el texto se deja vacío, vuelve al original. El texto por
+defecto no dice "solo en este equipo" a propósito: dejaría de ser cierto si
+algún día se enciende la nube.

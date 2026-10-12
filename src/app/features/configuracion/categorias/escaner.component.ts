@@ -124,6 +124,19 @@ export class EscanerCategoriaComponent {
     this.cdr.markForCheck();
   }
 
+  onToggleAvisoPrivacidad(): void {
+    const nuevo = !this.configService.avisoPrivacidadActivo;
+    this.configService.setAvisoPrivacidadActivo(nuevo);
+    this.toastService.success(nuevo ? 'Aviso de privacidad visible en el escáner' : 'Aviso de privacidad oculto');
+    this.cdr.markForCheck();
+  }
+
+  onChangeAvisoPrivacidad(texto: string): void {
+    this.configService.setAvisoPrivacidadTexto(texto);
+    this.toastService.success('Aviso de privacidad actualizado');
+    this.cdr.markForCheck();
+  }
+
   onToggleEscanerSaltarConfirmacion(): void {
     const nuevo = !this.configService.escanerSaltarConfirmacion;
     this.configService.setEscanerSaltarConfirmacion(nuevo);

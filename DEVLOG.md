@@ -35,6 +35,14 @@ Revisión de sus notas del bloc. Lo que se hizo y lo que apareció al revisar:
 
 **Sigue:** Cloudflare Pages (pasos del panel, del usuario).
 
+**Después, mismo día (v3.48.0): aviso de privacidad.** La entrega será una
+herramienta del coordinador, sin pasar por dirección. En modo local los datos no
+salen del equipo, pero los alumnos sí ven el escáner. Por eso hay un aviso
+corto junto al lector, editable y ocultable. La primera versión lo puso al fondo
+de la página (bajo "¿No eres alumno?") y su ajuste dentro del `<details>`
+plegado de la cámara: las capturas lo delataron y se movió al lector y a una
+tarjeta propia.
+
 ---
 
 ## 2026-10-07 — Ajustes antes de la presentación (v3.46.0)

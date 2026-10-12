@@ -764,3 +764,22 @@
 
   &[open] summary .cr-titulo { color: #E8F4F8; }
 }
+
+// Aviso de privacidad del escáner (v3.48.0): texto libre.
+.aviso-textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #E8F4F8;
+  background: rgba(200, 230, 240, 0.04);
+  border: 1px solid rgba(200, 230, 240, 0.12);
+  border-radius: 10px;
+  resize: vertical;
+
+  &:focus { outline: none; border-color: #00C8D7; }
+}

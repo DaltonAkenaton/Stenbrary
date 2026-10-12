@@ -45,12 +45,13 @@ export const CATEGORIAS_CONFIG: CategoriaConfig[] = [
     id: 'escaner',
     nombre: 'Escáner',
     icono: 'qr_code_scanner',
-    descripcion: 'Sonido, comportamiento de detección y cámara',
+    descripcion: 'Sonido, cámara y aviso de privacidad',
     keywords: [
       'sonido', 'audio', 'beep', 'volumen', 'mute', 'silenciar',
       'velocidad', 'cooldown', 'instantaneo', 'rapido',
       'confirmacion', 'saltar', 'directo',
       'camara', 'frontal', 'trasera', 'zoom',
+      'privacidad', 'aviso', 'datos personales',
     ],
   },
   {
