@@ -37,7 +37,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
   ExportarPdfDialogComponent,
   ExportarPdfDialogData,
@@ -122,6 +122,7 @@ interface OpcionPreset {
     MatInputModule,
     MatExpansionModule,
     MatDialogModule,
+    RouterLink,
   ],
   templateUrl: './dashboard-ejecutivo.component.html',
   styleUrl: './dashboard-ejecutivo.component.scss',
@@ -1427,6 +1428,7 @@ formatHora(h: number): string {
       const inactividad = await this.estadisticasService.contarInactividad(this.kpiUmbralInactividad);
       this.kpiAlumnosInactivos = inactividad.inactivos;
       this.kpiNuncaVinieron = inactividad.nuncaVinieron;
+      this.kpiAlumnosUnaSolaVisita = inactividad.unaSolaVisita;
 
       const TM = performance.now();
       // ─── TIER B: métricas avanzadas (rango actual) ──
@@ -1535,12 +1537,26 @@ formatHora(h: number): string {
     } : null;
   }
 
-  /** Crecimiento mensual (últimos 12 meses, independiente del filtro). */
+  /** Meses de la gráfica de crecimiento: atajos + input libre (principio de flexibilidad). */
+  readonly opcionesMesesCrecimiento = [3, 6, 12, 24];
+  readonly MESES_CRECIMIENTO_MIN = 2;
+  readonly MESES_CRECIMIENTO_MAX = 120;
+  mesesCrecimiento = 12;
+
+  setMesesCrecimiento(n: number): void {
+    if (!Number.isFinite(n)) return;
+    const meses = Math.min(this.MESES_CRECIMIENTO_MAX, Math.max(this.MESES_CRECIMIENTO_MIN, Math.round(n)));
+    if (meses === this.mesesCrecimiento) return;
+    this.mesesCrecimiento = meses;
+    void this.cargarCrecimiento12m().then(() => this.cdr.markForCheck());
+  }
+
+  /** Crecimiento mensual (últimos `mesesCrecimiento` meses, independiente del filtro). */
   private async cargarCrecimiento12m(): Promise<void> {
     const todos = await this.estadisticasService.obtenerRegistros();
     const hoy = new Date();
     const nombresAbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    this.kpiCrecimiento12m = conteoMensual(todos, hoy).map(m => ({
+    this.kpiCrecimiento12m = conteoMensual(todos, hoy, this.mesesCrecimiento).map(m => ({
       mes: `${nombresAbr[m.inicio.getMonth()]} ${String(m.inicio.getFullYear()).slice(-2)}`,
       cantidad: m.cantidad,
     }));
@@ -1795,15 +1811,8 @@ this.sparkRegistros = counts;
         this.kpiUltimoRegistroHace = 'sin registros aún';
       }
 
-      // Tier A6: "Una sola visita" REAL — alumnos con 1 visita histórica total.
-      const visitasHistoricasPorMat = new Map<string, number>();
-      for (const r of todos) {
-        if (r.matricula === 'INVITADO') continue;
-        visitasHistoricasPorMat.set(r.matricula, (visitasHistoricasPorMat.get(r.matricula) || 0) + 1);
-      }
-      let unaSolaReal = 0;
-      visitasHistoricasPorMat.forEach(v => { if (v === 1) unaSolaReal++; });
-      this.kpiAlumnosUnaSolaVisita = unaSolaReal;
+      // "Vinieron solo 1 vez" ya no se calcula aquí: sale de contarUnaSolaVisita
+      // (estadisticas.utils), junto con la inactividad y con su mismo universo.
 
       // Tier B10: carrera con mayor crecimiento vs período anterior.
       const rangoAnterior = this.rangoAnteriorActivo ?? this.estadisticasService.rangoAnteriorMismaLongitud(rango);
@@ -1832,7 +1841,10 @@ this.sparkRegistros = counts;
       carrerasA.forEach((cantA, carrera) => {
         const cantB = carrerasB.get(carrera) || 0;
         const cambio = cantA - cantB;
-        const porc = cantB > 0 ? (cambio / cantB) * 100 : (cantA > 0 ? 100 : 0);
+        // Sin visitas en el período anterior no hay base para un %: antes salía
+        // un "+100 %" inventado. Esas carreras no compiten por el título.
+        if (cantB === 0) return;
+        const porc = (cambio / cantB) * 100;
         if (cambio > 0 && cantA >= 5 && (!mejor || porc > mejor.porcentaje)) {
           mejor = { carrera, cambio, porcentaje: parseFloat(porc.toFixed(1)) };
         }

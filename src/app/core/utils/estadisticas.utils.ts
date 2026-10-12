@@ -264,6 +264,25 @@ export function calcularInactividad(
   return { inactivos, nuncaVinieron };
 }
 
+/**
+ * Alumnos con exactamente UNA visita en todo su historial. Mismo universo que
+ * `calcularInactividad`: solo alumnos que existen y no están desactivados (un
+ * alumno dado de baja o borrado no es candidato a "invitarlo a regresar").
+ * Invitados fuera (no tienen identidad).
+ */
+export function contarUnaSolaVisita(alumnos: Alumno[], registros: Registro[]): number {
+  const visitas = new Map<string, number>();
+  for (const r of registros) {
+    if (esInvitado(r)) continue;
+    visitas.set(r.matricula, (visitas.get(r.matricula) || 0) + 1);
+  }
+  let n = 0;
+  for (const a of alumnos) {
+    if (a.activo !== false && visitas.get(a.matricula) === 1) n++;
+  }
+  return n;
+}
+
 // ═══════════════════════════════════════════════════════
 // P8 — PROYECCIÓN DEL DÍA
 // ═══════════════════════════════════════════════════════
@@ -531,7 +550,7 @@ export interface ResumenCrecimiento {
   /** Cambio de cada mes contra el anterior; el mes en curso, al mismo avance. */
   cambios: CambioMensual[];
   /**
-   * Últimos 3 meses CERRADOS contra los 3 previos; null sin historial.
+   * Últimos 3 meses CERRADOS contra los 3 previos; null si no caben (menos de 7 meses).
    * `sinReferencia`: el trimestre previo tuvo 0 visitas — antes salía "↑ 100 %".
    */
   trimestre: { porcentaje: number; direccion: 'up' | 'down' | 'igual'; sinReferencia: boolean } | null;
@@ -567,7 +586,8 @@ export function resumirCrecimiento(cantidades: number[], anteriorAlMismoDia: num
   const fin = n - 1; // excluye el mes en curso
   const ultimos = cantidades.slice(Math.max(0, fin - 3), fin);
   const previos = cantidades.slice(Math.max(0, fin - 6), Math.max(0, fin - 3));
-  if (ultimos.length >= 2 && previos.length >= 2) {
+  // Trimestres completos o nada: con 6 meses en pantalla salía 3 meses contra 2.
+  if (ultimos.length === 3 && previos.length === 3) {
     const a = ultimos.reduce((s, v) => s + v, 0);
     const b = previos.reduce((s, v) => s + v, 0);
     const porcentaje = b > 0 ? ((a - b) / b) * 100 : 0;

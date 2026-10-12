@@ -20,6 +20,7 @@ import { Registro, Alumno, Motivo } from '../models';
 import { desplazarDias, diasCalendarioEntre as diasEntre } from '../utils/tiempo.utils';
 import {
   calcularInactividad,
+  contarUnaSolaVisita,
   contarMotivos,
   esInvitado,
   motivoMasFrecuente,
@@ -798,11 +799,17 @@ export class EstadisticasAvanzadasService {
    * la página /inactivos. `inactivos` = vinieron y llevan `umbral` días o
    * más sin volver; `nuncaVinieron` va aparte.
    */
-  async contarInactividad(umbralInactividadDias = 30): Promise<{ inactivos: number; nuncaVinieron: number }> {
+  async contarInactividad(
+    umbralInactividadDias = 30,
+  ): Promise<{ inactivos: number; nuncaVinieron: number; unaSolaVisita: number }> {
     const todosRegistros = await this.obtenerRegistrosConCache();
     const todosAlumnos = await this.databaseService.obtenerTodosLosAlumnos();
     const r = calcularInactividad(todosAlumnos, todosRegistros, umbralInactividadDias);
-    return { inactivos: r.inactivos.length, nuncaVinieron: r.nuncaVinieron.length };
+    return {
+      inactivos: r.inactivos.length,
+      nuncaVinieron: r.nuncaVinieron.length,
+      unaSolaVisita: contarUnaSolaVisita(todosAlumnos, todosRegistros),
+    };
   }
 
   /**

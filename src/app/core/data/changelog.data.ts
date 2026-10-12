@@ -49,6 +49,49 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.47.0',
+    fecha: '2026-10-12',
+    titulo: 'Estadísticas más claras',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto: 'La tarjeta "Alumnos inactivos" de Estadísticas abre la lista de inactivos con un clic.',
+      },
+      {
+        tipo: 'feat',
+        texto:
+          'La gráfica de crecimiento ya no se limita a 12 meses: elige 3, 6, 12 o 24, o escribe cuántos meses quieres ver.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Al comparar dos períodos, si en uno no hubo registros se dice claramente en lugar de mostrar ceros.',
+      },
+      {
+        tipo: 'fix',
+        texto:
+          '"Carrera en crecimiento" ya no muestra un +100 % cuando la carrera no tuvo visitas antes: sin base no hay porcentaje.',
+      },
+      {
+        tipo: 'fix',
+        texto: '"Vinieron solo 1 vez" ya no cuenta a alumnos desactivados ni borrados.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Los grados llegan hasta 12.º para los alumnos que se tardan más de 9 semestres.',
+      },
+      {
+        tipo: 'mejora',
+        texto:
+          'La búsqueda rápida (Ctrl+K) incluye todas las pantallas del menú y el botón de cámara del escáner, ' +
+          'y ya no ofrece "En Biblioteca" cuando el registro de salida está apagado.',
+      },
+      {
+        tipo: 'mejora',
+        texto: '"¿Cómo se calculan los números?" explica también "Vinieron solo 1 vez", "Carrera en crecimiento" y el resumen del crecimiento.',
+      },
+    ],
+  },
+  {
     version: '3.46.0',
     fecha: '2026-10-07',
     titulo: 'Comparaciones que tienen sentido',

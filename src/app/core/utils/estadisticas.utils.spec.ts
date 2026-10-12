@@ -11,6 +11,7 @@
 import { Alumno, Motivo, Registro } from '../models';
 import {
   calcularInactividad,
+  contarUnaSolaVisita,
   rangoAnteriorDeUnidad,
   combinacionesDeMotivos,
   conteoMensual,
@@ -191,6 +192,17 @@ describe('estadisticas.utils', () => {
       expect([...r.inactivos, ...r.nuncaVinieron].some(i => i.alumno.matricula === '4')).toBe(false);
     });
 
+    it('"vinieron solo 1 vez": mismo universo que la inactividad', () => {
+      const regs = [
+        ...registros,                                         // 1, 2, 4 y 5: una visita cada uno
+        reg(new Date(2026, 9, 31, 9), { matricula: '2' }),    // 2 ya volvió
+        reg(new Date(2026, 9, 31, 9), { matricula: '9' }),    // alumno borrado
+        reg(new Date(2026, 9, 31, 9), { matricula: 'INVITADO' }),
+      ];
+      // Cuentan 1 y 5. No: 2 (dos visitas), 3 (ninguna), 4 (desactivado), 9 (no existe), invitado.
+      expect(contarUnaSolaVisita(alumnos, regs)).toBe(2);
+    });
+
     it('el resultado no cambia según la hora de la consulta', () => {
       // Con bloques de 24 h, el alumno 5 pasaba de 28 a 29 días a las 21:59.
       const temprano = calcularInactividad(alumnos, registros, 29, new Date(2026, 9, 31, 7, 0));
@@ -346,6 +358,15 @@ describe('estadisticas.utils', () => {
       const r = resumirCrecimiento([0, 0, 0, 0, 0, 0, 0, 0, 10, 20, 30, 5], 0);
       expect(r.trimestre?.sinReferencia).toBe(true);
       expect(r.trimestre?.porcentaje).toBe(0);
+    });
+
+    it('el trimestre solo se calcula con dos trimestres cerrados completos', () => {
+      // 6 meses: el anterior tendría solo 2 meses → no se compara.
+      expect(resumirCrecimiento([10, 10, 10, 10, 10, 5], 0).trimestre).toBeNull();
+      // 7 meses: 3 cerrados contra 3 cerrados (el mes en curso no entra).
+      const r = resumirCrecimiento([10, 10, 10, 20, 20, 20, 5], 0);
+      expect(r.trimestre?.porcentaje).toBe(100);
+      expect(r.trimestre?.direccion).toBe('up');
     });
   });
 

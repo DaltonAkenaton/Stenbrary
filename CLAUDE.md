@@ -78,7 +78,7 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **270 specs unitarios en verde**, en 13 archivos —
+Suite activa: **272 specs unitarios en verde**, en 13 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `database.service`,
@@ -123,7 +123,7 @@ ignorar la salida; CI corre el lint completo, con avisos.
 
 ## Arquitectura
 
-**Stenbrary** es una PWA Angular 18 offline-first para control de acceso a biblioteca (UAT). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: `3.12.0` (ver `package.json`; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
+**Stenbrary** es una PWA Angular 18 offline-first para control de acceso a biblioteca (UAT). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: la de `package.json` (no se repite aquí porque se desactualiza; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
 
 ### Documentación del proyecto (capas)
 
@@ -143,6 +143,16 @@ Para liberar una versión nueva:
 3. Fecha en formato `YYYY-MM-DD`. Tipos de cambio: `feat | fix | mejora | cambio`.
 4. Escribir los textos en lenguaje claro para usuarios finales (no jerga técnica).
 5. Marcar `destacado: true` solo en releases mayores que merezcan un highlight.
+
+**Política de versionado (desde v3.47.0, decisión 2026-10-12).** Hasta aquí se
+subió una versión por cada tanda (20 el 31-ago-2026) y quedaron huecos (no hay
+3.23.1 ni 3.28.0–3.28.2). El historial no se renumera; de aquí en adelante:
+- **Una versión por cada publicación**, no por tanda: si una tanda no se
+  publica, su cambio se acumula en la siguiente entrada.
+- Números consecutivos: `menor` para funciones o cambios visibles, `parche` solo
+  para correcciones.
+- **v4.0.0 = la entrega a la UAT** (cierre de Fase 1 en el ROADMAP).
+- Cada versión publicada lleva su `git tag vX.Y.Z` (hasta v3.46.0 no hay ninguna).
 
 ### Rutas (`src/app/app.routes.ts`)
 

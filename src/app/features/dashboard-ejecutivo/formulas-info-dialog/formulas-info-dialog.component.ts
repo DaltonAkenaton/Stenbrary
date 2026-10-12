@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  formulas-info-dialog.component.ts                   ║
-// ║  Stenbrary v3.18.7 — Transparencia de cálculos       ║
+// ║  Stenbrary v3.47.0 — Transparencia de cálculos       ║
 // ║                                                      ║
 // ║  Modal con las fórmulas y supuestos detrás de cada    ║
 // ║  métrica del dashboard ejecutivo (tendencia,          ║
@@ -268,16 +268,55 @@ DÍA OCUPADO:
           </p>
         </mat-expansion-panel>
 
-        <!-- ─── CRECIMIENTO 12M ─── -->
+        <!-- ─── VINIERON SOLO 1 VEZ ─── -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
-            <mat-panel-title><mat-icon>bar_chart</mat-icon> Crecimiento 12 meses</mat-panel-title>
+            <mat-panel-title><mat-icon>person_add_disabled</mat-icon> Vinieron solo 1 vez</mat-panel-title>
           </mat-expansion-panel-header>
           <p>
-            Total de visitas mes a mes durante los últimos 12 meses calendario,
-            <strong>independiente del filtro</strong>. Sirve para ver salud
-            macroscópica del flujo.
+            Alumnos con <strong>exactamente una visita en todo su historial</strong>.
+            Como los inactivos, se mide desde hoy y no depende del filtro.
           </p>
+          <ul class="lista-rangos">
+            <li>No cuentan los alumnos desactivados en su ficha</li>
+            <li>No cuentan los invitados (no tienen identidad)</li>
+          </ul>
+          <p class="nota">
+            <mat-icon>info</mat-icon>
+            Un alumno que vino por primera vez hoy también aparece aquí hasta que regrese.
+          </p>
+        </mat-expansion-panel>
+
+        <!-- ─── CARRERA EN CRECIMIENTO ─── -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title><mat-icon>school</mat-icon> Carrera en crecimiento</mat-panel-title>
+          </mat-expansion-panel-header>
+          <p>
+            La carrera cuyas visitas crecieron más, en porcentaje, contra el período
+            anterior (el mismo que usa la tendencia).
+          </p>
+          <ul class="lista-rangos">
+            <li>Necesita al menos <strong>5 visitas</strong> en el período actual</li>
+            <li>Necesita visitas en el período anterior: sin base no hay porcentaje</li>
+            <li>Sin invitados</li>
+          </ul>
+        </mat-expansion-panel>
+
+        <!-- ─── CRECIMIENTO MES A MES ─── -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title><mat-icon>bar_chart</mat-icon> Crecimiento mes a mes</mat-panel-title>
+          </mat-expansion-panel-header>
+          <p>
+            Total de visitas mes a mes durante los últimos meses calendario,
+            <strong>independiente del filtro</strong>. Por defecto son 12; puedes
+            elegir 3, 6, 12 o 24, o escribir cualquier número entre 2 y 120.
+          </p>
+          <ul class="lista-rangos">
+            <li><strong>Promedio mensual:</strong> total ÷ meses que tuvieron al menos una visita</li>
+            <li><strong>Último trimestre vs anterior:</strong> los 3 últimos meses cerrados contra los 3 previos (el mes en curso no entra). Necesita al menos 7 meses en pantalla; con menos no se muestra.</li>
+          </ul>
           <p>
             La altura de cada barra es relativa al mes con más visitas:
           </p>

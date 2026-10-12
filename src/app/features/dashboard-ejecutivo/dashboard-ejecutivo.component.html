@@ -309,7 +309,8 @@
             </div>
           </div>
 
-          <div class="kpi-card kpi-warning">
+          <a class="kpi-card kpi-warning kpi-link" routerLink="/inactivos"
+             aria-label="Ver la lista de alumnos inactivos">
             <div class="kpi-icon"><mat-icon>people_outline</mat-icon></div>
             <div class="kpi-body">
               <div class="kpi-label">
@@ -335,8 +336,9 @@
                   <br>{{ kpiNuncaVinieron | number }} nunca han venido
                 }
               </div>
+              <div class="kpi-link-hint">Ver lista <mat-icon>arrow_forward</mat-icon></div>
             </div>
-          </div>
+          </a>
 
           <div class="kpi-card kpi-info">
             <div class="kpi-icon"><mat-icon>person_add_disabled</mat-icon></div>
@@ -344,7 +346,7 @@
               <div class="kpi-label">
                 Vinieron solo 1 vez
                 <mat-icon class="info-icon"
-                          matTooltip="Alumnos que han visitado la biblioteca una única vez en todo su historial. Si es alto, vale la pena hacer una campaña para que regresen."
+                          matTooltip="Alumnos que han visitado la biblioteca una única vez en todo su historial, contando desde HOY (no desde el filtro). No incluye alumnos desactivados ni invitados. Si es alto, vale la pena hacer una campaña para que regresen."
                           matTooltipPosition="above">
                   help_outline
                 </mat-icon>
@@ -722,19 +724,32 @@
         }
       </mat-card>
 
-      <!-- CRECIMIENTO 12 MESES -->
+      <!-- CRECIMIENTO MES A MES (12 por defecto, ajustable) -->
       @if (kpiCrecimiento12m.length > 0) {
         <mat-card class="chart-card crecimiento-card">
           <div class="chart-header">
             <h2>
               <mat-icon>show_chart</mat-icon>
-              Crecimiento — últimos 12 meses
+              Crecimiento — últimos {{ mesesCrecimiento }} meses
               <mat-icon class="info-icon"
-                        matTooltip="Total de visitas mes a mes durante el último año (independiente del filtro). Salud del flujo a lo largo del tiempo."
+                        matTooltip="Total de visitas mes a mes (independiente del filtro de arriba). Salud del flujo a lo largo del tiempo. Elige cuántos meses ver con los botones o escribe un número."
                         matTooltipPosition="above">
                 help_outline
               </mat-icon>
             </h2>
+            <div class="crecimiento-meses" role="group" aria-label="Meses a mostrar">
+              @for (n of opcionesMesesCrecimiento; track n) {
+                <button type="button" class="crecimiento-meses-btn"
+                        [class.activo]="mesesCrecimiento === n"
+                        (click)="setMesesCrecimiento(n)">{{ n }}m</button>
+              }
+              <input type="number" class="crecimiento-meses-input"
+                     [min]="MESES_CRECIMIENTO_MIN" [max]="MESES_CRECIMIENTO_MAX"
+                     [value]="mesesCrecimiento"
+                     (change)="setMesesCrecimiento($any($event.target).valueAsNumber)"
+                     aria-label="Número de meses (personalizado)"
+                     [matTooltip]="'Personalizado: de ' + MESES_CRECIMIENTO_MIN + ' a ' + MESES_CRECIMIENTO_MAX + ' meses'">
+            </div>
             @if (crecimiento12mTendencia) {
               <div class="crecimiento-trend-block">
                 <span class="crecimiento-trend-chip"
@@ -753,7 +768,7 @@
           <!-- Mini-KPIs del bloque -->
           <div class="crecimiento-mini-kpis">
             <div class="mini-kpi">
-              <span class="mini-kpi-label">Total 12m</span>
+              <span class="mini-kpi-label">Total {{ mesesCrecimiento }}m</span>
               <span class="mini-kpi-value">{{ crecimiento12mTotal | number }}</span>
               <span class="mini-kpi-sub">visitas acumuladas</span>
             </div>
@@ -1120,32 +1135,39 @@
               </div>
             }
             @if (comparativa) {
-              <div class="slot-rango-real">{{comparativaUI.labelA }}</div>
-              <div class="slot-stats">
-                <div class="slot-kpi big">
-                  <span class="slot-kpi-value">{{ comparativa.a.totalRegistros }}</span>
-                  <span class="slot-kpi-label">registros</span>
+              <div class="slot-rango-real">{{ comparativaUI.labelA }}</div>
+              @if (comparativa.a.totalRegistros === 0) {
+                <div class="slot-vacio">
+                  <mat-icon>event_busy</mat-icon>
+                  <p>En ese lapso de tiempo no hubo registros.</p>
                 </div>
-                <div class="slot-kpi-row">
-                  <div class="slot-kpi">
-                    <span class="slot-kpi-value">{{ comparativa.a.alumnosUnicos }}</span>
-                    <span class="slot-kpi-label">alumnos únicos</span>
+              } @else {
+                <div class="slot-stats">
+                  <div class="slot-kpi big">
+                    <span class="slot-kpi-value">{{ comparativa.a.totalRegistros }}</span>
+                    <span class="slot-kpi-label">registros</span>
                   </div>
-                  <div class="slot-kpi">
-                    <span class="slot-kpi-value">{{ comparativa.a.promedioPorDia }}</span>
-                    <span class="slot-kpi-label" matTooltip="Promedio por día con actividad">prom/día</span>
+                  <div class="slot-kpi-row">
+                    <div class="slot-kpi">
+                      <span class="slot-kpi-value">{{ comparativa.a.alumnosUnicos }}</span>
+                      <span class="slot-kpi-label">alumnos únicos</span>
+                    </div>
+                    <div class="slot-kpi">
+                      <span class="slot-kpi-value">{{ comparativa.a.promedioPorDia }}</span>
+                      <span class="slot-kpi-label" matTooltip="Promedio por día con actividad">prom/día</span>
+                    </div>
                   </div>
+                  @if (comparativa.a.horaPico) {
+                    <div class="slot-pico">
+                      <mat-icon>schedule</mat-icon>
+                      Pico: {{ comparativaUI.horaPicoA }}
+                    </div>
+                  }
                 </div>
-                @if (comparativa.a.horaPico) {
-                  <div class="slot-pico">
-                    <mat-icon>schedule</mat-icon>
-                    Pico: {{ comparativaUI.horaPicoA }}
-                  </div>
-                }
-              </div>
-              <div class="slot-donut">
-                <canvas #chartCompararA></canvas>
-              </div>
+                <div class="slot-donut">
+                  <canvas #chartCompararA></canvas>
+                </div>
+              }
             }
           </div>
 
@@ -1189,31 +1211,38 @@
             }
             @if (comparativa) {
               <div class="slot-rango-real">{{ comparativaUI.labelB }}</div>
-              <div class="slot-stats">
-                <div class="slot-kpi big">
-                  <span class="slot-kpi-value">{{ comparativa.b.totalRegistros }}</span>
-                  <span class="slot-kpi-label">registros</span>
+              @if (comparativa.b.totalRegistros === 0) {
+                <div class="slot-vacio">
+                  <mat-icon>event_busy</mat-icon>
+                  <p>En ese lapso de tiempo no hubo registros.</p>
                 </div>
-                <div class="slot-kpi-row">
-                  <div class="slot-kpi">
-                    <span class="slot-kpi-value">{{ comparativa.b.alumnosUnicos }}</span>
-                    <span class="slot-kpi-label">alumnos únicos</span>
+              } @else {
+                <div class="slot-stats">
+                  <div class="slot-kpi big">
+                    <span class="slot-kpi-value">{{ comparativa.b.totalRegistros }}</span>
+                    <span class="slot-kpi-label">registros</span>
                   </div>
-                  <div class="slot-kpi">
-                    <span class="slot-kpi-value">{{ comparativa.b.promedioPorDia }}</span>
-                    <span class="slot-kpi-label" matTooltip="Promedio por día con actividad">prom/día</span>
+                  <div class="slot-kpi-row">
+                    <div class="slot-kpi">
+                      <span class="slot-kpi-value">{{ comparativa.b.alumnosUnicos }}</span>
+                      <span class="slot-kpi-label">alumnos únicos</span>
+                    </div>
+                    <div class="slot-kpi">
+                      <span class="slot-kpi-value">{{ comparativa.b.promedioPorDia }}</span>
+                      <span class="slot-kpi-label" matTooltip="Promedio por día con actividad">prom/día</span>
+                    </div>
                   </div>
+                  @if (comparativa.b.horaPico) {
+                    <div class="slot-pico">
+                      <mat-icon>schedule</mat-icon>
+                      Pico: {{ comparativaUI.horaPicoB }}
+                    </div>
+                  }
                 </div>
-                @if (comparativa.b.horaPico) {
-                  <div class="slot-pico">
-                    <mat-icon>schedule</mat-icon>
-                    Pico: {{ comparativaUI.horaPicoB }}
-                  </div>
-                }
-              </div>
-              <div class="slot-donut">
-                <canvas #chartCompararB></canvas>
-              </div>
+                <div class="slot-donut">
+                  <canvas #chartCompararB></canvas>
+                </div>
+              }
             }
           </div>
         </div>

@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  command-palette.service.ts                          ║
-// ║  Stenbrary v3.25.0 — Catálogo de comandos para Ctrl+K║
+// ║  Stenbrary v3.47.0 — Catálogo de comandos para Ctrl+K║
 // ║                                                      ║
 // ║  Provee 3 tipos de comando al global-search:          ║
 // ║   - navegacion: cambia ruta                           ║
@@ -24,6 +24,8 @@ import { BackupService } from './backup.service';
 import { ToastService } from './toast.service';
 import { LoadingService } from './loading.service';
 import { PwaUpdateService } from './pwa-update.service';
+import { AuthService } from '../auth/auth.service';
+import { PermissionsService } from '../auth/permissions.service';
 
 export type CommandGrupo = 'Navegación' | 'Configuración' | 'Acciones';
 export type CommandTipo = 'navegacion' | 'toggle' | 'accion';
@@ -56,6 +58,8 @@ export class CommandPaletteService {
   private toastService = inject(ToastService);
   private loadingService = inject(LoadingService);
   private pwaUpdateService = inject(PwaUpdateService);
+  private authService = inject(AuthService);
+  private permisos = inject(PermissionsService);
 
   /**
    * Devuelve el catálogo completo de comandos disponibles AHORA. El cliente
@@ -67,7 +71,10 @@ export class CommandPaletteService {
       ...this.comandosNavegacion(),
       ...this.comandosConfiguracion(),
       ...this.comandosAcciones(),
-    ].filter(c => !c.visible || c.visible());
+    ]
+      .filter(c => !c.visible || c.visible())
+      // Con sesión, el rol decide qué pantallas puede abrir (igual que el menú).
+      .filter(c => !('ruta' in c) || this.permisos.canAccessRoute(String(c.ruta).split('#')[0]));
   }
 
   // ═══════════════════════════════════════════════
@@ -82,17 +89,27 @@ export class CommandPaletteService {
       ejecutar: () => void this.router.navigateByUrl(ruta),
     } as Command & { ruta: string });
 
+    // Mismas pantallas y condiciones que el menú lateral (AppComponent.navSections).
+    const conSalida = (c: Command): Command => ({ ...c, visible: () => this.configService.registroSalidaActivo });
+    const conSesion = (c: Command): Command => ({ ...c, visible: () => this.authService.isSignedIn() });
+
     return [
-      nav('nav-scanner',     'Ir a Scanner',           'qr_code_scanner', '/scanner',         ['scanner', 'escanear', 'inicio', 'registrar']),
+      nav('nav-scanner',     'Ir a Registro de Actividad', 'qr_code_scanner', '/scanner',     ['scanner', 'escanear', 'inicio', 'registrar', 'actividad']),
+      nav('nav-registro-alumno', 'Ir a Registrar Alumno', 'person_add',      '/registro-alumno', ['registrar', 'alumno', 'nuevo', 'alta', 'agregar']),
+      conSalida(nav('nav-presencia', 'Ir a En Biblioteca', 'sensor_door',    '/presencia',       ['presencia', 'biblioteca', 'dentro', 'adentro'])),
       nav('nav-dashboard',   'Ir a Resumen',           'dashboard',       '/dashboard',       ['resumen', 'dashboard', 'home']),
       nav('nav-alumnos',     'Ir a Alumnos',           'groups',          '/alumnos',         ['alumnos', 'lista', 'estudiantes']),
       nav('nav-registros',   'Ir a Registros',         'history',         '/registros',       ['registros', 'historial', 'accesos']),
       nav('nav-estadisticas','Ir a Estadísticas',      'bar_chart',       '/estadisticas',    ['estadisticas', 'graficas', 'analitica', 'ejecutivo']),
-      nav('nav-presencia',   'Ir a En Biblioteca',     'meeting_room',    '/presencia',       ['presencia', 'biblioteca', 'dentro', 'adentro'],),
+      nav('nav-inactivos',   'Ir a Inactivos',         'notifications_paused','/inactivos',   ['inactivos', 'ausentes', 'sin', 'venir']),
       nav('nav-motivos',     'Ir a Gestión de Motivos','category',        '/gestion-motivos', ['motivos', 'actividades', 'categorias']),
       nav('nav-importar',    'Ir a Importar Alumnos',  'upload_file',     '/importar-alumnos',['importar', 'excel', 'xlsx', 'bulk']),
-      nav('nav-inactivos',   'Ir a Inactivos',         'notifications_paused','/inactivos',   ['inactivos', 'ausentes', 'sin', 'venir']),
+      nav('nav-funciones',   'Ir a Qué puede hacer',   'auto_awesome',    '/funciones',       ['funciones', 'que', 'puede', 'hacer', 'ayuda', 'guia']),
       nav('nav-novedades',   'Ir a Novedades',         'campaign',        '/novedades',       ['novedades', 'changelog', 'cambios', 'version']),
+      conSesion(nav('nav-sincronizacion', 'Ir a Sincronización', 'cloud_sync', '/sincronizacion', ['sincronizacion', 'sync', 'nube', 'subir'])),
+      conSesion(nav('nav-descarga', 'Ir a Bajar de la nube', 'cloud_download', '/descarga',   ['descarga', 'bajar', 'nube', 'traer'])),
+      conSesion(nav('nav-usuarios', 'Ir a Usuarios',   'group',           '/usuarios',        ['usuarios', 'cuentas', 'roles', 'permisos'])),
+      nav('nav-diagnostico', 'Ir a Reporte del sistema', 'health_and_safety', '/diagnostico', ['diagnostico', 'reporte', 'sistema', 'salud', 'soporte', 'error']),
       nav('nav-config',      'Ir a Configuración',     'settings',        '/configuracion',   ['configuracion', 'ajustes', 'settings', 'opciones']),
 
       // Atajos directos a cada categoría de config
@@ -211,6 +228,26 @@ export class CommandPaletteService {
           const nuevo = !this.configService.horarioActivo;
           this.configService.setHorarioActivo(nuevo);
           this.toastService.info(nuevo ? 'Horarios activados' : 'Horarios desactivados');
+        },
+      },
+
+      // ─── Escáner: botón de cámara (v3.45.0) ───────
+      {
+        id: 'toggle-boton-camara',
+        label: () => this.configService.mostrarBotonCamara
+          ? 'Ocultar botón de cámara del escáner'
+          : 'Mostrar botón de cámara del escáner',
+        descripcion: () => this.configService.mostrarBotonCamara
+          ? 'Visible: la cámara queda como respaldo del lector'
+          : 'Oculto: solo lector físico o captura manual',
+        icono: 'photo_camera',
+        grupo: 'Configuración',
+        tipo: 'toggle',
+        keywords: ['camara', 'boton', 'escaner', 'lector', 'ocultar', 'mostrar', 'webcam'],
+        ejecutar: () => {
+          const nuevo = !this.configService.mostrarBotonCamara;
+          this.configService.setMostrarBotonCamara(nuevo);
+          this.toastService.info(nuevo ? 'Botón de cámara visible' : 'Botón de cámara oculto');
         },
       },
 

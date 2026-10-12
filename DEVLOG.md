@@ -9,6 +9,34 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-12 — Notas del usuario sobre Estadísticas y Ctrl+K (v3.47.0)
+
+Revisión de sus notas del bloc. Lo que se hizo y lo que apareció al revisar:
+
+- **Versionado.** 63 versiones, consistentes con `package.json`, pero 20 el
+  31-ago, huecos (3.23.1, 3.28.0–2) y ninguna `git tag`. Sin renumerar:
+  política nueva en CLAUDE.md (una versión por publicación, v4.0.0 = entrega
+  UAT, tag por versión).
+- **Manual de fórmulas contra el código.** Lo documentado cuadraba; faltaban
+  "Vinieron solo 1 vez", "Carrera en crecimiento" y el resumen del
+  crecimiento. Dos errores reales: la carrera en crecimiento mostraba +100 %
+  sin base, y "solo 1 vez" se calculaba en el componente (contaba
+  desactivados y borrados). Ahora `contarUnaSolaVisita` en utils, mismo
+  universo que la inactividad.
+- **Crecimiento ajustable** (3/6/12/24 o 2–120). Al probarlo con 6 meses salió
+  un bug que con 12 nunca se veía: `resumirCrecimiento` aceptaba "trimestres"
+  de 2 meses (3 contra 2). Ahora exige 3 + 3 cerrados (≥ 7 meses).
+- **Grados 1–12.** El importador ya aceptaba 12 y los formularios llegaban a 10.
+- **Ctrl+K** estaba atrasado: faltaban 6 pantallas y el toggle de cámara;
+  "En Biblioteca" salía con la salida apagada. Ahora sigue al menú lateral
+  (mismas condiciones y permisos por rol).
+- Tarjeta de inactivos → `/inactivos`; comparador con mensaje cuando un lado
+  no tiene registros.
+
+**Sigue:** Cloudflare Pages (pasos del panel, del usuario).
+
+---
+
 ## 2026-10-07 — Ajustes antes de la presentación (v3.46.0)
 
 Pedidos del usuario tras revisar el sistema con sus capturas, más lo que

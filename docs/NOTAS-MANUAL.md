@@ -198,3 +198,19 @@ Configuración → **Calendario escolar**. Todo se captura a mano.
   de la alerta "verifica que el escáner esté operando".
 - Los promedios **no** dependen del calendario: ya excluyen solos los días
   sin registros.
+
+## Estadísticas: ajustes de v3.47.0
+- **Vinieron solo 1 vez:** alumnos con exactamente una visita en todo su
+  historial, desde hoy (no depende del filtro). No cuenta desactivados ni
+  invitados. Quien vino por primera vez hoy aparece hasta que regrese.
+- **Carrera en crecimiento:** la que más creció en % contra el período
+  anterior; necesita ≥ 5 visitas ahora y alguna visita antes (sin base no se
+  inventa un "+100 %").
+- **Crecimiento mes a mes:** 12 meses por defecto; atajos 3/6/12/24 o
+  cualquier número de 2 a 120. El "último trimestre vs anterior" compara dos
+  trimestres cerrados completos: necesita al menos 7 meses en pantalla.
+- **Tarjeta de inactivos:** al hacer clic abre la página Inactivos.
+- **Comparar:** si un lado no tuvo registros, dice "En ese lapso de tiempo no
+  hubo registros" en lugar de mostrar ceros.
+- **Grados:** del 1.º al 12.º (la carrera dura 9 semestres, pero hay
+  rezagados). El importador ya aceptaba hasta 12.
