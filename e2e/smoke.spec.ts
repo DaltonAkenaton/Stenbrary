@@ -254,3 +254,29 @@ test.describe('Escáner: aviso de privacidad (v3.48.0)', () => {
     await expect(page.locator('.aviso-privacidad')).toHaveCount(0);
   });
 });
+
+test.describe('Quiosco: volver solo por inactividad (v3.49.0)', () => {
+  async function abrirConMinutos(page: import('@playwright/test').Page, minutos: number) {
+    await page.clock.install();
+    await page.addInitScript((m) => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+      localStorage.setItem('stenbrary-config', JSON.stringify({ quioscoAutoMinutos: m }));
+    }, minutos);
+    await page.goto('/registros');
+    await expect(page.locator('app-registros')).toBeVisible();
+  }
+
+  test('tras los minutos sin uso, se reactiva y regresa al escáner', async ({ page }) => {
+    await abrirConMinutos(page, 5);
+    await page.clock.fastForward('05:30');
+    await expect(page).toHaveURL(/\/scanner/);
+    await expect(page.locator('.kiosk-mode')).toBeVisible();
+  });
+
+  test('con 0 (nunca) se queda donde estaba', async ({ page }) => {
+    await abrirConMinutos(page, 0);
+    await page.clock.fastForward('30:00');
+    await expect(page).toHaveURL(/\/registros/);
+    await expect(page.locator('.kiosk-mode')).toHaveCount(0);
+  });
+});

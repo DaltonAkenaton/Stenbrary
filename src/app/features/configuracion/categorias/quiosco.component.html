@@ -27,7 +27,39 @@
     </button>
   </div>
 
-  @if (configService.modoQuiosco) {
+  <!-- Volver solo al quiosco (v3.49.0): se configura con el quiosco apagado,
+       que es justo cuando hace falta. -->
+  <div style="margin-top: 18px;">
+    <div class="section-header" style="margin-bottom: 6px;">
+      <mat-icon>timer</mat-icon>
+      <h2 style="font-size: 0.95rem;">Volver solo al quiosco</h2>
+    </div>
+    <p class="section-hint" style="margin-bottom: 10px;">
+      Si alguien sale del modo quiosco y deja el equipo sin usar este tiempo, se reactiva solo
+      y regresa al escáner. Evita que el equipo quede abierto con la administración a la vista.
+    </p>
+    <div class="auto-close-options">
+      @for (op of opcionesAutoQuiosco; track op) {
+        <button class="auto-close-btn"
+          [class.active]="configService.quioscoAutoMinutos === op"
+          (click)="setQuioscoAutoMinutos(op)">
+          {{ op === 0 ? 'Nunca' : op + ' min' }}
+        </button>
+      }
+    </div>
+    <div class="aforo-input-row" style="margin-top: 10px;">
+      <label for="quioscoAutoMin">Minutos (0 = nunca, máx. 240)</label>
+      <div class="aforo-stepper" style="max-width: 160px;">
+        <input id="quioscoAutoMin"
+               type="number" min="0" max="240" step="1"
+               class="aforo-number-input"
+               [ngModel]="configService.quioscoAutoMinutos"
+               (ngModelChange)="setQuioscoAutoMinutos($event)">
+      </div>
+    </div>
+  </div>
+
+  @if (configService.modoQuiosco || configService.quioscoAutoMinutos > 0) {
     <div style="margin-top: 18px;">
       <div class="aforo-input-row">
         <label for="quioscoPin">PIN de salida (4–6 dígitos)</label>
@@ -46,6 +78,11 @@
         <p class="section-hint" style="color:#F5A623;">
           <mat-icon>warning</mat-icon>
           Sin PIN configurado — cualquiera podrá salir del modo quiosco.
+        </p>
+      } @else if (configService.quioscoPin === '0000') {
+        <p class="section-hint" style="color:#F5A623;">
+          <mat-icon>warning</mat-icon>
+          Es el PIN de fábrica: cámbialo antes de dejar el equipo a la vista de los alumnos.
         </p>
       } @else {
         <p class="section-hint" style="color: rgba(0,200,215,0.5)">

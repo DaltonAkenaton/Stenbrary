@@ -87,6 +87,8 @@ interface AppConfig {
   modoQuiosco: boolean;
   /** PIN de 4 dígitos para salir del modo quiosco. Vacío = sin PIN (peligroso). */
   quioscoPin: string;
+  /** Minutos sin uso para volver solo al modo quiosco. 0 = apagado (v3.49.0). */
+  quioscoAutoMinutos: number;
 
   // ── Horarios de operación (v3.9.0) ──
   horarioActivo: boolean;
@@ -182,6 +184,7 @@ const DEFAULT_CONFIG: AppConfig = {
   aforoModo: 'permitir',
   modoQuiosco: false,
   quioscoPin: '0000',
+  quioscoAutoMinutos: 0,
   horarioActivo: false,
   horarios: DEFAULT_HORARIOS,
   horarioModo: 'advertir',
@@ -356,6 +359,17 @@ export class ConfigService {
   validarQuioscoPin(intento: string): boolean {
     if (!this.config.quioscoPin) return true;
     return intento === this.config.quioscoPin;
+  }
+
+  /** Minutos sin uso para reactivar el quiosco solo. 0 = apagado. */
+  get quioscoAutoMinutos(): number {
+    return this.config.quioscoAutoMinutos;
+  }
+
+  setQuioscoAutoMinutos(min: number): void {
+    const n = Math.round(Number(min));
+    this.config.quioscoAutoMinutos = Number.isFinite(n) ? Math.min(Math.max(n, 0), 240) : 0;
+    this.guardar();
   }
 
   // ═══════════════════════════════════════════════════════

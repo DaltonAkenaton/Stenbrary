@@ -4,7 +4,7 @@
 // ║  Stenbrary v3.24.0                                    ║
 // ║                                                      ║
 // ║  Contiene:                                            ║
-// ║   - Modo Quiosco (toggle + PIN)                       ║
+// ║   - Modo Quiosco (toggle + PIN + volver solo, v3.49)  ║
 // ║   - Horarios de Operación (editor por día + modo)     ║
 // ║                                                      ║
 // ║  Recordatorio: el PIN solo se pide para DESACTIVAR    ║
@@ -78,6 +78,20 @@ export class QuioscoCategoriaComponent {
     this.debouncedToast(
       'quiosco-pin',
       pin ? `PIN del modo quiosco: ${pin.length} dígito(s)` : 'PIN del modo quiosco eliminado',
+    );
+    this.cdr.markForCheck();
+  }
+
+  /** Atajos; el input libre acepta 0–240. */
+  readonly opcionesAutoQuiosco = [0, 5, 10, 15, 30];
+
+  setQuioscoAutoMinutos(valor: number | string): void {
+    if (valor === '' || valor === null) return; // campo a medio escribir
+    this.configService.setQuioscoAutoMinutos(Number(valor));
+    const min = this.configService.quioscoAutoMinutos;
+    this.debouncedToast(
+      'quiosco-auto',
+      min ? `Vuelve solo al quiosco tras ${min} min sin uso` : 'Ya no vuelve solo al quiosco',
     );
     this.cdr.markForCheck();
   }

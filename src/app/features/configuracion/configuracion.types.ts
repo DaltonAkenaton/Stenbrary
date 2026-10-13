@@ -72,7 +72,7 @@ export const CATEGORIAS_CONFIG: CategoriaConfig[] = [
     icono: 'tablet_android',
     descripcion: 'Modo quiosco para tablets y horarios de operación',
     keywords: [
-      'quiosco', 'kiosk', 'tablet', 'pin', 'bloqueo',
+      'quiosco', 'kiosk', 'tablet', 'pin', 'bloqueo', 'inactividad', 'volver', 'seguridad',
       'horario', 'apertura', 'cierre', 'dias', 'semana',
       'abierto', 'cerrado',
     ],

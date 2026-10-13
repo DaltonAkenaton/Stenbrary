@@ -9,6 +9,25 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-12 — El quiosco vuelve solo (v3.49.0)
+
+Pregunta del usuario: "el sistema lo puede usar cualquiera que tenga acceso,
+¿no hay seguridad?". Respuesta: la URL pública no expone nada (cada navegador
+tiene su propia base vacía); el riesgo es el equipo físico. Un login local
+sería cosmético (los datos siguen legibles desde DevTools), así que se cerró el
+hueco real: el equipo que queda fuera de quiosco por descuido.
+
+- `quioscoAutoMinutos` (0–240, 0 = apagado, default 0) en `ConfigService`.
+- Decisión pura en `core/utils/quiosco.utils.ts` (`debeVolverAQuiosco`, 5 specs);
+  `QuioscoAutoService` escucha pointerdown/keydown/wheel/touchstart fuera de la
+  zona de Angular (solo guarda un timestamp: nada de detección de cambios por
+  evento, importa en el Galaxy A06) y revisa cada 15 s. No actúa en
+  `/bienvenida` ni `/login`. El effect existente de `AppComponent` lleva al escáner.
+- E2E con `page.clock` (adelanta 5:30 min sin esperar): 2 tests nuevos.
+- Aviso ámbar si el PIN sigue en 0000.
+
+Sigue: plan de respaldos y preparar la visita "casi definitiva" al coordinador.
+
 ## 2026-10-12 — Cloudflare Pages en producción (v3.48.1)
 
 `https://stenbrary.pages.dev` publicado y verificado: cabeceras (sin caché para

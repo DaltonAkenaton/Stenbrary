@@ -37,6 +37,7 @@ import { DiagnosticoService } from './core/services/diagnostico.service';
 import { RestablecerService } from './core/services/restablecer.service';
 import { registrarDiagnostico } from './core/utils/invariante.utils';
 import { PwaUpdateService } from './core/services/pwa-update.service';
+import { QuioscoAutoService } from './core/services/quiosco-auto.service';
 
 interface NavItem {
   icon: string;
@@ -173,6 +174,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  private readonly quioscoAuto = inject(QuioscoAutoService);
+
   /** Rutas que se muestran a pantalla completa, sin sidebar ni topbar. */
   private static readonly RUTAS_SIN_SHELL = ['/bienvenida'];
 
@@ -235,6 +238,9 @@ export class AppComponent implements OnInit, OnDestroy {
     // Revisión periódica de versiones nuevas (el aviso lo pinta el listener
     // de `versionUpdates` de más abajo). Antes no se arrancaba nunca.
     this.pwaUpdateService.iniciar();
+
+    // Volver solo al modo quiosco tras N minutos sin uso (0 = apagado).
+    this.quioscoAuto.iniciar();
 
     // Evaluar de entrada: si se llega directo a /bienvenida por URL, el
     // NavigationEnd de abajo puede haber ocurrido ya.

@@ -222,3 +222,23 @@ coordinador lo cambia o lo oculta en Configuración → Escáner → Aviso de
 privacidad. Si el texto se deja vacío, vuelve al original. El texto por
 defecto no dice "solo en este equipo" a propósito: dejaría de ser cierto si
 algún día se enciende la nube.
+
+## Volver solo al quiosco (v3.49.0)
+En Configuración → Quiosco, "Volver solo al quiosco": si el equipo pasa ese
+número de minutos sin que nadie lo toque (clic, toque o tecla; pasar una
+credencial por el lector cuenta como uso), el modo quiosco se reactiva solo y
+regresa al escáner. Atajos de 5, 10, 15 y 30 minutos, o cualquier valor de 0 a
+240; 0 = nunca (el valor de fábrica). Funciona con el quiosco apagado, que es
+cuando hace falta: cubre el caso de "salí a revisar algo y se me olvidó
+volver a activarlo". No interrumpe el asistente inicial.
+
+Si el PIN sigue siendo 0000, Configuración lo marca en ámbar: es el primer PIN
+que probaría cualquiera.
+
+**Qué protege y qué no.** En modo local los datos viven en el navegador del
+equipo. El quiosco impide que un alumno llegue a la administración desde la
+pantalla, pero no es una caja fuerte: quien tenga el equipo y conocimientos
+técnicos puede leer la base del navegador. La protección completa es quiosco
++ bloqueo del equipo (contraseña de Windows o del celular) cuando nadie lo
+atiende + respaldos guardados solo por el coordinador. El login con cuentas
+llega con la nube (Fase 2).

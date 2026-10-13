@@ -49,6 +49,23 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.49.0',
+    fecha: '2026-10-12',
+    titulo: 'El quiosco vuelve solo',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto:
+          'Si sales del modo quiosco y dejas el equipo sin usar, puede volver solo al escáner tras los minutos que elijas. ' +
+          'Así la administración no queda a la vista de los alumnos por un descuido. Se configura en Configuración → Quiosco.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Configuración avisa si el PIN del quiosco sigue siendo el de fábrica (0000).',
+      },
+    ],
+  },
+  {
     version: '3.48.1',
     fecha: '2026-10-12',
     titulo: 'Nueva dirección',

@@ -1,6 +1,6 @@
 {
   "name": "stenbrary",
-  "version": "3.48.1",
+  "version": "3.49.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
