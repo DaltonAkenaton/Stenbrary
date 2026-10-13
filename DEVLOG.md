@@ -9,6 +9,29 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-12 — Cloudflare Pages en producción (v3.48.1)
+
+`https://stenbrary.pages.dev` publicado y verificado: cabeceras (sin caché para
+`index`/`ngsw`/workers, un año para lo que lleva hash), fallback SPA, y la app
+instalada en un Galaxy A06 que registró entrada y salida con lector en modo avión.
+
+- **Correo dedicado bloqueado.** Google: "número usado demasiadas veces".
+  Microsoft: "actividad inusual". Se paró ahí (dos intentos) y la cuenta se creó
+  con un alias `+stenbrary` del Gmail personal; el correo se cambia después.
+- **Cloudflare ya llama "legacy" a Pages** y empuja Workers: el "Connect GitHub"
+  de *Create* crea un Worker. Se entra por "Continue to Pages".
+- **Primer build falló por un espacio** al inicio de *Build output directory*.
+- **Node 20 llegó a fin de vida** (aviso del build): `.nvmrc` y CI a 22.
+- La 3.48.1 existe para que el push cambie los archivos de la app: solo con
+  `.nvmrc` el `ngsw.json` saldría idéntico y no habría aviso que probar.
+- Observación del usuario: lag al abrir el drawer y "Más" en el A06 (4 GB).
+  Propuesta: medir primero (Chrome remoto), abaratar lo caro (`backdrop-filter`,
+  sombras) y como complemento un modo ligero automático/configurable. Pendiente.
+
+**Sigue:** confirmar el aviso de nueva versión en el celular; apagar Netlify.
+
+---
+
 ## 2026-10-12 — Notas del usuario sobre Estadísticas y Ctrl+K (v3.47.0)
 
 Revisión de sus notas del bloc. Lo que se hizo y lo que apareció al revisar:

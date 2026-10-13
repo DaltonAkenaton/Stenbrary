@@ -18,8 +18,12 @@
 
 ## Pasos (unos 15 minutos)
 
-1. Panel de Cloudflare → **Workers & Pages** → **Create** → pestaña **Pages** →
-   **Connect to Git**.
+1. Panel de Cloudflare → **Compute** → **Workers & Pages** → **Create**. **No** usar el
+   "Connect GitHub" de esa pantalla: crea un *Worker*. Abajo, el enlace *"Need to use the
+   legacy Pages workflow? → **Continue to Pages**"* → **Import an existing Git repository**.
+   (Panel de octubre de 2026. Cloudflare empuja Workers y llama "legacy" a Pages, pero Pages
+   sigue soportado; todo lo del repo está hecho y probado para Pages. Si algún día anuncian
+   su retiro, migrar con calma.)
 2. Autoriza GitHub y elige **solo** el repositorio `Stenbrary` (no "todos los repositorios").
 3. Configuración de compilación:
 
@@ -32,21 +36,34 @@
    | Build output directory | `dist/stenbrary/browser` |
    | Root directory | *(vacío)* |
 
-   No hace falta poner `NODE_VERSION`: Cloudflare lee el archivo `.nvmrc` del repositorio (Node 20,
+   No hace falta poner `NODE_VERSION`: Cloudflare lee el archivo `.nvmrc` del repositorio (Node 22,
    el mismo que CI).
+
+   **Ojo con los espacios al escribir los campos.** En la primera compilación real se coló un espacio
+   al inicio de *Build output directory*: Angular compiló bien y falló al final con
+   `Output directory " dist/stenbrary/browser" not found`. Se corrige en Settings → Build →
+   Build configuration y *Retry deployment*.
 4. **Save and Deploy.** La primera compilación tarda 2–4 minutos.
 5. Settings → **Builds** → **Branch control** → *Preview branches*: **None**. Así solo `main`
    gasta compilaciones; las ramas de trabajo no despliegan nada.
 
 ## Qué comprobar en `https://stenbrary.pages.dev`
 
-- [ ] Abre y llega al asistente de bienvenida (instalación nueva = navegador sin datos).
-- [ ] Recargar estando en `/estadisticas` no da error 404 (el *fallback* de rutas es automático).
-- [ ] Novedades muestra la versión actual.
-- [ ] **En tablet o celular:** instalar como app (menú del navegador → "Instalar" / "Agregar a pantalla de inicio").
-- [ ] Con la app instalada, sin internet: abre y registra.
+Hecho el 2026-10-12. La cuenta usa un alias `+stenbrary` del Gmail personal, de forma temporal: ese
+día Google y Microsoft bloquearon crear el correo dedicado. Se cambia en My Profile cuando exista.
+
+- [x] Abre y llega al asistente de bienvenida (instalación nueva = navegador sin datos).
+- [x] Recargar estando en `/estadisticas` no da error 404 (el *fallback* de rutas es automático).
+- [x] Novedades muestra la versión actual.
+- [x] **En tablet o celular:** instalar como app (menú del navegador → "Instalar" / "Agregar a pantalla de inicio").
+- [x] Con la app instalada, sin internet: abre y registra (Galaxy A06 en modo avión; entrada y salida con lector).
 - [ ] Tras el siguiente push a `main`: en la app instalada aparece el aviso de nueva versión.
 - [ ] Las pruebas de tablet y celular de `docs/PRUEBAS-RONDA-2026-10.md` §4.
+
+**Firefox pide "almacenamiento persistente" al abrir la app: hay que darle Allow** (con "Remember
+this decision"). Sin ese permiso, el navegador puede borrar los datos de Stenbrary si el disco se
+llena, y todos los registros viven ahí. Repetirlo en el equipo de la biblioteca el día de la
+instalación.
 
 ## Qué ya está resuelto en el repositorio
 

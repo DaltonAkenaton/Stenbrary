@@ -49,6 +49,19 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.48.1',
+    fecha: '2026-10-12',
+    titulo: 'Nueva dirección',
+    cambios: [
+      {
+        tipo: 'cambio',
+        texto:
+          'Stenbrary ahora se publica en stenbrary.pages.dev. Si la tienes instalada como app desde esta dirección, ' +
+          'no tienes que hacer nada: las actualizaciones llegan solas.',
+      },
+    ],
+  },
+  {
     version: '3.48.0',
     fecha: '2026-10-12',
     titulo: 'Aviso de privacidad en el escáner',
