@@ -242,3 +242,16 @@ técnicos puede leer la base del navegador. La protección completa es quiosco
 + bloqueo del equipo (contraseña de Windows o del celular) cuando nadie lo
 atiende + respaldos guardados solo por el coordinador. El login con cuentas
 llega con la nube (Fase 2).
+
+## Respaldos entre dos equipos (v3.50.0)
+El caso "equipo de la puerta → PC del coordinador": se exporta el respaldo en
+la puerta y se importa en la oficina con **Combinar**. Repetirlo cada día no
+duplica nada: cada registro tiene un identificador y se guarda en su lugar.
+Los motivos se reconocen por nombre ("Estudiar" de un equipo es "Estudiar" del
+otro). Va en un solo sentido: lo que se edite o borre en la oficina no regresa
+a la puerta, así que la oficina es solo para consultar.
+
+## Borrar un registro (v3.50.0)
+Registros (o el perfil del alumno) → lápiz del registro → **Eliminar**, con
+confirmación. Para un escaneo por error que nadie deshizo a tiempo. No se puede
+deshacer. Para borrar muchos a la vez: Configuración → Datos → limpieza por rango.

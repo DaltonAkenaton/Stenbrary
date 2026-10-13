@@ -5,16 +5,19 @@
 // ║  - Editar hora de entrada / salida (o limpiar salida)║
 // ║  - Cambiar motivos (múltiples, v3.7.0+)              ║
 // ║  - Valida que salida >= entrada si se especifica     ║
+// ║  - v3.50.0: eliminar el registro (con confirmación)  ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, Inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DatabaseService } from '../../../core/services/database.service';
+import { AforoService } from '../../../core/services/aforo.service';
 import { Motivo, Registro } from '../../../core/models';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 export interface RegistroEditarDialogData {
   registro: Registro;
@@ -28,6 +31,9 @@ export interface RegistroEditarResultado {
   motivoId: string;
   motivoNombre: string;
 }
+
+/** Lo que devuelve el diálogo: cambios a guardar, o que el registro ya se borró. */
+export type RegistroEditarSalida = RegistroEditarResultado | 'eliminado';
 
 @Component({
   selector: 'app-registro-editar-dialog',
@@ -108,6 +114,10 @@ export interface RegistroEditarResultado {
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
+      <button mat-button color="warn" class="btn-eliminar" (click)="eliminar()">
+        <mat-icon>delete</mat-icon> Eliminar
+      </button>
+      <span class="acciones-espacio"></span>
       <button mat-button (click)="cerrar()">Cancelar</button>
       <button mat-raised-button color="primary"
               (click)="guardar()"
@@ -225,6 +235,9 @@ export interface RegistroEditarResultado {
     }
 
     mat-dialog-actions { padding: 8px 16px 16px; }
+    .acciones-espacio { flex: 1; }
+    .btn-eliminar { color: #F05252; }
+    .btn-eliminar mat-icon { margin-right: 4px; }
 
     @media (max-width: 480px) {
       .dialog-content { min-width: 0; }
@@ -239,8 +252,10 @@ export class RegistroEditarDialogComponent implements OnInit {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: RegistroEditarDialogData,
-    private dialogRef: MatDialogRef<RegistroEditarDialogComponent, RegistroEditarResultado>,
+    private dialogRef: MatDialogRef<RegistroEditarDialogComponent, RegistroEditarSalida>,
     private databaseService: DatabaseService,
+    private dialog: MatDialog,
+    private aforoService: AforoService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -252,10 +267,19 @@ export class RegistroEditarDialogComponent implements OnInit {
     const todos = await this.databaseService.obtenerMotivosActivos();
     this.motivos.set(todos);
 
-    const ids = this.data.registro.motivoIds?.length
-      ? this.data.registro.motivoIds
-      : [this.data.registro.motivoId];
-    this.motivoIdsSeleccionados.set([...ids]);
+    // Un id que ya no está en el catálogo (motivo borrado o desactivado, o
+    // un registro importado de otra instalación antes de v3.50.0) se busca
+    // por nombre; si tampoco aparece, se descarta y el coordinador elige.
+    const r = this.data.registro;
+    const ids = r.motivoIds?.length ? r.motivoIds : [r.motivoId];
+    const nombres = r.motivoIds?.length ? (r.motivoNombres ?? []) : [r.motivoNombre];
+    const porId = new Set(todos.map(m => m.id));
+    const resueltos = ids
+      .map((id, i) => porId.has(id)
+        ? id
+        : todos.find(m => m.nombre.toLowerCase().trim() === (nombres[i] ?? '').toLowerCase().trim())?.id)
+      .filter((id): id is string => !!id);
+    this.motivoIdsSeleccionados.set([...new Set(resueltos)]);
   }
 
   toggleMotivo(id: string): void {
@@ -278,14 +302,15 @@ export class RegistroEditarDialogComponent implements OnInit {
   }
 
   puedeGuardar(): boolean {
-    return !this.errorTexto() && this.motivoIdsSeleccionados().length > 0;
+    const ids = this.motivoIdsSeleccionados();
+    return !this.errorTexto() && this.motivos().some(m => m.id && ids.includes(m.id));
   }
 
   guardar(): void {
     if (!this.puedeGuardar()) return;
 
-    const idsSel = this.motivoIdsSeleccionados();
-    const motivosSel = this.motivos().filter(m => idsSel.includes(m.id!));
+    const motivosSel = this.motivos().filter(m => this.motivoIdsSeleccionados().includes(m.id!));
+    const idsSel = motivosSel.map(m => m.id!);
     const nombres = motivosSel.map(m => m.nombre);
     const principal = motivosSel[0];
 
@@ -298,6 +323,27 @@ export class RegistroEditarDialogComponent implements OnInit {
       motivoNombre: principal.nombre,
     };
     this.dialogRef.close(resultado);
+  }
+
+  /** Borrar un registro suelto (un escaneo por error que nadie deshizo a tiempo). */
+  eliminar(): void {
+    const r = this.data.registro;
+    const cuando = new Date(r.fechaHora).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        titulo: '¿Eliminar este registro?',
+        mensaje: `La visita de ${r.nombreCompleto} del ${cuando} se borrará y dejará de contar en las estadísticas. No se puede deshacer.`,
+        variante: 'danger',
+        textoConfirmar: 'Eliminar',
+        icono: 'delete',
+      } as ConfirmDialogData,
+    }).afterClosed().subscribe(async (ok) => {
+      if (!ok) return;
+      await this.databaseService.eliminarRegistro(r.id);
+      await this.aforoService.refrescar(); // si era una entrada abierta, libera el lugar
+      this.dialogRef.close('eliminado');
+    });
   }
 
   cerrar(): void {

@@ -78,7 +78,7 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **277 specs unitarios en verde**, en 14 archivos —
+Suite activa: **279 specs unitarios en verde**, en 14 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `database.service`,
@@ -207,7 +207,7 @@ El "estado de sesión" entre scanner y selección de motivo se pasa exclusivamen
 
 ### Base de datos (IndexedDB via `idb`)
 
-`DatabaseService` (`core/services/database.service.ts`) es el único punto de acceso. `DB_NAME = 'stenbrary-db'`, `DB_VERSION = 1`. Tres stores:
+`DatabaseService` (`core/services/database.service.ts`) es el único punto de acceso. `DB_NAME = 'stenbrary-db'`, `DB_VERSION = 2` (v2, Fase 2.2: índice `by-sync-status` en los tres stores). Tres stores:
 
 - `alumnos` (keyPath `id`) — índices: `by-matricula` (unique), `by-carrera`
 - `registros` (keyPath `id`) — índices: `by-fecha` (fechaHora), `by-alumno` (alumnoId), `by-matricula`
@@ -244,7 +244,7 @@ Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los p
 - `ChangelogService` — compara `versionActual().version` con `stenbrary-changelog-vista` (localStorage). Signal `hayNovedades` alimenta el badge del sidebar. En primera instalación NO muestra badge (marca la versión como vista).
 - `SoundService` — beeps vía Web Audio API (sin archivos). Flag en `stenbrary-sonido-activo`. Métodos: `beepScan`, `beepSalida`, `beepError`.
 - `ToastService`, `LoadingService` — UI transversal (componentes en `shared/`).
-- `BackupService` — export/import JSON completo. Verifica duplicados de motivos por nombre antes de insertar.
+- `BackupService` — export/import JSON completo. Los motivos se emparejan **por nombre** con los locales y los `motivoIds` de los registros se traducen a los ids locales (`remapearMotivos`, v3.50.0): cada instalación crea sus motivos default con ids propios, y sin el mapa un respaldo de otro equipo dejaba registros apuntando a motivos inexistentes (estadísticas partidas, editor roto). En modo `replace` se restaura el catálogo del respaldo con sus ids. Combinar el mismo respaldo dos veces no duplica nada (`put` por id).
 - `ExportService`, `ReportService` — PDF (`jspdf`/`jspdf-autotable`) y Excel (`xlsx`).
 - `EstadisticasAvanzadasService` — tendencias, heatmap, top alumnos, insights, distribución por motivo/carrera.
 - `PwaUpdateService` — `AppComponent.ngOnInit` llama `iniciar()`: revisión por **reloj** (`timer`, 60 s y luego cada 15 min), nunca por `appRef.isStable` (con intervalos vivos la app no se estabiliza y la revisión no arrancaba; v3.46.0). El aviso lo pinta `AppComponent` con `SwUpdate.versionUpdates`. `stenbrary-sw-revision-ms` en localStorage acorta el intervalo solo para pruebas.
@@ -382,7 +382,7 @@ En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la cl
 - No romper la retrocompatibilidad de `Registro`: `motivoId`/`motivoNombre` siguen siendo el "principal"; `motivoIds`/`motivoNombres` son opcionales.
 - No acceder a `/seleccion-motivo` sin pasar antes por scanner/registro — el guard depende de `sessionStorage.alumnoActual`.
 - El `detalle-alumno` se enruta por `:matricula`, no por `:id`.
-- No incrementar `DB_VERSION = 1` sin definir la migración en `onupgradeneeded`.
+- No incrementar `DB_VERSION` (hoy 2) sin definir la migración en el `upgrade()` de `openDB`.
 - Al tocar el scanner: respetar `isDetecting` y `enCooldown` (previenen detecciones concurrentes/dobles) y el throttle de `effectiveScanInterval`.
 - No eliminar estrategias de `PREPROCESS_STRATEGIES` / `LOWRES_EXTRA_STRATEGIES` sin datos — el orden refleja probabilidad real de éxito y la priorización adaptativa se apoya en los `label`.
 - Al agregar un método que muta `registros`, llamar `AforoService.refrescar()` si el cambio puede alterar la ocupación.

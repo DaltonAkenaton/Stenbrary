@@ -27,7 +27,7 @@ describe('horarios.utils', () => {
       expect(dom.getDay()).toBe(0);
       const r = verificarHorario(dom, HORARIO_LUN_A_VIE);
       expect(r.abierto).toBeFalse();
-      expect(r.mensaje).toContain('domingo');
+      expect(r.mensaje).toContain('los domingos');
       expect(r.proximaApertura).toBe('mañana a las 07:00');
     });
 
@@ -48,7 +48,7 @@ describe('horarios.utils', () => {
       const r = verificarHorario(lun, HORARIO_LUN_A_VIE);
       expect(r.abierto).toBeFalse();
       expect(r.mensaje).toContain('Aún no abre');
-      expect(r.proximaApertura).toBe('Hoy a las 07:00');
+      expect(r.proximaApertura).toBe('hoy a las 07:00');
     });
 
     it('abre exactamente en minuto de apertura (07:00)', () => {

@@ -26,7 +26,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { Registro, Alumno, Motivo } from '../../core/models';
 import { ExportService } from '../../core/services/export.service';
 import { RegistroDetalleDialogComponent } from '../detalle-alumno/registro-detalle-dialog/registro-detalle-dialog.component';
-import { RegistroEditarDialogComponent, RegistroEditarResultado } from '../detalle-alumno/registro-editar-dialog/registro-editar-dialog.component';
+import { RegistroEditarDialogComponent, RegistroEditarSalida } from '../detalle-alumno/registro-editar-dialog/registro-editar-dialog.component';
 import { formatearDuracion, parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
 import { esSalidaEstimada, incluyeMotivo } from '../../core/utils/estadisticas.utils';
 import { logError } from '../../core/utils/logger';
@@ -427,8 +427,13 @@ columnas: string[] = [
       width: '520px',
       data: { registro },
     });
-    const resultado = await ref.afterClosed().toPromise() as RegistroEditarResultado | undefined;
+    const resultado = await ref.afterClosed().toPromise() as RegistroEditarSalida | undefined;
     if (!resultado) return;
+    if (resultado === 'eliminado') {
+      this.toastService.success('Registro eliminado');
+      await this.cargarDatos();
+      return;
+    }
 
     try {
       await this.databaseService.actualizarRegistroManual(registro.id, resultado);

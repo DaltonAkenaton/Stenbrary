@@ -27,7 +27,7 @@ import { ReportService } from '../../core/services/report.service';
 import { EditarAlumnoDialogComponent } from './editar-alumno-dialog/editar-alumno-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { RegistroDetalleDialogComponent } from './registro-detalle-dialog/registro-detalle-dialog.component';
-import { RegistroEditarDialogComponent, RegistroEditarResultado } from './registro-editar-dialog/registro-editar-dialog.component';
+import { RegistroEditarDialogComponent, RegistroEditarSalida } from './registro-editar-dialog/registro-editar-dialog.component';
 import { calcularLogros, LogrosAlumno } from '../../core/utils/insignias.utils';
 import { diasCalendarioEntre, formatearDuracion } from '../../core/utils/tiempo.utils';
 import { contarMotivos, resumirEstancia } from '../../core/utils/estadisticas.utils';
@@ -447,8 +447,13 @@ export class DetalleAlumnoComponent implements OnInit {
       width: '520px',
       data: { registro },
     });
-    const resultado = await ref.afterClosed().toPromise() as RegistroEditarResultado | undefined;
+    const resultado = await ref.afterClosed().toPromise() as RegistroEditarSalida | undefined;
     if (!resultado) return;
+    if (resultado === 'eliminado') {
+      this.toastService.success('Registro eliminado');
+      if (this.alumno) await this.cargarDatosAlumno(this.alumno.matricula);
+      return;
+    }
 
     try {
       this.loadingService.show('Guardando cambios...');

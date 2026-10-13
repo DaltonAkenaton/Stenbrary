@@ -409,6 +409,7 @@ h1 {
   .nombre-cell {
     font-weight: 500;
     color: $text-primary;
+    overflow-wrap: anywhere; // un nombre sin espacios no debe empujar la tabla
   }
 
   .motivo-chip {

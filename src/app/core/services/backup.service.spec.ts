@@ -302,4 +302,51 @@ describe('BackupService — round-trip', () => {
     expect(res.errores.length).toBe(1);
     expect((await db.obtenerTodosLosRegistros()).length).toBe(0);
   });
+
+  // ═══════════════════════════════════════════════════════
+  // Respaldo de OTRA instalación (v3.50.0): cada base crea sus motivos
+  // default con ids propios. Es el caso diario de "equipo de la puerta →
+  // PC del coordinador".
+  describe('motivos de otra instalación', () => {
+    async function respaldoDeOtraInstalacion(): Promise<{ datos: BackupData; idOrigen: string }> {
+      resetIndexedDB(); // la otra instalación tiene su propia base
+      const otra = nuevoServicio();
+      await otra.db.inicializar();
+      const estudiar = (await otra.db.obtenerTodosLosMotivos()).find(m => m.nombre === 'Estudiar')!;
+      await otra.db.restaurarRegistro({
+        id: 'r-puerta-1', alumnoId: 'a', matricula: '2299990002', nombreCompleto: 'Ana', carrera: 'ISC',
+        motivoId: estudiar.id!, motivoNombre: 'Estudiar', motivoIds: [estudiar.id!], motivoNombres: ['Estudiar'],
+        fechaHora: FECHA_VIEJA, sincronizado: false,
+      } as Registro);
+      const datos = porJSON(await otra.backup.exportarBackup());
+      resetIndexedDB(); // y esta, la suya: motivos default con otros ids
+      ({ db, backup } = nuevoServicio());
+      await db.inicializar();
+      return { datos, idOrigen: estudiar.id! };
+    }
+
+    it('al combinar, los registros apuntan al motivo local del mismo nombre', async () => {
+      const { datos, idOrigen } = await respaldoDeOtraInstalacion();
+      const local = (await db.obtenerTodosLosMotivos()).find(m => m.nombre === 'Estudiar')!;
+      expect(local.id).not.toBe(idOrigen);
+
+      await backup.importarBackup(datos, 'merge');
+
+      const [r] = await db.obtenerTodosLosRegistros();
+      expect(r.motivoId).toBe(local.id!);
+      expect(r.motivoIds).toEqual([local.id!]);
+      expect((await db.obtenerTodosLosMotivos()).length).toBe(5); // sin "Estudiar" duplicado
+    });
+
+    it('al reemplazar, se restaura el catálogo del respaldo con sus ids', async () => {
+      const { datos, idOrigen } = await respaldoDeOtraInstalacion();
+
+      await backup.importarBackup(datos, 'replace');
+
+      const motivos = await db.obtenerTodosLosMotivos();
+      expect(motivos.length).toBe(5);
+      expect(motivos.find(m => m.nombre === 'Estudiar')!.id).toBe(idOrigen);
+      expect((await db.obtenerTodosLosRegistros())[0].motivoId).toBe(idOrigen);
+    });
+  });
 });

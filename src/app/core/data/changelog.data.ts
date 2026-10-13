@@ -49,6 +49,35 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.50.0',
+    fecha: '2026-10-12',
+    titulo: 'Respaldos entre equipos y borrar un registro',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto:
+          'Al importar un respaldo de otro equipo, las actividades se reconocen por su nombre. Antes, "Estudiar" podía ' +
+          'aparecer dos veces en Estadísticas y algunos registros no se podían editar.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Ya puedes borrar un registro suelto: en Registros, toca el lápiz y luego "Eliminar".',
+      },
+      {
+        tipo: 'fix',
+        texto: 'El archivo de respaldo ahora se llama, por ejemplo, stenbrary_backup_2026-10-12_2144.json (antes llevaba "p.m." y un punto de más).',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'La tecla Escape cierra los avisos del escáner, y se corrigieron textos ("los domingos", "1 persona", "1 registro").',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Estadísticas: los títulos del mapa de calor, el top de alumnos y la tendencia ya no salen gigantes.',
+      },
+    ],
+  },
+  {
     version: '3.49.0',
     fecha: '2026-10-12',
     titulo: 'El quiosco vuelve solo',

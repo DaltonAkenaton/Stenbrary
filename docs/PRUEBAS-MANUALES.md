@@ -18,6 +18,8 @@ anótalo en una columna "incidencias" al final de cada sección.
 
 ---
 
+> **Ronda 2026-10-12 (v3.50.0):** los `[🤖✅]` de esta fecha se verificaron con Playwright exploratorio en el navegador (no con lectura de código). Lo que queda en `[ ]` necesita hardware (cámara, lector, celular), volumen extremo o manipular el reloj del sistema.
+
 ## 0. SETUP INICIAL
 
 ### 0.1 Instalación limpia
@@ -25,8 +27,8 @@ anótalo en una columna "incidencias" al final de cada sección.
 - [✅] App carga en `http://localhost:4200`
 - [✅] Redirige de `/` a `/scanner`
 - [✅] Wildcard (`/foo-no-existe`) redirige a `/scanner`
-- [ ] Primera carga: NO muestra badge "Novedades" en sidebar
-- [ ] IndexedDB creada (DevTools → Application → IndexedDB → `stenbrary-db`)
+- [🤖✅] Primera carga: NO muestra badge "Novedades" en sidebar
+- [🤖✅] IndexedDB creada (DevTools → Application → IndexedDB → `stenbrary-db`)
 - [✅] Stores `alumnos`, `registros`, `motivos` existen
 - [✅] 5 motivos default creados (Estudiar, Pedir libro, Trabajo escolar, Investigación, Otro)
 - [ ] Service Worker registrado (`/ngsw-worker.js` en Application → Service Workers)
@@ -54,18 +56,18 @@ Ir a `/configuracion` → sección "Datos de prueba".
 - [ ] Con >80k registros: "Proceso muy largo. Déjalo correr en segundo plano."
 
 ### 1.2 Preset "Pequeño" (100/30/2)
-- [ ] Click "Generar datos de prueba" → diálogo de confirmación
-- [ ] Diálogo menciona "calendario UAT: vacaciones, festivos, verano 15%"
+- [🤖✅] Click "Generar datos de prueba" → diálogo de confirmación
+- [🤖✅] Diálogo menciona "calendario UAT: vacaciones, festivos, verano 15%"
 - [ ] Confirmar → barra de progreso visible
 - [ ] Fase 1: "Creando alumnos..." llega a 100
 - [ ] Fase 2: "Generando registros..." llega al total estimado ±20%
-- [ ] Toast éxito con números finales
+- [🤖✅] Toast éxito con números finales
 - [ ] Conteo actualiza: "100 alumnos · ~N registros de prueba cargados"
 - [ ] Tiempo real < 10 segundos
 
 ### 1.3 Preset "Medio" (500/180/2)
-- [ ] Genera sin errores
-- [ ] Tiempo real < 1 minuto
+- [🤖✅] Genera sin errores
+- [🤖✅] Tiempo real < 1 minuto — 12 s
 - [ ] Conteo: 500 alumnos, ~3000 registros (después de aplicar factor vacaciones ≈30%)
 
 ### 1.4 Preset "Tu universidad" (2554/30/2)
@@ -85,19 +87,19 @@ Ir a `/configuracion` → sección "Datos de prueba".
 ### 1.6 Verificación de distribución (con datos ya generados)
 Abrir DevTools Console y revisar con `indexedDB.databases()` o inspeccionar.
 
-- [ ] Ningún registro tiene `fechaHora` en día domingo (día 0)
-- [ ] Ningún registro cae en festivo oficial (01-01, 02-05, 03-16, 05-01, 05-05, 09-16, 11-02, 11-16, 12-12, 12-25)
+- [🤖✅] Ningún registro tiene `fechaHora` en día domingo (día 0)
+- [🤖✅] Ningún registro cae en festivo oficial (01-01, 02-05, 03-16, 05-01, 05-05, 09-16, 11-02, 11-16, 12-12, 12-25)
 - [ ] Ningún registro entre 03-25 y 04-05 (Semana Santa aprox)
-- [ ] Ningún registro con `fechaHora.hours` fuera de 7–22
-- [ ] Ningún registro con `horaSalida.hours` > 22
-- [ ] Matrículas todas ≥ 9000001
-- [ ] Todos los registros tienen `dispositivo === 'SEED-TEST'`
+- [🤖✅] Ningún registro con `fechaHora.hours` fuera de 7–22
+- [🤖✅] Ningún registro con `horaSalida.hours` > 22
+- [🤖✅] Matrículas todas ≥ 9000001
+- [🤖✅] Todos los registros tienen `dispositivo === 'SEED-TEST'`
 - [ ] En meses de verano (junio/julio): menor densidad de registros (~15% del normal)
 - [ ] En períodos inter-semestrales (mayo 16–31, julio 16–ago 16, dic 8–ene 11): cero registros
-- [ ] Distribución turnos: ~66% Matutino, ~22% Vespertino, ~12% Mixto
+- [🤖✅] Distribución turnos: ~66% Matutino, ~22% Vespertino, ~12% Mixto — 65/26/9 % con preset Medio
 - [ ] Ninguno de los 5 motivos default quedó sin usar
-- [ ] Al menos un alumno tiene registros con 2 motivos
-- [ ] Al menos un alumno tiene registros con 3 motivos
+- [🤖✅] Al menos un alumno tiene registros con 2 motivos
+- [🤖✅] Al menos un alumno tiene registros con 3 motivos
 
 ### 1.7 Limpieza
 - [✅] Botón "Limpiar datos de prueba" abre diálogo danger
@@ -198,9 +200,9 @@ Firefox o Safari para forzar.
 - [✅] Segundo invitado con mismo nombre: acepta (no es duplicado)
 
 ### 3.4 Lector USB HID (v3.11.0)
-- [ ] Lector conectado, simulando Enter final: captura matrícula
+- [🤖✅] Lector conectado, simulando Enter final: captura matrícula
 - [ ] Velocidad de escaneo: no se trunca el input
-- [ ] Input parcial sin Enter: no procesa
+- [🤖✅] Input parcial sin Enter: no procesa
 
 ---
 
@@ -273,23 +275,23 @@ Configurar `umbralDuplicadoMin = 30`. Tener `registroSalidaActivo = false`.
 Configurar `registroSalidaActivo = true`.
 
 ### 7.1 Flujo entrada + salida
-- [ ] Primera vez: registra entrada (sin horaSalida)
-- [ ] Segunda vez (mismo día): diálogo "Salida / Nuevo / Cancelar"
-- [ ] Salida: calcula `duracionMinutos`, pone `horaSalida = ahora`
-- [ ] El alumno ya NO aparece en `/presencia`
-- [ ] Tercera vez: entrada nueva (flujo de nuevo)
+- [🤖✅] Primera vez: registra entrada (sin horaSalida)
+- [🤖✅] Segunda vez (mismo día): diálogo "Salida / Nuevo / Cancelar"
+- [🤖✅] Salida: calcula `duracionMinutos`, pone `horaSalida = ahora`
+- [🤖✅] El alumno ya NO aparece en `/presencia`
+- [🤖✅] Tercera vez: entrada nueva (flujo de nuevo)
 
 ### 7.2 Entrada abierta de AYER
 - [ ] Crear entrada, bajar reloj del sistema al día siguiente
-- [ ] Escanear al alumno: NO considera la entrada de ayer (usa `obtenerEntradaAbiertaHoy`)
-- [ ] Entra como entrada nueva
+- [🤖✅] Escanear al alumno: NO considera la entrada de ayer (usa `obtenerEntradaAbiertaHoy`)
+- [🤖✅] Entra como entrada nueva
 
 ### 7.3 Cierre automático
 Configurar `horasAutoSalida = 4`.
 
-- [ ] Crear entrada hace 5 horas
-- [ ] Cargar app: entrada aparece cerrada con flag `cierreAutomatico: true`
-- [ ] En `/presencia`: visible con indicador distintivo (⚠️ o similar)
+- [🤖✅] Crear entrada hace 5 horas
+- [🤖✅] Cargar app: entrada aparece cerrada con flag `cierreAutomatico: true`
+- [🤖✅] En `/presencia`: visible con indicador distintivo (⚠️ o similar)
 - [ ] Botón "Confirmar cierre": limpia el flag
 - [ ] Con `horasAutoSalida = 0`: feature off, no cierra nada
 
@@ -311,14 +313,14 @@ Configurar `horasAutoSalida = 4`.
 - [👤] Intentar registrar con sobreaforo: deja pasar (solo warn)
 
 ### 8.3 Aforo modo "confirmar"
-- [ ] Con aforo lleno: diálogo "¿Registrar de todos modos?"
+- [🤖✅] Con aforo lleno: diálogo "¿Registrar de todos modos?"
 - [ ] Confirmar: registra
-- [ ] Cancelar: no registra
+- [🤖✅] Cancelar: no registra
 
 ### 8.4 Aforo modo "bloquear"
-- [ ] Con aforo lleno: toast error "Aforo completo"
-- [ ] NO registra
-- [ ] Al dar salida a alguien, vuelve a permitir
+- [🤖✅] Con aforo lleno: toast error "Aforo completo"
+- [🤖✅] NO registra
+- [🤖✅] Al dar salida a alguien, vuelve a permitir
 
 ### 8.5 Live update
 - [ ] Abrir `/presencia` en otra pestaña
@@ -335,16 +337,16 @@ Configurar `horasAutoSalida = 4`.
 ### 9.2 Activo — modo "advertir"
 Configurar lunes–viernes 07:00–22:00, sábado 08:00–14:00, domingo cerrado.
 
-- [ ] Lunes 10:00: registra sin aviso
-- [ ] Lunes 06:00 (antes de abrir): toast "fuera de horario, próxima apertura" pero registra
-- [ ] Lunes 23:00: toast pero registra
-- [ ] Sábado 10:00: registra
-- [ ] Sábado 15:00: toast pero registra
-- [ ] Domingo cualquier hora: toast pero registra
+- [🤖✅] Lunes 10:00: registra sin aviso
+- [🤖✅] Lunes 06:00 (antes de abrir): toast "fuera de horario, próxima apertura" pero registra
+- [🤖✅] Lunes 23:00: toast pero registra
+- [🤖✅] Sábado 10:00: registra
+- [🤖✅] Sábado 15:00: toast pero registra
+- [🤖✅] Domingo cualquier hora: toast pero registra — **ARREGLADO v3.50.0**: decía "los domingo"
 
 ### 9.3 Activo — modo "bloquear"
-- [ ] Fuera de horario: muestra error con próxima apertura, NO registra
-- [ ] Dentro de horario: registra normalmente
+- [🤖✅] Fuera de horario: muestra error con próxima apertura, NO registra
+- [🤖✅] Dentro de horario: registra normalmente
 
 ---
 
@@ -447,7 +449,7 @@ Con preset "Histórico 12m" cargado.
 
 ### 13.2 Filtros
 - [✅] Filtro "Hoy"
-- [🤖❌] Filtro "Ayer" — **no implementado**. Rangos existentes: `hoy / semana / mes / todo / personalizado` (`registros.component.ts:31`). Fácil de agregar si lo quieres.
+- [✅] Filtro "Ayer" — ya existe (visto en v3.50.0)
 - [✅] Filtro "Esta semana"
 - [✅] Filtro "Este mes"
 - [✅] Filtro rango custom
@@ -459,13 +461,13 @@ Con preset "Histórico 12m" cargado.
 
 ### 13.3 Edición manual
 - [ ] Click en registro → modal/detalle
-- [ ] Editar `fechaHora`
-- [ ] Editar `horaSalida`
+- [🤖✅] Editar `fechaHora` — **BUG ARREGLADO v3.50.0** (tronaba con registros restaurados de un respaldo)
+- [🤖✅] Editar `horaSalida`
 - [✅] Editar motivos (agregar/quitar)
 - [✅] Guardar: se refleja
 
 ### 13.4 Eliminación
-- [ ] Eliminar uno: confirmación + toast
+- [🤖✅] Eliminar uno: confirmación + toast — **añadido en v3.50.0** (no existía): botón Eliminar en el editor del registro
 - [ ] Eliminación masiva por rango: va en `/configuracion`
 
 ### 13.5 Indicadores visuales
@@ -524,13 +526,13 @@ Con dataset histórico 30m.
 - [ ] Crecimiento/decrecimiento porcentual
 
 ### 16.3 Heatmap
-- [ ] Heatmap día-de-la-semana × hora
-- [ ] Domingos: columna vacía
+- [🤖✅] Heatmap día-de-la-semana × hora
+- [🤖✅] Domingos: columna vacía
 - [ ] Horas 0–6 y 23: vacías
 - [ ] Mayor intensidad en días entre semana horario medio
 
 ### 16.4 Top alumnos
-- [ ] Top 10 por visitas en el período
+- [🤖✅] Top 10 por visitas en el período
 - [ ] Enlace a detalle de cada uno
 
 ### 16.5 Insights automáticos
@@ -539,10 +541,10 @@ Con dataset histórico 30m.
 - [ ] Detecta motivo más usado
 
 ### 16.6 Distribuciones
-- [ ] Por carrera (pie o barras)
-- [ ] Por motivo (incluyendo múltiples)
-- [ ] Por turno
-- [ ] Por grado
+- [🤖✅] Por carrera (pie o barras)
+- [🤖✅] Por motivo (incluyendo múltiples)
+- [🤖✅] Por turno
+- [🤖✅] Por grado
 
 ---
 
@@ -599,11 +601,11 @@ Con dataset histórico 30m.
 - [ ] Eliminar por rango con confirmación danger
 
 ### 18.8 Backup
-- [ ] Exportar JSON
+- [🤖✅] Exportar JSON
 - [ ] Verificar tamaño (con 90k registros puede ser 40–80 MB)
-- [ ] Importar en navegador limpio (modo incógnito)
-- [ ] Todo se restaura
-- [ ] Importar con datos existentes: ¿duplica o mergea? (validar)
+- [🤖✅] Importar en navegador limpio (modo incógnito)
+- [🤖✅] Todo se restaura
+- [🤖✅] Importar con datos existentes: ¿duplica o mergea? (validar) — combina sin duplicar (`put` por id), probado 2 veces seguidas. **BUG ARREGLADO v3.50.0:** los motivos de otra instalación dejaban registros con ids huérfanos (estadísticas partidas, editor roto)
 
 ### 18.9 Flexibilidad
 Por feedback "Flexibilidad del sistema" (memory): validar que TODOS los ajustes numéricos acepten valores libres, no solo presets.
@@ -676,7 +678,7 @@ Por feedback "Flexibilidad del sistema" (memory): validar que TODOS los ajustes 
 ## 22. NAVEGACIÓN (shell)
 
 ### 22.1 Desktop
-- [ ] Sidebar colapsado 64px
+- [🤖✅] Sidebar colapsado 64px
 - [ ] Expandido 220px
 - [ ] Sección "Operación" con Scanner, Registrar Alumno, En Biblioteca (si aplica)
 - [ ] Sección "Consulta" con 4 items
@@ -686,8 +688,8 @@ Por feedback "Flexibilidad del sistema" (memory): validar que TODOS los ajustes 
 
 ### 22.2 Móvil (<768px)
 - [ ] Sidebar en drawer (overlay)
-- [ ] Bottom nav visible
-- [ ] Bottom nav tiene Scanner + 3–4 más
+- [🤖✅] Bottom nav visible
+- [🤖✅] Bottom nav tiene Scanner + 3–4 más
 - [ ] "Registros" se swapea por "Biblioteca" si `registroSalidaActivo`
 - [ ] Navegar: sidebar se auto-cierra
 
@@ -735,8 +737,8 @@ Ejecutar con Histórico 30m cargado (≈90k registros, 2500 alumnos).
 - [✅] `/inactivos`: < 3s
 
 ### 24.2 Memoria
-- [ ] DevTools Memory: heap snapshot < 150 MB en uso normal
-- [ ] Navegar 10 veces entre rutas: no crece indefinido (leaks)
+- [🤖✅] DevTools Memory: heap snapshot < 150 MB en uso normal
+- [🤖✅] Navegar 10 veces entre rutas: no crece indefinido (leaks) — 92 MB antes y después de 21 navegaciones
 
 ### 24.3 Scroll y búsqueda
 - [✅] Listado de 2500 alumnos: scroll 60fps
@@ -746,17 +748,17 @@ Ejecutar con Histórico 30m cargado (≈90k registros, 2500 alumnos).
 ### 24.4 Operaciones masivas
 - [ ] Generar 30m: no se congela la UI durante la operación
 - [ ] Limpiar 30m: no se congela
-- [ ] Exportar backup: completa sin crashear
-- [ ] Importar backup: completa sin crashear
+- [🤖✅] Exportar backup: completa sin crashear
+- [🤖✅] Importar backup: completa sin crashear
 
 ---
 
 ## 25. EDGE CASES
 
 ### 25.1 Datos extremos
-- [ ] Alumno con nombre de 200 caracteres: UI no rompe
-- [ ] Matrícula con ceros al inicio `0000001`: maneja correctamente
-- [ ] Registro con `duracionMinutos > 900` (15h): visualiza sin bug
+- [🤖✅] Alumno con nombre de 200 caracteres: UI no rompe — **ARREGLADO v3.50.0** (sin espacios desbordaba la tabla y el perfil)
+- [🤖✅] Matrícula con ceros al inicio `0000001`: maneja correctamente
+- [🤖✅] Registro con `duracionMinutos > 900` (15h): visualiza sin bug
 
 ### 25.2 Tiempo
 - [ ] Cambiar fecha del sistema hacia adelante: registros "de ayer" siguen visibles
@@ -764,7 +766,7 @@ Ejecutar con Histórico 30m cargado (≈90k registros, 2500 alumnos).
 - [ ] Cruce de medianoche durante uso: transiciones limpias
 
 ### 25.3 Concurrencia
-- [ ] Dos pestañas abiertas, registrar en ambas: ambos registros persisten
+- [🤖✅] Dos pestañas abiertas, registrar en ambas: ambos registros persisten
 - [ ] Dos pestañas modificando el mismo alumno: último gana (no lock)
 - [ ] Abrir y cerrar app muchas veces: inicialización consistente
 
@@ -786,10 +788,10 @@ Ejecutar con Histórico 30m cargado (≈90k registros, 2500 alumnos).
 - [✅] Navegación por teclado funciona en scanner
 - [✅] Todos los botones tienen focus visible
 - [✅] Contraste de texto (Lighthouse A11y > 90)
-- [ ] Tamaño touch ≥44px en bottom nav
+- [🤖✅] Tamaño touch ≥44px en bottom nav — 78×57 px
 - [ ] Toasts no bloquean contenido crítico
 - [ ] Diálogos con backdrop cerrable
-- [ ] Escape cierra diálogos
+- [🤖✅] Escape cierra diálogos — **ARREGLADO v3.50.0** en los diálogos del escáner; el clic fuera sigue bloqueado a propósito (quiosco)
 - [ ] Enter envía formularios
 
 ---

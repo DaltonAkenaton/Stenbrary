@@ -9,6 +9,35 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-12 — Pasada de pruebas manuales, mi parte (v3.50.0)
+
+Recorrido automatizado (Playwright exploratorio, fuera de la suite) de los
+pendientes de `docs/PRUEBAS-MANUALES.md` que no requieren hardware.
+
+**Lo grave:** importar un respaldo de OTRA instalación dejaba los registros
+apuntando a ids de motivo inexistentes — cada base crea sus 5 motivos default
+con UUIDs propios y el import omitía los del respaldo por nombre sin traducir
+los ids. Efectos: `contarMotivos` (agrupa por id) partía "Estudiar" en dos
+filas, y el editor de registro tronaba (`principal.id` de undefined). Pasaba
+también al restaurar en modo replace (limpiarTodosDatos recrea defaults). Es
+exactamente el flujo diario de la opción "equipo en la puerta + PC del
+coordinador". Fix: mapa id-respaldo → id-local por nombre + `remapearMotivos`;
+replace restaura el catálogo del respaldo con sus ids. 2 specs con dos
+IDBFactory distintas (con una sola, las dos "instalaciones" compartían base y
+el test pasaba en falso). El editor además resuelve ids huérfanos por nombre.
+
+**Más:** no existía borrar un registro suelto (añadido en el editor, con
+ConfirmDialog danger + `AforoService.refrescar`); nombre del respaldo con
+`toLocaleTimeString` daba "_0937 p.m..json"; `disableClose` bloqueaba Escape en
+los diálogos del escáner (`keydownEvents`); gramática ("los domingo", "Hay 1
+personas", "1 registros", "Hoy" a media frase); nombres sin espacios desbordaban
+tabla y perfil (`overflow-wrap: anywhere`).
+
+**Verificado sin cambios:** entrada/salida, entrada de ayer, cierre automático,
+aforo confirmar/bloquear, horarios en 8 casos, lector rápido vs tecleo humano,
+dos pestañas, matrícula 0000001, combinar dos veces sin duplicar, Escape,
+bottom nav 57 px. CLAUDE.md decía `DB_VERSION = 1`; es 2 desde Fase 2.2.
+
 ## 2026-10-12 — El quiosco vuelve solo (v3.49.0)
 
 Pregunta del usuario: "el sistema lo puede usar cualquiera que tenga acceso,

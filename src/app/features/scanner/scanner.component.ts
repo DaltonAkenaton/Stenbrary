@@ -41,7 +41,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { filter } from 'rxjs/operators';
 
 // zxing se carga dinámicamente solo cuando el BarcodeDetector nativo no
 // está disponible (v3.12.1). Evita meter ~500KB en el chunk del scanner
@@ -1430,6 +1431,17 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // CONFIRMACIÓN Y NAVEGACIÓN
   // ═══════════════════════════════════════════════════════════════════════
 
+  /**
+   * disableClose evita que un toque fuera del diálogo lo cierre por accidente
+   * (tablet del quiosco), pero también bloqueaba Escape. Escape sí es
+   * intencional: cierra sin respuesta, que ambos diálogos tratan como cancelar.
+   */
+  private cerrarConEscape(ref: MatDialogRef<unknown>): void {
+    ref.keydownEvents()
+      .pipe(filter(e => e.key === 'Escape'))
+      .subscribe(() => ref.close());
+  }
+
   private mostrarConfirmacionMatricula(
     matricula: string,
     reiniciarCamara = true,
@@ -1440,6 +1452,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       data: { matricula },
       disableClose: true
     });
+    this.cerrarConEscape(dialogRef);
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado === true) {
@@ -1614,6 +1627,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         data,
         disableClose: true,
       });
+      this.cerrarConEscape(dialogRef);
 
       dialogRef.afterClosed().subscribe((resultado: RegistroDuplicadoResultado) => {
         resolve(resultado || 'cancelar');
@@ -1826,7 +1840,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (modo === 'confirmar') {
       const data: ConfirmDialogData = {
         titulo: 'Aforo máximo alcanzado',
-        mensaje: `Hay ${ocupacion} personas dentro y la capacidad es de ${capacidad}.\n\n¿Deseas autorizar esta entrada de todas formas?`,
+        mensaje: `${ocupacion === 1 ? 'Hay 1 persona' : `Hay ${ocupacion} personas`} dentro y la capacidad es de ${capacidad}.\n\n¿Deseas autorizar esta entrada de todas formas?`,
         textoConfirmar: 'Autorizar entrada',
         textoCancelar: 'Cancelar',
         variante: 'warning',

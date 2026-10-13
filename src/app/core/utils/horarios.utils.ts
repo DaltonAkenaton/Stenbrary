@@ -46,7 +46,7 @@ export function verificarHorario(
   if (!horarioDia || horarioDia.cerrado) {
     return {
       abierto: false,
-      mensaje: `La biblioteca no opera los ${DIAS_NOMBRE[dia].toLowerCase()}.`,
+      mensaje: `La biblioteca no opera los ${plural(DIAS_NOMBRE[dia].toLowerCase())}.`,
       proximaApertura: buscarProximaApertura(fecha, horarios),
     };
   }
@@ -65,7 +65,7 @@ export function verificarHorario(
     return {
       abierto: false,
       mensaje: `Aún no abre. Horario de hoy: ${horarioDia.apertura} a ${horarioDia.cierre}.`,
-      proximaApertura: `Hoy a las ${horarioDia.apertura}`,
+      proximaApertura: `hoy a las ${horarioDia.apertura}`,
     };
   }
 
@@ -100,3 +100,8 @@ function buscarProximaApertura(desde: Date, horarios: HorariosSemana): string | 
 
 /** Lista de etiquetas de días, índice 0 = domingo. Útil para UI. */
 export const DIAS_SEMANA = DIAS_NOMBRE;
+
+/** "domingo" → "domingos"; lunes a viernes ya terminan en s. */
+function plural(dia: string): string {
+  return dia.endsWith('s') ? dia : dia + 's';
+}

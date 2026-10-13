@@ -85,9 +85,10 @@ export class BackupService {
     try {
       const backup = await this.exportarBackup();
       const fecha = fechaLocalISO();
-      const hora = new Date().toLocaleTimeString('es-MX', {
-        hour: '2-digit', minute: '2-digit',
-      }).replace(':', '');
+      // HHmm en 24 h a mano: toLocaleTimeString('es-MX') da "09:37 p.m." y el
+      // archivo salía como "..._0937 p.m..json" (espacio y doble punto).
+      const ahora = new Date();
+      const hora = String(ahora.getHours()).padStart(2, '0') + String(ahora.getMinutes()).padStart(2, '0');
       const nombreArchivo = `stenbrary_backup_${fecha}_${hora}.json`;
 
       const json = JSON.stringify(backup, null, 2);
@@ -170,33 +171,54 @@ export class BackupService {
     try {
       if (modo === 'replace') {
         await this.databaseService.limpiarTodosDatos();
+        // limpiarTodosDatos() recrea los motivos default con ids nuevos. Si el
+        // respaldo trae su catálogo, ese manda: se restaura tal cual (ids,
+        // colores, orden, activos) en vez de mezclarse con los default.
+        if (datos.motivos.length > 0) {
+          for (const m of await this.databaseService.obtenerTodosLosMotivos()) {
+            if (m.id) await this.databaseService.eliminarMotivo(m.id);
+          }
+        }
         console.log('🗑️ Datos anteriores eliminados (modo replace)');
       }
 
-      // ── Importar Motivos (FIX: deduplicar por nombre) ──
+      // ── Importar Motivos (deduplicar por nombre, v3.4.1) ──
+      // Cada instalación crea sus motivos default con ids propios, así que
+      // "Estudiar" del respaldo y "Estudiar" de esta base son el mismo motivo
+      // con ids distintos. Antes se omitía el del respaldo sin más y sus
+      // registros quedaban apuntando a un id inexistente: las estadísticas
+      // partían "Estudiar" en dos filas y editar el registro fallaba (v3.50.0).
+      // Ahora se arma un mapa id-del-respaldo → id-local y se aplica a los
+      // registros. Los motivos nuevos conservan su id.
       const motivosExistentes = await this.databaseService.obtenerTodosLosMotivos();
-      const nombresExistentes = new Set(
-        motivosExistentes.map(m => m.nombre.toLowerCase().trim())
+      const idPorNombre = new Map(
+        motivosExistentes.filter(m => m.id).map(m => [normalizarNombre(m.nombre), m.id as string]),
       );
+      const idsLocales = new Set(motivosExistentes.map(m => m.id));
+      const mapaMotivos = new Map<string, string>();
 
       for (const motivo of datos.motivos) {
-        const nombreNorm = motivo.nombre.toLowerCase().trim();
+        const nombreNorm = normalizarNombre(motivo.nombre);
+        const local = motivo.id && idsLocales.has(motivo.id) ? motivo.id : idPorNombre.get(nombreNorm);
 
-        if (nombresExistentes.has(nombreNorm)) {
+        if (local) {
+          if (motivo.id) mapaMotivos.set(motivo.id, local);
           resultado.motivosOmitidos++;
           continue;
         }
 
         try {
-          await this.databaseService.crearMotivo({
-            nombre: motivo.nombre,
-            descripcion: motivo.descripcion,
-            icono: motivo.icono,
-            color: motivo.color,
-            orden: motivo.orden,
-            activo: motivo.activo,
-          });
-          nombresExistentes.add(nombreNorm);
+          const nuevo = motivo.id
+            ? await this.databaseService.restaurarMotivo(motivo)
+            : await this.databaseService.crearMotivo({
+                nombre: motivo.nombre,
+                descripcion: motivo.descripcion,
+                icono: motivo.icono,
+                color: motivo.color,
+                orden: motivo.orden,
+                activo: motivo.activo,
+              });
+          if (nuevo.id) idPorNombre.set(nombreNorm, nuevo.id);
           resultado.motivosImportados++;
         } catch {
           resultado.motivosOmitidos++;
@@ -228,7 +250,7 @@ export class BackupService {
       // horaSalida, duracionMinutos, motivoIds/motivoNombres y turno.
       for (const registro of datos.registros) {
         try {
-          await this.databaseService.restaurarRegistro(registro);
+          await this.databaseService.restaurarRegistro(remapearMotivos(registro, mapaMotivos));
           resultado.registrosImportados++;
         } catch (err: any) {
           resultado.errores.push(
@@ -320,4 +342,23 @@ export class BackupService {
 
     return duplicados;
   }
+}
+
+function normalizarNombre(nombre: string): string {
+  return (nombre || '').toLowerCase().trim();
+}
+
+/**
+ * Traduce los ids de motivo de un registro del respaldo a los de esta base.
+ * Los ids que no están en el mapa (motivos nuevos o ya borrados) se quedan
+ * igual: el registro conserva sus nombres guardados de todos modos.
+ */
+export function remapearMotivos(registro: Registro, mapa: Map<string, string>): Registro {
+  if (mapa.size === 0) return registro;
+  const t = (id: string) => mapa.get(id) ?? id;
+  return {
+    ...registro,
+    motivoId: registro.motivoId ? t(registro.motivoId) : registro.motivoId,
+    ...(registro.motivoIds ? { motivoIds: registro.motivoIds.map(t) } : {}),
+  };
 }
