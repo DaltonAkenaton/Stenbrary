@@ -4,7 +4,7 @@ Cómo pasar de "Fase 2 funciona en mi laptop" a "Fase 2 existe en el sitio
 publicado". Todo lo de este documento se hace **una vez**.
 
 Hoy `src/environments/environment.prod.ts` tiene Supabase vacío, así que el
-Netlify que usa el coordinador corre en modo solo-local: nada de lo construido
+sitio publicado (`stenbrary.pages.dev`) corre en modo solo-local: nada de lo construido
 en Fase 2 (login, roles, bandeja de sincronización, descarga, usuarios) es
 alcanzable ahí. Esto lo arregla.
 

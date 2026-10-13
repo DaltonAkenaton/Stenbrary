@@ -12,7 +12,7 @@ Sistema PWA de registro de accesos para bibliotecas. Permite escanear credencial
 - **SheetJS (xlsx)** — importación/exportación de archivos Excel
 - **ZXing + BarcodeDetector API** — escaneo de códigos de barras
 - **Service Workers** — funcionamiento offline (PWA)
-- **Netlify** — despliegue
+- **Cloudflare Pages** — despliegue (`stenbrary.pages.dev`)
 
 ## Funcionalidades
 
@@ -90,13 +90,15 @@ src/app/
 
 ## Despliegue
 
-El proyecto está configurado para Netlify. El archivo `public/_redirects` maneja el routing SPA.
+Se publica en Cloudflare Pages: cada push a `main` compila y despliega solo. Cloudflare sirve
+`index.html` en cualquier ruta (routing de la SPA) y `public/_headers` fija la caché. Guía:
+`docs/DESPLIEGUE-CLOUDFLARE.md`.
 
 ```bash
 # Build de producción
 ng build
 
-# El contenido de dist/stenbrary/browser/ se despliega en Netlify
+# Cloudflare publica el contenido de dist/stenbrary/browser/
 ```
 
 ## Versión

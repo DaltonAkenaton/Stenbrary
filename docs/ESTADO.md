@@ -197,7 +197,7 @@ Primera versión de la bajada. Espejo del modelo de subida: supervisada.
 **Pendiente de esta sub-fase:**
 - [ ] **Resolución de conflictos** 🟡 — hoy se muestran campo por campo pero no se aplican. Requiere decidir con el coordinador la política (¿gana la nube? ¿el local? ¿por campo?) y probablemente un respaldo automático previo.
 - [ ] **Probar contra volumen real** — validado en local; falta con miles de filas remotas.
-- [ ] Nota: en producción (Netlify) `environment.prod.ts` tiene Supabase vacío, así que esta pantalla solo es alcanzable en desarrollo hasta que se decida activar la nube en el sitio publicado.
+- [ ] Nota: en producción (Cloudflare Pages) `environment.prod.ts` tiene Supabase vacío, así que esta pantalla solo es alcanzable en desarrollo hasta que se decida activar la nube en el sitio publicado.
 
 ### 2.0.5 Activación de la nube por instalación ✅ (v3.41.0, 2026-09-04)
 
@@ -322,7 +322,7 @@ automático ciego.
 
 **Falta:**
 
-- [ ] **Desplegar la nube en producción** 🔴 — `environment.prod.ts` sigue vacío, así que en el Netlify del coordinador nada de lo anterior existe. Checklist paso a paso en `docs/DESPLIEGUE-NUBE.md`. Bloqueado por trabajo fuera del repo: crear el proyecto de PROD, aplicar las 8 migraciones, SMTP propio.
+- [ ] **Desplegar la nube en producción** 🔴 — `environment.prod.ts` sigue vacío, así que en el sitio publicado nada de lo anterior existe. Checklist paso a paso en `docs/DESPLIEGUE-NUBE.md`. Bloqueado por trabajo fuera del repo: crear el proyecto de PROD, aplicar las 8 migraciones, SMTP propio.
 - [ ] **Resolución de conflictos** en `/descarga` 🟡 — se muestran campo por campo, no se aplican. Requiere política acordada con el coordinador + respaldo automático previo.
 - [ ] **Prueba con volumen real** 🟡 — validado en local; falta con miles de filas remotas.
 - [ ] **Sync automático opcional** 🟡 — el ROADMAP promete `syncAuto` + `syncAutoHora` ("subir a las 22:00"). No existe ninguna de las dos claves; hoy todo es manual.

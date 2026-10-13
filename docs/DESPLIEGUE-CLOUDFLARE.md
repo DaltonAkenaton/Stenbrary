@@ -74,10 +74,10 @@ instalación.
   que no haya un `404.html`. La regla de `public/_redirects` es la de **Netlify**: Cloudflare la ignora
   con el aviso "Infinite loop detected", que es inofensivo.
 
-## Después, al apagar Netlify
+## Después, al apagar Netlify (hecho el 2026-10-12)
 
-1. Borrar `public/_redirects` (ya no hará falta) y actualizar la sección *Deployment* de `CLAUDE.md`.
-2. En Netlify: Site settings → borrar el sitio.
+1. [x] Borrar `public/_redirects` (ya no hará falta) y actualizar la sección *Deployment* de `CLAUDE.md`.
+2. [x] En Netlify: Site settings → borrar el sitio.
 3. Si la nube ya está desplegada: en Supabase → Authentication → URL Configuration, cambiar las
    *Redirect URLs* de Netlify por `https://stenbrary.pages.dev/**` (ver `docs/DESPLIEGUE-NUBE.md`).
 
