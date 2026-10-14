@@ -370,6 +370,11 @@ Sin PIN configurado, intentar activar: advertencia.
 - [✅] Long-press 3s en scanner → diálogo PIN
 - [✅] PIN incorrecto: rechaza, vibración o animación
 - [✅] PIN correcto: desactiva quiosco, shell vuelve normal
+- [🤖✅] v3.52.0: 5 PIN incorrectos bloquean 5 min; recargar no lo reinicia (E2E)
+- [🤖✅] v3.52.0: con PIN correcto, "Descargar respaldo" sin salir del quiosco (E2E)
+- [ ] v3.52.0: en el equipo real, el respaldo descargado se copia a USB y se importa en la oficina con Combinar
+- [🤖✅] v3.52.0: la salida y el respaldo aparecen en Configuración → Bitácora con el nombre del equipo (E2E)
+- [🤖✅] v3.52.0: la bitácora viaja en el respaldo, no se duplica al combinar dos veces y sobrevive a "borrar todo" (unitarios)
 
 ### 10.3 Casos
 - [✅] En quiosco + refresh: sigue en quiosco
@@ -687,7 +692,7 @@ Por feedback "Flexibilidad del sistema" (memory): validar que TODOS los ajustes 
 - [ ] Item activo resaltado
 
 ### 22.2 Móvil (<768px)
-- [ ] Sidebar en drawer (overlay)
+- [👤✅] Sidebar en drawer (overlay) — fluido en Galaxy A06 tras v3.51.0 (2026-10-14)
 - [🤖✅] Bottom nav visible
 - [🤖✅] Bottom nav tiene Scanner + 3–4 más
 - [ ] "Registros" se swapea por "Biblioteca" si `registroSalidaActivo`

@@ -13,12 +13,14 @@ import { Router } from '@angular/router';
 import { ConfigService } from './config.service';
 import { ToastService } from './toast.service';
 import { debeVolverAQuiosco } from '../utils/quiosco.utils';
+import { BitacoraService } from './bitacora.service';
 
 const EVENTOS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
 const REVISION_MS = 15_000;
 
 @Injectable({ providedIn: 'root' })
 export class QuioscoAutoService {
+  private readonly bitacora = inject(BitacoraService);
   private readonly config = inject(ConfigService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -53,6 +55,8 @@ export class QuioscoAutoService {
     this.zone.run(() => {
       // El effect de AppComponent lleva al escáner al encenderse el quiosco.
       this.config.setModoQuiosco(true);
+      // Quedó abierto sin nadie: vale la pena que el coordinador lo sepa.
+      this.bitacora.registrar('quiosco-auto', `Tras ${this.config.quioscoAutoMinutos} min sin uso`);
       this.toast.info('Modo quiosco reactivado por inactividad');
     });
   }

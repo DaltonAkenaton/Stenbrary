@@ -260,3 +260,24 @@ deshacer. Para borrar muchos a la vez: Configuración → Datos → limpieza por
 En Registros, tocar una fila abre el detalle de la visita; el bloque con el
 nombre del alumno lleva a su perfil. Los invitados no tienen perfil, así que en
 ellos no es un enlace. El detalle lista todas las actividades de la visita.
+
+## PIN del quiosco y respaldo del día (v3.52.0)
+Tras **5 PIN incorrectos** el diálogo se bloquea **5 minutos** (aunque se
+recargue la página) y cada intento queda en la Bitácora. Con el PIN correcto
+hay dos opciones: **Descargar respaldo** (el equipo sigue en modo quiosco: es la
+rutina diaria para llevar los datos a la oficina) o **Salir del modo quiosco**.
+
+## Bitácora (v3.52.0)
+Configuración → Bitácora. Anota **qué** se hizo, **cuándo** y **en qué
+equipo**: salidas del modo quiosco, PIN incorrectos y bloqueos, cambio de PIN,
+visitas editadas o borradas, limpiezas por fechas, alumnos editados,
+desactivados o borrados, actividades borradas, respaldos descargados o
+importados y "borrar todo". No dice **quién** (no hay cuentas en modo local).
+- **Nombre del equipo:** en la misma pantalla. Ponerle "Puerta" o "Oficina" a
+  cada computadora; sale en cada evento.
+- **Viaja en el respaldo:** al importar el respaldo de la puerta en la oficina,
+  su bitácora se suma; con el filtro por equipo se ve solo lo de la puerta.
+- **No se puede borrar** desde el sistema, ni siquiera con "borrar todo".
+  Guarda los últimos 5000 eventos.
+- Lo que no anota: los registros normales del escáner (eso ya está en
+  Registros) ni el "Deshacer" justo después de escanear.

@@ -26,6 +26,7 @@ import { LoadingService } from './loading.service';
 import { PwaUpdateService } from './pwa-update.service';
 import { AuthService } from '../auth/auth.service';
 import { PermissionsService } from '../auth/permissions.service';
+import { BitacoraService } from './bitacora.service';
 
 export type CommandGrupo = 'Navegación' | 'Configuración' | 'Acciones';
 export type CommandTipo = 'navegacion' | 'toggle' | 'accion';
@@ -51,6 +52,7 @@ export interface Command {
 @Injectable({ providedIn: 'root' })
 export class CommandPaletteService {
 
+  private readonly bitacora = inject(BitacoraService);
   private router = inject(Router);
   private configService = inject(ConfigService);
   private soundService = inject(SoundService);
@@ -118,6 +120,7 @@ export class CommandPaletteService {
       nav('nav-config-operacion',   'Configuración → Operación',   'meeting_room',      '/configuracion#operacion',   ['operacion', 'salida', 'aforo', 'duplicados']),
       nav('nav-config-quiosco',     'Configuración → Quiosco',     'tablet_android',    '/configuracion#quiosco',     ['quiosco', 'kiosk', 'horario', 'pin']),
       nav('nav-config-experiencia', 'Configuración → Experiencia', 'celebration',       '/configuracion#experiencia', ['experiencia', 'celebracion', 'animacion', 'inactividad']),
+      nav('nav-config-bitacora',    'Configuración → Bitácora',           'history',    '/configuracion#bitacora',    ['bitacora', 'historial', 'auditoria', 'seguridad', 'equipo']),
       nav('nav-config-calendario',  'Configuración → Calendario escolar', 'event',      '/configuracion#calendario',  ['calendario', 'periodo', 'semestre', 'festivo', 'inhabil', 'vacaciones']),
       nav('nav-config-datos',       'Configuración → Datos',       'storage',           '/configuracion#datos',       ['datos', 'respaldo', 'backup', 'restore', 'limpieza']),
       nav('nav-config-avanzado',    'Configuración → Avanzado',    'warning',           '/configuracion#avanzado',    ['avanzado', 'peligro', 'eliminar']),
@@ -142,6 +145,7 @@ export class CommandPaletteService {
         ejecutar: () => {
           const nuevo = !this.configService.modoQuiosco;
           this.configService.setModoQuiosco(nuevo);
+          if (nuevo) this.bitacora.registrar('quiosco-activar', 'Desde la paleta de comandos');
           this.toastService.info(
             nuevo
               ? 'Modo quiosco activado — pulsación larga + PIN para salir'

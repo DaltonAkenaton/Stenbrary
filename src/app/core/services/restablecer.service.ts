@@ -22,6 +22,7 @@ import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
 import { DiagnosticoService } from './diagnostico.service';
 import { BackupService } from './backup.service';
+import { BitacoraService } from './bitacora.service';
 
 /** Frase que hay que escribir. En mayúsculas y sin ambigüedad. */
 export const FRASE_CONFIRMACION = 'BORRAR TODO';
@@ -52,6 +53,7 @@ export interface ResultadoRestablecer {
 
 @Injectable({ providedIn: 'root' })
 export class RestablecerService {
+  private readonly bitacora = inject(BitacoraService);
   private readonly db = inject(DatabaseService);
   private readonly config = inject(ConfigService);
   private readonly diagnostico = inject(DiagnosticoService);
@@ -94,6 +96,10 @@ export class RestablecerService {
     const conteo = await this.db.obtenerConteoTotal();
 
     await this.db.limpiarTodosDatos();
+    this.bitacora.registrar(
+      'datos-borrados',
+      `Restablecer de fábrica: ${conteo.alumnos ?? 0} alumnos, ${conteo.registros ?? 0} visitas`,
+    );
 
     for (const clave of CLAVES_A_BORRAR) {
       try {

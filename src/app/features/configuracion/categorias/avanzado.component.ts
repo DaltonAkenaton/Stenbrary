@@ -25,6 +25,7 @@ import { RemoteDatabaseService } from '../../../core/services/remote-database.se
 import { SubirSupabaseDialogComponent } from '../dialogs/subir-supabase-dialog.component';
 import { hayCredencialesNube, isNubeActiva, setNubeActiva } from '../../../core/auth/supabase.client';
 import { environment } from '../../../../environments/environment';
+import { BitacoraService } from '../../../core/services/bitacora.service';
 
 @Component({
   selector: 'app-config-avanzado',
@@ -48,6 +49,7 @@ export class AvanzadoCategoriaComponent {
 
   // Sesión / Supabase — la sección "Subir a la nube" solo aparece si hay
   // sesión activa Y el backend está configurado.
+  private readonly bitacora = inject(BitacoraService);
   protected readonly auth = inject(AuthService);
   private readonly remote = inject(RemoteDatabaseService);
   readonly backendDisponible = this.remote.isAvailable();
@@ -211,6 +213,7 @@ export class AvanzadoCategoriaComponent {
       this.cdr.markForCheck();
       this.loadingService.show('Eliminando todos los datos...');
       await this.databaseService.limpiarTodosDatos();
+      this.bitacora.registrar('datos-borrados', 'Alumnos, visitas y actividades');
       this.loadingService.hide();
       this.toastService.success('Todos los datos han sido eliminados');
     } catch {

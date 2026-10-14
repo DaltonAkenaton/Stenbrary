@@ -9,6 +9,39 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-14 — Seguridad local para dos equipos (v3.52.0)
+
+Última vuelta antes de la visita al coordinador, con el modelo de dos equipos
+(puerta en quiosco 24/7 + PC de la oficina). Al revisarlo aparecieron dos huecos
+reales:
+
+- **El PIN no tenía límite de intentos.** 4 dígitos, intentos infinitos frente
+  a la puerta. Ahora 5 fallos → 5 min de bloqueo, persistido en localStorage
+  (`stenbrary-pin-intentos`: recargar no lo reinicia). Funciones puras en
+  `quiosco.utils.ts`; si el reloj se atrasa, el fin del bloqueo se recorta a un
+  bloqueo completo (`normalizarIntentosPin`) para no quedar trabado.
+- **El respaldo diario obligaba a salir del quiosco.** Con el PIN correcto el
+  diálogo ofrece ahora "Descargar respaldo" (sigue en quiosco) o "Salir".
+
+Y la **bitácora local** (qué, cuándo, en qué equipo; el "quién" llega con las
+cuentas de la Fase 2). Decisiones:
+
+- Store propio, `DB_VERSION` 3. Solo agregar y leer; `limpiarTodosDatos()` no
+  la toca y el import la combina también en `replace`: tiene que sobrevivir a
+  un "borrar todo" para que se note. Tope 5000 eventos.
+- Viaja en el respaldo (`bitacora?`, opcional) con `meta.equipo`: la oficina ve
+  lo que pasó en la puerta. `nombreEquipo` nuevo en `ConfigService`.
+- Se anota en el punto de la acción (componentes, `BackupService`,
+  `QuioscoAutoService`), no dentro de `DatabaseService.eliminarRegistro`: el
+  "Deshacer" del escáner y el generador de datos de prueba también borran y no
+  deben ensuciarla. Costo: una acción nueva hay que anotarla a mano (lo dice
+  CLAUDE.md).
+- `registrar()` nunca lanza. El PIN nunca se escribe en el detalle.
+- Límite honesto: quien sepa abrir las herramientas del navegador puede borrar
+  los datos del sitio, pero eso borra todo y se nota.
+
+La E2E encontró un "Te quedan 1 intento". 287 unitarios, 37 E2E.
+
 ## 2026-10-14 — Del registro al alumno; lag del drawer (v3.51.0)
 
 Pruebas del usuario con hardware: Excel, constancia PDF con ñ/acentos y app en

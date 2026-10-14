@@ -78,7 +78,7 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **279 specs unitarios en verde**, en 14 archivos —
+Suite activa: **287 specs unitarios en verde**, en 14 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `database.service`,
@@ -94,8 +94,8 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**35 tests E2E** con
-Playwright (18 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 9 en `cuadre.spec.ts` — este
+**37 tests E2E** con
+Playwright (20 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 9 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
@@ -207,11 +207,12 @@ El "estado de sesión" entre scanner y selección de motivo se pasa exclusivamen
 
 ### Base de datos (IndexedDB via `idb`)
 
-`DatabaseService` (`core/services/database.service.ts`) es el único punto de acceso. `DB_NAME = 'stenbrary-db'`, `DB_VERSION = 2` (v2, Fase 2.2: índice `by-sync-status` en los tres stores). Tres stores:
+`DatabaseService` (`core/services/database.service.ts`) es el único punto de acceso. `DB_NAME = 'stenbrary-db'`, `DB_VERSION = 3` (v2, Fase 2.2: índice `by-sync-status` en los tres stores de datos; v3, v3.52.0: store `bitacora`). Cuatro stores:
 
 - `alumnos` (keyPath `id`) — índices: `by-matricula` (unique), `by-carrera`
 - `registros` (keyPath `id`) — índices: `by-fecha` (fechaHora), `by-alumno` (alumnoId), `by-matricula`
 - `motivos` (keyPath `id`) — índice: `by-orden`
+- `bitacora` (keyPath `id`) — índice: `by-fecha` (`fechaHora`, string ISO). **Solo se agrega y se lee**: `limpiarTodosDatos()` no la borra a propósito (tiene que sobrevivir a un "borrar todo" para que se note), viaja en el respaldo y se combina también en modo `replace`. Tope de 5000 eventos (`recortarBitacora`).
 
 Cambiar el esquema requiere incrementar `DB_VERSION` y ampliar el `upgrade()` en `openDB`. Al inicializar sin datos, `crearMotivosDefault()` inserta 5 motivos: Estudiar, Pedir libro, Trabajo escolar, Investigación, Otro.
 
@@ -239,12 +240,13 @@ Métodos clave adicionales:
 Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los principales; algunos (`ConfigService`, `AforoService`, `SoundService`, `ChangelogService`, `PwaUpdateService`) se importan por ruta.
 
 - `DatabaseService` — ver sección anterior.
-- `ConfigService` — persiste en `localStorage` bajo `stenbrary-config`. Claves: `registroSalidaActivo`, `horasAutoSalida` (0 = off), `nombreInstitucion`, `umbralDuplicadoMin` (default 30), `aforoMaximo` (0 = off), `aforoModo` (`'permitir' | 'confirmar' | 'bloquear'`), `modoQuiosco` + `quioscoPin` (v3.9.0) + `quioscoAutoMinutos` (v3.49.0: minutos sin uso para reactivar el quiosco solo, 0 = off; lo vigila `QuioscoAutoService`), `horarioActivo` + `horarios` (por día, 0=domingo … 6=sábado) + `horarioModo` (`'advertir' | 'bloquear'`, v3.9.0), `celebracionActiva` + `celebracionProbabilidad` (0–1, v3.9.0), `mostrarBotonCamara` (v3.45.0, default true: el lector físico es el camino principal y la cámara un respaldo ocultable), `calendarioEscolar` (periodos + días inhábiles, v3.43.0; funciones puras en `core/utils/calendario.utils.ts`, precarga UAT 2026, signal `calendarioSignal`). Getter derivado: `aforoActivo = aforoMaximo > 0 && registroSalidaActivo`. Signals: `hayAutoClose` (cierres pendientes) y `modoQuioscoSignal` (reactivo para `AppComponent`).
+- `ConfigService` — persiste en `localStorage` bajo `stenbrary-config`. Claves: `registroSalidaActivo`, `horasAutoSalida` (0 = off), `nombreInstitucion`, `nombreEquipo` (v3.52.0: "Puerta", "Oficina"; va en cada evento de la bitácora y en `meta.equipo` del respaldo), `umbralDuplicadoMin` (default 30), `aforoMaximo` (0 = off), `aforoModo` (`'permitir' | 'confirmar' | 'bloquear'`), `modoQuiosco` + `quioscoPin` (v3.9.0) + `quioscoAutoMinutos` (v3.49.0: minutos sin uso para reactivar el quiosco solo, 0 = off; lo vigila `QuioscoAutoService`), `horarioActivo` + `horarios` (por día, 0=domingo … 6=sábado) + `horarioModo` (`'advertir' | 'bloquear'`, v3.9.0), `celebracionActiva` + `celebracionProbabilidad` (0–1, v3.9.0), `mostrarBotonCamara` (v3.45.0, default true: el lector físico es el camino principal y la cámara un respaldo ocultable), `calendarioEscolar` (periodos + días inhábiles, v3.43.0; funciones puras en `core/utils/calendario.utils.ts`, precarga UAT 2026, signal `calendarioSignal`). Getter derivado: `aforoActivo = aforoMaximo > 0 && registroSalidaActivo`. Signals: `hayAutoClose` (cierres pendientes) y `modoQuioscoSignal` (reactivo para `AppComponent`).
 - `AforoService` — usa `signal`/`computed` sobre la ocupación actual. Estados: `inactivo`, `libre` (<50%), `normal` (50–79%), `alto` (80–99%), `lleno` (100%), `sobreaforo` (>100%). `refrescar()` relee de la BD; `setOcupacion()` para evitar doble lectura cuando ya tenemos el conteo (p.ej. en `/presencia`).
 - `ChangelogService` — compara `versionActual().version` con `stenbrary-changelog-vista` (localStorage). Signal `hayNovedades` alimenta el badge del sidebar. En primera instalación NO muestra badge (marca la versión como vista).
 - `SoundService` — beeps vía Web Audio API (sin archivos). Flag en `stenbrary-sonido-activo`. Métodos: `beepScan`, `beepSalida`, `beepError`.
 - `ToastService`, `LoadingService` — UI transversal (componentes en `shared/`).
-- `BackupService` — export/import JSON completo. Los motivos se emparejan **por nombre** con los locales y los `motivoIds` de los registros se traducen a los ids locales (`remapearMotivos`, v3.50.0): cada instalación crea sus motivos default con ids propios, y sin el mapa un respaldo de otro equipo dejaba registros apuntando a motivos inexistentes (estadísticas partidas, editor roto). En modo `replace` se restaura el catálogo del respaldo con sus ids. Combinar el mismo respaldo dos veces no duplica nada (`put` por id).
+- `BackupService` — export/import JSON completo. Los motivos se emparejan **por nombre** con los locales y los `motivoIds` de los registros se traducen a los ids locales (`remapearMotivos`, v3.50.0): cada instalación crea sus motivos default con ids propios, y sin el mapa un respaldo de otro equipo dejaba registros apuntando a motivos inexistentes (estadísticas partidas, editor roto). En modo `replace` se restaura el catálogo del respaldo con sus ids. Combinar el mismo respaldo dos veces no duplica nada (`put` por id). Desde v3.52.0 incluye `bitacora?` (opcional: los respaldos viejos se importan igual).
+- `BitacoraService` (v3.52.0) — `registrar(accion, detalle)` anota qué, cuándo y en qué equipo; **nunca lanza** (la bitácora no puede romper la acción que anota). Se llama en el punto de la acción, no dentro de `DatabaseService`: el "Deshacer" del escáner y el generador de datos de prueba también borran registros y no deben ensuciarla. Al agregar una acción administrativa nueva que mute datos, anotarla aquí (tipo `AccionBitacora` en `core/models/bitacora.model.ts`, etiqueta en `ACCIONES_BITACORA`). Nunca escribir el PIN en el detalle. En la Fase 2 el modelo gana `usuarioId`.
 - `ExportService`, `ReportService` — PDF (`jspdf`/`jspdf-autotable`) y Excel (`xlsx`).
 - `EstadisticasAvanzadasService` — tendencias, heatmap, top alumnos, insights, distribución por motivo/carrera.
 - `PwaUpdateService` — `AppComponent.ngOnInit` llama `iniciar()`: revisión por **reloj** (`timer`, 60 s y luego cada 15 min), nunca por `appRef.isStable` (con intervalos vivos la app no se estabiliza y la revisión no arrancaba; v3.46.0). El aviso lo pinta `AppComponent` con `SwUpdate.versionUpdates`. `stenbrary-sw-revision-ms` en localStorage acorta el intervalo solo para pruebas.
@@ -349,7 +351,7 @@ Sidebar (64px colapsado / 220px expandido) + topbar + bottom nav (≤768px). Sec
 
 `bottomNavItems` swapea "Registros" por "Biblioteca" cuando el módulo de salida está activo. El sidebar se auto-cierra en móvil al navegar (suscripción a `NavigationEnd`, `window.innerWidth < 768`).
 
-En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la clase `kiosk-mode` que oculta sidebar, topbar y bottom nav; además `AppComponent` intercepta `NavigationEnd` y redirige a `/scanner` cualquier ruta que no sea parte del flujo operativo (`/scanner`, `/seleccion-motivo`, `/registro-alumno`). Se sale con pulsación larga (3 s) en el scanner + PIN configurado en `ConfigService`.
+En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la clase `kiosk-mode` que oculta sidebar, topbar y bottom nav; además `AppComponent` intercepta `NavigationEnd` y redirige a `/scanner` cualquier ruta que no sea parte del flujo operativo (`/scanner`, `/seleccion-motivo`, `/registro-alumno`). Se sale con pulsación larga (3 s) o 5 toques en el scanner + PIN configurado en `ConfigService`. Desde v3.52.0 el PIN se bloquea 5 min tras 5 fallos (`stenbrary-pin-intentos` en localStorage, funciones puras en `quiosco.utils.ts`) y, con el PIN correcto, el diálogo ofrece "Descargar respaldo" sin salir del quiosco además de "Salir".
 
 ### Horarios de operación (`core/utils/horarios.utils.ts`)
 
@@ -382,7 +384,7 @@ En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la cl
 - No romper la retrocompatibilidad de `Registro`: `motivoId`/`motivoNombre` siguen siendo el "principal"; `motivoIds`/`motivoNombres` son opcionales.
 - No acceder a `/seleccion-motivo` sin pasar antes por scanner/registro — el guard depende de `sessionStorage.alumnoActual`.
 - El `detalle-alumno` se enruta por `:matricula`, no por `:id`.
-- No incrementar `DB_VERSION` (hoy 2) sin definir la migración en el `upgrade()` de `openDB`.
+- No incrementar `DB_VERSION` (hoy 3) sin definir la migración en el `upgrade()` de `openDB`.
 - Al tocar el scanner: respetar `isDetecting` y `enCooldown` (previenen detecciones concurrentes/dobles) y el throttle de `effectiveScanInterval`.
 - No eliminar estrategias de `PREPROCESS_STRATEGIES` / `LOWRES_EXTRA_STRATEGIES` sin datos — el orden refleja probabilidad real de éxito y la priorización adaptativa se apoya en los `label`.
 - Al agregar un método que muta `registros`, llamar `AforoService.refrescar()` si el cambio puede alterar la ocupación.

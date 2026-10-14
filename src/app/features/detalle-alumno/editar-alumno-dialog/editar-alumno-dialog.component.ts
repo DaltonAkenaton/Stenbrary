@@ -9,7 +9,7 @@
 // ║  - Responsive: min-width removido en mobile          ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -23,6 +23,7 @@ import { DatabaseService } from '../../../core/services/database.service';
 import { Alumno } from '../../../core/models';
 import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalogos.constants';
 import { logError } from '../../../core/utils/logger';
+import { BitacoraService, describirAlumno } from '../../../core/services/bitacora.service';
 
 @Component({
   selector: 'app-editar-alumno-dialog',
@@ -230,6 +231,8 @@ export class EditarAlumnoDialogComponent implements OnInit {
   grupos = GRUPOS;
   turnos = TURNOS;
 
+  private readonly bitacora = inject(BitacoraService);
+
   constructor(
     private fb: FormBuilder,
     private databaseService: DatabaseService,
@@ -274,6 +277,7 @@ export class EditarAlumnoDialogComponent implements OnInit {
       };
 
       await this.databaseService.actualizarAlumno(this.data.alumno.id!, alumnoActualizado);
+      this.bitacora.registrar('alumno-editado', describirAlumno(alumnoActualizado));
 
       this.dialogRef.close(true);
     } catch (error: any) {

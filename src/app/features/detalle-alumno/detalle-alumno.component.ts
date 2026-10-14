@@ -8,7 +8,7 @@
 // ║  - Código limpio sin residuos de merge                ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfigService } from '../../core/services/config.service';
@@ -33,6 +33,7 @@ import { diasCalendarioEntre, formatearDuracion } from '../../core/utils/tiempo.
 import { contarMotivos, resumirEstancia } from '../../core/utils/estadisticas.utils';
 import { Motivo } from '../../core/models';
 import { logError } from '../../core/utils/logger';
+import { BitacoraService, describirAlumno, describirRegistro } from '../../core/services/bitacora.service';
 
 /**
  * Registro extendido con la fecha ya formateada — evita que
@@ -97,6 +98,8 @@ export class DetalleAlumnoComponent implements OnInit {
   tooltipPromedioSemanalStr = '';
 
   columnasRegistros: string[] = ['fechaHora', 'motivo', 'acciones'];
+
+  private readonly bitacora = inject(BitacoraService);
 
   constructor(
     private route: ActivatedRoute,
@@ -358,6 +361,7 @@ export class DetalleAlumnoComponent implements OnInit {
         ...this.alumno,
         activo: false,
       });
+      this.bitacora.registrar('alumno-desactivado', describirAlumno(this.alumno));
 
       this.loadingService.hide();
       this.toastService.success('Alumno desactivado exitosamente');
@@ -393,6 +397,7 @@ export class DetalleAlumnoComponent implements OnInit {
         ...this.alumno,
         activo: true,
       });
+      this.bitacora.registrar('alumno-reactivado', describirAlumno(this.alumno));
 
       this.loadingService.hide();
       this.toastService.success('Alumno reactivado exitosamente');
@@ -424,6 +429,7 @@ export class DetalleAlumnoComponent implements OnInit {
     try {
       this.loadingService.show('Eliminando alumno...');
       await this.databaseService.eliminarAlumno(this.alumno.id!);
+      this.bitacora.registrar('alumno-eliminado', `${describirAlumno(this.alumno)} y sus ${this.registros.length} visitas`);
       this.loadingService.hide();
       this.toastService.success('Alumno eliminado permanentemente');
       this.router.navigate(['/alumnos']);
@@ -458,6 +464,7 @@ export class DetalleAlumnoComponent implements OnInit {
     try {
       this.loadingService.show('Guardando cambios...');
       await this.databaseService.actualizarRegistroManual(registro.id, resultado);
+      this.bitacora.registrar('registro-editado', describirRegistro(registro));
       this.loadingService.hide();
       this.toastService.success('Registro actualizado');
       if (this.alumno) await this.cargarDatosAlumno(this.alumno.matricula);

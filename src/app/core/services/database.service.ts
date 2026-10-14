@@ -23,7 +23,7 @@ import { Injectable, signal } from '@angular/core';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { v4 as uuidv4 } from 'uuid';
 import { calcularInactividad, duracionReal } from '../utils/estadisticas.utils';
-import { Alumno, Registro, Motivo } from '../models';
+import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { log, logError } from '../utils/logger';
 import { invariante } from '../utils/invariante.utils';
 
@@ -58,6 +58,15 @@ interface StenbraryDB extends DBSchema {
       'by-sync-status': string;
     };
   };
+  // v3 (v3.52.0): bitácora local. Sin by-sync-status: en la Fase 2 se sube
+  // tal cual a una tabla de auditoría, no pasa por la bandeja supervisada.
+  bitacora: {
+    key: string;
+    value: EventoBitacora;
+    indexes: {
+      'by-fecha': string;
+    };
+  };
 }
 
 @Injectable({
@@ -67,7 +76,8 @@ export class DatabaseService {
   private db: IDBPDatabase<StenbraryDB> | null = null;
   private readonly DB_NAME = 'stenbrary-db';
   // v2 (Fase 2.2): índice by-sync-status en alumnos, registros, motivos.
-  private readonly DB_VERSION = 2;
+  // v3 (v3.52.0): store `bitacora`.
+  private readonly DB_VERSION = 3;
   private initializationPromise: Promise<void> | null = null;
 
   // Signal de error de BD: si openDB falla irrecoverablemente, este signal
@@ -146,6 +156,12 @@ export class DatabaseService {
             if (!motivosStore.indexNames.contains('by-sync-status')) {
               motivosStore.createIndex('by-sync-status', '_syncStatus');
             }
+          }
+
+          // ── v3 (v3.52.0): bitácora local ──────────────────────
+          if (!db.objectStoreNames.contains('bitacora')) {
+            const bitacoraStore = db.createObjectStore('bitacora', { keyPath: 'id' });
+            bitacoraStore.createIndex('by-fecha', 'fechaHora');
           }
         },
       });
@@ -585,6 +601,11 @@ export class DatabaseService {
 
   // ==================== UTILIDADES ====================
 
+  /**
+   * Borra alumnos, registros y motivos. La bitácora NO se borra a propósito:
+   * es justo lo que tiene que sobrevivir a un "borrar todo" para que el
+   * coordinador vea que ocurrió.
+   */
   async limpiarTodosDatos(): Promise<void> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
@@ -598,6 +619,53 @@ export class DatabaseService {
     await this.crearMotivosDefault();
 
     log('✅ Todos los datos han sido limpiados');
+  }
+
+  // ==================== BITÁCORA (v3.52.0) ====================
+  // Solo agregar y leer: no hay método para borrar eventos sueltos.
+
+  /** Tope de eventos guardados; al pasarlo se descartan los más viejos. */
+  private static readonly BITACORA_MAX = 5000;
+
+  async agregarEventoBitacora(evento: EventoBitacora): Promise<void> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    await this.db.put('bitacora', evento);
+    await this.recortarBitacora();
+  }
+
+  /** Eventos del más reciente al más viejo. */
+  async obtenerBitacora(): Promise<EventoBitacora[]> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    const eventos = await this.db.getAllFromIndex('bitacora', 'by-fecha');
+    return eventos.reverse();
+  }
+
+  /** Para el respaldo: `put` por id, así que combinar dos veces no duplica. */
+  async restaurarEventoBitacora(evento: EventoBitacora): Promise<void> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    if (!evento?.id || !evento.fechaHora || !evento.accion) {
+      throw new Error('Evento de bitácora incompleto');
+    }
+    await this.db.put('bitacora', evento);
+  }
+
+  async recortarBitacora(max = DatabaseService.BITACORA_MAX): Promise<void> {
+    await this.inicializar();
+    if (!this.db) return;
+    const total = await this.db.count('bitacora');
+    if (total <= max) return;
+    const tx = this.db.transaction('bitacora', 'readwrite');
+    let cursor = await tx.store.index('by-fecha').openCursor();
+    let sobran = total - max;
+    while (cursor && sobran > 0) {
+      await cursor.delete();
+      sobran--;
+      cursor = await cursor.continue();
+    }
+    await tx.done;
   }
 
   async obtenerConteoTotal(): Promise<{

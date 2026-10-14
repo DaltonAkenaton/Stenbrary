@@ -12,7 +12,8 @@
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
-import { Alumno, Registro, Motivo } from '../models';
+import { BitacoraService } from './bitacora.service';
+import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 
 export interface BackupData {
@@ -23,10 +24,14 @@ export interface BackupData {
     totalAlumnos: number;
     totalRegistros: number;
     totalMotivos: number;
+    /** Equipo que generó el respaldo (v3.52.0). Opcional: los viejos no lo traen. */
+    equipo?: string;
   };
   alumnos: Alumno[];
   registros: Registro[];
   motivos: Motivo[];
+  /** Bitácora del equipo (v3.52.0). Opcional por retrocompatibilidad. */
+  bitacora?: EventoBitacora[];
 }
 
 export interface ValidacionBackup {
@@ -42,6 +47,7 @@ export interface ResultadoImportacion {
   motivosImportados: number;
   alumnosOmitidos: number;
   motivosOmitidos: number;
+  eventosBitacora: number;
   errores: string[];
 }
 
@@ -53,6 +59,7 @@ export class BackupService {
   constructor(
     private databaseService: DatabaseService,
     private configService: ConfigService,
+    private bitacora: BitacoraService,
   ) {}
 
   // ═══════════════════════════════════════════════
@@ -60,10 +67,11 @@ export class BackupService {
   // ═══════════════════════════════════════════════
 
   async exportarBackup(): Promise<BackupData> {
-    const [alumnos, registros, motivos] = await Promise.all([
+    const [alumnos, registros, motivos, bitacora] = await Promise.all([
       this.databaseService.obtenerTodosLosAlumnos(),
       this.databaseService.obtenerTodosLosRegistros(),
       this.databaseService.obtenerTodosLosMotivos(),
+      this.databaseService.obtenerBitacora(),
     ]);
 
     return {
@@ -74,10 +82,12 @@ export class BackupService {
         totalAlumnos: alumnos.length,
         totalRegistros: registros.length,
         totalMotivos: motivos.length,
+        equipo: this.configService.nombreEquipo || undefined,
       },
       alumnos,
       registros,
       motivos,
+      bitacora,
     };
   }
 
@@ -105,6 +115,10 @@ export class BackupService {
       // Se hace después de disparar la descarga para no marcar como "hecho"
       // si la construcción del blob falló.
       this.configService.registrarRespaldoHecho();
+      this.bitacora.registrar(
+        'respaldo-exportado',
+        `${nombreArchivo} — ${backup.meta.totalAlumnos} alumnos, ${backup.meta.totalRegistros} visitas`,
+      );
       return { exito: true, nombreArchivo };
     } catch (error) {
       console.error('❌ Error al exportar backup:', error);
@@ -135,6 +149,9 @@ export class BackupService {
     if (!Array.isArray(datos.alumnos)) errores.push('Falta el array "alumnos"');
     if (!Array.isArray(datos.registros)) errores.push('Falta el array "registros"');
     if (!Array.isArray(datos.motivos)) errores.push('Falta el array "motivos"');
+    if (datos.bitacora !== undefined && !Array.isArray(datos.bitacora)) {
+      errores.push('El campo "bitacora" no es una lista');
+    }
 
     if (errores.length > 0) return { valido: false, errores };
 
@@ -165,6 +182,7 @@ export class BackupService {
       motivosImportados: 0,
       alumnosOmitidos: 0,
       motivosOmitidos: 0,
+      eventosBitacora: 0,
       errores: [],
     };
 
@@ -259,7 +277,26 @@ export class BackupService {
         }
       }
 
+      // ── Bitácora (v3.52.0) ──
+      // Se combina siempre, también en 'replace': la bitácora no se borra
+      // nunca, y la del equipo de origen es lo que la oficina quiere ver.
+      for (const evento of datos.bitacora ?? []) {
+        try {
+          await this.databaseService.restaurarEventoBitacora(evento);
+          resultado.eventosBitacora++;
+        } catch {
+          // Un evento incompleto no invalida el respaldo: se omite.
+        }
+      }
+
       resultado.exitoso = true;
+      const origen = datos.meta?.equipo ? ` de "${datos.meta.equipo}"` : '';
+      this.bitacora.registrar(
+        'respaldo-importado',
+        `Respaldo${origen} del ${fechaRespaldo(datos.meta?.fecha)} ` +
+        `(${modo === 'replace' ? 'reemplazar' : 'combinar'}): ` +
+        `${resultado.alumnosImportados} alumnos, ${resultado.registrosImportados} visitas`,
+      );
       console.log('✅ Importación completada:', resultado);
       return resultado;
     } catch (error: any) {
@@ -342,6 +379,14 @@ export class BackupService {
 
     return duplicados;
   }
+}
+
+function fechaRespaldo(iso: string | undefined): string {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return '?';
+  return d.toLocaleString('es-MX', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  });
 }
 
 function normalizarNombre(nombre: string): string {

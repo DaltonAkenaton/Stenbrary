@@ -73,7 +73,7 @@ import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { InvitadoNombreDialogComponent } from './invitado-nombre-dialog/invitado-nombre-dialog.component';
-import { QuioscoPinDialogComponent } from './quiosco-pin-dialog/quiosco-pin-dialog.component';
+import { QuioscoPinDialogComponent, SalidaPinQuiosco } from './quiosco-pin-dialog/quiosco-pin-dialog.component';
 import {
   SalidaVisitanteDialogComponent,
   SalidaVisitanteResultado,
@@ -1976,12 +1976,14 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   private abrirDialogSalidaQuiosco(): void {
-    const ref = this.dialog.open<QuioscoPinDialogComponent, unknown, boolean>(
+    // El diálogo también descarga el respaldo sin salir del quiosco (v3.52.0);
+    // aquí solo llega 'salir'.
+    const ref = this.dialog.open<QuioscoPinDialogComponent, unknown, SalidaPinQuiosco>(
       QuioscoPinDialogComponent,
-      { width: '340px', disableClose: false }
+      { width: '360px', maxWidth: 'calc(100vw - 32px)', disableClose: false }
     );
-    ref.afterClosed().subscribe((ok) => {
-      if (ok) {
+    ref.afterClosed().subscribe((salida) => {
+      if (salida === 'salir') {
         this.configService.setModoQuiosco(false);
         this.toastService.success('Modo quiosco desactivado');
       }

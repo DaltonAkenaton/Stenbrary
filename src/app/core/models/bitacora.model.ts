@@ -1,0 +1,38 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  bitacora.model.ts                                   ║
+// ║  Stenbrary v3.52.0 — Bitácora local de acciones      ║
+// ║                                                      ║
+// ║  Qué se hizo, cuándo y en qué equipo. El "quién"     ║
+// ║  llega con las cuentas de la Fase 2: entonces este   ║
+// ║  modelo gana un `usuarioId` y nada más cambia.       ║
+// ╚══════════════════════════════════════════════════════╝
+
+export type AccionBitacora =
+  | 'quiosco-salir'
+  | 'quiosco-activar'
+  | 'quiosco-auto'
+  | 'pin-fallido'
+  | 'pin-bloqueado'
+  | 'pin-cambiado'
+  | 'registro-editado'
+  | 'registro-eliminado'
+  | 'registros-limpiados'
+  | 'alumno-editado'
+  | 'alumno-eliminado'
+  | 'alumno-desactivado'
+  | 'alumno-reactivado'
+  | 'motivo-eliminado'
+  | 'respaldo-exportado'
+  | 'respaldo-importado'
+  | 'datos-borrados';
+
+export interface EventoBitacora {
+  id: string;
+  /** ISO 8601 (UTC): ordena bien como texto y sobrevive al JSON del respaldo. */
+  fechaHora: string;
+  accion: AccionBitacora;
+  /** Texto legible: "Ana López (2200000001), visita del 05/10/2026 10:00". */
+  detalle: string;
+  /** Nombre del equipo que lo hizo ("Puerta", "Oficina"); vacío si no se configuró. */
+  equipo: string;
+}

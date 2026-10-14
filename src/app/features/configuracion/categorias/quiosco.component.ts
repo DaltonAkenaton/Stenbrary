@@ -12,7 +12,7 @@
 // ║  vistas frecuentes — eso expondría el PIN al alumno). ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,6 +20,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfigService, HorarioModo } from '../../../core/services/config.service';
 import { DIAS_SEMANA } from '../../../core/utils/horarios.utils';
+import { BitacoraService } from '../../../core/services/bitacora.service';
 
 @Component({
   selector: 'app-config-quiosco',
@@ -54,6 +55,8 @@ export class QuioscoCategoriaComponent {
   // Debounce de toast para inputs continuos (PIN, time inputs).
   private toastDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+  private readonly bitacora = inject(BitacoraService);
+
   constructor(
     public configService: ConfigService,
     private toastService: ToastService,
@@ -64,6 +67,7 @@ export class QuioscoCategoriaComponent {
   toggleModoQuiosco(): void {
     const nuevo = !this.configService.modoQuiosco;
     this.configService.setModoQuiosco(nuevo);
+    if (nuevo) this.bitacora.registrar('quiosco-activar', 'Desde Configuración');
     this.toastService.info(
       nuevo
         ? 'Modo quiosco activado — pulsación larga + PIN para salir'
@@ -79,6 +83,13 @@ export class QuioscoCategoriaComponent {
       'quiosco-pin',
       pin ? `PIN del modo quiosco: ${pin.length} dígito(s)` : 'PIN del modo quiosco eliminado',
     );
+    // Se anota al terminar de escribir, no por cada dígito. Nunca el PIN en sí.
+    const prev = this.toastDebounceTimers.get('bitacora-pin');
+    if (prev) clearTimeout(prev);
+    this.toastDebounceTimers.set('bitacora-pin', setTimeout(() => {
+      this.bitacora.registrar('pin-cambiado', pin ? `${pin.length} dígitos` : 'PIN eliminado');
+      this.toastDebounceTimers.delete('bitacora-pin');
+    }, 1500));
     this.cdr.markForCheck();
   }
 

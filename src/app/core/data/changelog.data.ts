@@ -49,6 +49,34 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.52.0',
+    fecha: '2026-10-14',
+    titulo: 'Seguridad local',
+    resumen: 'Pensado para trabajar con dos equipos: uno en la puerta en modo quiosco y otro en la oficina.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto: 'Nueva Bitácora (Configuración → Bitácora): anota cuándo alguien sale del modo quiosco, escribe mal el PIN, edita o borra visitas y alumnos, o descarga e importa respaldos.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'La bitácora viaja dentro del respaldo: al importarlo en la oficina, ves también lo que pasó en la puerta.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Ponle nombre a cada equipo ("Puerta", "Oficina") para saber en cuál pasó cada cosa.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El PIN del modo quiosco se bloquea 5 minutos tras 5 intentos incorrectos, aunque se recargue la página.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Con el PIN correcto ahora puedes descargar el respaldo del día sin salir del modo quiosco.',
+      },
+    ],
+  },
+  {
     version: '3.51.0',
     fecha: '2026-10-14',
     titulo: 'Del registro al alumno',

@@ -29,10 +29,12 @@ function resetIndexedDB() {
 
 /** ConfigService no participa en el round-trip; basta un doble inerte. */
 const configStub = {} as any;
+/** Lo que el servicio anota en la bitácora no es lo que se prueba aquí. */
+const bitacoraStub = { registrar: () => undefined } as any;
 
 function nuevoServicio(): { db: DatabaseService; backup: BackupService } {
   const db = new DatabaseService();
-  return { db, backup: new BackupService(db, configStub) };
+  return { db, backup: new BackupService(db, configStub, bitacoraStub) };
 }
 
 /** Simula el viaje real por disco: Date → string ISO y de vuelta. */
@@ -347,6 +349,48 @@ describe('BackupService — round-trip', () => {
       expect(motivos.length).toBe(5);
       expect(motivos.find(m => m.nombre === 'Estudiar')!.id).toBe(idOrigen);
       expect((await db.obtenerTodosLosRegistros())[0].motivoId).toBe(idOrigen);
+    });
+  });
+
+  describe('bitácora (v3.52.0)', () => {
+    const evento = {
+      id: 'ev-1', fechaHora: '2026-10-14T20:00:00.000Z',
+      accion: 'registro-eliminado' as const, detalle: 'Ana (2299990002)', equipo: 'Puerta',
+    };
+
+    it('viaja en el respaldo y combinar dos veces no la duplica', async () => {
+      await db.agregarEventoBitacora(evento);
+      const datos = porJSON(await backup.exportarBackup());
+      expect(datos.bitacora).toEqual([evento]);
+
+      resetIndexedDB();
+      ({ db, backup } = nuevoServicio());
+      await db.inicializar();
+      await backup.importarBackup(datos, 'merge');
+      await backup.importarBackup(datos, 'merge');
+      expect(await db.obtenerBitacora()).toEqual([evento]);
+    });
+
+    it('sobrevive a "reemplazar" y a borrar todos los datos', async () => {
+      await db.agregarEventoBitacora(evento);
+      await backup.importarBackup(porJSON(await backup.exportarBackup()), 'replace');
+      await db.limpiarTodosDatos();
+      expect(await db.obtenerBitacora()).toEqual([evento]);
+    });
+
+    it('un respaldo viejo sin bitácora se importa igual', async () => {
+      const datos = porJSON(await backup.exportarBackup());
+      delete datos.bitacora;
+      expect(backup.validarArchivo(JSON.stringify(datos)).valido).toBeTrue();
+      expect((await backup.importarBackup(datos, 'merge')).exitoso).toBeTrue();
+    });
+
+    it('al pasar el tope descarta los eventos más viejos', async () => {
+      for (let i = 0; i < 4; i++) {
+        await db.agregarEventoBitacora({ ...evento, id: `ev-${i}`, fechaHora: `2026-10-1${i}T10:00:00.000Z` });
+      }
+      await db.recortarBitacora(2);
+      expect((await db.obtenerBitacora()).map(e => e.id)).toEqual(['ev-3', 'ev-2']);
     });
   });
 });

@@ -7,7 +7,7 @@
 // ║  - exportarCSV() escapa campos con comas/comillas    ║
 // ╚══════════════════════════════════════════════════════╝
 import { ReportService, TipoReporte } from '../../core/services/report.service';
-import { Component, OnInit, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, computed, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -30,6 +30,7 @@ import { RegistroEditarDialogComponent, RegistroEditarSalida } from '../detalle-
 import { formatearDuracion, parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
 import { esSalidaEstimada, incluyeMotivo } from '../../core/utils/estadisticas.utils';
 import { logError } from '../../core/utils/logger';
+import { BitacoraService, describirRegistro } from '../../core/services/bitacora.service';
 
 type RangoFecha = 'hoy' | 'ayer' | 'semana' | 'mes' | 'todo' | 'personalizado';
 
@@ -140,6 +141,8 @@ columnas: string[] = [
       'fechaHora', 'matricula', 'nombre', 'carrera',
       'motivo', 'salida', 'duracion', 'acciones'
     ];
+  private readonly bitacora = inject(BitacoraService);
+
   constructor(
   private databaseService: DatabaseService,
   private toastService: ToastService,
@@ -437,6 +440,7 @@ columnas: string[] = [
 
     try {
       await this.databaseService.actualizarRegistroManual(registro.id, resultado);
+      this.bitacora.registrar('registro-editado', describirRegistro(registro));
       this.toastService.success('Registro actualizado');
       await this.cargarDatos();
     } catch {

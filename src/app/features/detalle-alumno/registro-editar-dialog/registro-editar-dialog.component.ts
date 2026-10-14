@@ -8,7 +8,7 @@
 // ║  - v3.50.0: eliminar el registro (con confirmación)  ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, OnInit, signal } from '@angular/core';
+import { Component, Inject, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -18,6 +18,7 @@ import { DatabaseService } from '../../../core/services/database.service';
 import { AforoService } from '../../../core/services/aforo.service';
 import { Motivo, Registro } from '../../../core/models';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { BitacoraService, describirRegistro } from '../../../core/services/bitacora.service';
 
 export interface RegistroEditarDialogData {
   registro: Registro;
@@ -250,6 +251,8 @@ export class RegistroEditarDialogComponent implements OnInit {
   motivos = signal<Motivo[]>([]);
   motivoIdsSeleccionados = signal<string[]>([]);
 
+  private readonly bitacora = inject(BitacoraService);
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: RegistroEditarDialogData,
     private dialogRef: MatDialogRef<RegistroEditarDialogComponent, RegistroEditarSalida>,
@@ -341,6 +344,7 @@ export class RegistroEditarDialogComponent implements OnInit {
     }).afterClosed().subscribe(async (ok) => {
       if (!ok) return;
       await this.databaseService.eliminarRegistro(r.id);
+      this.bitacora.registrar('registro-eliminado', describirRegistro(r));
       await this.aforoService.refrescar(); // si era una entrada abierta, libera el lugar
       this.dialogRef.close('eliminado');
     });

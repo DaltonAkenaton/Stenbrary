@@ -280,3 +280,73 @@ test.describe('Quiosco: volver solo por inactividad (v3.49.0)', () => {
     await expect(page.locator('.kiosk-mode')).toHaveCount(0);
   });
 });
+
+test.describe('Quiosco: PIN con límite, respaldo sin salir y bitácora (v3.52.0)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+      if (!sessionStorage.getItem('e2e-config-puesta')) {
+        localStorage.setItem('stenbrary-config', JSON.stringify({
+          modoQuiosco: true, quioscoPin: '2468', nombreEquipo: 'Puerta',
+        }));
+        sessionStorage.setItem('e2e-config-puesta', '1');
+      }
+    });
+    await page.goto('/scanner');
+    await expect(page.locator('.kiosk-mode')).toBeVisible();
+  });
+
+  /** 5 toques rápidos en una zona vacía del escáner abren el diálogo del PIN. */
+  async function abrirPin(page: import('@playwright/test').Page) {
+    const caja = (await page.locator('.scanner-container').boundingBox())!;
+    for (let i = 0; i < 5; i++) {
+      await page.mouse.move(caja.x + 8, caja.y + 8);
+      await page.mouse.down();
+      await page.mouse.up();
+    }
+    await expect(page.locator('app-quiosco-pin-dialog')).toBeVisible();
+  }
+
+  test('5 PIN incorrectos bloquean, y recargar no lo reinicia', async ({ page }) => {
+    await abrirPin(page);
+    const input = page.locator('.pin-input');
+    for (let i = 0; i < 4; i++) {
+      await input.fill('1111');
+      await input.press('Enter');
+    }
+    await expect(page.locator('.pin-error')).toContainText('Te queda 1 intento');
+    await input.fill('1111');
+    await input.press('Enter');
+    await expect(page.locator('.pin-bloqueo')).toContainText('Demasiados intentos');
+
+    await page.reload();
+    await abrirPin(page);
+    await expect(page.locator('.pin-bloqueo')).toBeVisible();
+    await expect(page.locator('.pin-input')).toHaveCount(0);
+  });
+
+  test('respaldo sin salir del quiosco; la salida queda en la bitácora', async ({ page }) => {
+    await abrirPin(page);
+    await page.locator('.pin-input').fill('2468');
+    await page.locator('.pin-input').press('Enter');
+
+    const descarga = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Descargar respaldo/ }).click();
+    expect((await descarga).suggestedFilename()).toMatch(/^stenbrary_backup_.*\.json$/);
+    await expect(page.locator('.pin-ok')).toContainText('Descargado');
+    await page.getByRole('button', { name: 'Listo' }).click();
+    await expect(page.locator('.kiosk-mode')).toBeVisible();          // sigue en quiosco
+
+    await abrirPin(page);
+    await page.locator('.pin-input').fill('2468');
+    await page.locator('.pin-input').press('Enter');
+    await page.getByRole('button', { name: /Salir del modo quiosco/ }).click();
+    await expect(page.locator('.kiosk-mode')).toHaveCount(0);
+
+    await page.goto('/configuracion#bitacora');
+    const lista = page.locator('.bitacora-lista');
+    await expect(lista).toContainText('Salió del modo quiosco');
+    await expect(lista).toContainText('Descargó un respaldo');
+    await expect(lista.locator('.evento-equipo').first()).toHaveText('Puerta');
+  });
+});

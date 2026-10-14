@@ -1,0 +1,90 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/bitacora.component.html                  ║ -->
+<!-- ║  Nombre del equipo + bitácora de acciones (v3.52.0)  ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── NOMBRE DEL EQUIPO ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>computer</mat-icon>
+    <h2>Nombre de este equipo</h2>
+  </div>
+  <p class="section-hint">
+    Ponle un nombre a cada computadora ("Puerta", "Oficina"). Aparece en la bitácora y viaja en
+    los respaldos, así sabes en qué equipo pasó cada cosa.
+  </p>
+  <div class="aforo-input-row">
+    <label for="nombreEquipo">Nombre</label>
+    <input id="nombreEquipo"
+           class="equipo-input"
+           type="text"
+           maxlength="40"
+           placeholder="Ej. Puerta"
+           [(ngModel)]="nombreEquipo"
+           (blur)="guardarNombreEquipo()"
+           (keydown.enter)="guardarNombreEquipo()">
+  </div>
+</div>
+
+<!-- ── BITÁCORA ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>history</mat-icon>
+    <h2>Bitácora</h2>
+  </div>
+  <p class="section-hint">
+    Salidas del modo quiosco, PIN incorrectos, visitas o alumnos editados y borrados, y respaldos.
+    Al importar el respaldo de otro equipo, su bitácora se suma a esta. No se puede borrar desde
+    el sistema.
+  </p>
+
+  <div class="auto-close-options filtros">
+    @for (f of filtros; track f.id) {
+      <button class="auto-close-btn" [class.active]="filtro() === f.id" (click)="setFiltro(f.id)">
+        {{ f.etiqueta }}
+      </button>
+    }
+  </div>
+
+  @if (equipos().length > 1) {
+    <div class="auto-close-options filtros">
+      @for (eq of equipos(); track eq) {
+        <button class="auto-close-btn equipo-chip" [class.active]="equipo() === eq" (click)="setEquipo(eq)">
+          <mat-icon>computer</mat-icon> {{ etiquetaEquipo(eq) }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="bitacora-vacia">Cargando…</p>
+  } @else if (filtrados().length === 0) {
+    <p class="bitacora-vacia">
+      {{ eventos().length === 0 ? 'Todavía no hay nada anotado.' : 'Nada con este filtro.' }}
+    </p>
+  } @else {
+    <p class="bitacora-total">
+      {{ filtrados().length }} {{ filtrados().length === 1 ? 'evento' : 'eventos' }}
+    </p>
+    <ul class="bitacora-lista">
+      @for (e of pagina(); track e.id) {
+        <li class="evento" [class.alerta]="acciones[e.accion].alerta">
+          <mat-icon class="evento-icono">{{ acciones[e.accion].icono }}</mat-icon>
+          <div class="evento-cuerpo">
+            <div class="evento-titulo">
+              <strong>{{ acciones[e.accion].etiqueta }}</strong>
+              @if (e.equipo) { <span class="evento-equipo">{{ e.equipo }}</span> }
+            </div>
+            @if (e.detalle) { <div class="evento-detalle">{{ e.detalle }}</div> }
+            <div class="evento-fecha">{{ fecha(e) }}</div>
+          </div>
+        </li>
+      }
+    </ul>
+    @if (pagina().length < filtrados().length) {
+      <button class="btn-inline mostrar-mas" (click)="mostrarMas()">
+        <mat-icon>expand_more</mat-icon> Mostrar más
+      </button>
+    }
+  }
+</div>

@@ -9,7 +9,7 @@
 // ║    (el dialog ya tiene variante danger + texto claro) ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -26,6 +26,7 @@ import { LoadingService } from '../../core/services/loading.service';
 import { Motivo } from '../../core/models';
 import { MotivoFormDialogComponent } from './motivo-form-dialog/motivo-form-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { BitacoraService } from '../../core/services/bitacora.service';
 
 @Component({
   selector: 'app-gestion-motivos',
@@ -67,6 +68,8 @@ export class GestionMotivosComponent implements OnInit {
       (m.descripcion || '').toLowerCase().includes(q)
     );
   }
+
+  private readonly bitacora = inject(BitacoraService);
 
   constructor(
     private databaseService: DatabaseService,
@@ -180,6 +183,7 @@ export class GestionMotivosComponent implements OnInit {
     try {
       this.loadingService.show('Eliminando motivo...');
       await this.databaseService.eliminarMotivo(motivo.id!);
+      this.bitacora.registrar('motivo-eliminado', motivo.nombre);
       this.loadingService.hide();
       this.toastService.success('Motivo eliminado exitosamente');
       await this.cargarMotivos();

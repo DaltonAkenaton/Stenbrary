@@ -16,6 +16,7 @@ export type CategoriaConfigId =
   | 'experiencia'
   | 'calendario'
   | 'datos'
+  | 'bitacora'
   | 'avanzado';
 
 export interface CategoriaConfig {
@@ -108,6 +109,16 @@ export const CATEGORIAS_CONFIG: CategoriaConfig[] = [
       'restore', 'restaurar', 'importar', 'exportar', 'descargar',
       'limpieza', 'limpiar', 'eliminar', 'rango',
       'prueba', 'seed', 'generar', 'mantenimiento',
+    ],
+  },
+  {
+    id: 'bitacora',
+    nombre: 'Bitácora',
+    icono: 'history',
+    descripcion: 'Qué se hizo, cuándo y en qué equipo',
+    keywords: [
+      'bitacora', 'historial', 'auditoria', 'registro', 'acciones', 'seguridad',
+      'equipo', 'nombre', 'puerta', 'oficina', 'pin', 'quiosco', 'borrado', 'quien',
     ],
   },
   {

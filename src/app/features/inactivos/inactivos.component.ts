@@ -8,7 +8,7 @@
 // ║  ordenamiento y dos vistas (lista / tarjetas).       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -28,6 +28,7 @@ import { ExportService } from '../../core/services/export.service';
 import { Alumno } from '../../core/models';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { fechaLocalISO } from '../../core/utils/tiempo.utils';
+import { BitacoraService, describirAlumno } from '../../core/services/bitacora.service';
 
 interface AlumnoInactivo {
   alumno: Alumno;
@@ -175,6 +176,8 @@ export class InactivosComponent implements OnInit {
     return 'normal';
   }
 
+  private readonly bitacora = inject(BitacoraService);
+
   constructor(
     private db: DatabaseService,
     public configService: ConfigService,
@@ -268,6 +271,7 @@ export class InactivosComponent implements OnInit {
     try {
       this.loading.show('Desactivando alumno...');
       await this.db.desactivarAlumno(alumno.id);
+      this.bitacora.registrar('alumno-desactivado', `${describirAlumno(alumno)}, desde Inactivos`);
       // Recargar la lista — el alumno desactivado dejará de aparecer
       // (obtenerAlumnosInactivos filtra activo !== false)
       const lista = await this.db.obtenerAlumnosInactivos(1);

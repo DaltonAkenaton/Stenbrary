@@ -33,6 +33,7 @@ import { ExperienciaCategoriaComponent } from './categorias/experiencia.componen
 import { DatosCategoriaComponent } from './categorias/datos.component';
 import { CalendarioCategoriaComponent } from './categorias/calendario.component';
 import { AvanzadoCategoriaComponent } from './categorias/avanzado.component';
+import { BitacoraCategoriaComponent } from './categorias/bitacora.component';
 
 const STORAGE_KEY = 'stenbrary-config-categoria-activa';
 const DEFAULT_CATEGORIA: CategoriaConfigId = 'general';
@@ -52,6 +53,7 @@ const DEFAULT_CATEGORIA: CategoriaConfigId = 'general';
     DatosCategoriaComponent,
     CalendarioCategoriaComponent,
     AvanzadoCategoriaComponent,
+    BitacoraCategoriaComponent,
   ],
   templateUrl: './configuracion-v2.component.html',
   styleUrls: ['./configuracion.styles.scss', './configuracion-v2.component.scss'],
@@ -65,7 +67,7 @@ export class ConfiguracionV2Component implements OnInit, OnDestroy {
   // pueda volver a marcar alguna como "beta" si en el futuro se añade una nueva.
   readonly migradas = new Set<CategoriaConfigId>([
     'general', 'escaner', 'operacion', 'quiosco',
-    'experiencia', 'calendario', 'datos', 'avanzado',
+    'experiencia', 'calendario', 'datos', 'bitacora', 'avanzado',
   ]);
 
   /** Callback del sub-componente Datos para refrescar conteos en otras categorías. */

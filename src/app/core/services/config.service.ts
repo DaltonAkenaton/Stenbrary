@@ -79,6 +79,8 @@ interface AppConfig {
   registroSalidaActivo: boolean;
   horasAutoSalida: number;
   nombreInstitucion: string;
+  /** Nombre de este equipo para la bitácora ("Puerta", "Oficina"). v3.52.0. */
+  nombreEquipo: string;
   umbralDuplicadoMin: number;
   aforoMaximo: number;
   aforoModo: AforoModo;
@@ -179,6 +181,7 @@ const DEFAULT_CONFIG: AppConfig = {
   registroSalidaActivo: false,
   horasAutoSalida: 3,
   nombreInstitucion: '',
+  nombreEquipo: '',
   umbralDuplicadoMin: 30,
   aforoMaximo: 0,
   aforoModo: 'permitir',
@@ -295,6 +298,16 @@ export class ConfigService {
     // Limita a 120 caracteres para evitar que un pegado accidental contamine
     // localStorage o haga overflow en headers de PDF/Excel.
     this.config.nombreInstitucion = (nombre || '').trim().slice(0, 120);
+    this.guardar();
+  }
+
+  /** "Puerta", "Oficina"… Identifica el equipo en la bitácora y en sus respaldos (v3.52.0). */
+  get nombreEquipo(): string {
+    return this.config.nombreEquipo;
+  }
+
+  setNombreEquipo(nombre: string): void {
+    this.config.nombreEquipo = (nombre || '').trim().slice(0, 40);
     this.guardar();
   }
 

@@ -15,7 +15,7 @@
 // ║             limpieza-registros.component.ts            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -33,6 +33,7 @@ import { AforoService } from '../../core/services/aforo.service';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { coincide } from '../../core/utils/invariante.utils';
 import { parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
+import { BitacoraService } from '../../core/services/bitacora.service';
 
 type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6meses' | 'todo';
 
@@ -359,6 +360,8 @@ export class LimpiezaRegistrosComponent {
   /** Total en la base, sin filtrar. Explica por qué el rango puede dar 0. */
   readonly totalEnBase = signal(0);
 
+  private readonly bitacora = inject(BitacoraService);
+
   constructor(
     private databaseService: DatabaseService,
     private toastService: ToastService,
@@ -444,6 +447,10 @@ export class LimpiezaRegistrosComponent {
       const eliminados = await this.databaseService.eliminarRegistrosPorRango(
         rango.inicio,
         rango.fin
+      );
+      this.bitacora.registrar(
+        'registros-limpiados',
+        `${eliminados} visitas del ${rango.inicio.toLocaleDateString('es-MX')} al ${rango.fin.toLocaleDateString('es-MX')}`,
       );
 
       // Releer de la BD en vez de asumir que quedó en cero. Poner el contador
