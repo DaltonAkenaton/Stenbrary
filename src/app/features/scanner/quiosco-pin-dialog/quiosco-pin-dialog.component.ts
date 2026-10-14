@@ -28,6 +28,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../../core/services/config.service';
 import { BackupService } from '../../../core/services/backup.service';
 import { BitacoraService } from '../../../core/services/bitacora.service';
+import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import {
   IntentosPin, PIN_BLOQUEO_MS, PIN_MAX_FALLOS,
   leerIntentosPin, msBloqueoPin, normalizarIntentosPin, registrarFalloPin, textoUltimoRespaldo,
@@ -66,9 +67,12 @@ export type SalidaPinQuiosco = 'salir' | undefined;
             [class.pin-input-error]="error()"
             [(ngModel)]="pin"
             (keydown.enter)="confirmar()"
-            (input)="error.set(false)"
+            (input)="error.set(false); lecturaIgnorada.set(false)"
             placeholder="••••" />
 
+          @if (lecturaIgnorada()) {
+            <p class="pin-desc">Se leyó una credencial: no cuenta como intento. Escribe el PIN.</p>
+          }
           @if (error()) {
             <p class="pin-error">
               PIN incorrecto.
@@ -231,6 +235,10 @@ export class QuioscoPinDialogComponent implements OnInit, OnDestroy {
   private readonly configService = inject(ConfigService);
   private readonly backupService = inject(BackupService);
   private readonly bitacora = inject(BitacoraService);
+  private readonly lector = inject(LectorRafagaService);
+  private dejarDeEscuchar: (() => void) | null = null;
+  /** Se pasó una credencial mientras el diálogo estaba abierto (v3.54.0). */
+  readonly lecturaIgnorada = signal(false);
 
   /** Se actualiza solo al descargar: la señal de ConfigService cambia. */
   readonly ultimoRespaldo = computed(() => textoUltimoRespaldo(this.configService.ultimoRespaldoSignal()));
@@ -245,9 +253,19 @@ export class QuioscoPinDialogComponent implements OnInit, OnDestroy {
     this.actualizarBloqueo();
     // Cuenta regresiva visible mientras dure el bloqueo.
     this.reloj = setInterval(() => this.actualizarBloqueo(), 1000);
+
+    // v3.54.0: si un alumno pasa su credencial mientras el coordinador escribe
+    // el PIN, los dígitos caían en este campo y el Enter contaba como intento
+    // fallido (cinco de esos y el PIN se bloqueaba). Se descarta la lectura.
+    this.dejarDeEscuchar = this.lector.escuchar(() => {
+      this.pin = '';
+      this.error.set(false);
+      this.lecturaIgnorada.set(true);
+    });
   }
 
   ngOnDestroy(): void {
+    this.dejarDeEscuchar?.();
     if (this.reloj) clearInterval(this.reloj);
   }
 

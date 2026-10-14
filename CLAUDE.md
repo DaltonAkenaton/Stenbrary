@@ -78,10 +78,10 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **296 specs unitarios en verde**, en 14 archivos —
+Suite activa: **308 specs unitarios en verde**, en 16 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
-`calendario.utils`, `quiosco.utils`, `database.service`,
+`calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
 `backup.service`, `estadisticas-avanzadas.service`, `supabase.client`.
 CI corre los unitarios con `TZ=America/Matamoros` (la zona de Nuevo Laredo,
 que **conserva el horario de verano**) y Playwright con `timezoneId` igual:
@@ -94,8 +94,8 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**38 tests E2E** con
-Playwright (21 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 9 en `cuadre.spec.ts` — este
+**43 tests E2E** con
+Playwright (26 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 9 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
@@ -205,6 +205,8 @@ El "estado de sesión" entre scanner y selección de motivo se pasa exclusivamen
 
 `registroFlujoGuard` valida que `alumnoActual` sea JSON parseable; si está corrupto lo limpia y redirige a `/scanner` con toast de advertencia.
 
+**Flujos de la puerta (v3.54.0).** `/seleccion-motivo` y `/registro-alumno` (cuando viene del escáner) usan `LectorRafagaService.vigilarFlujo()`: sin interacción 90 s / 3 min se cancelan y vuelven al escáner; si el lector lee **otra** credencial, `decidirLecturaEnFlujo` (`flujo-puerta.utils.ts`) decide: con la pantalla 20 s sin tocar se atiende al nuevo (la matrícula viaja en `sessionStorage.lecturaPendiente` y el escáner la procesa al entrar), si no, espera con aviso. El servicio **se come el Enter del lector**, incluido el click de teclado que Chrome dispara después sobre el botón enfocado: sin eso, el Enter del siguiente alumno registraba al anterior. El diálogo del PIN también escucha y descarta lecturas (antes contaban como intento fallido). Al tocar cualquier pantalla con foco en un botón que el lector pueda alcanzar, usar este servicio.
+
 ### Base de datos (IndexedDB via `idb`)
 
 `DatabaseService` (`core/services/database.service.ts`) es el único punto de acceso. `DB_NAME = 'stenbrary-db'`, `DB_VERSION = 3` (v2, Fase 2.2: índice `by-sync-status` en los tres stores de datos; v3, v3.52.0: store `bitacora`). Cuatro stores:
@@ -230,7 +232,7 @@ Métodos clave adicionales:
 
 ### Modelos (`core/models/`)
 
-- `Alumno`: campos fijos (matricula, nombre, apellidos, carrera, grado, grupo, turno) + opcionales (`email`, `telefono`, `notas`) + `datosExtra: Record<string, string>` para campos personalizados de la coordinadora.
+- `Alumno`: campos fijos (matricula, nombre, apellidos — el materno puede ir vacío desde v3.54.0 —, carrera, grado, grupo, turno). Nombres capturados pasan por `limpiarNombre`/`esNombreValido` (`nombres.utils.ts`) + opcionales (`email`, `telefono`, `notas`) + `datosExtra: Record<string, string>` para campos personalizados de la coordinadora.
 - `Registro`: `motivoId`/`motivoNombre` (principal, retrocompat) **y** `motivoIds?`/`motivoNombres?` (múltiples, v3.7.0+). También `horaSalida?`, `duracionMinutos?`, `cierreAutomatico?` (pendiente de revisar; confirmar lo borra) y `salidaEstimada?` (v3.42.0: la salida la puso el sistema; **permanente**, su duración no cuenta en promedios ni constancias). No romper la retrocompatibilidad.
 
 **Métricas: una sola definición.** Todo número que aparezca en más de una pantalla (inactivos, motivos, estancia, promedio por día, día más concurrido, proyección) se calcula en `core/utils/estadisticas.utils.ts`, con `ahora` como parámetro. No reimplementarlo en un componente: así fue como "alumnos inactivos" llegó a dar dos cifras distintas. Las definiciones (P1–P8) están en `docs/AUDITORIA-2026-10.md` y, en lenguaje de usuario, en `docs/NOTAS-MANUAL.md`.

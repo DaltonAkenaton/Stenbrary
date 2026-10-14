@@ -8,7 +8,7 @@
 // ║  - "Matrícula incorrecta" siempre visible            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -27,6 +27,8 @@ import { AforoService } from '../../core/services/aforo.service';
 import { CelebrationComponent } from '../../shared/components/celebration/celebration.component';
 import { SuccessAnimationComponent } from '../../shared/components/success-animation/success-animation.component';
 import { logError } from '../../core/utils/logger';
+import { LectorRafagaService } from '../../core/services/lector-rafaga.service';
+import { ABANDONO_MOTIVO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/flujo-puerta.utils';
 
 @Component({
   selector: 'app-seleccion-motivo',
@@ -79,6 +81,9 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
   /** Duración (ms) que dura la pantalla de éxito. Configurable. */
   tiempoExitoMs = 5000;
 
+  private readonly lector = inject(LectorRafagaService);
+  private dejarDeVigilar: (() => void) | null = null;
+
   constructor(
     private databaseService: DatabaseService,
     private router: Router,
@@ -106,6 +111,16 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
     this.alumno = parsed;
     this.esInvitado = parsed.esInvitado === true;
     this.precomputarNombres();
+
+    // v3.54.0: pantalla abandonada o credencial del siguiente alumno.
+    this.dejarDeVigilar = this.lector.vigilarFlujo({
+      abandonoMs: ABANDONO_MOTIVO_MS,
+      matricula: () => this.alumno?.matricula ?? null,
+      terminado: () => this.registroExitoso,
+      ocupado: () => this.registrando && !this.registroExitoso,
+      abandonar: (motivo, leida) => this.abandonarFlujo(motivo, leida),
+      avisar: texto => this.toastService.info(texto),
+    });
 
     await this.cargarMotivos();
   }
@@ -330,7 +345,25 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
     this.router.navigate(['/scanner']);
   }
 
+  /**
+   * Sale al escáner sin registrar (v3.54.0). Por inactividad, o porque llegó
+   * la credencial de otro alumno: esa se procesa al llegar al escáner.
+   */
+  private abandonarFlujo(motivo: 'inactividad' | 'nueva-lectura', leida?: string): void {
+    if (this.exitoTimer) {
+      clearTimeout(this.exitoTimer);
+      this.exitoTimer = null;
+    }
+    if (!this.registroExitoso) {
+      sessionStorage.removeItem('alumnoActual');
+      if (motivo === 'inactividad') this.toastService.info('Registro cancelado por inactividad');
+    }
+    if (leida) sessionStorage.setItem(CLAVE_LECTURA_PENDIENTE, leida);
+    this.router.navigate(['/scanner']);
+  }
+
   ngOnDestroy(): void {
+    this.dejarDeVigilar?.();
     if (this.exitoTimer) {
       clearTimeout(this.exitoTimer);
       this.exitoTimer = null;

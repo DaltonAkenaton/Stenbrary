@@ -9,6 +9,36 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-14 — La puerta con prisas: lector fuera del escáner y flujos abandonados (v3.54.0)
+
+Segunda vuelta de revisión. Sin el Excel de la UAT, cada alumno se registra
+solo en la puerta, así que se revisó ese camino con el lector y con gente que
+se va a medias.
+
+- **Bug real, confirmado por E2E:** en "elegir actividad" el foco puede quedar
+  en "Registrar"; el lector del siguiente alumno manda dígitos + Enter y ese
+  Enter registraba al anterior. `LectorRafagaService` reconoce la ráfaga y se
+  come el Enter. Cancelar el keydown NO bastó (la E2E siguió fallando): Chrome
+  activa el botón con un click de teclado posterior; se descartan keypress,
+  keyup y clicks con `detail === 0` en los 300 ms siguientes.
+- **Flujos abandonados:** en quiosco nada regresaba al escáner. Ahora 90 s
+  (actividad) / 3 min (registro) sin interacción → vuelve solo. Lectura de
+  otra credencial: con la pantalla 20 s sin tocar, se atiende al nuevo
+  (`lecturaPendiente` en sessionStorage); si no, espera con aviso.
+- **PIN:** una credencial leída con el diálogo abierto contaba como intento
+  fallido (5 → bloqueo). Se descarta.
+- **Nombres:** solo letras, espacios de sobra fuera, capitalización si viene
+  todo en mayúsculas/minúsculas, materno opcional. La E2E pescó que un espacio
+  inicial daba "solo letras": se valida ya recortado (`esNombreValido`). En el
+  diálogo de edición no se puso el patrón: nombres importados con caracteres
+  raros bloquearían guardar otros campos.
+- **Dos pestañas:** registrar desde ambas ya estaba bien. Lo que faltaba:
+  `blocked`/`blocking` de IndexedDB. Una pestaña vieja bloqueaba la subida de
+  `DB_VERSION` y la nueva se quedaba cargando sin decir nada. Ahora la nueva
+  avisa y la vieja se recarga. Solo protege de esta versión en adelante.
+
+308 unitarios, 43 E2E.
+
 ## 2026-10-14 — Revisión con el escenario puerta + oficina (v3.53.0)
 
 Revisión del código pensando en una puerta 24/7 en quiosco que casi nunca se

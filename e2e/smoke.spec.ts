@@ -13,6 +13,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { test, expect } from '@playwright/test';
+import path from 'node:path';
 
 test.describe('Smoke: shell y componentes globales', () => {
   // Un navegador limpio + base vacía = instalación nueva, y desde v3.30 eso
@@ -325,6 +326,16 @@ test.describe('Quiosco: PIN con límite, respaldo sin salir y bitácora (v3.52.0
     await expect(page.locator('.pin-input')).toHaveCount(0);
   });
 
+  test('una credencial leída con el diálogo del PIN abierto no cuenta como intento (v3.54.0)', async ({ page }) => {
+    await abrirPin(page);
+    await page.locator('.pin-input').focus();
+    await page.keyboard.type('2200000001', { delay: 5 });
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('no cuenta como intento')).toBeVisible();
+    await expect(page.locator('.pin-error')).toHaveCount(0);
+    await expect(page.locator('.pin-input')).toHaveValue('');
+  });
+
   test('respaldo sin salir del quiosco; la salida queda en la bitácora', async ({ page }) => {
     await abrirPin(page);
     await page.locator('.pin-input').fill('2468');
@@ -385,5 +396,74 @@ test.describe('Puerta 24/7: cierre automático sin abrir "En Biblioteca" (v3.53.
     await page.clock.fastForward('02:05');       // vence el umbral de 2 h; corre la revisión de cada minuto
     await expect(page.locator('.aforo-detalle')).toContainText(/0\s*\/\s*10/);
     await expect(page).toHaveURL(/\/scanner/);    // nadie abrió "En Biblioteca"
+  });
+});
+
+test.describe('Puerta: el lector fuera del escáner y pantallas abandonadas (v3.54.0)', () => {
+  const FIXTURE = path.join(__dirname, 'fixtures', 'cuadre.json');
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-10-14T12:00:00-05:00') });
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+    await page.goto('/configuracion#datos');
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles(FIXTURE);
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await page.locator('mat-dialog-container button').last().click();
+    await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
+    await page.goto('/scanner');
+    await expect(page.locator('app-scanner')).toBeVisible();
+  });
+
+  /** El lector: teclas muy rápidas y Enter, sin foco en ningún campo. */
+  async function pasarCredencial(page: import('@playwright/test').Page, matricula: string) {
+    await page.keyboard.type(matricula, { delay: 5 });
+    await page.keyboard.press('Enter');
+  }
+
+  test('pantalla abandonada: la credencial del siguiente la reemplaza', async ({ page }) => {
+    await pasarCredencial(page, '2200000001');
+    await expect(page.locator('.student-name')).toContainText('Ana', { timeout: 10000 });
+    await page.clock.fastForward('00:25');                 // Ana se fue sin elegir
+    await pasarCredencial(page, '2200000002');
+    await expect(page.locator('.student-name')).toContainText('Beto', { timeout: 10000 });
+  });
+
+  test('con alguien eligiendo, la del siguiente espera y su Enter no presiona nada', async ({ page }) => {
+    await pasarCredencial(page, '2200000001');
+    await expect(page.locator('.student-name')).toContainText('Ana', { timeout: 10000 });
+    await page.locator('.btn-registrar').focus();          // el foco quedó en "Registrar"
+    await pasarCredencial(page, '2200000002');
+    await expect(page.getByText('Hay un registro en curso')).toBeVisible();
+    await expect(page.locator('.student-name')).toContainText('Ana');
+    await expect(page.locator('.exito-nombre')).toHaveCount(0); // no se registró a Ana
+  });
+
+  test('sin tocar nada 90 s, vuelve solo al escáner', async ({ page }) => {
+    await pasarCredencial(page, '2200000001');
+    await expect(page.locator('.student-name')).toContainText('Ana', { timeout: 10000 });
+    await page.clock.fastForward('01:35');
+    await expect(page).toHaveURL(/\/scanner/);
+    await expect(page.getByText('Registro cancelado por inactividad')).toBeVisible();
+  });
+
+  test('registro de alumno nuevo: solo letras, nombres capitalizados, materno opcional', async ({ page }) => {
+    await pasarCredencial(page, '2299999999');
+    await expect(page).toHaveURL(/\/registro-alumno/, { timeout: 10000 });
+    await page.locator('input[formcontrolname="nombre"]').fill('ana2');
+    await page.locator('input[formcontrolname="nombre"]').blur();
+    await expect(page.getByText('Solo letras, espacios y guiones')).toBeVisible();
+
+    await page.locator('input[formcontrolname="nombre"]').fill('  juan   carlos ');
+    await page.locator('input[formcontrolname="apellidoPaterno"]').fill('GARCÍA');
+    for (const [campo, opcion] of [['carrera', 0], ['grado', 0], ['grupo', 0], ['turno', 0]] as const) {
+      await page.locator(`mat-select[formcontrolname="${campo}"]`).click();
+      await page.locator('mat-option').nth(opcion).click();
+    }
+    await page.getByRole('button', { name: /Registrar/ }).last().click();
+    await expect(page).toHaveURL(/\/seleccion-motivo/, { timeout: 10000 });
+    await expect(page.locator('.student-name')).toContainText('Juan');
+
+    await page.goto('/detalle-alumno/2299999999');
+    await expect(page.locator('h2').first()).toContainText('Juan Carlos García');
   });
 });

@@ -23,6 +23,7 @@ import { DatabaseService } from '../../../core/services/database.service';
 import { Alumno } from '../../../core/models';
 import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalogos.constants';
 import { logError } from '../../../core/utils/logger';
+import { limpiarNombre } from '../../../core/utils/nombres.utils';
 import { BitacoraService, describirAlumno } from '../../../core/services/bitacora.service';
 
 @Component({
@@ -73,7 +74,7 @@ import { BitacoraService, describirAlumno } from '../../../core/services/bitacor
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Apellido Materno</mat-label>
+          <mat-label>Apellido Materno (opcional)</mat-label>
           <input matInput formControlName="apellidoMaterno" placeholder="García">
           <mat-icon matPrefix>person</mat-icon>
           @if (campoInvalido('apellidoMaterno')) {
@@ -244,7 +245,8 @@ export class EditarAlumnoDialogComponent implements OnInit {
     this.editarForm = this.fb.group({
       nombre: [this.data.alumno.nombre, [Validators.required, Validators.minLength(2)]],
       apellidoPaterno: [this.data.alumno.apellidoPaterno, [Validators.required, Validators.minLength(2)]],
-      apellidoMaterno: [this.data.alumno.apellidoMaterno, [Validators.required, Validators.minLength(2)]],
+      // Opcional desde v3.54.0: hay quien tiene un solo apellido.
+      apellidoMaterno: [this.data.alumno.apellidoMaterno ?? ''],
       carrera: [this.data.alumno.carrera, Validators.required],
       grado: [this.data.alumno.grado, Validators.required],
       grupo: [this.data.alumno.grupo, Validators.required],
@@ -267,9 +269,9 @@ export class EditarAlumnoDialogComponent implements OnInit {
 
       const alumnoActualizado: Alumno = {
         ...this.data.alumno,
-        nombre: formValue.nombre.trim(),
-        apellidoPaterno: formValue.apellidoPaterno.trim(),
-        apellidoMaterno: formValue.apellidoMaterno.trim(),
+        nombre: limpiarNombre(formValue.nombre),
+        apellidoPaterno: limpiarNombre(formValue.apellidoPaterno),
+        apellidoMaterno: limpiarNombre(formValue.apellidoMaterno),
         carrera: formValue.carrera,
         grado: Number(formValue.grado),
         grupo: formValue.grupo,

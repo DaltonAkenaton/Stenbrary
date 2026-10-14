@@ -174,6 +174,24 @@ export class DatabaseService {
             bitacoraStore.createIndex('by-fecha', 'fechaHora');
           }
         },
+        // ── Dos pestañas y un cambio de esquema (v3.54.0) ──
+        // Una pestaña abierta con la versión anterior bloquea la subida de
+        // DB_VERSION: la nueva se quedaba esperando sin decir nada.
+        // La pestaña nueva avisa…
+        blocked: () => {
+          this._bdError.set(
+            'Hay otra ventana o pestaña de Stenbrary abierta con la versión anterior. ' +
+            'Ciérrala o recárgala para continuar.',
+          );
+        },
+        // …y la vieja suelta la base y se recarga sola con la versión nueva.
+        // Solo funciona de esta versión en adelante: la que ya está abierta en
+        // un equipo no tiene este código.
+        blocking: () => {
+          this.db?.close();
+          this.db = null;
+          window.location.reload();
+        },
       });
 
       this._bdError.set(null);

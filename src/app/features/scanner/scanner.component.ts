@@ -74,6 +74,7 @@ import { ConfigService } from '../../core/services/config.service';
 import { AforoService } from '../../core/services/aforo.service';
 import { InvitadoNombreDialogComponent } from './invitado-nombre-dialog/invitado-nombre-dialog.component';
 import { QuioscoPinDialogComponent, SalidaPinQuiosco } from './quiosco-pin-dialog/quiosco-pin-dialog.component';
+import { CLAVE_LECTURA_PENDIENTE } from '../../core/utils/flujo-puerta.utils';
 import {
   SalidaVisitanteDialogComponent,
   SalidaVisitanteResultado,
@@ -423,6 +424,15 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     this.detectarCapacidades();
     this.registrarLectorHid();
+
+    // v3.54.0: el lector se pasó en "elegir actividad" o en el registro de
+    // alumno nuevo de una pantalla abandonada. Esa pantalla se cerró y dejó
+    // la matrícula aquí para atenderla como si se hubiera leído en el escáner.
+    const pendiente = sessionStorage.getItem(CLAVE_LECTURA_PENDIENTE);
+    if (pendiente) {
+      sessionStorage.removeItem(CLAVE_LECTURA_PENDIENTE);
+      setTimeout(() => this.procesarDeteccion(pendiente, 'usb-hid'));
+    }
     // Refrescar aforo al entrar al scanner para tener el conteo actualizado
     if (this.configService.aforoActivo) {
       this.aforoService.refrescar();

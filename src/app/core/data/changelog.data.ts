@@ -49,6 +49,37 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.54.0',
+    fecha: '2026-10-14',
+    titulo: 'La puerta, a prueba de prisas',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'Si alguien pasa su credencial mientras otro alumno elige su actividad, ya no se registra la visita del anterior por accidente.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Si un alumno deja a medias "elegir actividad" o el registro, la pantalla vuelve sola al escáner (90 segundos y 3 minutos sin uso). Si el siguiente pasa su credencial tras 20 segundos sin que nadie toque nada, se le atiende a él.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Registro de alumnos nuevos: los nombres solo aceptan letras, se quitan espacios de sobra y se corrigen los escritos todo en mayúsculas o minúsculas ("juan carlos" → "Juan Carlos").',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El apellido materno ahora es opcional, para quien tiene un solo apellido.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Pasar una credencial con el diálogo del PIN abierto ya no cuenta como intento fallido.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Si hay otra ventana de Stenbrary abierta con una versión anterior durante una actualización, se avisa en lugar de quedarse cargando.',
+      },
+    ],
+  },
+  {
     version: '3.53.0',
     fecha: '2026-10-14',
     titulo: 'Puerta y oficina, afinadas',

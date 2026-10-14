@@ -8,7 +8,7 @@
 // ║    desde catalogos.constants.ts (fuente única)       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, Validators, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -28,6 +28,9 @@ import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../core/constants/catalogos
 import { validarMatricula, MATRICULA_CONFIG, normalizarMatricula } from '../../core/utils/matricula.utils';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { log, logError } from '../../core/utils/logger';
+import { LectorRafagaService } from '../../core/services/lector-rafaga.service';
+import { ABANDONO_REGISTRO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/flujo-puerta.utils';
+import { esNombreValido, limpiarNombre } from '../../core/utils/nombres.utils';
 
 @Component({
   selector: 'app-registro-alumno',
@@ -47,7 +50,10 @@ import { log, logError } from '../../core/utils/logger';
   templateUrl: './registro-alumno.component.html',
   styleUrl: './registro-alumno.component.scss',
 })
-export class RegistroAlumnoComponent implements OnInit {
+export class RegistroAlumnoComponent implements OnInit, OnDestroy {
+  private readonly lector = inject(LectorRafagaService);
+  private dejarDeVigilar: (() => void) | null = null;
+
   registroForm!: FormGroup;
   cargando = false;
   error: string | null = null;
@@ -79,6 +85,15 @@ export class RegistroAlumnoComponent implements OnInit {
       this.matriculaBloqueada = true;
       this.vieneDelScanner = true;
       log('📝 Registrando alumno desde scanner, matrícula:', this.matricula);
+      // v3.54.0: formulario abandonado o credencial del siguiente alumno.
+      this.dejarDeVigilar = this.lector.vigilarFlujo({
+        abandonoMs: ABANDONO_REGISTRO_MS,
+        matricula: () => this.matricula,
+        terminado: () => false,
+        ocupado: () => this.cargando,
+        abandonar: (motivo, leida) => this.abandonarFlujo(motivo, leida),
+        avisar: texto => this.toastService.info(texto),
+      });
     } else {
       this.matricula = '';
       this.matriculaBloqueada = false;
@@ -92,9 +107,11 @@ export class RegistroAlumnoComponent implements OnInit {
         [Validators.required, Validators.minLength(MATRICULA_CONFIG.minDigitos), this.matriculaValidator],
       ],
       // maxLength previene que un alumno pegue 10 KB de basura por accidente.
-      nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
-      apellidoPaterno: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(40)]],
-      apellidoMaterno: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(40)]],
+      // v3.54.0: solo letras (con acentos), y el materno es opcional — quien
+      // tiene un solo apellido escribía "XX" para poder avanzar.
+      nombre: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60), this.nombreValidator]],
+      apellidoPaterno: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(40), this.nombreValidator]],
+      apellidoMaterno: ['', [Validators.maxLength(40), this.nombreValidator]],
       carrera: ['', Validators.required],
       grado: ['', Validators.required],
       grupo: ['', Validators.required],
@@ -114,6 +131,9 @@ export class RegistroAlumnoComponent implements OnInit {
     const r = validarMatricula(String(v));
     return r.valida ? null : { matricula: r.error };
   };
+
+  private nombreValidator = (control: AbstractControl): ValidationErrors | null =>
+    esNombreValido(control.value) ? null : { pattern: true };
 
   async registrarAlumno(): Promise<void> {
     if (this.registroForm.invalid) {
@@ -136,9 +156,9 @@ export class RegistroAlumnoComponent implements OnInit {
 
       const nuevoAlumno: Omit<Alumno, 'id' | 'fechaRegistro'> = {
         matricula: matriculaFinal,
-        nombre: formValue.nombre.trim(),
-        apellidoPaterno: formValue.apellidoPaterno.trim(),
-        apellidoMaterno: formValue.apellidoMaterno.trim(),
+        nombre: limpiarNombre(formValue.nombre),
+        apellidoPaterno: limpiarNombre(formValue.apellidoPaterno),
+        apellidoMaterno: limpiarNombre(formValue.apellidoMaterno),
         carrera: formValue.carrera,
         grado: Number(formValue.grado),
         grupo: formValue.grupo,
@@ -150,7 +170,7 @@ export class RegistroAlumnoComponent implements OnInit {
 
       log('✅ Alumno registrado:', alumnoCreado.matricula);
       this.loadingService.hide();
-      this.toastService.success(`Alumno ${formValue.nombre} ${formValue.apellidoPaterno} registrado exitosamente`);
+      this.toastService.success(`Alumno ${nuevoAlumno.nombre} ${nuevoAlumno.apellidoPaterno} registrado exitosamente`);
 
       if (this.vieneDelScanner) {
         sessionStorage.setItem('alumnoActual', JSON.stringify(alumnoCreado));
@@ -194,6 +214,19 @@ export class RegistroAlumnoComponent implements OnInit {
 
       this.cargando = false;
     }
+  }
+
+  /** Sale al escáner sin guardar: por inactividad o por la credencial de otro alumno (v3.54.0). */
+  private abandonarFlujo(motivo: 'inactividad' | 'nueva-lectura', leida?: string): void {
+    this.dialog.closeAll(); // p. ej. el "¿descartar?" que nadie contestó
+    sessionStorage.removeItem('matriculaTemp');
+    if (motivo === 'inactividad') this.toastService.info('Registro cancelado por inactividad');
+    if (leida) sessionStorage.setItem(CLAVE_LECTURA_PENDIENTE, leida);
+    this.router.navigate(['/scanner']);
+  }
+
+  ngOnDestroy(): void {
+    this.dejarDeVigilar?.();
   }
 
   async cancelar(): Promise<void> {
@@ -258,6 +291,7 @@ export class RegistroAlumnoComponent implements OnInit {
   obtenerErrorCampo(campo: string): string {
     const control = this.registroForm.get(campo);
     if (control?.hasError('required')) return 'Este campo es obligatorio';
+    if (control?.hasError('pattern')) return 'Solo letras, espacios y guiones';
     if (control?.hasError('matricula')) {
       // Mensaje específico devuelto por validarMatricula()
       return control.getError('matricula') || 'Formato de matrícula no válido';
