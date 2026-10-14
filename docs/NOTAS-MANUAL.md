@@ -255,3 +255,8 @@ a la puerta, así que la oficina es solo para consultar.
 Registros (o el perfil del alumno) → lápiz del registro → **Eliminar**, con
 confirmación. Para un escaneo por error que nadie deshizo a tiempo. No se puede
 deshacer. Para borrar muchos a la vez: Configuración → Datos → limpieza por rango.
+
+## Del registro al alumno (v3.51.0)
+En Registros, tocar una fila abre el detalle de la visita; el bloque con el
+nombre del alumno lleva a su perfil. Los invitados no tienen perfil, así que en
+ellos no es un enlace. El detalle lista todas las actividades de la visita.

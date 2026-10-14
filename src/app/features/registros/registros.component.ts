@@ -416,7 +416,7 @@ columnas: string[] = [
   verDetalle(registro: Registro): void {
     this.dialog.open(RegistroDetalleDialogComponent, {
       width: '480px',
-      data: { registro },
+      data: { registro, enlazarAlumno: true },
     });
   }
 

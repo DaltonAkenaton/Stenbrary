@@ -654,11 +654,11 @@ Por feedback "Flexibilidad del sistema" (memory): validar que TODOS los ajustes 
 
 ### 20.3 Detalle de alumno
 - [🤖✅] Constancia PDF individual — `report.service.ts:576-791` (`constancia_<matricula>.pdf`)
-- [👤] PDF legible, Excel manipulable (visual)
+- [👤✅] PDF legible, Excel manipulable (2026-10-14: exportó Registros a Excel sin problema)
 
 ### 20.4 Caracteres especiales
 - [🤖✅] Excel: librería xlsx usa UTF-8 nativo — tildes/ñ funcionan sin escape
-- [👤] PDF: jspdf default usa Helvetica; algunas ñ/tildes pueden necesitar fuente custom. **Verificar visualmente.**
+- [👤✅] PDF: ñ y acentos se ven bien en la constancia (2026-10-14)
 
 ---
 
@@ -704,7 +704,7 @@ Por feedback "Flexibilidad del sistema" (memory): validar que TODOS los ajustes 
 
 ### 23.1 Instalación PWA
 - [✅] Instalar via Chrome desktop
-- [ ] Instalar via Android
+- [👤✅] Instalar via Android — Galaxy A06, 2026-10-12 (offline con lector, aviso de versión nueva)
 - [✅] Icono y nombre correctos
 
 ### 23.2 Offline

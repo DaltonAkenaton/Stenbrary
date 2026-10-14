@@ -9,6 +9,24 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-14 — Del registro al alumno; lag del drawer (v3.51.0)
+
+Pruebas del usuario con hardware: Excel, constancia PDF con ñ/acentos y app en
+el Galaxy A06 bien. El menú "Más" (drawer) da lag en el A06.
+
+Medido con CPU x6 (CDP `setCPUThrottlingRate`): ~45 fps y un cuadro de 117 ms
+al primer abrir; o sea, el cuello del A06 es la GPU, que la emulación no mide.
+En móvil se quitó lo caro para GPU/layout: `backdrop-filter` a pantalla
+completa (backdrop y topbar), `filter: blur` animado en ~15 etiquetas,
+`letter-spacing` animado (layout), pulso infinito de box-shadow, borde animado,
+y la animación simultánea de `width` + `transform` (el drawer ya nace con el
+ancho expandido; solo `transform`). CPU x6 tras el cambio: 10–25 % menos
+tiempo por cuadro. La confirmación real es en el A06.
+
+Detalle de registro: el alumno enlaza a `/detalle-alumno/:matricula` (opción
+`enlazarAlumno`, solo desde /registros; nunca para INVITADO) y se listan todos
+los `motivoNombres`.
+
 ## 2026-10-12 — Pasada de pruebas manuales, mi parte (v3.50.0)
 
 Recorrido automatizado (Playwright exploratorio, fuera de la suite) de los

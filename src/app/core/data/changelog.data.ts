@@ -49,6 +49,25 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.51.0',
+    fecha: '2026-10-14',
+    titulo: 'Del registro al alumno',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto: 'En Registros, al abrir el detalle de una visita, toca el nombre del alumno para ir a su perfil.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El detalle de una visita muestra todas sus actividades, no solo la primera.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'En celulares, el menú "Más" abre más fluido: se quitaron efectos visuales pesados para teléfonos sencillos.',
+      },
+    ],
+  },
+  {
     version: '3.50.0',
     fecha: '2026-10-12',
     titulo: 'Respaldos entre equipos y borrar un registro',

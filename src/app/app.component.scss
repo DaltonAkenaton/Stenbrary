@@ -854,10 +854,34 @@
     transform: translateX(-100%);
     transition: transform $transition-normal;
     box-shadow: $shadow-lg;
+    // v3.51.0 — lag en un Galaxy A06 al abrir "Más". En el drawer el ancho ya
+    // es el expandido desde el inicio: antes se animaban ancho Y posición a
+    // la vez, y el ancho recalcula el layout en cada cuadro. Solo transform,
+    // que la GPU mueve sin recalcular nada.
+    width: $sidebar-width-expanded;
+    will-change: transform;
 
     &.expanded {
       transform: translateX(0);
     }
+
+    // Efectos de escritorio que en un celular modesto cuestan cuadros: el
+    // desenfoque animado de ~15 etiquetas, el letter-spacing animado (layout),
+    // el pulso infinito del item activo y el borde animado.
+    &::after { animation: none; }
+    .nav-item { transition: color $transition-fast, background $transition-fast; }
+  }
+
+  .sidebar.expanded .sidebar-nav .nav-label,
+  .sidebar.expanded .nav-section-title,
+  .sidebar .nav-item.active { animation: none; }
+
+  // Desenfocar la pantalla entera detrás del drawer es lo más caro para la
+  // GPU de un teléfono de gama baja; un fondo más opaco cumple igual.
+  .topbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(8, 14, 26, 0.96);
   }
 
   // Mostrar hamburger
@@ -870,8 +894,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.72);
     z-index: $z-sidebar - 1;
     animation: backdropFadeIn $transition-fast ease-out;
   }

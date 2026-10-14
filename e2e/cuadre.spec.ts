@@ -119,6 +119,13 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await expect(page.locator('tbody tr')).toHaveCount(2, { timeout: 15000 });   // incluye el secundario
   });
 
+  test('Registros: del detalle de la visita al perfil del alumno (v3.51.0)', async ({ page }) => {
+    await page.goto('/registros?fecha=2026-10-05');
+    await page.locator('tbody tr').filter({ hasText: 'Ana' }).first().click();
+    await page.locator('.alumno-link').click();
+    await expect(page).toHaveURL(/\/detalle-alumno\/2200000001/);
+  });
+
   test('Inactivos', async ({ page }) => {
     await page.goto('/inactivos');
     const resumen = page.locator('.summary-row');

@@ -4,6 +4,7 @@
 // ║                                                      ║
 // ║  Muestra todos los campos de un Registro:            ║
 // ║  entrada, salida, duración, motivo, dispositivo      ║
+// ║  v3.51.0: el alumno enlaza a su perfil (si se pide)  ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, Inject } from '@angular/core';
@@ -11,10 +12,13 @@ import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
 import { Registro } from '../../../core/models';
 
 export interface RegistroDetalleDialogData {
   registro: Registro;
+  /** Mostrar al alumno como enlace a su perfil. No desde el propio perfil. */
+  enlazarAlumno?: boolean;
 }
 
 @Component({
@@ -29,7 +33,7 @@ export interface RegistroDetalleDialogData {
 
     <mat-dialog-content class="dialog-content">
 
-      <div class="alumno-header">
+      <ng-template #alumnoInfo>
         <mat-icon class="avatar-icon">account_circle</mat-icon>
         <div>
           <p class="alumno-nombre">{{ data.registro.nombreCompleto }}</p>
@@ -38,7 +42,18 @@ export interface RegistroDetalleDialogData {
             &nbsp;·&nbsp;{{ data.registro.carrera }}
           </p>
         </div>
-      </div>
+      </ng-template>
+      @if (puedeEnlazar) {
+        <button type="button" class="alumno-header alumno-link" (click)="irAlAlumno()"
+                title="Ver el perfil del alumno">
+          <ng-container *ngTemplateOutlet="alumnoInfo" />
+          <mat-icon class="link-chevron">chevron_right</mat-icon>
+        </button>
+      } @else {
+        <div class="alumno-header">
+          <ng-container *ngTemplateOutlet="alumnoInfo" />
+        </div>
+      }
 
       <div class="info-grid">
 
@@ -81,7 +96,7 @@ export interface RegistroDetalleDialogData {
             <mat-icon>category</mat-icon>
             <div>
               <span class="label">Actividad</span>
-              <span class="value motivo-badge">{{ data.registro.motivoNombre }}</span>
+              <span class="value motivo-badge">{{ motivosTexto }}</span>
             </div>
           </div>
         </div>
@@ -134,6 +149,21 @@ export interface RegistroDetalleDialogData {
 
       > div { min-width: 0; flex: 1; }
     }
+
+    .alumno-link {
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      border-top: 0; border-right: 0; border-bottom: 0;
+      cursor: pointer;
+      transition: background 0.15s;
+
+      &:hover, &:focus-visible { background: rgba(0, 200, 215, 0.16); }
+      .alumno-nombre { text-decoration: underline; text-underline-offset: 3px; }
+    }
+
+    .link-chevron { color: var(--cyan-500, #00C8D7); flex-shrink: 0; }
 
     .avatar-icon {
       font-size: 36px;
@@ -258,10 +288,27 @@ export interface RegistroDetalleDialogData {
   `],
 })
 export class RegistroDetalleDialogComponent {
+  /** Los invitados no tienen perfil. */
+  get puedeEnlazar(): boolean {
+    return !!this.data.enlazarAlumno && this.data.registro.matricula !== 'INVITADO';
+  }
+
+  /** Todas las actividades de la visita, no solo la principal. */
+  get motivosTexto(): string {
+    const r = this.data.registro;
+    return (r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre]).join(', ');
+  }
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: RegistroDetalleDialogData,
     private dialogRef: MatDialogRef<RegistroDetalleDialogComponent>,
+    private router: Router,
   ) {}
+
+  irAlAlumno(): void {
+    this.dialogRef.close();
+    void this.router.navigate(['/detalle-alumno', this.data.registro.matricula]);
+  }
 
   cerrar(): void {
     this.dialogRef.close();
