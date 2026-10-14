@@ -385,6 +385,65 @@ describe('BackupService — round-trip', () => {
       expect((await backup.importarBackup(datos, 'merge')).exitoso).toBeTrue();
     });
 
+    it('al combinar a diario cuenta solo lo nuevo', async () => {
+      await sembrar();
+      const datos = porJSON(await backup.exportarBackup());
+      const r = await backup.importarBackup(datos, 'merge');
+      expect(r.registrosNuevos).toBe(0);
+      expect(r.alumnosNuevos).toBe(0);
+      expect(r.registrosImportados).toBe(1);
+    });
+
+    describe('borrados entre equipos (v3.53.0)', () => {
+      /** La oficina ya tiene la visita; luego la puerta la borra y manda su respaldo. */
+      async function puertaBorra(): Promise<{ registro: Registro; datos: BackupData }> {
+        const { registro } = await sembrar();
+        const ayer = porJSON(await backup.exportarBackup());
+        // "Puerta": borra la visita y anota el borrado.
+        await db.eliminarRegistro(registro.id);
+        await db.agregarEventoBitacora({
+          id: 'ev-borrado', fechaHora: '2026-10-14T20:00:00.000Z', accion: 'registro-eliminado',
+          detalle: 'Ana', equipo: 'Puerta', refId: registro.id,
+        });
+        const hoy = porJSON(await backup.exportarBackup());
+        // "Oficina": tenía el respaldo de ayer.
+        resetIndexedDB();
+        ({ db, backup } = nuevoServicio());
+        await db.inicializar();
+        await backup.importarBackup(ayer, 'merge');
+        expect((await db.obtenerTodosLosRegistros()).length).toBe(1);
+        return { registro, datos: hoy };
+      }
+
+      it('combinar aplica en la oficina la visita borrada en la puerta', async () => {
+        const { datos } = await puertaBorra();
+        const r = await backup.importarBackup(datos, 'merge');
+        expect(r.borradosAplicados).toBe(1);
+        expect(await db.obtenerTodosLosRegistros()).toEqual([]);
+      });
+
+      it('lo borrado no revive con un respaldo viejo que aún la trae', async () => {
+        const { registro, datos } = await puertaBorra();
+        await backup.importarBackup(datos, 'merge');
+        const viejo = porJSON(await backup.exportarBackup());
+        viejo.registros = [{ ...registro, fechaHora: FECHA_VIEJA } as Registro];
+        await backup.importarBackup(porJSON(viejo), 'merge');
+        expect(await db.obtenerTodosLosRegistros()).toEqual([]);
+      });
+
+      it('"Reemplazar todo" devuelve exactamente lo del archivo (restaurar tras borrar por error)', async () => {
+        const { registro } = await sembrar();
+        const antes = porJSON(await backup.exportarBackup());
+        await db.eliminarRegistro(registro.id);
+        await db.agregarEventoBitacora({
+          id: 'ev-error', fechaHora: '2026-10-14T20:00:00.000Z', accion: 'registro-eliminado',
+          detalle: 'Ana', equipo: 'Oficina', refId: registro.id,
+        });
+        await backup.importarBackup(antes, 'replace');
+        expect((await db.obtenerTodosLosRegistros()).map(x => x.id)).toEqual([registro.id]);
+      });
+    });
+
     it('al pasar el tope descarta los eventos más viejos', async () => {
       for (let i = 0; i < 4; i++) {
         await db.agregarEventoBitacora({ ...evento, id: `ev-${i}`, fechaHora: `2026-10-1${i}T10:00:00.000Z` });

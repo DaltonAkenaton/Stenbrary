@@ -255,15 +255,25 @@
       <div class="result-text">
         <strong>{{ resultadoImportacion.exitoso ? 'Importación exitosa' : 'Error en importación' }}</strong>
         @if (resultadoImportacion.exitoso) {
+          <!-- v3.53.0: lo nuevo primero — al combinar a diario, el total no dice nada. -->
           <span>
-            {{ resultadoImportacion.alumnosImportados }} alumnos,
-            {{ resultadoImportacion.registrosImportados }} registros,
-            {{ resultadoImportacion.motivosImportados }} motivos importados
-            @if (resultadoImportacion.alumnosOmitidos > 0) {
-              <span>· {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos</span>
+            <strong>{{ resultadoImportacion.registrosNuevos }}</strong> visitas nuevas ·
+            <strong>{{ resultadoImportacion.alumnosNuevos }}</strong> alumnos nuevos
+            @if (resultadoImportacion.borradosAplicados > 0) {
+              · {{ resultadoImportacion.borradosAplicados }} borradas en el otro equipo
             }
-            @if (resultadoImportacion.motivosOmitidos > 0) {
-              <span>· {{ resultadoImportacion.motivosOmitidos }} motivos omitidos</span>
+          </span>
+          <span class="result-detalle">
+            En total: {{ resultadoImportacion.registrosImportados }} visitas y
+            {{ resultadoImportacion.alumnosImportados }} alumnos revisados
+            @if (resultadoImportacion.motivosImportados > 0) {
+              · {{ resultadoImportacion.motivosImportados }} actividades nuevas
+            }
+            @if (resultadoImportacion.alumnosOmitidos > 0) {
+              · {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos (matrícula ya usada aquí)
+            }
+            @if (resultadoImportacion.errores.length > 0) {
+              · {{ resultadoImportacion.errores.length }} con error
             }
           </span>
         }

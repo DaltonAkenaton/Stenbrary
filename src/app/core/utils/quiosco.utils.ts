@@ -7,6 +7,8 @@
 // ║  minutos sin uso, el equipo regresa al escáner.      ║
 // ╚══════════════════════════════════════════════════════╝
 
+import { diasCalendarioEntre } from './tiempo.utils';
+
 /** Rutas donde nunca se reactiva: el asistente inicial no debe interrumpirse. */
 const RUTAS_EXCLUIDAS = ['/bienvenida', '/login'];
 
@@ -80,4 +82,20 @@ export function leerIntentosPin(crudo: string | null): IntentosPin {
     // Vacío o corrupto: empezar de cero.
     return { ...INTENTOS_PIN_INICIAL };
   }
+}
+
+// ── Último respaldo, para el diálogo del PIN (v3.53.0) ──
+// En la puerta, en quiosco, el recordatorio de respaldo del Resumen no se ve
+// nunca: el diálogo del PIN es donde se descarga, así que ahí se avisa.
+
+/** "hoy a las 18:02", "ayer", "hace 3 días" o "nunca". */
+export function textoUltimoRespaldo(ts: number, ahora: Date = new Date()): string {
+  if (!(ts > 0)) return 'nunca';
+  const fecha = new Date(ts);
+  const dias = diasCalendarioEntre(fecha, ahora);
+  if (dias <= 0) {
+    return `hoy a las ${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}`;
+  }
+  if (dias === 1) return 'ayer';
+  return `hace ${dias} días`;
 }

@@ -12,7 +12,7 @@
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
-import { BitacoraService } from './bitacora.service';
+import { BitacoraService, idsBorrados } from './bitacora.service';
 import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 
@@ -48,6 +48,11 @@ export interface ResultadoImportacion {
   alumnosOmitidos: number;
   motivosOmitidos: number;
   eventosBitacora: number;
+  /** De los importados, cuántos no existían aquí (v3.53.0): lo que trajo el día. */
+  alumnosNuevos: number;
+  registrosNuevos: number;
+  /** Visitas borradas aquí porque se borraron en el otro equipo (v3.53.0). */
+  borradosAplicados: number;
   errores: string[];
 }
 
@@ -183,6 +188,9 @@ export class BackupService {
       alumnosOmitidos: 0,
       motivosOmitidos: 0,
       eventosBitacora: 0,
+      alumnosNuevos: 0,
+      registrosNuevos: 0,
+      borradosAplicados: 0,
       errores: [],
     };
 
@@ -243,22 +251,41 @@ export class BackupService {
         }
       }
 
+      // ── Borrados del otro equipo (v3.53.0, solo al combinar) ──
+      // El import combina y nunca quita, así que una visita basura borrada en
+      // la puerta seguía para siempre en la oficina. Los borrados viajan en
+      // la bitácora (`refId`):
+      //  - los que llegan NUEVOS en este respaldo se aplican aquí;
+      //  - todos los conocidos (de aquí o de allá) evitan revivir lo borrado.
+      // "Reemplazar todo" no los aplica: es restaurar, y tiene que devolver
+      // exactamente lo que trae el archivo (p. ej. tras un borrado por error).
+      const eventosEntrantes = datos.bitacora ?? [];
+      let omitirAlumno: (id: string) => boolean = () => false;
+      let omitirRegistro: (r: Registro) => boolean = () => false;
+      if (modo === 'merge') {
+        const locales = await this.databaseService.obtenerBitacora();
+        const conocidos = new Set(locales.map(e => e.id));
+        const nuevos = idsBorrados(eventosEntrantes.filter(e => !conocidos.has(e.id)));
+        for (const id of nuevos.alumnos) {
+          resultado.borradosAplicados += await this.databaseService.eliminarAlumno(id, { porMatricula: false });
+        }
+        resultado.borradosAplicados += await this.databaseService.eliminarRegistrosPorIds(nuevos.registros);
+
+        const todos = idsBorrados([...locales, ...eventosEntrantes]);
+        omitirAlumno = id => todos.alumnos.has(id);
+        omitirRegistro = r => todos.registros.has(r.id) || todos.alumnos.has(r.alumnoId);
+      }
+
       // ── Importar Alumnos (deduplicar por matrícula) ──
       // Se restauran TAL CUAL: conservan su `id` original, y con él los
       // `alumnoId` de los registros que los referencian. Reconstruirlos con
       // `crearAlumno()` generaba ids nuevos y rompía esa relación.
-      for (const alumno of datos.alumnos) {
-        try {
-          const restaurado = await this.databaseService.restaurarAlumno(alumno);
-          if (restaurado) {
-            resultado.alumnosImportados++;
-          } else {
-            resultado.alumnosOmitidos++; // matrícula ya usada por otro alumno
-          }
-        } catch {
-          resultado.alumnosOmitidos++;
-        }
-      }
+      // v3.53.0: en lote (una transacción), no fila por fila.
+      const alumnosOmitibles = new Set(datos.alumnos.filter(a => a?.id && omitirAlumno(a.id)).map(a => a.id!));
+      const resAlumnos = await this.databaseService.restaurarAlumnosLote(datos.alumnos, alumnosOmitibles);
+      resultado.alumnosImportados = resAlumnos.nuevos + resAlumnos.actualizados + resAlumnos.iguales;
+      resultado.alumnosNuevos = resAlumnos.nuevos;
+      resultado.alumnosOmitidos = resAlumnos.omitidos;
 
       // ── Importar Registros ──
       // Un backup es la única red de seguridad del coordinador: tiene que
@@ -266,36 +293,28 @@ export class BackupService {
       // que estampa `fechaHora: new Date()` — cada restauración aplastaba
       // meses de historial contra el día de la importación, y descartaba
       // horaSalida, duracionMinutos, motivoIds/motivoNombres y turno.
-      for (const registro of datos.registros) {
-        try {
-          await this.databaseService.restaurarRegistro(remapearMotivos(registro, mapaMotivos));
-          resultado.registrosImportados++;
-        } catch (err: any) {
-          resultado.errores.push(
-            `Registro omitido: ${registro.matricula} (${err?.message ?? 'error'})`,
-          );
-        }
-      }
+      // v3.53.0: en lote. Un año (50 000 visitas) pasaba de 70–120 s.
+      const resRegistros = await this.databaseService.restaurarRegistrosLote(
+        datos.registros.map(r => remapearMotivos(r, mapaMotivos)),
+        omitirRegistro,
+      );
+      resultado.registrosImportados = resRegistros.nuevos + resRegistros.actualizados + resRegistros.iguales;
+      resultado.registrosNuevos = resRegistros.nuevos;
+      resultado.errores.push(...resRegistros.errores);
 
       // ── Bitácora (v3.52.0) ──
       // Se combina siempre, también en 'replace': la bitácora no se borra
       // nunca, y la del equipo de origen es lo que la oficina quiere ver.
-      for (const evento of datos.bitacora ?? []) {
-        try {
-          await this.databaseService.restaurarEventoBitacora(evento);
-          resultado.eventosBitacora++;
-        } catch {
-          // Un evento incompleto no invalida el respaldo: se omite.
-        }
-      }
+      resultado.eventosBitacora = await this.databaseService.restaurarBitacoraLote(eventosEntrantes);
 
       resultado.exitoso = true;
       const origen = datos.meta?.equipo ? ` de "${datos.meta.equipo}"` : '';
+      const borrados = resultado.borradosAplicados ? `, ${resultado.borradosAplicados} borradas allá` : '';
       this.bitacora.registrar(
         'respaldo-importado',
         `Respaldo${origen} del ${fechaRespaldo(datos.meta?.fecha)} ` +
         `(${modo === 'replace' ? 'reemplazar' : 'combinar'}): ` +
-        `${resultado.alumnosImportados} alumnos, ${resultado.registrosImportados} visitas`,
+        `${resultado.registrosNuevos} visitas nuevas, ${resultado.alumnosNuevos} alumnos nuevos${borrados}`,
       );
       console.log('✅ Importación completada:', resultado);
       return resultado;

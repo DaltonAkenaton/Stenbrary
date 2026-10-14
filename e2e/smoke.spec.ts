@@ -350,3 +350,40 @@ test.describe('Quiosco: PIN con límite, respaldo sin salir y bitácora (v3.52.0
     await expect(lista.locator('.evento-equipo').first()).toHaveText('Puerta');
   });
 });
+
+test.describe('Puerta 24/7: cierre automático sin abrir "En Biblioteca" (v3.53.0)', () => {
+  test('la entrada sin salida se cierra sola y el aforo baja, en el escáner', async ({ page }) => {
+    const ahora = new Date('2026-10-14T12:00:00-05:00');
+    await page.clock.install({ time: ahora });
+    await page.addInitScript(() => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+      if (!sessionStorage.getItem('e2e-config-puesta')) {
+        localStorage.setItem('stenbrary-config', JSON.stringify({
+          registroSalidaActivo: true, horasAutoSalida: 2, aforoMaximo: 10,
+        }));
+        sessionStorage.setItem('e2e-config-puesta', '1');
+      }
+    });
+    // Entró hace 1 h 59 min y nunca registró salida.
+    const entrada = new Date(ahora.getTime() - 119 * 60_000).toISOString();
+    const respaldo = {
+      meta: { version: '3.4', fecha: ahora.toISOString(), app: 'Stenbrary', totalAlumnos: 1, totalRegistros: 1, totalMotivos: 1 },
+      alumnos: [{ id: 'a1', matricula: '2200000001', nombre: 'Ana', apellidoPaterno: 'P', apellidoMaterno: 'M', carrera: 'Ing. TI', grado: 1, grupo: 'A', turno: 'Matutino', activo: true, fechaRegistro: entrada }],
+      registros: [{ id: 'r1', alumnoId: 'a1', matricula: '2200000001', nombreCompleto: 'Ana P M', carrera: 'Ing. TI', motivoId: 'm1', motivoNombre: 'Estudiar', motivoIds: ['m1'], motivoNombres: ['Estudiar'], fechaHora: entrada, sincronizado: false }],
+      motivos: [{ id: 'm1', nombre: 'Estudiar', icono: 'school', orden: 1, activo: true }],
+    };
+    await page.goto('/configuracion#datos');
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles({
+      name: 'r.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(respaldo)),
+    });
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await page.locator('mat-dialog-container button').last().click();
+    await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
+
+    await page.goto('/scanner');
+    await expect(page.locator('.aforo-detalle')).toContainText(/1\s*\/\s*10/);
+    await page.clock.fastForward('02:05');       // vence el umbral de 2 h; corre la revisión de cada minuto
+    await expect(page.locator('.aforo-detalle')).toContainText(/0\s*\/\s*10/);
+    await expect(page).toHaveURL(/\/scanner/);    // nadie abrió "En Biblioteca"
+  });
+});

@@ -49,6 +49,41 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.53.0',
+    fecha: '2026-10-14',
+    titulo: 'Puerta y oficina, afinadas',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto: 'Importar el respaldo diario en la oficina tarda segundos, no minutos: solo se guarda lo que cambió.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Al combinar un respaldo, las visitas o alumnos borrados en el otro equipo también se borran aquí. "Reemplazar todo" sigue devolviendo exactamente lo que trae el archivo.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'El resultado de importar dice cuántas visitas y alumnos nuevos llegaron.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'El cierre automático de entradas sin salida ahora funciona aunque nadie abra "En Biblioteca" (por ejemplo, en el equipo de la puerta en modo quiosco), y también cierra las de la noche anterior.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Eliminar un alumno ahora borra también sus visitas, como avisaba el mensaje de confirmación.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'En modo quiosco ya no aparece el aviso de versión nueva: se actualiza solo cuando el escáner lleva 2 minutos sin uso.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El diálogo del PIN muestra cuándo fue el último respaldo.',
+      },
+    ],
+  },
+  {
     version: '3.52.0',
     fecha: '2026-10-14',
     titulo: 'Seguridad local',

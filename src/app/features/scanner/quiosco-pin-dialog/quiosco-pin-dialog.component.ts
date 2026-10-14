@@ -20,7 +20,7 @@
 // ║  Devuelve 'salir' o undefined.                       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -30,7 +30,7 @@ import { BackupService } from '../../../core/services/backup.service';
 import { BitacoraService } from '../../../core/services/bitacora.service';
 import {
   IntentosPin, PIN_BLOQUEO_MS, PIN_MAX_FALLOS,
-  leerIntentosPin, msBloqueoPin, normalizarIntentosPin, registrarFalloPin,
+  leerIntentosPin, msBloqueoPin, normalizarIntentosPin, registrarFalloPin, textoUltimoRespaldo,
 } from '../../../core/utils/quiosco.utils';
 
 const CLAVE_INTENTOS = 'stenbrary-pin-intentos';
@@ -92,7 +92,7 @@ export type SalidaPinQuiosco = 'salir' | undefined;
           <mat-icon>download</mat-icon>
           <span>
             <strong>Descargar respaldo</strong>
-            <small>El equipo sigue en modo quiosco.</small>
+            <small>El equipo sigue en modo quiosco. Último: {{ ultimoRespaldo() }}.</small>
           </span>
         </button>
         @if (respaldoListo()) {
@@ -231,6 +231,9 @@ export class QuioscoPinDialogComponent implements OnInit, OnDestroy {
   private readonly configService = inject(ConfigService);
   private readonly backupService = inject(BackupService);
   private readonly bitacora = inject(BitacoraService);
+
+  /** Se actualiza solo al descargar: la señal de ConfigService cambia. */
+  readonly ultimoRespaldo = computed(() => textoUltimoRespaldo(this.configService.ultimoRespaldoSignal()));
 
   private intentos: IntentosPin = leerIntentosPin(null);
   private reloj: ReturnType<typeof setInterval> | null = null;

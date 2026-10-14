@@ -27,6 +27,16 @@ import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { log, logError } from '../utils/logger';
 import { invariante } from '../utils/invariante.utils';
 
+/**
+ * Huella de una fila para saber si cambió, sin los metadatos de sync (que el
+ * import siempre reescribe). Las fechas salen como ISO en ambos lados.
+ */
+function huella(fila: object): string {
+  const { _syncStatus, _lastSyncedAt, ...resto } = fila as Record<string, unknown>;
+  void _syncStatus; void _lastSyncedAt;
+  return JSON.stringify(resto);
+}
+
 // Definir esquema de la base de datos
 interface StenbraryDB extends DBSchema {
   alumnos: {
@@ -325,13 +335,161 @@ export class DatabaseService {
     return await this.db.getAll('alumnos');
   }
 
-  async eliminarAlumno(id: string): Promise<void> {
+  /**
+   * Elimina al alumno **y sus visitas**, en una sola transacción. Devuelve
+   * cuántas visitas se borraron.
+   *
+   * v3.53.0: antes solo borraba el perfil, aunque el diálogo prometía borrar
+   * también los registros; las visitas quedaban huérfanas y seguían contando
+   * en las estadísticas.
+   *
+   * `porMatricula` también borra visitas con su matrícula y otro `alumnoId`
+   * (llegadas de un respaldo donde la matrícula ya existía). El borrado que
+   * llega por la bitácora de otro equipo lo apaga: si el alumno volvió a
+   * registrarse después, con id nuevo, sus visitas nuevas no se tocan.
+   */
+  async eliminarAlumno(id: string, { porMatricula = true } = {}): Promise<number> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
-    await this.db.delete('alumnos', id);
+    const tx = this.db.transaction(['alumnos', 'registros'], 'readwrite');
+    const alumnos = tx.objectStore('alumnos');
+    const registros = tx.objectStore('registros');
+    const alumno = await alumnos.get(id);
+
+    let borrados = 0;
+    let cursor = await registros.index('by-alumno').openCursor(id);
+    while (cursor) {
+      await cursor.delete();
+      borrados++;
+      cursor = await cursor.continue();
+    }
+    if (porMatricula && alumno?.matricula) {
+      let porMat = await registros.index('by-matricula').openCursor(alumno.matricula);
+      while (porMat) {
+        await porMat.delete();
+        borrados++;
+        porMat = await porMat.continue();
+      }
+    }
+    await alumnos.delete(id);
+    await tx.done;
+
     this.notificarCambioDatos();
-    log('✅ Alumno eliminado:', id);
+    log('✅ Alumno eliminado:', id, `(${borrados} visitas)`);
+    return borrados;
+  }
+
+  // ==================== RESTAURAR POR LOTES (v3.53.0) ====================
+  // El import diario en la oficina restauraba fila por fila: un año de datos
+  // (50 000 visitas) tardaba 70–120 s en una PC rápida. Aquí todo va en una
+  // transacción por store y las escrituras se encadenan sin esperar cada una.
+
+  /** Alumnos: conserva ids; omite matrículas que ya son de OTRO alumno. */
+  async restaurarAlumnosLote(
+    lista: Alumno[],
+    omitirIds: ReadonlySet<string> = new Set(),
+  ): Promise<{ nuevos: number; actualizados: number; iguales: number; omitidos: number }> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const tx = this.db.transaction('alumnos', 'readwrite');
+    const existentes = await tx.store.getAll();
+    const idPorMatricula = new Map(existentes.map(a => [a.matricula, a.id]));
+    const actuales = new Map(existentes.map(a => [a.id, huella(a)]));
+    const escrituras: Promise<unknown>[] = [];
+    let nuevos = 0, actualizados = 0, iguales = 0, omitidos = 0;
+
+    for (const alumno of lista) {
+      if (!alumno?.id || !alumno.matricula || omitirIds.has(alumno.id)) { omitidos++; continue; }
+      const dueno = idPorMatricula.get(alumno.matricula);
+      if (dueno && dueno !== alumno.id) { omitidos++; continue; }
+      const fila: Alumno = {
+        ...alumno,
+        fechaRegistro: this.aFecha(alumno.fechaRegistro) ?? new Date(),
+        _syncStatus: 'pending',
+        _lastSyncedAt: undefined,
+      };
+      const previa = actuales.get(alumno.id);
+      const h = huella(fila);
+      if (previa === h) { iguales++; continue; } // igual que el que ya está: no se reescribe
+      escrituras.push(tx.store.put(fila));
+      if (previa === undefined) nuevos++; else actualizados++;
+      actuales.set(alumno.id, h);
+      idPorMatricula.set(alumno.matricula, alumno.id);
+    }
+
+    await Promise.all(escrituras);
+    await tx.done;
+    if (escrituras.length > 0) {
+      this.notificarCambioSync();
+      this.notificarCambioDatos();
+    }
+    return { nuevos, actualizados, iguales, omitidos };
+  }
+
+  /** Registros: conserva id, fechas, salida y motivos. `omitir` filtra los borrados. */
+  async restaurarRegistrosLote(
+    lista: Registro[],
+    omitir: (r: Registro) => boolean = () => false,
+  ): Promise<{ nuevos: number; actualizados: number; iguales: number; omitidos: number; errores: string[] }> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    // Solo se escribe lo nuevo o lo que cambió: escribir es lo caro (~1 000
+    // filas/s con 4 índices) y de un día a otro casi todo llega igual. Un
+    // año (50 000 visitas) pasaba de 45–65 s a lo que tarde leerlo.
+    const tx = this.db.transaction('registros', 'readwrite');
+    const actuales = new Map((await tx.store.getAll()).map(r => [r.id, huella(r)]));
+    const escrituras: Promise<unknown>[] = [];
+    const errores: string[] = [];
+    let nuevos = 0, actualizados = 0, iguales = 0, omitidos = 0;
+
+    for (const registro of lista) {
+      if (!registro?.id) { errores.push('Registro sin id'); continue; }
+      if (omitir(registro)) { omitidos++; continue; }
+      const fechaHora = this.aFecha(registro.fechaHora);
+      if (!fechaHora) { errores.push(`Registro omitido: ${registro.matricula} (sin fechaHora válida)`); continue; }
+      const horaSalida = this.aFecha(registro.horaSalida);
+      const fila: Registro = {
+        ...registro,
+        fechaHora,
+        ...(horaSalida ? { horaSalida } : {}),
+        _syncStatus: 'pending',
+        _lastSyncedAt: undefined,
+      };
+      const previa = actuales.get(registro.id);
+      const h = huella(fila);
+      if (previa === h) { iguales++; continue; }
+      escrituras.push(tx.store.put(fila));
+      if (previa === undefined) nuevos++; else actualizados++;
+      actuales.set(registro.id, h);
+    }
+
+    await Promise.all(escrituras);
+    await tx.done;
+    if (escrituras.length > 0) {
+      this.notificarCambioSync();
+      this.notificarCambioDatos();
+    }
+    return { nuevos, actualizados, iguales, omitidos, errores };
+  }
+
+  /** Borra visitas por id (borrados que llegan en la bitácora de otro equipo). */
+  async eliminarRegistrosPorIds(ids: Iterable<string>): Promise<number> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    const tx = this.db.transaction('registros', 'readwrite');
+    let borrados = 0;
+    for (const id of ids) {
+      if (await tx.store.getKey(id)) {
+        await tx.store.delete(id);
+        borrados++;
+      }
+    }
+    await tx.done;
+    if (borrados > 0) this.notificarCambioDatos();
+    return borrados;
   }
 
   // ==================== REGISTROS ====================
@@ -624,6 +782,9 @@ export class DatabaseService {
   // ==================== BITÁCORA (v3.52.0) ====================
   // Solo agregar y leer: no hay método para borrar eventos sueltos.
 
+  /** Hasta cuántos días atrás busca el cierre automático entradas sin salida. */
+  private static readonly VENTANA_CIERRE_DIAS = 7;
+
   /** Tope de eventos guardados; al pasarlo se descartan los más viejos. */
   private static readonly BITACORA_MAX = 5000;
 
@@ -650,6 +811,27 @@ export class DatabaseService {
       throw new Error('Evento de bitácora incompleto');
     }
     await this.db.put('bitacora', evento);
+  }
+
+  /** Lote del respaldo en una transacción. Devuelve cuántos eventos eran nuevos. */
+  async restaurarBitacoraLote(eventos: EventoBitacora[]): Promise<number> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    const tx = this.db.transaction('bitacora', 'readwrite');
+    const ids = new Set(await tx.store.getAllKeys());
+    const escrituras: Promise<unknown>[] = [];
+    let nuevos = 0;
+    for (const e of eventos) {
+      // Un evento incompleto no invalida el respaldo: se omite.
+      if (!e?.id || !e.fechaHora || !e.accion) continue;
+      escrituras.push(tx.store.put(e));
+      if (!ids.has(e.id)) nuevos++;
+      ids.add(e.id);
+    }
+    await Promise.all(escrituras);
+    await tx.done;
+    await this.recortarBitacora();
+    return nuevos;
   }
 
   async recortarBitacora(max = DatabaseService.BITACORA_MAX): Promise<void> {
@@ -1360,6 +1542,11 @@ export class DatabaseService {
    *
    * Atómico: el batch ocurre dentro de una sola transacción readwrite.
    *
+   * v3.53.0: mira los últimos 7 días, no solo hoy. Antes una entrada de las
+   * 21:30 con umbral de 3 h vencía a las 00:30 — ya "mañana" — y quedaba
+   * abierta para siempre. Las de días anteriores se cierran ya confirmadas:
+   * Presencia solo muestra el día, así que nadie podría revisarlas.
+   *
    * @param horasUmbral umbral en horas; si <=0 retorna 0
    * @param autoConfirmar si true, NO marca cierreAutomatico (no requiere revisión)
    */
@@ -1369,15 +1556,27 @@ export class DatabaseService {
       await this.inicializar();
       if (!this.db) return 0;
 
-      const abiertas = await this.obtenerRegistrosAbiertoHoy();
       const limiteMs = horasUmbral * 60 * 60 * 1000;
       const ahora = Date.now();
+      const desde = new Date(ahora - DatabaseService.VENTANA_CIERRE_DIAS * 86_400_000);
+      const hasta = new Date(ahora - limiteMs);
+      if (hasta <= desde) return 0;
 
-      const candidatos = abiertas.filter(r => {
-        if (r.horaSalida) return false;
-        const edad = ahora - new Date(r.fechaHora).getTime();
-        return edad >= limiteMs;
-      });
+      let recientes: Registro[];
+      try {
+        recientes = await this.db.getAllFromIndex('registros', 'by-fecha', IDBKeyRange.bound(desde, hasta));
+      } catch {
+        // Índice inservible (fechas string en datos viejos) → fallback.
+        const todos = await this.db.getAll('registros');
+        recientes = todos.filter(r => {
+          const t = new Date(r.fechaHora);
+          return t >= desde && t <= hasta;
+        });
+      }
+
+      const candidatos = recientes.filter(r => !r.horaSalida);
+      const inicioHoy = new Date(ahora);
+      inicioHoy.setHours(0, 0, 0, 0);
 
       if (candidatos.length === 0) return 0;
 
@@ -1390,7 +1589,7 @@ export class DatabaseService {
         if (!actual || actual.horaSalida) continue;
         actual.horaSalida = new Date(new Date(actual.fechaHora).getTime() + limiteMs);
         actual.duracionMinutos = horasUmbral * 60;
-        actual.cierreAutomatico = !autoConfirmar;
+        actual.cierreAutomatico = !autoConfirmar && new Date(actual.fechaHora) >= inicioHoy;
         // La salida la inventó el sistema: queda marcada aunque se confirme.
         actual.salidaEstimada = true;
         this.marcarPendienteEnSitio(actual);

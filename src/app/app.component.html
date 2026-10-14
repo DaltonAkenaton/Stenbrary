@@ -244,7 +244,8 @@
     }
 
     <!-- ═══ Banner de actualización PWA ═══ -->
-    @if (hayActualizacion) {
+    <!-- En quiosco no se muestra: se aplica sola con el escáner sin uso (v3.53.0). -->
+    @if (hayActualizacion && !configService.modoQuioscoSignal()) {
       <div class="update-banner">
         <div class="update-content">
           <mat-icon>system_update</mat-icon>

@@ -38,6 +38,7 @@ import { RestablecerService } from './core/services/restablecer.service';
 import { registrarDiagnostico } from './core/utils/invariante.utils';
 import { PwaUpdateService } from './core/services/pwa-update.service';
 import { QuioscoAutoService } from './core/services/quiosco-auto.service';
+import { AforoService } from './core/services/aforo.service';
 
 interface NavItem {
   icon: string;
@@ -175,6 +176,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private readonly quioscoAuto = inject(QuioscoAutoService);
+  private readonly aforoService = inject(AforoService);
 
   /** Rutas que se muestran a pantalla completa, sin sidebar ni topbar. */
   private static readonly RUTAS_SIN_SHELL = ['/bienvenida'];
@@ -305,10 +307,59 @@ export class AppComponent implements OnInit, OnDestroy {
   private iniciarCierrePorHorario(): void {
     this.cierrePorHorarioInterval = setInterval(() => {
       void this.checkCierrePorHorario();
+      void this.checkCierrePorHoras();
+      this.checkActualizacionEnQuiosco();
+      this.checkCambioDeDia();
     }, 60_000);
     // Disparo inmediato al cargar (cubre el caso de abrir la app después
     // de la hora de cierre, p. ej. en la mañana siguiente).
     void this.checkCierrePorHorario();
+    void this.checkCierrePorHoras();
+  }
+
+  // ── Cierre tras N horas sin salida (v3.53.0) ──
+  // Antes solo corría al abrir /presencia. En el equipo de la puerta, en
+  // quiosco 24/7, esa vista no se abre nunca (ni se puede): las entradas sin
+  // salida se quedaban abiertas y el aforo inflado todo el día.
+  private checkCierrePorHoras = async (): Promise<void> => {
+    if (!this.configService.registroSalidaActivo) return;
+    const horas = this.configService.horasAutoSalida;
+    if (!(horas > 0)) return;
+    const autoConfirmar = this.configService.cierreAutoConfirmar;
+    const cerrados = await this.databaseService.cerrarEntradasAntiguas(horas, autoConfirmar);
+    if (cerrados === 0) return;
+    await this.aforoService.refrescar();
+    if (!autoConfirmar) this.configService.setHayAutoClose(true);
+    // Los alumnos frente al quiosco no necesitan enterarse.
+    if (!this.configService.modoQuioscoSignal()) {
+      this.toastService.info(`${cerrados} entrada(s) cerradas automáticamente tras ${horas}h`);
+    }
+  };
+
+  // ── Cambio de día (v3.53.0) ──
+  // El aforo cuenta las entradas abiertas DE HOY. En un equipo que no se
+  // recarga, a medianoche el banner seguía con la cifra de ayer hasta el
+  // siguiente escaneo.
+  private diaActual = new Date().toDateString();
+
+  private checkCambioDeDia(): void {
+    const hoy = new Date().toDateString();
+    if (hoy === this.diaActual) return;
+    this.diaActual = hoy;
+    void this.aforoService.refrescar();
+  }
+
+  // ── Actualización en quiosco (v3.53.0) ──
+  // El aviso de versión nueva no se muestra en quiosco (era para los alumnos
+  // un botón que no les toca). En su lugar, con el escáner sin uso 2 min y sin
+  // diálogos abiertos, se aplica sola: la puerta nunca se recarga a mano y si
+  // no, se quedaría en la versión vieja indefinidamente.
+  private checkActualizacionEnQuiosco(): void {
+    if (!this.hayActualizacion || !this.configService.modoQuioscoSignal()) return;
+    if (!this.router.url.startsWith('/scanner')) return;
+    if (this.dialog.openDialogs.length > 0) return;
+    if (this.quioscoAuto.msSinActividad() < 2 * 60_000) return;
+    this.actualizarApp();
   }
 
   private checkCierrePorHorario = async (): Promise<void> => {

@@ -9,6 +9,41 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-14 — Revisión con el escenario puerta + oficina (v3.53.0)
+
+Revisión del código pensando en una puerta 24/7 en quiosco que casi nunca se
+recarga y una oficina que importa el respaldo a diario. Hallazgos y arreglos:
+
+- **Cierre tras N horas solo corría al abrir /presencia.** En la puerta esa
+  vista no se abre (ni se puede en quiosco): entradas abiertas todo el día y
+  aforo inflado. Ahora lo corre AppComponent cada minuto. Además solo miraba
+  "hoy": una entrada de las 21:30 con umbral de 3 h vencía mañana y quedaba
+  abierta para siempre. Ventana de 7 días; las de días anteriores se cierran
+  confirmadas (Presencia no las mostraría).
+- **Import diario lento.** Medido con un año sintético (3 000 alumnos, 50 000
+  visitas, JSON de 27 MB): 71 s la primera vez y 124 s la segunda, en una PC
+  rápida. Lotes en una transacción: 46/65 s. Sacarlo de la zona de Angular: sin
+  cambio (no era la detección de cambios; se descartó). Lo que funcionó: no
+  reescribir lo que no cambió (`huella()`): **3 s** el día siguiente. Escribir
+  en IndexedDB con 4 índices cuesta ~1 000 filas/s; leer es barato.
+- **Borrados no viajaban.** Combinar nunca quita: una visita basura borrada en
+  la puerta seguía en la oficina. Los eventos de borrado llevan `refId`; al
+  combinar se aplican los nuevos y todos evitan revivir lo borrado. Reemplazar
+  no los aplica (restaurar debe devolver el archivo tal cual — p. ej. tras un
+  borrado por error, cubierto por test).
+- **Eliminar alumno no borraba sus visitas** aunque el diálogo lo prometía.
+- **Aviso de versión nueva visible para los alumnos** en quiosco, y si alguien
+  tocaba "Ahora no" la puerta se quedaba en la versión vieja. Oculto en
+  quiosco; se aplica solo con el escáner 2 min sin uso.
+- Aforo a medianoche refrescado; "último respaldo" en el diálogo del PIN (el
+  recordatorio del Resumen no se ve en quiosco).
+
+Revisado y bien: Ctrl+K, "?" y Alt+N ya estaban bloqueados en quiosco; el
+cierre por horario ya corría cada minuto; exportar 1.5 s y las pantallas de
+consulta 0.3–2 s con un año de datos.
+
+296 unitarios, 38 E2E.
+
 ## 2026-10-14 — Seguridad local para dos equipos (v3.52.0)
 
 Última vuelta antes de la visita al coordinador, con el modelo de dos equipos

@@ -23,13 +23,15 @@ export class BitacoraService {
   private readonly db = inject(DatabaseService);
   private readonly config = inject(ConfigService);
 
-  registrar(accion: AccionBitacora, detalle = ''): void {
+  /** `refId`: id de la visita o el alumno borrado, para repetir el borrado en el otro equipo. */
+  registrar(accion: AccionBitacora, detalle = '', refId?: string): void {
     const evento: EventoBitacora = {
       id: uuidv4(),
       fechaHora: new Date().toISOString(),
       accion,
       detalle,
       equipo: this.config.nombreEquipo,
+      ...(refId ? { refId } : {}),
     };
     this.db.agregarEventoBitacora(evento).catch(err => logError('❌ Bitácora:', err));
   }
@@ -37,6 +39,23 @@ export class BitacoraService {
   obtener(): Promise<EventoBitacora[]> {
     return this.db.obtenerBitacora();
   }
+}
+
+/**
+ * Ids borrados según la bitácora (v3.53.0). El import los usa para no
+ * revivir lo que se borró en cualquiera de los dos equipos. No incluye la
+ * limpieza por rango de fechas: la puerta puede vaciar meses viejos para
+ * aligerar su respaldo sin que la oficina, que es el archivo, los pierda.
+ */
+export function idsBorrados(eventos: readonly EventoBitacora[]): { registros: Set<string>; alumnos: Set<string> } {
+  const registros = new Set<string>();
+  const alumnos = new Set<string>();
+  for (const e of eventos) {
+    if (!e?.refId) continue;
+    if (e.accion === 'registro-eliminado') registros.add(e.refId);
+    else if (e.accion === 'alumno-eliminado') alumnos.add(e.refId);
+  }
+  return { registros, alumnos };
 }
 
 // ── Textos para el detalle ──────────────────────────────

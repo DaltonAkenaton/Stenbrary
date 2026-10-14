@@ -5,7 +5,7 @@
 
 import {
   debeVolverAQuiosco, EstadoQuiosco, INTENTOS_PIN_INICIAL, PIN_BLOQUEO_MS, PIN_MAX_FALLOS,
-  leerIntentosPin, msBloqueoPin, normalizarIntentosPin, registrarFalloPin,
+  leerIntentosPin, msBloqueoPin, normalizarIntentosPin, registrarFalloPin, textoUltimoRespaldo,
 } from './quiosco.utils';
 
 const MIN = 60_000;
@@ -66,5 +66,16 @@ describe('quiosco.utils — intentos del PIN', () => {
     expect(leerIntentosPin(null)).toEqual(INTENTOS_PIN_INICIAL);
     expect(leerIntentosPin('no es json')).toEqual(INTENTOS_PIN_INICIAL);
     expect(leerIntentosPin('{"fallos":-2,"bloqueadoHasta":"x"}')).toEqual(INTENTOS_PIN_INICIAL);
+  });
+});
+
+describe('quiosco.utils — último respaldo (v3.53.0)', () => {
+  const ahora = new Date(2026, 9, 14, 19, 0);
+
+  it('hoy, ayer, hace N días y nunca', () => {
+    expect(textoUltimoRespaldo(new Date(2026, 9, 14, 8, 5).getTime(), ahora)).toBe('hoy a las 08:05');
+    expect(textoUltimoRespaldo(new Date(2026, 9, 13, 23, 59).getTime(), ahora)).toBe('ayer');
+    expect(textoUltimoRespaldo(new Date(2026, 9, 10, 12, 0).getTime(), ahora)).toBe('hace 4 días');
+    expect(textoUltimoRespaldo(0, ahora)).toBe('nunca');
   });
 });

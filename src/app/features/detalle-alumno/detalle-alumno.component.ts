@@ -34,6 +34,7 @@ import { contarMotivos, resumirEstancia } from '../../core/utils/estadisticas.ut
 import { Motivo } from '../../core/models';
 import { logError } from '../../core/utils/logger';
 import { BitacoraService, describirAlumno, describirRegistro } from '../../core/services/bitacora.service';
+import { AforoService } from '../../core/services/aforo.service';
 
 /**
  * Registro extendido con la fecha ya formateada — evita que
@@ -100,6 +101,7 @@ export class DetalleAlumnoComponent implements OnInit {
   columnasRegistros: string[] = ['fechaHora', 'motivo', 'acciones'];
 
   private readonly bitacora = inject(BitacoraService);
+  private readonly aforoService = inject(AforoService);
 
   constructor(
     private route: ActivatedRoute,
@@ -428,8 +430,9 @@ export class DetalleAlumnoComponent implements OnInit {
 
     try {
       this.loadingService.show('Eliminando alumno...');
-      await this.databaseService.eliminarAlumno(this.alumno.id!);
-      this.bitacora.registrar('alumno-eliminado', `${describirAlumno(this.alumno)} y sus ${this.registros.length} visitas`);
+      const visitas = await this.databaseService.eliminarAlumno(this.alumno.id!);
+      this.bitacora.registrar('alumno-eliminado', `${describirAlumno(this.alumno)} y sus ${visitas} visitas`, this.alumno.id);
+      await this.aforoService.refrescar(); // si estaba dentro, libera su lugar
       this.loadingService.hide();
       this.toastService.success('Alumno eliminado permanentemente');
       this.router.navigate(['/alumnos']);

@@ -70,6 +70,39 @@ describe('DatabaseService', () => {
     await db.inicializar();
   });
 
+  describe('eliminarAlumno (v3.53.0)', () => {
+    async function alumnoConVisitas(matricula: string, visitas: number) {
+      const a = await db.crearAlumno({
+        matricula, nombre: 'Ana', apellidoPaterno: 'P', apellidoMaterno: 'M',
+        carrera: 'ISC', grado: 1, grupo: 'A', turno: 'Matutino', activo: true,
+      } as any);
+      for (let i = 0; i < visitas; i++) {
+        const r = await db.crearRegistro({
+          alumnoId: a.id!, matricula, nombreCompleto: 'Ana P M', carrera: 'ISC', motivoId: 'm1', motivoNombre: 'Estudiar',
+        });
+        expect(r.id).toBeTruthy();
+      }
+      return a;
+    }
+
+    it('borra al alumno y sus visitas, como promete el diálogo', async () => {
+      const ana = await alumnoConVisitas('2200000001', 3);
+      await alumnoConVisitas('2200000002', 2);
+      expect(await db.eliminarAlumno(ana.id!)).toBe(3);
+      const quedan = await db.obtenerTodosLosRegistros();
+      expect(quedan.length).toBe(2);
+      expect(quedan.every(r => r.matricula === '2200000002')).toBeTrue();
+      expect(await db.obtenerAlumnoPorMatricula('2200000001')).toBeNull();
+    });
+
+    it('también las visitas con su matrícula y otro alumnoId (de un respaldo)', async () => {
+      const ana = await alumnoConVisitas('2200000001', 1);
+      await crearRegistroConFecha(db, '2200000001', new Date(2026, 2, 10, 12, 0));
+      expect(await db.eliminarAlumno(ana.id!)).toBe(2);
+      expect(await db.eliminarAlumno('no-existe', { porMatricula: false })).toBe(0);
+    });
+  });
+
   describe('eliminarRegistrosPorRango con fechas de un <input type="date">', () => {
     // Regresión de la auditoría 2026-10 (R2): el componente convertía
     // '2026-03-10' con new Date(), que es medianoche UTC; en México eso
@@ -342,6 +375,29 @@ describe('DatabaseService', () => {
       guardado = (await db.obtenerTodosLosRegistros()).find(x => x.id === r.id)!;
       expect(guardado.cierreAutomatico).toBe(false);
       expect(guardado.salidaEstimada).toBe(true);
+    });
+
+    it('cierra la entrada de anoche que venció después de medianoche (v3.53.0)', async () => {
+      // Ayer 21:30 + umbral 3 h = hoy 00:30. Antes solo se miraba "hoy" y
+      // esta entrada quedaba abierta para siempre.
+      const ayer2130 = new Date(ahoraFijo);
+      ayer2130.setDate(ayer2130.getDate() - 1);
+      ayer2130.setHours(21, 30, 0, 0);
+      const r = await crearRegistroConFecha(db, '1000019', ayer2130);
+
+      expect(await db.cerrarEntradasAntiguas(3)).toBe(1);
+      const guardado = (await db.obtenerTodosLosRegistros()).find(x => x.id === r.id)!;
+      expect(guardado.duracionMinutos).toBe(180);
+      expect(guardado.salidaEstimada).toBe(true);
+      // De un día anterior: Presencia no la mostraría, así que no queda pendiente de revisar.
+      expect(guardado.cierreAutomatico).toBe(false);
+    });
+
+    it('no toca entradas de hace más de 7 días', async () => {
+      const hace10d = new Date(ahoraFijo);
+      hace10d.setDate(hace10d.getDate() - 10);
+      await crearRegistroConFecha(db, '1000020', hace10d);
+      expect(await db.cerrarEntradasAntiguas(3)).toBe(0);
     });
 
     it('corregir la salida a mano la vuelve real', async () => {

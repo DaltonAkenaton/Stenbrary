@@ -43,6 +43,11 @@ export class QuioscoAutoService {
     });
   }
 
+  /** Tiempo desde el último toque o tecla (el lector cuenta). */
+  msSinActividad(): number {
+    return Date.now() - this.ultimaActividad;
+  }
+
   private revisar(): void {
     const volver = debeVolverAQuiosco({
       activo: this.config.modoQuiosco,

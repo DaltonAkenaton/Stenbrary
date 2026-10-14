@@ -35,4 +35,11 @@ export interface EventoBitacora {
   detalle: string;
   /** Nombre del equipo que lo hizo ("Puerta", "Oficina"); vacío si no se configuró. */
   equipo: string;
+  /**
+   * Id de lo afectado, solo en borrados de una visita o un alumno (v3.53.0).
+   * Al importar el respaldo, el otro equipo aplica el mismo borrado: sin
+   * esto, una visita basura borrada en la puerta seguía para siempre en la
+   * oficina (el import combina, nunca quita).
+   */
+  refId?: string;
 }

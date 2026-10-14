@@ -344,7 +344,7 @@ export class RegistroEditarDialogComponent implements OnInit {
     }).afterClosed().subscribe(async (ok) => {
       if (!ok) return;
       await this.databaseService.eliminarRegistro(r.id);
-      this.bitacora.registrar('registro-eliminado', describirRegistro(r));
+      this.bitacora.registrar('registro-eliminado', describirRegistro(r), r.id);
       await this.aforoService.refrescar(); // si era una entrada abierta, libera el lugar
       this.dialogRef.close('eliminado');
     });

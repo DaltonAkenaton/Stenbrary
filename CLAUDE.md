@@ -78,7 +78,7 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **287 specs unitarios en verde**, en 14 archivos —
+Suite activa: **296 specs unitarios en verde**, en 14 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `database.service`,
@@ -94,8 +94,8 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**37 tests E2E** con
-Playwright (20 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 9 en `cuadre.spec.ts` — este
+**38 tests E2E** con
+Playwright (21 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 9 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
@@ -222,10 +222,11 @@ Métodos clave adicionales:
 - `verificarRegistroReciente(matricula, minutosUmbral=30)` — devuelve el último registro dentro de la ventana (para detectar duplicado en el scanner)
 - `obtenerEntradaAbiertaHoy(matricula)` — registro del día sin `horaSalida` (cuando `registroSalidaActivo` está ON)
 - `obtenerRegistrosAbiertoHoy()` — para la vista `/presencia`, incluye entradas sin salida **y** cerradas por `cierreAutomatico` pendientes de confirmación
-- `cerrarEntradasAntiguas(horasUmbral)` — cierre automático (marca `cierreAutomatico=true`)
+- `cerrarEntradasAntiguas(horasUmbral)` — cierre automático (marca `cierreAutomatico=true`). Desde v3.53.0 mira los últimos 7 días (antes solo hoy: una entrada de las 21:30 vencía mañana y no se cerraba nunca); las de días anteriores se cierran ya confirmadas. Lo corre `AppComponent` cada minuto, no solo `/presencia`: en la puerta, en quiosco, esa vista no se abre nunca.
 - `confirmarCierreAutomatico(id)` — limpia el flag tras revisión del personal
 - `registrarSalida(id)` — calcula `horaSalida` y `duracionMinutos`
 - `eliminarRegistrosPorRango(inicio, fin)` + `contarRegistrosPorRango` — para limpieza masiva
+- `eliminarAlumno(id, { porMatricula })` — borra al alumno **y sus visitas** en una transacción (hasta v3.52.0 dejaba las visitas huérfanas). `porMatricula: false` para borrados que llegan de otro equipo: no tocar visitas de un alumno que volvió a registrarse con id nuevo.
 
 ### Modelos (`core/models/`)
 
@@ -245,7 +246,7 @@ Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los p
 - `ChangelogService` — compara `versionActual().version` con `stenbrary-changelog-vista` (localStorage). Signal `hayNovedades` alimenta el badge del sidebar. En primera instalación NO muestra badge (marca la versión como vista).
 - `SoundService` — beeps vía Web Audio API (sin archivos). Flag en `stenbrary-sonido-activo`. Métodos: `beepScan`, `beepSalida`, `beepError`.
 - `ToastService`, `LoadingService` — UI transversal (componentes en `shared/`).
-- `BackupService` — export/import JSON completo. Los motivos se emparejan **por nombre** con los locales y los `motivoIds` de los registros se traducen a los ids locales (`remapearMotivos`, v3.50.0): cada instalación crea sus motivos default con ids propios, y sin el mapa un respaldo de otro equipo dejaba registros apuntando a motivos inexistentes (estadísticas partidas, editor roto). En modo `replace` se restaura el catálogo del respaldo con sus ids. Combinar el mismo respaldo dos veces no duplica nada (`put` por id). Desde v3.52.0 incluye `bitacora?` (opcional: los respaldos viejos se importan igual).
+- `BackupService` — export/import JSON completo. Los motivos se emparejan **por nombre** con los locales y los `motivoIds` de los registros se traducen a los ids locales (`remapearMotivos`, v3.50.0): cada instalación crea sus motivos default con ids propios, y sin el mapa un respaldo de otro equipo dejaba registros apuntando a motivos inexistentes (estadísticas partidas, editor roto). En modo `replace` se restaura el catálogo del respaldo con sus ids. Combinar el mismo respaldo dos veces no duplica nada (`put` por id). Desde v3.52.0 incluye `bitacora?` (opcional: los respaldos viejos se importan igual). Desde v3.53.0 alumnos y registros se restauran **por lote** (`restaurarAlumnosLote` / `restaurarRegistrosLote`, una transacción) y **solo se escribe lo que cambió** (comparación por `huella()`, sin metadatos de sync): escribir cuesta ~1 000 filas/s con 4 índices, y el import diario de un año pasó de ~120 s a ~3 s. **Borrados entre equipos**: los eventos `registro-eliminado`/`alumno-eliminado` llevan `refId`; al **combinar**, los que llegan nuevos se aplican aquí y todos los conocidos evitan revivir lo borrado (`idsBorrados`). **Reemplazar** no los aplica: es restaurar y devuelve exactamente el archivo. La limpieza por rango no se propaga a propósito (la oficina es el archivo).
 - `BitacoraService` (v3.52.0) — `registrar(accion, detalle)` anota qué, cuándo y en qué equipo; **nunca lanza** (la bitácora no puede romper la acción que anota). Se llama en el punto de la acción, no dentro de `DatabaseService`: el "Deshacer" del escáner y el generador de datos de prueba también borran registros y no deben ensuciarla. Al agregar una acción administrativa nueva que mute datos, anotarla aquí (tipo `AccionBitacora` en `core/models/bitacora.model.ts`, etiqueta en `ACCIONES_BITACORA`). Nunca escribir el PIN en el detalle. En la Fase 2 el modelo gana `usuarioId`.
 - `ExportService`, `ReportService` — PDF (`jspdf`/`jspdf-autotable`) y Excel (`xlsx`).
 - `EstadisticasAvanzadasService` — tendencias, heatmap, top alumnos, insights, distribución por motivo/carrera.
