@@ -246,6 +246,11 @@ formatHora(h: number): string {
   kpiVisitasEstimadas = 0;
   kpiTasaRetencion = 0; // % alumnos con ≥N visitas (N = umbralRetencion)
   kpiUmbralRetencion = 3;
+  /**
+   * En un período de un día (Hoy, Ayer) casi nadie viene dos veces: la tasa
+   * salía ~0 % y parecía una mala noticia. Ahí se muestra "No aplica".
+   */
+  kpiRetencionAplica = true;
   kpiCrecimiento12m: { mes: string; cantidad: number }[] = [];
 
   /** Datos enriquecidos por barra: altura, flags, MoM, tooltip ya calculados. */
@@ -371,8 +376,13 @@ formatHora(h: number): string {
 
   // ─── Top alumnos config (sub-filtro independiente) ─
   topPeriodo = 30;
-  /** Modo período: preset o personalizado (rango libre). */
-  topPeriodoModo: 'preset' | 'personalizado' = 'preset';
+  /**
+   * 'principal' (por defecto, v3.55.1): mismo período y filtro de hora que
+   * el resto de la pantalla, como el mapa de calor. Antes eran siempre 30
+   * días: con "Esta semana" arriba, el Top seguía mostrando un mes.
+   * 'preset' / 'personalizado': período propio solo para esta lista.
+   */
+  topPeriodoModo: 'principal' | 'preset' | 'personalizado' = 'principal';
   topFechaInicio = '';
   topFechaFin = '';
   /** Cantidad de alumnos a mostrar (input libre, no solo presets). */
@@ -1234,6 +1244,16 @@ formatHora(h: number): string {
     this.cargarTopAlumnos();
   }
 
+  usarPeriodoPrincipalEnTop(): void {
+    this.topPeriodoModo = 'principal';
+    this.cargarTopAlumnos();
+  }
+
+  /** Filtro de hora que aplica al Top: solo cuando sigue al período principal. */
+  private get horaFiltroTop(): { desde: number; hasta: number } | null {
+    return this.topPeriodoModo === 'principal' ? this.horaFiltro : null;
+  }
+
   /** Activa el modo personalizado del top alumnos (rango libre). */
   activarTopPersonalizado(): void {
     this.topPeriodoModo = 'personalizado';
@@ -1274,6 +1294,7 @@ formatHora(h: number): string {
       this.topLimite,
       rangoCustom ? undefined : (this.topPeriodo || undefined),
       rangoCustom,
+      this.horaFiltroTop,
     );
 
     this.topAlumnos = top.map(item => ({
@@ -1287,6 +1308,7 @@ formatHora(h: number): string {
   }
 
   private rangoTopPersonalizado(): RangoFechas | undefined {
+    if (this.topPeriodoModo === 'principal') return this.rangoActivo ?? undefined;
     if (this.topPeriodoModo !== 'personalizado') return undefined;
     if (!this.topFechaInicio || !this.topFechaFin) return undefined;
     return this.estadisticasService.normalizarRango(
@@ -1297,6 +1319,10 @@ formatHora(h: number): string {
 
   private actualizarLabelTopAlumnos(): void {
     const cantidad = `Top ${this.topLimite}`;
+    if (this.topPeriodoModo === 'principal') {
+      this.labelTopAlumnos = `${cantidad} alumnos — mismo período`;
+      return;
+    }
     if (this.topPeriodoModo === 'personalizado' && this.topFechaInicio && this.topFechaFin) {
       const fi = this.formatearFechaCorta(new Date(this.topFechaInicio + 'T00:00:00'));
       const ff = this.formatearFechaCorta(new Date(this.topFechaFin + 'T00:00:00'));
@@ -1374,6 +1400,7 @@ formatHora(h: number): string {
           this.topLimite,
           rangoTopCustom ? undefined : (this.topPeriodo || undefined),
           rangoTopCustom,
+          this.horaFiltroTop,
         ),
       ]);
       const prediccion = this.estadisticasService.predecirDiaOcupadoDesde(heatmap);
@@ -1529,6 +1556,7 @@ formatHora(h: number): string {
       registros, umbralRetencionPara(this.estadisticasService.diasEnRango(rango)));
     this.kpiUmbralRetencion = retencion.umbral;
     this.kpiTasaRetencion = retencion.porcentaje;
+    this.kpiRetencionAplica = this.estadisticasService.diasEnRango(rango) > 1;
 
     // Distribución por turno (P5: sin invitados).
     const coloresTurno: Record<string, string> = {
@@ -2287,11 +2315,16 @@ this.sparkRegistros = counts;
     const rango = this.rangoDelTop();
     const ini = rango?.inicio.getTime() ?? -Infinity;
     const fin = rango?.fin.getTime() ?? Infinity;
+    // Mismo filtro de hora que el Top en pantalla: si no, el archivo contaba
+    // visitas que la lista no.
+    const hora = this.horaFiltroTop;
     return todosRegistros
       .filter(r => {
         if (!matriculasTop.has(r.matricula)) return false;
-        const t = new Date(r.fechaHora).getTime();
-        return t >= ini && t <= fin;
+        const d = new Date(r.fechaHora);
+        const t = d.getTime();
+        if (t < ini || t > fin) return false;
+        return !hora || (d.getHours() >= hora.desde && d.getHours() <= hora.hasta);
       })
       .sort((a, b) => new Date(b.fechaHora).getTime() - new Date(a.fechaHora).getTime());
   }

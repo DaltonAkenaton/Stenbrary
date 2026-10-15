@@ -28,11 +28,14 @@ Todo cuadró salvo:
   ahora dice cuántas salidas estimadas no se contaron.
 
 Dos pruebas nuevas en el cuadre; se comprobó que fallan sin las correcciones.
-Quedan a decisión del usuario: retención en periodos de 1 día (siempre ~0 %)
-y el Top de alumnos, que por defecto usa 30 días aunque arriba se elija otro
-periodo (el título lo dice).
 
-309 unitarios, 45 E2E.
+Decididas con el usuario después:
+- **Top de alumnos** con modo `'principal'` por defecto (mismo período y
+  filtro de hora, como el mapa de calor); `obtenerTopAlumnos` acepta
+  `horaFiltro`, y la exportación del Top filtra igual.
+- **Retención** "No aplica" en periodos de 1 día (`kpiRetencionAplica`).
+
+309 unitarios, 46 E2E.
 
 ## 2026-10-14 — Prueba de volumen: 2 años de visitas (v3.55.0)
 

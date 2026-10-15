@@ -304,8 +304,13 @@
                   help_outline
                 </mat-icon>
               </div>
-              <div class="kpi-value">{{ kpiTasaRetencion }}<span class="kpi-unit">%</span></div>
-              <div class="kpi-sub">≥ {{ kpiUmbralRetencion }} visitas en el período</div>
+              @if (kpiRetencionAplica) {
+                <div class="kpi-value">{{ kpiTasaRetencion }}<span class="kpi-unit">%</span></div>
+                <div class="kpi-sub">≥ {{ kpiUmbralRetencion }} visitas en el período</div>
+              } @else {
+                <div class="kpi-value muted">No aplica</div>
+                <div class="kpi-sub">Se mide en períodos de 2 días o más</div>
+              }
             </div>
           </div>
 
@@ -980,7 +985,7 @@
             <mat-icon>emoji_events</mat-icon>
             {{ labelTopAlumnos }}
             <mat-icon class="info-icon"
-                      matTooltip="Los alumnos con más visitas en el período seleccionado (independiente del filtro principal). Excluye invitados. Período y cantidad son configurables."
+                      matTooltip="Los alumnos con más visitas. Por defecto usa el mismo período y filtro de hora de arriba; con los botones puedes elegir otro período solo para esta lista. Excluye invitados."
                       matTooltipPosition="above">
               help_outline
             </mat-icon>
@@ -988,6 +993,12 @@
 
           <div class="section-actions">
             <div class="mini-periodo-selector">
+              <button class="mini-periodo-btn"
+                      [class.active]="topPeriodoModo === 'principal'"
+                      (click)="usarPeriodoPrincipalEnTop()"
+                      matTooltip="El mismo período elegido arriba">
+                Igual que arriba
+              </button>
               @for (op of opcionesTopPeriodo; track op.dias) {
                 <button class="mini-periodo-btn"
                         [class.active]="topPeriodoModo === 'preset' && topPeriodo === op.dias"

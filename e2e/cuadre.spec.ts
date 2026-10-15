@@ -110,6 +110,21 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     expect(t).toMatch(/Vespertino\s*2\s*40%/);
     expect(t).toMatch(/1°\s*1\s*20%\s*3°\s*2\s*40%\s*5°\s*2\s*40%/);
     expect(t).toMatch(/Estudiar \+ Pedir libro\s*1\s*100%/);
+    // El Top sigue al período de arriba (7 días), no a 30 días fijos:
+    // Ana 2 (r1, r4), Beto 2 (r2, r6), Caro 1 (r3). En 30 días serían 3, 3, 2.
+    expect(t).toMatch(/Top 5 alumnos — mismo período/);
+    expect(t).toMatch(/Beto Prueba Cuadre\s*Ing\. TI\s*login\s*2 visitas/);
+    expect(t).toMatch(/Ana Prueba Cuadre\s*Ing\. TI\s*login\s*2 visitas/);
+    expect(t).toMatch(/Caro Prueba Cuadre\s*Derecho\s*login\s*1 visita\b/);
+  });
+
+  test('Hoy: la retención no aplica a un solo día', async ({ page }) => {
+    await page.goto('/estadisticas?p=hoy&tab=resumen');
+    await expect(page.locator('.kpis-hero')).toContainText(/alumnos únicos/i, { timeout: 15000 });
+    const hero = await texto(page, '.kpis-hero');
+    expect(hero).toMatch(/Tasa de retención\D*No aplica/i);
+    expect(hero).toMatch(/Contra el día anterior/i);
+    expect(hero).toMatch(/Miércoles 09:00\s*1 visita\b/);                     // singular
   });
 
   test('Comparar recorta el mes pasado al mismo avance', async ({ page }) => {

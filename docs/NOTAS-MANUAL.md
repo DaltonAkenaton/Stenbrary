@@ -288,3 +288,9 @@ importados y "borrar todo". No dice **quién** (no hay cuentas en modo local).
 - **Alumnos inactivos:** igual, de 60 en 60. Cambiar la búsqueda, la carrera o el orden vuelve a la primera tanda. "Exportar a Excel" lleva la lista completa.
 - **PDF con más de 3 000 visitas** (Registros, "Exportar lo que veo" y el reporte por periodo de Estadísticas): antes de generarlo, el sistema pregunta. "Incluir detalle" agrega una tabla con cada visita (unas 40 por página: un año son cientos de páginas y puede tardar minutos). "Solo resumen" deja totales, carreras, actividades, turnos y alumnos frecuentes. Cerrar la ventana cancela. "Personalizar PDF" no pregunta porque ahí ya se eligen las secciones.
 - **Excel:** el archivo va comprimido. Dos años de visitas pesan unos 17 MB.
+
+## Estadísticas: Top y retención (v3.55.1)
+
+- **Top de alumnos:** por defecto, "Igual que arriba": mismo período y filtro de hora que el resto de la pantalla. Con 7/30/90 días, Año, Todo o Personalizado se elige otro período solo para la lista; el filtro de hora entonces no aplica. Excel y PDF del Top usan exactamente lo que se ve.
+- **Tasa de retención:** en períodos de un día (Hoy, Ayer) dice "No aplica". Se mide desde 2 días.
+- **Alerta de crecimiento/caída:** compara contra el mismo período anterior que la tarjeta "Contra…" (semana, mes, periodo o año anterior al mismo avance).

@@ -62,6 +62,14 @@ export const CHANGELOG: VersionChangelog[] = [
         texto: 'Un enlace a Estadísticas con un periodo que no existe ya no deja la pantalla en ceros: abre los últimos 30 días.',
       },
       {
+        tipo: 'cambio',
+        texto: 'El Top de alumnos usa ahora el mismo período y filtro de hora que el resto de la pantalla, como el mapa de calor. Con los botones de la lista todavía puedes elegir otro período solo para ella.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'En "Hoy" y "Ayer", la tasa de retención dice "No aplica": en un solo día casi nadie viene dos veces y el 0 % parecía una mala noticia.',
+      },
+      {
         tipo: 'mejora',
         texto: 'Textos más claros: "1 visita" en vez de "1 visitas", "Contra el día anterior", y el tiempo de estancia indica cuántas salidas estimadas no se contaron.',
       },

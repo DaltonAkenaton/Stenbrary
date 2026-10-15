@@ -744,6 +744,8 @@ export class EstadisticasAvanzadasService {
     limite = 10,
     dias?: number,
     rangoCustom?: RangoFechas,
+    /** Filtro de hora del período principal (cuando el Top lo sigue). */
+    horaFiltro?: { desde: number; hasta: number } | null,
   ): Promise<TopAlumno[]> {
     let registrosFiltrados = await this.obtenerRegistrosConCache();
     const todosAlumnos = await this.obtenerAlumnosConCache();
@@ -752,10 +754,10 @@ export class EstadisticasAvanzadasService {
     // Si se pasa un rango explícito (modo personalizado), úsalo;
     // sino y hay días (preset), filtrar por últimos N. Si nada, sin filtro.
     if (rangoCustom) {
-      registrosFiltrados = this.filtrarPorRango(registrosFiltrados, rangoCustom);
+      registrosFiltrados = this.filtrarPorRango(registrosFiltrados, rangoCustom, horaFiltro);
     } else if (dias && dias > 0) {
       const rango = this.crearRangoUltimosDias(dias);
-      registrosFiltrados = this.filtrarPorRango(registrosFiltrados, rango);
+      registrosFiltrados = this.filtrarPorRango(registrosFiltrados, rango, horaFiltro);
     }
 
     const registrosPorMatricula = new Map<string, Registro[]>();
