@@ -9,6 +9,53 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-14 — Prueba de volumen: 2 años de visitas (v3.55.0)
+
+Antes de cerrar el código se midió con datos de verdad grandes: 3 000 alumnos y
+120 000 visitas en 2 años, escritas directo a IndexedDB, sobre el build de
+producción, con Playwright midiendo tareas largas (>50 ms) por pantalla. El
+script no se commiteó: se sembraba en una transacción por lote; el generador de
+"Datos de prueba" escribe fila por fila y tarda minutos.
+
+| Pantalla / acción | Antes | Después |
+|---|---|---|
+| Perfil de alumno muy frecuente | 5.2 s | 0.15 s |
+| Estadísticas | 2.4 s (1.6 s congelada) | 1.8 s (0.9 s) |
+| Registros | 1.9 s | 1.1 s |
+| Inactivos | 1.3 s | 1.0 s |
+| Excel, todo el historial | 3.9 s, 53 MB | ~4 s, 17 MB |
+| PDF, todo con detalle | 36 s congelado, sin aviso | pregunta; con aviso |
+
+- **Perfil:** `mat-table` sin paginar, con chip y dos botones con ripple por
+  fila. Ahora tandas de 50. Inactivos, igual (60), con el límite atado a la
+  lista que lo amplió para que un filtro nuevo regrese a la primera tanda sin
+  `effect`.
+- **`toLocaleDateString` por fila** crea un formateador cada vez: 15.7 s contra
+  0.44 s con `Intl.DateTimeFormat` en caché, para 120 000 filas (medido en
+  Node). Estaba en Excel, la tabla del PDF, la constancia e Inactivos.
+- **Sort con dos `new Date` por comparación** en `obtenerTodosLosRegistros`:
+  370 → 170 ms precalculando el timestamp.
+- **`filtrarPorRango`** construía un Date por registro en cada una de sus
+  muchas llamadas (~0.5 s por carga de /estadisticas, según el perfil de CPU).
+  La caché del servicio ahora guarda un índice ordenado (`cacheOrdenado` +
+  `Float64Array` de timestamps) y filtra con búsqueda binaria. Hay un test que
+  lo compara contra el filtro lineal, con fechas repetidas e inválidas.
+  Proyección, crecimiento mensual y carrera con mayor crecimiento reciben solo
+  su tramo.
+- **Registros:** solo `_fechaTs` al cargar; las strings de la tabla, solo para
+  la página visible.
+- **PDF:** con más de 3 000 visitas, `elegirDetallePdf` pregunta antes:
+  incluir detalle / solo resumen / cancelar (Esc). No se recorta en silencio.
+  `generarPDF()` de Registros no esperaba la promesa (aviso de éxito antes del
+  archivo, errores tragados). La tabla mostraba solo el motivo principal (P2) y
+  el resumen por actividad no recibía el catálogo (nombres viejos de motivos
+  renombrados).
+- **Lo que queda** en Estadísticas/Registros es sobre todo `getAll` de
+  IndexedDB (~0.3–0.5 s por deserializar 120 000 objetos). Bajarlo pide paginar
+  la lectura o un worker. Para el volumen esperado no compensa.
+
+309 unitarios.
+
 ## 2026-10-14 — La puerta con prisas: lector fuera del escáner y flujos abandonados (v3.54.0)
 
 Segunda vuelta de revisión. Sin el Excel de la UAT, cada alumno se registra

@@ -49,6 +49,38 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.55.0',
+    fecha: '2026-10-14',
+    titulo: 'Rápido con años de datos',
+    resumen: 'Probamos el sistema con dos años de visitas (120 000) y ajustamos lo que se ponía lento.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto: 'El perfil de un alumno que viene mucho abre al instante: el historial muestra las 50 visitas más recientes y un botón "Mostrar más".',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Estadísticas, Registros y Alumnos inactivos cargan más rápido con mucho historial. Inactivos también muestra la lista por partes.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Exportar a Excel es mucho más rápido y el archivo pesa tres veces menos, para que quepa en un correo.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Antes de un PDF con miles de visitas, el sistema pregunta si quieres incluir el detalle de cada una (cientos de páginas) o solo el resumen. Mientras se genera aparece el aviso "Generando…".',
+      },
+      {
+        tipo: 'fix',
+        texto: 'En la tabla del PDF salen todas las actividades de cada visita, no solo la primera, y las actividades renombradas aparecen con su nombre actual, igual que en pantalla.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'El PDF de Registros ya no avisa "generado" antes de terminar, y si falla, lo dice.',
+      },
+    ],
+  },
+  {
     version: '3.54.0',
     fecha: '2026-10-14',
     titulo: 'La puerta, a prueba de prisas',

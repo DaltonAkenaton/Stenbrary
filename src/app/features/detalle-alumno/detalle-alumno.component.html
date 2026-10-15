@@ -334,7 +334,7 @@
 
         @if (registros.length > 0) {
           <div class="table-container">
-            <table mat-table [dataSource]="registros" class="historial-table">
+            <table mat-table [dataSource]="registrosVisibles" class="historial-table">
 
               <ng-container matColumnDef="fechaHora">
                 <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
@@ -375,6 +375,14 @@
               <tr mat-row *matRowDef="let row; columns: columnasRegistros;"></tr>
             </table>
           </div>
+          @if (registrosVisibles.length < registros.length) {
+            <div class="historial-mas">
+              <button mat-stroked-button (click)="mostrarMasHistorial()">
+                <mat-icon>expand_more</mat-icon>
+                Mostrar más ({{ registros.length - registrosVisibles.length }} restantes)
+              </button>
+            </div>
+          }
         } @else {
           <div class="empty-state">
             <mat-icon>event_note</mat-icon>

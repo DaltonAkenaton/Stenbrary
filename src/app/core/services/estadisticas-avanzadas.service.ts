@@ -195,6 +195,7 @@ export class EstadisticasAvanzadasService {
     const version = this.versionActual();
     this.cacheInFlight = this.databaseService.obtenerTodosLosRegistros()
       .then(registros => {
+        this.indexarCache(registros);
         this.registrosCache = registros;
         this.cacheTimestamp = Date.now();
         this.versionCache = version;
@@ -204,6 +205,39 @@ export class EstadisticasAvanzadasService {
         this.cacheInFlight = null;
       });
     return this.cacheInFlight;
+  }
+
+  /**
+   * Índice por fecha de la caché: los registros con fecha válida, de más
+   * reciente a más antiguo, y sus timestamps en paralelo. `filtrarPorRango`
+   * lo recorre con búsqueda binaria en vez de construir un Date por cada uno
+   * de los 120 000 registros en cada llamada (~0.5 s por carga de
+   * /estadisticas en la prueba de volumen, 2026-10). Se reordena aquí y no se
+   * confía en el orden de la BD: una fecha inválida rompe cualquier sort.
+   */
+  private cacheOrdenado: Registro[] = [];
+  private cacheTs: Float64Array = new Float64Array(0);
+
+  private indexarCache(registros: Registro[]): void {
+    const pares: { t: number; r: Registro }[] = [];
+    for (const r of registros) {
+      const t = new Date(r.fechaHora).getTime();
+      if (Number.isFinite(t)) pares.push({ t, r });
+    }
+    pares.sort((a, b) => b.t - a.t);
+    this.cacheOrdenado = pares.map(p => p.r);
+    this.cacheTs = Float64Array.from(pares, p => p.t);
+  }
+
+  /** Primera posición con timestamp <= `t` (el arreglo va en orden descendente). */
+  private posicionDesde(t: number): number {
+    let lo = 0;
+    let hi = this.cacheTs.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (this.cacheTs[mid] > t) lo = mid + 1; else hi = mid;
+    }
+    return lo;
   }
 
   /** Versión de los datos con la que se llenó la caché (ver `DatabaseService.versionDatos`). */
@@ -239,6 +273,8 @@ export class EstadisticasAvanzadasService {
   invalidarCache(): void {
     this.versionCache = -1;
     this.registrosCache = null;
+    this.cacheOrdenado = [];
+    this.cacheTs = new Float64Array(0);
     this.cacheTimestamp = 0;
     this.cacheInFlight = null;
     this.alumnosCache = null;
@@ -341,6 +377,16 @@ export class EstadisticasAvanzadasService {
   ): Registro[] {
     const ini = rango.inicio.getTime();
     const fin = rango.fin.getTime();
+    if (registros === this.registrosCache) {
+      // Tramo [ini, fin] del índice: de la posición de `fin` a la de `ini`.
+      const tramo = this.cacheOrdenado.slice(this.posicionDesde(fin), this.posicionDesde(ini - 1));
+      if (!horaFiltro) return tramo;
+      const { desde, hasta } = horaFiltro;
+      return tramo.filter(r => {
+        const h = new Date(r.fechaHora).getHours();
+        return h >= desde && h <= hasta;
+      });
+    }
     if (!horaFiltro) {
       return registros.filter(r => {
         const t = new Date(r.fechaHora).getTime();
@@ -822,7 +868,11 @@ export class EstadisticasAvanzadasService {
 
   /** Proyección del total de hoy con el historial real (P8). `null` = no hay base. */
   async proyectarHoy(ahora: Date = new Date()): Promise<ProyeccionDia | null> {
-    return proyectarCierreHoy(await this.obtenerRegistrosConCache(), ahora);
+    // La proyección mira 10 semanas atrás; se le pasa ese tramo (con holgura)
+    // en vez del historial completo.
+    const todos = await this.obtenerRegistrosConCache();
+    const rango = this.normalizarRango(desplazarDias(ahora, -12 * 7), ahora);
+    return proyectarCierreHoy(this.filtrarPorRango(todos, rango), ahora);
   }
 
   async analizarPorCarrera(

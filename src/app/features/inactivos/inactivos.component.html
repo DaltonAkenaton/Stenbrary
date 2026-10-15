@@ -190,7 +190,7 @@
 
     <!-- VISTA LISTA -->
     <div class="lista">
-      @for (item of inactivosFiltrados(); track item.alumno.matricula) {
+      @for (item of inactivosVisibles(); track item.alumno.matricula) {
         <a class="fila"
            [routerLink]="['/detalle-alumno', item.alumno.matricula]">
           <div class="fila-avatar">{{ item._iniciales }}</div>
@@ -239,7 +239,7 @@
 
     <!-- VISTA CARDS -->
     <div class="cards-grid">
-      @for (item of inactivosFiltrados(); track item.alumno.matricula) {
+      @for (item of inactivosVisibles(); track item.alumno.matricula) {
         <a class="card"
            [class]="'grav-' + item._gravedad"
            [routerLink]="['/detalle-alumno', item.alumno.matricula]">
@@ -293,6 +293,15 @@
       }
     </div>
 
+  }
+
+  @if (!cargando() && inactivosVisibles().length < inactivosFiltrados().length) {
+    <div class="mostrar-mas">
+      <button mat-stroked-button type="button" (click)="mostrarMas()">
+        <mat-icon>expand_more</mat-icon>
+        Mostrar más ({{ inactivosFiltrados().length - inactivosVisibles().length }} restantes)
+      </button>
+    </div>
   }
 
 </div>

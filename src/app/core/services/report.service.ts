@@ -1,4 +1,4 @@
-﻿// ╔══════════════════════════════════════════════════════╗
+// ╔══════════════════════════════════════════════════════╗
 // ║  RUTA: src/app/core/services/report.service.ts       ║
 // ║  Stenbrary v3.8.2 — Reportes PDF con sección Top      ║
 // ║                                                      ║
@@ -9,7 +9,7 @@
 
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
-import { Alumno, Registro } from '../models';
+import { Alumno, Motivo, Registro } from '../models';
 // Solo tipos: el bundler no incluirá jspdf/jspdf-autotable en el chunk inicial.
 // Los módulos se cargan dinámicamente en cargarPdfLib() — primer uso descarga
 // jspdf (~150 KB) + autotable (~30 KB) on-demand.
@@ -17,6 +17,12 @@ import type jsPDF from 'jspdf';
 import type autoTableT from 'jspdf-autotable';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 import { contarMotivos, duracionReal, esInvitado, esSalidaEstimada, resumirEstancia } from '../utils/estadisticas.utils';
+
+// Formateadores creados una vez: `toLocaleDateString` arma uno por llamada y
+// en tablas de miles de filas era la mayor parte del tiempo (ver export.service).
+const FMT_FECHA = new Intl.DateTimeFormat('es-MX');
+const FMT_FECHA_2D = new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const FMT_HORA = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
 
 export type TipoReporte = 'diario' | 'semanal' | 'mensual' | 'anual' | 'personalizado';
 
@@ -188,7 +194,9 @@ export class ReportService {
 
     if (secciones.motivos) {
       y = this.verificarEspacioPagina(doc, y, 60);
-      y = this.dibujarResumenMotivos(doc, registros, y, margin);
+      // Con el catálogo, un motivo renombrado sale con su nombre actual, como en pantalla.
+      const catalogo = await this.databaseService.obtenerTodosLosMotivos().catch(() => []);
+      y = this.dibujarResumenMotivos(doc, registros, y, margin, catalogo);
     }
 
     if (secciones.turnos) {
@@ -446,7 +454,7 @@ export class ReportService {
       t.carrera.length > 28 ? t.carrera.substring(0, 26) + '…' : t.carrera,
       t.totalVisitas.toString(),
       t.motivoFrecuente,
-      new Date(t.ultimaVisita).toLocaleDateString('es-MX'),
+      FMT_FECHA.format(new Date(t.ultimaVisita)),
     ]);
 
     this._autoTable(doc, {
@@ -513,18 +521,20 @@ export class ReportService {
       const fecha = new Date(r.fechaHora);
       return [
         (i + 1).toString(),
-        fecha.toLocaleDateString('es-MX'),
-        fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+        FMT_FECHA.format(fecha),
+        FMT_HORA.format(fecha),
         r.matricula,
         r.nombreCompleto,
-        r.carrera.length > 25 ? r.carrera.substring(0, 23) + '...' : r.carrera,
-        r.motivoNombre,
+        // `|| ''`: un respaldo viejo sin carrera tronaba todo el PDF aquí.
+        (r.carrera || '').length > 25 ? r.carrera.substring(0, 23) + '...' : (r.carrera || ''),
+        // Todas las actividades, como el Excel y los conteos (P2); antes solo la principal.
+        (r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre]).join(', '),
       ];
     });
 
     this._autoTable(doc, {
       startY: startY + 3,
-      head: [['#', 'Fecha', 'Hora', 'Matrícula', 'Alumno', 'Carrera', 'Actividad']],
+      head: [['#', 'Fecha', 'Hora', 'Matrícula', 'Alumno', 'Carrera', 'Actividades']],
       body: datos,
       margin: { left: margin, right: margin },
       styles: {
@@ -568,11 +578,13 @@ export class ReportService {
     const porCarrera = new Map<string, { visitas: number; alumnos: Set<string> }>();
     registros.forEach(r => {
       // Excluir visitantes del resumen por carrera (no tienen carrera real)
-      if (r.matricula === 'INVITADO') return;
-      const data = porCarrera.get(r.carrera) || { visitas: 0, alumnos: new Set() };
+      if (esInvitado(r)) return;
+      // Misma etiqueta que Estadísticas (`analizarPorCarrera`); antes salía "undefined".
+      const carrera = r.carrera || 'Sin carrera';
+      const data = porCarrera.get(carrera) || { visitas: 0, alumnos: new Set() };
       data.visitas++;
       data.alumnos.add(r.matricula);
-      porCarrera.set(r.carrera, data);
+      porCarrera.set(carrera, data);
     });
 
     if (porCarrera.size === 0) return startY;
@@ -617,11 +629,12 @@ export class ReportService {
     doc: jsPDF,
     registros: Registro[],
     startY: number,
-    margin: number
+    margin: number,
+    catalogo: Motivo[] = [],
   ): number {
     // P2: cada motivo de una visita suma. El % es "de las visitas, cuántas
     // incluyeron esta actividad" y la columna puede sumar más de 100 %.
-    const conteo = contarMotivos(registros);
+    const conteo = contarMotivos(registros, catalogo);
     if (conteo.length === 0) return startY;
 
     const total = registros.length;
@@ -899,16 +912,16 @@ export class ReportService {
         .map(r => {
           const fecha = new Date(r.fechaHora);
           const motivo = r.motivoNombres?.join(', ') || r.motivoNombre || '—';
-          const entrada = fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+          const entrada = FMT_HORA.format(fecha);
           const salida = r.horaSalida
-            ? new Date(r.horaSalida).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+            ? FMT_HORA.format(new Date(r.horaSalida))
             : '—';
           const real = duracionReal(r);
           const dur = real !== null
             ? (real >= 60 ? `${Math.floor(real / 60)}h ${real % 60}m` : `${real}m`)
             : (r.horaSalida && esSalidaEstimada(r) ? 'sin registrar' : '—');
           return [
-            fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+            FMT_FECHA_2D.format(fecha),
             entrada,
             salida,
             dur,

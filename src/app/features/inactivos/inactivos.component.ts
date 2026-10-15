@@ -163,6 +163,30 @@ export class InactivosComponent implements OnInit {
     });
   });
 
+  /**
+   * Se pinta por tandas: con la matrícula completa importada, la lista con
+   * "nunca vinieron" pasa de 2 000 filas, cada una con enlace e íconos. El
+   * límite va atado a la lista que lo amplió: si cambia un filtro, la lista
+   * es otra y se vuelve a la primera tanda sin un `effect`.
+   */
+  private static readonly TANDA = 60;
+  private limite = signal<{ lista: unknown; n: number }>({ lista: null, n: InactivosComponent.TANDA });
+
+  private limiteActual(lista: unknown): number {
+    const s = this.limite();
+    return s.lista === lista ? s.n : InactivosComponent.TANDA;
+  }
+
+  inactivosVisibles = computed(() => {
+    const lista = this.inactivosFiltrados();
+    return lista.slice(0, this.limiteActual(lista));
+  });
+
+  mostrarMas(): void {
+    const lista = this.inactivosFiltrados();
+    this.limite.set({ lista, n: this.limiteActual(lista) + InactivosComponent.TANDA });
+  }
+
   nuncaHanVenido = computed(() => {
     let n = 0;
     for (const i of this.todos()) if (!Number.isFinite(i.diasSinVenir)) n++;
@@ -328,12 +352,15 @@ export class InactivosComponent implements OnInit {
     return `${n}${p}`.toUpperCase();
   }
 
+  // Un solo formateador: se llama por cada alumno de la lista (miles).
+  private static readonly FMT_FECHA = new Intl.DateTimeFormat('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
   formatearFecha(fecha: Date): string {
-    return new Date(fecha).toLocaleDateString('es-MX', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+    return InactivosComponent.FMT_FECHA.format(new Date(fecha));
   }
 
   isFinite(n: number): boolean {

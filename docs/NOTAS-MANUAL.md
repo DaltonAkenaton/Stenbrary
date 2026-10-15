@@ -281,3 +281,10 @@ importados y "borrar todo". No dice **quién** (no hay cuentas en modo local).
   Guarda los últimos 5000 eventos.
 - Lo que no anota: los registros normales del escáner (eso ya está en
   Registros) ni el "Deshacer" justo después de escanear.
+
+## Listas largas y PDF con muchas visitas (v3.55.0)
+
+- **Perfil del alumno:** el historial muestra las 50 visitas más recientes; "Mostrar más" agrega otras 50. Los totales (visitas, horas, actividad frecuente) siempre cuentan todo el historial, no solo lo que se ve.
+- **Alumnos inactivos:** igual, de 60 en 60. Cambiar la búsqueda, la carrera o el orden vuelve a la primera tanda. "Exportar a Excel" lleva la lista completa.
+- **PDF con más de 3 000 visitas** (Registros, "Exportar lo que veo" y el reporte por periodo de Estadísticas): antes de generarlo, el sistema pregunta. "Incluir detalle" agrega una tabla con cada visita (unas 40 por página: un año son cientos de páginas y puede tardar minutos). "Solo resumen" deja totales, carreras, actividades, turnos y alumnos frecuentes. Cerrar la ventana cancela. "Personalizar PDF" no pregunta porque ahí ya se eligen las secciones.
+- **Excel:** el archivo va comprimido. Dos años de visitas pesan unos 17 MB.

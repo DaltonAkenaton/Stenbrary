@@ -63,6 +63,8 @@ import { ExportService } from '../../core/services/export.service';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfigService } from '../../core/services/config.service';
+import { LoadingService } from '../../core/services/loading.service';
+import { cederPintado, elegirDetallePdf } from '../../shared/components/confirm-dialog/detalle-pdf';
 import {
   combinacionesDeMotivos,
   conteoMensual,
@@ -84,7 +86,7 @@ import {
   umbralRetencionPara,
   variacionDiaria,
 } from '../../core/utils/estadisticas.utils';
-import { Motivo } from '../../core/models';
+import { Motivo, Registro } from '../../core/models';
 import { periodoActual, periodoAnterior, PeriodoResuelto, rangoDePeriodo } from '../../core/utils/calendario.utils';
 import { desplazarDias, fechaLocalISO } from '../../core/utils/tiempo.utils';
 
@@ -440,6 +442,7 @@ formatHora(h: number): string {
     private cdr: ChangeDetectorRef,
     private dialog: MatDialog,
     private ngZone: NgZone,
+    private loading: LoadingService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -1553,8 +1556,14 @@ formatHora(h: number): string {
 
   /** Crecimiento mensual (últimos `mesesCrecimiento` meses, independiente del filtro). */
   private async cargarCrecimiento12m(): Promise<void> {
-    const todos = await this.estadisticasService.obtenerRegistros();
     const hoy = new Date();
+    // Solo el tramo que cubren las dos métricas (los N meses y el anterior al
+    // primero): las funciones filtran solas, pero así no recorren todo el historial.
+    const meses = Math.max(this.mesesCrecimiento, 2);
+    const todos = await this.estadisticasService.obtenerRegistrosCrudos({
+      inicio: new Date(hoy.getFullYear(), hoy.getMonth() - meses, 1),
+      fin: this.estadisticasService.normalizarRango(hoy, hoy).fin,
+    });
     const nombresAbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     this.kpiCrecimiento12m = conteoMensual(todos, hoy, this.mesesCrecimiento).map(m => ({
       mes: `${nombresAbr[m.inicio.getMonth()]} ${String(m.inicio.getFullYear()).slice(-2)}`,
@@ -1816,26 +1825,22 @@ this.sparkRegistros = counts;
 
       // Tier B10: carrera con mayor crecimiento vs período anterior.
       const rangoAnterior = this.rangoAnteriorActivo ?? this.estadisticasService.rangoAnteriorMismaLongitud(rango);
-      const inA = rango.inicio.getTime(), fnA = rango.fin.getTime();
-      const inB = rangoAnterior.inicio.getTime(), fnB = rangoAnterior.fin.getTime();
-
-      const aplicaHora = (d: Date): boolean => {
-        if (!horaFiltro) return true;
-        const h = d.getHours();
-        return h >= horaFiltro.desde && h <= horaFiltro.hasta;
+      // Los dos tramos salen del índice por fecha del servicio, no de recorrer todo el historial.
+      const [regsA, regsB] = await Promise.all([
+        this.estadisticasService.obtenerRegistrosCrudos(rango, horaFiltro),
+        this.estadisticasService.obtenerRegistrosCrudos(rangoAnterior, horaFiltro),
+      ]);
+      const contarPorCarrera = (regs: Registro[]): Map<string, number> => {
+        const m = new Map<string, number>();
+        for (const r of regs) {
+          if (esInvitado(r)) continue; // P5
+          const c = r.carrera || 'Sin carrera';
+          m.set(c, (m.get(c) || 0) + 1);
+        }
+        return m;
       };
-
-      const carrerasA = new Map<string, number>();
-      const carrerasB = new Map<string, number>();
-      for (const r of todos) {
-        const d = new Date(r.fechaHora);
-        const t = d.getTime();
-        if (!aplicaHora(d)) continue;
-        if (esInvitado(r)) continue; // P5
-        const c = r.carrera || 'Sin carrera';
-        if (t >= inA && t <= fnA) carrerasA.set(c, (carrerasA.get(c) || 0) + 1);
-        else if (t >= inB && t <= fnB) carrerasB.set(c, (carrerasB.get(c) || 0) + 1);
-      }
+      const carrerasA = contarPorCarrera(regsA);
+      const carrerasB = contarPorCarrera(regsB);
 
       let mejor: { carrera: string; cambio: number; porcentaje: number } | null = null;
       carrerasA.forEach((cantA, carrera) => {
@@ -2097,6 +2102,11 @@ this.sparkRegistros = counts;
         this.toastService.warning('No hay registros en el periodo seleccionado');
         return;
       }
+      // Un reporte anual con la tabla de cada visita son ~1 500 páginas: preguntar.
+      const eleccion = await elegirDetallePdf(this.dialog, delRango.length);
+      if (!eleccion) return;
+      this.loading.show('Generando PDF…');
+      await cederPintado();
       const topParaReporte = this.calcularTopDelMes(
         delRango, 10, await this.databaseService.obtenerTodosLosMotivos());
       const { ReportService } = await import('../../core/services/report.service');
@@ -2114,12 +2124,14 @@ this.sparkRegistros = counts;
         fechaFin: rango.fin,
         topAlumnos: topParaReporte,
         tituloTabla: 'Detalle de visitas del período',
+        ...(eleccion === 'resumen' ? { secciones: { tablaRegistros: false } } : {}),
       });
       this.toastService.success(`Reporte generado (${delRango.length} registros)`);
     } catch (e) {
       console.error(e);
       this.toastService.error('No se pudo generar el reporte');
     } finally {
+      this.loading.hide();
       this.generandoReporte = false;
       this.cdr.markForCheck();
     }
@@ -2130,7 +2142,11 @@ this.sparkRegistros = counts;
    * Para personalizar secciones, usar `personalizarPdf()`.
    */
   async exportarLoQueVeo(): Promise<void> {
-    await this.generarPdfRangoActivo();
+    if (this.generandoReporte) return;
+    // "Personalizar" ya deja quitar la tabla; este botón la incluía siempre.
+    const eleccion = await elegirDetallePdf(this.dialog, this.kpiTotalRegistros);
+    if (!eleccion) return;
+    await this.generarPdfRangoActivo(eleccion === 'resumen' ? { tablaRegistros: false } : undefined);
   }
 
   /** Abre el dialog de personalización antes de generar. */
@@ -2158,7 +2174,9 @@ this.sparkRegistros = counts;
     if (this.generandoReporte) return;
     this.generandoReporte = true;
     this.cdr.markForCheck();
+    this.loading.show('Generando PDF…');
     try {
+      await cederPintado();
       const todos = await this.databaseService.obtenerTodosLosRegistros();
       const horaFiltro = this.horaFiltro;
       const ini = this.rangoActivo.inicio.getTime();
@@ -2196,6 +2214,7 @@ this.sparkRegistros = counts;
       console.error(e);
       this.toastService.error('No se pudo generar el PDF');
     } finally {
+      this.loading.hide();
       this.generandoReporte = false;
       this.cdr.markForCheck();
     }

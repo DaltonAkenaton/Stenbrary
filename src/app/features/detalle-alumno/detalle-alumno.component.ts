@@ -100,6 +100,20 @@ export class DetalleAlumnoComponent implements OnInit {
 
   columnasRegistros: string[] = ['fechaHora', 'motivo', 'acciones'];
 
+  /**
+   * El historial se pinta por tandas: cada fila lleva chip y dos botones
+   * con ripple, y un alumno con ~2 000 visitas tardaba 5 s en abrir
+   * (prueba de volumen, 2026-10). Las métricas usan siempre `registros`.
+   */
+  private static readonly TANDA_HISTORIAL = 50;
+  limiteHistorial = DetalleAlumnoComponent.TANDA_HISTORIAL;
+  registrosVisibles: RegistroDetalle[] = [];
+
+  mostrarMasHistorial(): void {
+    this.limiteHistorial += DetalleAlumnoComponent.TANDA_HISTORIAL;
+    this.registrosVisibles = this.registros.slice(0, this.limiteHistorial);
+  }
+
   private readonly bitacora = inject(BitacoraService);
   private readonly aforoService = inject(AforoService);
 
@@ -159,6 +173,7 @@ export class DetalleAlumnoComponent implements OnInit {
       this.registros = rawRegistros.map(r =>
         Object.assign(r, { _fechaStr: FMT_DET.format(new Date(r.fechaHora)) })
       ) as RegistroDetalle[];
+      this.registrosVisibles = this.registros.slice(0, this.limiteHistorial);
       this.calcularEstadisticas();
       this.logros = calcularLogros(this.registros);
       this.precomputarDisplay();

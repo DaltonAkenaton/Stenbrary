@@ -574,6 +574,12 @@
     border: 1px solid $border-subtle;
   }
 
+  .historial-mas {
+    display: flex;
+    justify-content: center;
+    margin-top: $spacing-md;
+  }
+
   .historial-table {
     width: 100%;
 

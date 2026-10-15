@@ -15,6 +15,12 @@ import { Registro, Alumno } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 import { duracionReal, esSalidaEstimada } from '../utils/estadisticas.utils';
 
+// Formateadores creados una vez. `toLocaleDateString('es-MX')` arma uno nuevo
+// en cada llamada: con 120 000 visitas el Excel tardaba ~16 s solo en las
+// fechas, contra ~0.4 s así (mismo texto; prueba de volumen 2026-10).
+const FMT_FECHA = new Intl.DateTimeFormat('es-MX');
+const FMT_HORA = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit' });
+
 @Injectable({
   providedIn: 'root',
 })
@@ -37,12 +43,12 @@ export class ExportService {
     if (registros.length === 0) return;
     const XLSX = await this.cargarXlsx();
 
-    const hora = (x: Date) => x.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    const hora = (x: Date) => FMT_HORA.format(x);
     const datos = registros.map(r => {
       const d = new Date(r.fechaHora);
       const real = duracionReal(r);
       return {
-        'Fecha': d.toLocaleDateString('es-MX'),
+        'Fecha': FMT_FECHA.format(d),
         'Hora': hora(d),
         'Matrícula': r.matricula,
         'Alumno': r.nombreCompleto,
@@ -77,7 +83,9 @@ export class ExportService {
     XLSX.utils.book_append_sheet(wb, ws, 'Registros');
 
     const nombre = nombreArchivo || `registros_stenbrary_${this.fechaHoy()}`;
-    XLSX.writeFile(wb, `${nombre}.xlsx`);
+    // Sin `compression` SheetJS guarda el ZIP sin comprimir: 120 000 visitas
+    // pesaban 53 MB, demasiado para un correo.
+    XLSX.writeFile(wb, `${nombre}.xlsx`, { compression: true });
   }
 
   /**
@@ -104,7 +112,7 @@ export class ExportService {
       'Grupo': a.grupo,
       'Turno': a.turno,
       'Activo': a.activo ? 'Sí' : 'No',
-      'Fecha Registro': new Date(a.fechaRegistro).toLocaleDateString('es-MX'),
+      'Fecha Registro': FMT_FECHA.format(new Date(a.fechaRegistro)),
       ...(columnasExtra ? columnasExtra(a) : {}),
     }));
 
@@ -128,7 +136,7 @@ export class ExportService {
     XLSX.utils.book_append_sheet(wb, ws, 'Alumnos');
 
     const nombre = nombreArchivo || `alumnos_stenbrary_${this.fechaHoy()}`;
-    XLSX.writeFile(wb, `${nombre}.xlsx`);
+    XLSX.writeFile(wb, `${nombre}.xlsx`, { compression: true });
   }
 
   private fechaHoy(): string {

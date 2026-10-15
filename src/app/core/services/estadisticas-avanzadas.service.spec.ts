@@ -263,6 +263,41 @@ describe('EstadisticasAvanzadasService', () => {
       const svc = new EstadisticasAvanzadasService(crearMockDb(conStrings) as any);
       expect(await svc.contarRegistrosEnRango(semana)).toBe(1);
     });
+
+    it('la búsqueda binaria da lo mismo que recorrer todo (fechas repetidas, inválidas y desordenadas)', async () => {
+      // El índice por fecha de la caché (prueba de volumen 2026-10) no puede
+      // cambiar ni un conteo: se compara contra el filtro lineal de siempre.
+      const base = new Date(2026, 2, 1).getTime();
+      const regs: Registro[] = [];
+      for (let i = 0; i < 400; i++) {
+        // Paso de 37 min sobre ~10 días, mezclado; cada 5.º repite el anterior.
+        const t = base + ((i * 7919) % 400) * 37 * 60_000;
+        regs.push(reg(`q${i}`, '2000000001', 'ISC', 'Estudiar', new Date(i % 5 === 0 && i > 0 ? t - 37 * 60_000 : t)));
+      }
+      regs.push(reg('nan1', '2000000001', 'ISC', 'Estudiar', new Date('basura')));
+      regs.push(reg('nan2', '2000000001', 'ISC', 'Estudiar', 'tampoco' as unknown as Date));
+      const svc = new EstadisticasAvanzadasService(crearMockDb(regs) as any);
+
+      const lineal = (r: RangoFechas, h?: { desde: number; hasta: number }) => regs.filter(x => {
+        const d = new Date(x.fechaHora);
+        const t = d.getTime();
+        if (!(t >= r.inicio.getTime() && t <= r.fin.getTime())) return false;
+        return !h || (d.getHours() >= h.desde && d.getHours() <= h.hasta);
+      }).map(x => x.id).sort();
+
+      const rangos: RangoFechas[] = [
+        svc.normalizarRango(new Date(2026, 2, 3), new Date(2026, 2, 5)),
+        { inicio: new Date(regs[10].fechaHora), fin: new Date(regs[20].fechaHora) }, // bordes exactos
+        svc.normalizarRango(new Date(2025, 0, 1), new Date(2027, 0, 1)),            // todo
+        svc.normalizarRango(new Date(2030, 0, 1), new Date(2030, 0, 2)),            // nada
+      ];
+      for (const r of rangos) {
+        for (const h of [undefined, { desde: 9, hasta: 13 }]) {
+          const ids = (await svc.obtenerRegistrosCrudos(r, h)).map(x => x.id).sort();
+          expect(ids).toEqual(lineal(r, h));
+        }
+      }
+    });
   });
 
   // ═══════════════════════════════════════════════════════

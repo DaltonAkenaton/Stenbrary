@@ -31,19 +31,24 @@ import { formatearDuracion, parseFechaLocal, rangoUltimosDias } from '../../core
 import { esSalidaEstimada, incluyeMotivo } from '../../core/utils/estadisticas.utils';
 import { logError } from '../../core/utils/logger';
 import { BitacoraService, describirRegistro } from '../../core/services/bitacora.service';
+import { LoadingService } from '../../core/services/loading.service';
+import { cederPintado, elegirDetallePdf } from '../../shared/components/confirm-dialog/detalle-pdf';
 
 type RangoFecha = 'hoy' | 'ayer' | 'semana' | 'mes' | 'todo' | 'personalizado';
 
 /**
- * Registro extendido con strings precomputadas para la tabla.
- * Construido una sola vez en `cargarDatos()`, evita formatear en cada render.
+ * Registro extendido para la tabla. `_fechaTs` se calcula al cargar (lo usa
+ * el filtro); las strings de display, solo para las filas de la página
+ * visible (`decorarParaTabla`): formatearlas para los 120 000 registros de
+ * dos años costaba ~0.4 s al abrir la vista, para pintar 30 (prueba de
+ * volumen, 2026-10). Una vez formateada, la fila conserva sus strings.
  */
 type RegistroRender = Registro & {
   _fechaTs: number;
-  _fechaDateStr: string;     // "12/04/2026"
-  _horaEntradaStr: string;   // "14:30"
-  _horaSalidaStr: string;    // "16:45" o ""
-  _duracionStr: string;      // "2h 15m" o ""
+  _fechaDateStr?: string;     // "12/04/2026"
+  _horaEntradaStr?: string;   // "14:30"
+  _horaSalidaStr?: string;    // "16:45" o ""
+  _duracionStr?: string;      // "2h 15m" o ""
 };
 
 const FMT_FECHA = new Intl.DateTimeFormat('es-MX', {
@@ -54,10 +59,14 @@ const FMT_HORA = new Intl.DateTimeFormat('es-MX', {
 });
 
 function buildRegistroRender(r: Registro): RegistroRender {
-  const entrada = new Date(r.fechaHora);
+  return Object.assign(r, { _fechaTs: new Date(r.fechaHora).getTime() }) as RegistroRender;
+}
+
+function decorarParaTabla(r: RegistroRender): RegistroRender {
+  if (r._fechaDateStr !== undefined) return r;
+  const entrada = new Date(r._fechaTs);
   const salida = r.horaSalida ? new Date(r.horaSalida) : null;
   return Object.assign(r, {
-    _fechaTs: entrada.getTime(),
     _fechaDateStr: FMT_FECHA.format(entrada),
     _horaEntradaStr: FMT_HORA.format(entrada),
     _horaSalidaStr: salida ? FMT_HORA.format(salida) : '',
@@ -142,6 +151,7 @@ columnas: string[] = [
       'motivo', 'salida', 'duracion', 'acciones'
     ];
   private readonly bitacora = inject(BitacoraService);
+  private readonly loading = inject(LoadingService);
 
   constructor(
   private databaseService: DatabaseService,
@@ -332,7 +342,7 @@ columnas: string[] = [
 
   registrosPaginadosSig = computed<RegistroRender[]>(() => {
     const inicio = this.paginaActual() * this.filasPorPagina;
-    return this.registrosFiltradosSig().slice(inicio, inicio + this.filasPorPagina);
+    return this.registrosFiltradosSig().slice(inicio, inicio + this.filasPorPagina).map(decorarParaTabla);
   });
 
   get registrosPaginados(): RegistroRender[] {
@@ -400,7 +410,7 @@ columnas: string[] = [
 
   // ─── FORMATO ───────────────────────────────────────────
   // Las strings de display (_fechaDateStr, _horaEntradaStr, _duracionStr)
-  // se precomputan en buildRegistroRender(). Los formatos se centralizan
+  // se calculan en decorarParaTabla(), solo para la página visible. Los formatos se centralizan
   // en core/utils/tiempo.utils.ts (formatearDuracion).
 
   get etiquetaRango(): string {
@@ -456,23 +466,31 @@ columnas: string[] = [
       return;
     }
     try {
+      this.loading.show('Generando Excel…');
+      await cederPintado();
       await this.exportService.exportarRegistrosXLSX(datos);
       this.toastService.success(`${datos.length} registros exportados a Excel`);
     } catch (err) {
       logError('Error al exportar registros:', err);
       this.toastService.error('No se pudo generar el archivo Excel');
+    } finally {
+      this.loading.hide();
     }
   }
 
-  
+  /** Evita un segundo clic mientras jsPDF trabaja (bloquea el hilo). */
+  generandoPdf = false;
 
-
-  generarPDF(): void {
+  async generarPDF(): Promise<void> {
     const datos = this.registrosFiltrados;
     if (datos.length === 0) {
       this.toastService.warning('No hay datos para generar el reporte');
       return;
     }
+    if (this.generandoPdf) return;
+
+    const eleccion = await elegirDetallePdf(this.dialog, datos.length);
+    if (!eleccion) return;
 
     const tipoMap: Record<string, TipoReporte> = {
       'hoy': 'diario',
@@ -491,17 +509,31 @@ columnas: string[] = [
       ? new Date(tsMin) : new Date(datos[datos.length - 1]._fechaTs);
     const fechaFin = Number.isFinite(tsMax) ? new Date(tsMax) : new Date(datos[0]._fechaTs);
 
-    this.reportService.generarReporteAccesos(datos, {
-      tipo,
-      fechaInicio,
-      fechaFin,
-      filtros: {
-        busqueda: f.busqueda || undefined,
-        carrera: f.carrera || undefined,
-        motivo: f.motivo || undefined,
-      },
-    });
-    this.toastService.success(`Reporte PDF generado (${datos.length} registros)`);
+    // Antes no se esperaba: el aviso de "generado" salía antes que el PDF y
+    // un fallo de jsPDF no se le mostraba a nadie.
+    this.generandoPdf = true;
+    this.loading.show('Generando PDF…');
+    try {
+      await cederPintado();
+      await this.reportService.generarReporteAccesos(datos, {
+        tipo,
+        fechaInicio,
+        fechaFin,
+        filtros: {
+          busqueda: f.busqueda || undefined,
+          carrera: f.carrera || undefined,
+          motivo: f.motivo || undefined,
+        },
+        ...(eleccion === 'resumen' ? { secciones: { tablaRegistros: false } } : {}),
+      });
+      this.toastService.success(`Reporte PDF generado (${datos.length} registros)`);
+    } catch (err) {
+      logError('Error al generar el PDF de registros:', err);
+      this.toastService.error('No se pudo generar el PDF');
+    } finally {
+      this.generandoPdf = false;
+      this.loading.hide();
+    }
   }
 
 
