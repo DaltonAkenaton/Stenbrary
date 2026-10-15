@@ -259,7 +259,7 @@
               </div>
               @if (kpiHoraPico) {
                 <div class="kpi-value">{{ kpiHoraPicoStr }}</div>
-                <div class="kpi-sub">{{ kpiHoraPico.cantidad }} visitas</div>
+                <div class="kpi-sub">{{ kpiHoraPico.cantidad }} {{ kpiHoraPico.cantidad === 1 ? 'visita' : 'visitas' }}</div>
               } @else {
                 <div class="kpi-value muted">Sin datos</div>
                 <div class="kpi-sub">No hay registros</div>
@@ -288,7 +288,7 @@
                 </div>
               } @else {
                 <div class="kpi-value muted">N/D</div>
-                <div class="kpi-sub">Sin tiempos de salida</div>
+                <div class="kpi-sub">{{ kpiVisitasEstimadas > 0 ? kpiVisitasEstimadas + ' con salida estimada, no cuentan' : 'Sin tiempos de salida' }}</div>
               }
             </div>
           </div>
@@ -369,7 +369,7 @@
                   </mat-icon>
                 </div>
                 <div class="kpi-value motivo">{{ kpiTopMotivo.nombre }}</div>
-                <div class="kpi-sub">en {{ kpiTopMotivo.cantidad | number }} visitas · {{ kpiTopMotivo.porcentaje }}% de ellas</div>
+                <div class="kpi-sub">en {{ kpiTopMotivo.cantidad | number }} {{ kpiTopMotivo.cantidad === 1 ? 'visita' : 'visitas' }} · {{ kpiTopMotivo.porcentaje }}% de ellas</div>
               </div>
             </div>
           }
@@ -409,7 +409,7 @@
             <div class="iq-body">
               <div class="iq-label">Carrera en crecimiento</div>
               <div class="iq-value">{{ kpiCarreraTopCrecimiento.carrera }}</div>
-              <div class="iq-sub">+{{ kpiCarreraTopCrecimiento.cambio }} visitas · +{{ kpiCarreraTopCrecimiento.porcentaje }}%</div>
+              <div class="iq-sub">+{{ kpiCarreraTopCrecimiento.cambio }} {{ kpiCarreraTopCrecimiento.cambio === 1 ? 'visita' : 'visitas' }} · +{{ kpiCarreraTopCrecimiento.porcentaje }}%</div>
             </div>
           </div>
         }
@@ -871,7 +871,7 @@
         @if (kpiVisitasInvitados > 0) {
           <p class="nota-invitados">
             <mat-icon>person_pin</mat-icon>
-            Además hubo {{ kpiVisitasInvitados | number }} visitas de invitados, que no se cuentan por carrera, turno ni grado.
+            Además hubo {{ kpiVisitasInvitados | number }} {{ kpiVisitasInvitados === 1 ? 'visita' : 'visitas' }} de invitados, que no se cuentan por carrera, turno ni grado.
           </p>
         }
       </mat-card>
@@ -1076,7 +1076,7 @@
                 <div class="alumno-stats">
                   <div class="stat-item">
                     <mat-icon>login</mat-icon>
-                    <span>{{ item.totalVisitas }} visitas</span>
+                    <span>{{ item.totalVisitas }} {{ item.totalVisitas === 1 ? 'visita' : 'visitas' }}</span>
                   </div>
                   <div class="stat-item">
                     <mat-icon>event</mat-icon>

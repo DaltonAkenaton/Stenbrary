@@ -9,6 +9,31 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-15 — Auditoría a mano de /estadisticas (v3.55.1)
+
+El usuario pidió confirmar que Estadísticas no da datos falsos. En vez de
+afirmarlo, se volcó el texto de cada pestaña con `cuadre.json` y el reloj
+congelado, y se comparó contra el cálculo a mano: 11 periodos (hoy, ayer,
+semana, mes, mes pasado, 7/30 días, periodo, año, todo, filtro de hora), el
+mapa de calor celda por celda, crecimiento 12 m, Personas, Top y Comparar.
+Todo cuadró salvo:
+
+- **Alerta contra otro periodo.** `generarInsights` llamaba a
+  `compararTendencias` sin el rango anterior de la unidad: "Este mes" (1–7 oct)
+  decía "Sin datos previos" (1–7 sep = 0) y a la vez "crecieron 200 %" (contra
+  24–30 sep). Ahora recibe `rangoAnteriorActivo`.
+- **`?p=` desconocido** dejaba la pantalla en ceros, sin banner. Se valida
+  contra `PRESETS_VALIDOS`.
+- Plurales ("1 visitas", "Contra los 1 día anteriores"), y la estancia en N/D
+  ahora dice cuántas salidas estimadas no se contaron.
+
+Dos pruebas nuevas en el cuadre; se comprobó que fallan sin las correcciones.
+Quedan a decisión del usuario: retención en periodos de 1 día (siempre ~0 %)
+y el Top de alumnos, que por defecto usa 30 días aunque arriba se elija otro
+periodo (el título lo dice).
+
+309 unitarios, 45 E2E.
+
 ## 2026-10-14 — Prueba de volumen: 2 años de visitas (v3.55.0)
 
 Antes de cerrar el código se midió con datos de verdad grandes: 3 000 alumnos y

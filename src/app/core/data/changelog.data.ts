@@ -49,6 +49,25 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.55.1',
+    fecha: '2026-10-15',
+    titulo: 'Estadísticas, revisadas a mano',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'En "Esta semana", "Este mes", "Este periodo" y "Este año", la alerta de "Crecimiento extraordinario" o "Caída crítica" se comparaba contra un periodo distinto al de la tarjeta de arriba y podía contradecirla. Ahora las dos usan el mismo periodo anterior.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Un enlace a Estadísticas con un periodo que no existe ya no deja la pantalla en ceros: abre los últimos 30 días.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Textos más claros: "1 visita" en vez de "1 visitas", "Contra el día anterior", y el tiempo de estancia indica cuántas salidas estimadas no se contaron.',
+      },
+    ],
+  },
+  {
     version: '3.55.0',
     fecha: '2026-10-14',
     titulo: 'Rápido con años de datos',

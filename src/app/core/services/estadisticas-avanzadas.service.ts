@@ -794,13 +794,20 @@ export class EstadisticasAvanzadasService {
     horaFiltro?: { desde: number; hasta: number } | null,
     umbralInactividadDias = 30,
     inactividadDesactivada = false,
+    /**
+     * El mismo período de referencia que la tarjeta de tendencia. Sin él,
+     * "Este mes" (1–7 oct) decía "Sin datos previos" arriba (1–7 sep = 0) y
+     * aquí "crecieron 200 %" contra los 7 días previos: dos comparaciones
+     * distintas en la misma pantalla.
+     */
+    rangoAnterior?: RangoFechas | null,
   ): Promise<Insight[]> {
     const insights: Insight[] = [];
 
     // Solo insights EXTRAORDINARIOS (alertas que no duplican KPIs fijos).
     // Los KPIs ya muestran tendencia, hora pico e inactivos; aquí solo
     // levantamos la mano cuando el cambio es DRAMÁTICO (>50%).
-    const tendencia = await this.compararTendencias(rango, horaFiltro);
+    const tendencia = await this.compararTendencias(rango, horaFiltro, new Date(), rangoAnterior);
     if (tendencia.direccion === 'up' && tendencia.porcentajeCambio > 50) {
       insights.push({
         tipo: 'success',

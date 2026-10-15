@@ -76,6 +76,24 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     expect(await texto(page, '.kpis-hero')).toMatch(/200\.0% más que el período anterior/);
   });
 
+  test('Este mes: la alerta compara contra lo mismo que la tarjeta', async ({ page }) => {
+    // 1–7 oct contra 1–7 sep (0 visitas): no hay base para un %. Antes la
+    // tarjeta decía "Sin datos previos" y la alerta "crecieron 200 %"
+    // (contra 24–30 sep, los 7 días previos).
+    await page.goto('/estadisticas?p=mes-actual&tab=resumen');
+    await expect(page.locator('.kpis-hero')).toContainText(/alumnos únicos/i, { timeout: 15000 });
+    const t = await texto(page, '.dashboard-ejecutivo-container');
+    expect(t).toMatch(/Total de registros\D*6\b/i);
+    expect(t).toMatch(/Sin datos previos para comparar/);
+    expect(t).not.toMatch(/Crecimiento extraordinario/);
+  });
+
+  test('Un período desconocido en la URL no deja la pantalla en ceros', async ({ page }) => {
+    await page.goto('/estadisticas?p=no-existe&tab=resumen');
+    await expect(page.locator('.rango-activo-banner')).toContainText(/30 días/, { timeout: 15000 });
+    expect(await texto(page, '.kpis-hero')).toMatch(/Total de registros\D*9\b/i);   // 8 sep – 7 oct
+  });
+
   test('El mapa de calor sigue al período de arriba', async ({ page }) => {
     // Antes tenía su propio rango (30 días) aunque arriba se eligiera otro.
     await page.goto('/estadisticas?p=ultimos7&tab=calor');
@@ -85,9 +103,9 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
 
   test('Estadísticas, personas', async ({ page }) => {
     await page.goto('/estadisticas?p=ultimos7&tab=personas');
-    await expect(page.getByText(/visitas de invitados/)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/visitas? de invitados/)).toBeVisible({ timeout: 15000 });
     const t = await texto(page, '.dashboard-ejecutivo-container');
-    expect(t).toMatch(/hubo 1 visitas de invitados/);                        // fuera de carreras (P5)
+    expect(t).toMatch(/hubo 1 visita de invitados/);                         // fuera de carreras (P5)
     expect(t).toMatch(/Matutino\s*3\s*60%/);
     expect(t).toMatch(/Vespertino\s*2\s*40%/);
     expect(t).toMatch(/1°\s*1\s*20%\s*3°\s*2\s*40%\s*5°\s*2\s*40%/);

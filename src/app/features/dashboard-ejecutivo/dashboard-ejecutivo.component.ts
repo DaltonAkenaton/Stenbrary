@@ -92,7 +92,11 @@ import { desplazarDias, fechaLocalISO } from '../../core/utils/tiempo.utils';
 
 Chart.register(...registerables);
 
-type PresetRango = 'hoy' | 'ayer' | 'semana' | 'semana-pasada' | 'mes-actual' | 'mes-pasado' | 'ultimos7' | 'ultimos14' | 'ultimos30' | 'ultimos90' | 'anio' | 'anio-pasado' | 'periodo-actual' | 'periodo-anterior' | 'todo' | 'personalizado';
+const PRESETS_VALIDOS = [
+  'hoy', 'ayer', 'semana', 'semana-pasada', 'mes-actual', 'mes-pasado', 'ultimos7', 'ultimos14',
+  'ultimos30', 'ultimos90', 'anio', 'anio-pasado', 'periodo-actual', 'periodo-anterior', 'todo', 'personalizado',
+] as const;
+type PresetRango = typeof PRESETS_VALIDOS[number];
 
 /** Enlaces viejos (?p=semestre-actual) siguen funcionando: ahora son periodos del calendario. */
 const PRESETS_RENOMBRADOS: Record<string, PresetRango> = {
@@ -974,7 +978,12 @@ formatHora(h: number): string {
   private leerUrlParams(): void {
     const qp = this.activatedRoute.snapshot.queryParamMap;
     const p = qp.get('p');
-    if (p) this.presetSeleccionado = PRESETS_RENOMBRADOS[p] ?? (p as PresetRango);
+    // Un `p` desconocido (enlace viejo o mal escrito) dejaba la pantalla en
+    // ceros sin rango ni aviso: se ignora y queda el período por defecto.
+    const preset = p ? (PRESETS_RENOMBRADOS[p] ?? p) : null;
+    if (preset && (PRESETS_VALIDOS as readonly string[]).includes(preset)) {
+      this.presetSeleccionado = preset as PresetRango;
+    }
     const ini = qp.get('ini'); if (ini) this.fechaInicio = ini;
     const fin = qp.get('fin'); if (fin) this.fechaFin = fin;
     const hd = qp.get('hd'); const hh = qp.get('hh');
@@ -1377,7 +1386,7 @@ formatHora(h: number): string {
       const [tendencia, insights, diarios, motivos, carreras] = await Promise.all([
         this.estadisticasService.compararTendencias(rango, horaFiltro, new Date(), this.rangoAnteriorActivo),
         this.estadisticasService.generarInsights(
-          rango, horaFiltro, this.kpiUmbralInactividad, this.inactividadDesactivada),
+          rango, horaFiltro, this.kpiUmbralInactividad, this.inactividadDesactivada, this.rangoAnteriorActivo),
         this.estadisticasService.obtenerRegistrosPorRango(rango, horaFiltro),
         this.estadisticasService.obtenerDistribucionMotivos(rango, horaFiltro),
         this.estadisticasService.analizarPorCarrera(rango, horaFiltro),
@@ -1467,7 +1476,7 @@ formatHora(h: number): string {
         : this.unidadActiva?.tipo === 'mes' ? 'Contra el mes anterior'
         : this.unidadActiva?.tipo === 'anio' ? 'Contra el año anterior'
         : this.unidadActiva?.tipo === 'periodo' ? 'Contra el periodo anterior'
-        : `Contra los ${dias} ${dias === 1 ? 'día' : 'días'} anteriores`;
+        : dias === 1 ? 'Contra el día anterior' : `Contra los ${dias} días anteriores`;
       this.actualizarLabelsHeatmap();
       this.actualizarLabelTopAlumnos();
 
