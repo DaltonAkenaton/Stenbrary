@@ -294,3 +294,10 @@ importados y "borrar todo". No dice **quién** (no hay cuentas en modo local).
 - **Top de alumnos:** por defecto, "Igual que arriba": mismo período y filtro de hora que el resto de la pantalla. Con 7/30/90 días, Año, Todo o Personalizado se elige otro período solo para la lista; el filtro de hora entonces no aplica. Excel y PDF del Top usan exactamente lo que se ve.
 - **Tasa de retención:** en períodos de un día (Hoy, Ayer) dice "No aplica". Se mide desde 2 días.
 - **Alerta de crecimiento/caída:** compara contra el mismo período anterior que la tarjeta "Contra…" (semana, mes, periodo o año anterior al mismo avance).
+
+## Frases que solo salen con datos suficientes (v3.55.2)
+
+- **"Hoy al cierre (proyección)":** necesita al menos 4 días del mismo tipo (p. ej. 4 viernes) en las últimas 10 semanas y que, sumándolos, ya hubieran llegado **10 visitas o más a esta hora**. Si no, la tarjeta no aparece. Temprano por la mañana, o con poco historial, es normal que no salga.
+- **"Día dentro de lo normal"** (Resumen): solo cuando se comparó con el mismo día de la semana pasada a la misma hora (10 visitas o más de referencia) y la diferencia es menor de ±30 %. Si no hay con qué comparar, el mensaje solo dice cuántos accesos van.
+- **Empates:** si varias horas tienen el mismo máximo, la hora pico dice "empata con N franjas más". El valle dice cuántas franjas tienen el mínimo y no cuenta las horas sin ninguna visita.
+- **Top de alumnos:** a igual número de visitas, primero quien vino más recientemente.

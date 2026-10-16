@@ -246,6 +246,20 @@ describe('estadisticas.utils', () => {
       expect(proyectarCierreHoy([...historial(6), ...hoy(3)], new Date(2026, 9, 6, 8, 0))).toBeNull();
     });
 
+    it('no proyecta si a esta hora habían llegado muy pocas visitas en los días base', () => {
+      // Caso real de la auditoría 2026-10-16: 8 viernes con 32 visitas, solo 3
+      // antes de las 9:03 → "9 %" → 7 de hoy se proyectaban en ~75 visitas.
+      const regs: Registro[] = [];
+      for (let k = 1; k <= 8; k++) {
+        const d = new Date(2026, 9, 6 - 7 * k);
+        const dia = (h: number, m: number) => reg(new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m));
+        if (k <= 3) regs.push(dia(8, 30));                       // 3 llegadas tempranas en total
+        for (let i = 0; i < (k <= 3 ? 3 : 4); i++) regs.push(dia(15, i));
+      }
+      expect(regs.length).toBe(32);
+      expect(proyectarCierreHoy([...regs, ...hoy(7)], new Date(2026, 9, 6, 9, 3))).toBeNull();
+    });
+
     it('nunca proyecta menos de lo que ya llegó', () => {
       const p = proyectarCierreHoy([...historial(6), ...hoy(8)], new Date(2026, 9, 6, 23, 0))!;
       expect(p.total).toBeGreaterThanOrEqual(8);

@@ -46,6 +46,7 @@ const FMT_HORA_DASH = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute
 type RegistroDashboard = Registro & {
   _horaStr: string;
   _adentro: boolean;
+  _motivosStr: string;
 };
 
 interface QuickStat {
@@ -517,6 +518,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         ...r,
         _horaStr: FMT_HORA_DASH.format(new Date(r.fechaHora)),
         _adentro: !r.horaSalida,
+        // Todas las actividades de la visita (P2), no solo la principal.
+        _motivosStr: (r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre]).join(', '),
       }));
 
       this.ultimoRegistroHora = this.ultimosRegistros[0]?._horaStr ?? '';
@@ -748,7 +751,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Al mismo avance del día (ver calcularDeltaComparativa). Con menos de
     // 10 accesos de referencia el porcentaje es ruido (2 vs 3 = "+50 %").
     const refSemana = contarHastaMismaHora(this.fechasSemanaPasada, ahora);
-    if (refSemana >= 10) {
+    // Solo con esta comparación hecha (y dentro de ±30 %) se puede decir
+    // "día dentro de lo normal". Antes la frase salía por defecto: con 7
+    // accesos contra 0 del viernes pasado decía "normal" sin medir nada.
+    const comparadoConSemanaPasada = refSemana >= 10;
+    if (comparadoConSemanaPasada) {
       const pctDif = Math.round(((registrosHoy.length - refSemana) / refSemana) * 100);
       const nombreDia = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][ahora.getDay()];
 
@@ -832,9 +839,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     }
 
-    // ─── Regla 7 (default): día normal con resumen ─
+    // ─── Regla 7 (default): resumen; "normal" solo si se comparó (regla 2) ─
     return {
-      texto: `${registrosHoy.length} ${registrosHoy.length === 1 ? 'acceso registrado' : 'accesos registrados'} hasta ahora — día dentro de lo normal.`,
+      texto: `${registrosHoy.length} ${registrosHoy.length === 1 ? 'acceso registrado' : 'accesos registrados'} hasta ahora` +
+        (comparadoConSemanaPasada ? ' — día dentro de lo normal.' : '.'),
       icono: 'check_circle',
       tono: 'positivo',
     };

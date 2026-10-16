@@ -49,6 +49,34 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.55.2',
+    fecha: '2026-10-16',
+    titulo: 'Sin conclusiones sin datos',
+    resumen: 'Revisamos cada cifra de Resumen y Estadísticas contra un cálculo independiente. Los números estaban bien; ajustamos las frases que concluían algo sin tener datos suficientes.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'La proyección "Hoy al cierre" ya no aparece cuando hay muy pocas visitas de referencia a esa hora: con 7 visitas temprano llegó a proyectar ~75 en una biblioteca que nunca había pasado de 9 al día.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'El Resumen solo dice "día dentro de lo normal" si de verdad pudo compararlo con el mismo día de la semana pasada.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'En Visitas por carrera y Motivos de visita, la información que aparece al pasar el cursor corresponde siempre a la fila donde está el cursor.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Cuando varias horas empatan como hora pico o como hora más tranquila, la pantalla lo dice en vez de presentar una sola como si fuera la única.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'En "Últimas entradas" del Resumen se ven todas las actividades de cada visita. En el Top de alumnos, a igual número de visitas va primero quien vino más recientemente.',
+      },
+    ],
+  },
+  {
     version: '3.55.1',
     fecha: '2026-10-15',
     titulo: 'Estadísticas, revisadas a mano',

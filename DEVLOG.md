@@ -9,6 +9,35 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-16 — Auditoría con datos generados y cálculo independiente (v3.55.2)
+
+El usuario generó 30 alumnos / 218 visitas, mandó el respaldo JSON y capturas
+con la hora. Las cifras se recalcularon con un script de Python escrito desde
+las definiciones P1–P8, sin reutilizar el TypeScript. Coincidieron: Resumen,
+30 días (todas las tarjetas, barras diarias, motivos), las 105 celdas del mapa
+de calor, crecimiento 12 m, Personas completo (carreras, turnos, grados,
+combinaciones, Top) y Comparar (A y B recortado al mismo avance).
+
+Lo que estaba mal eran **conclusiones sin base**:
+- **Proyección P8:** solo pedía que hubiera *alguna* visita de referencia a
+  esa hora. 3 de 32 → 9 % → 7 visitas a las 9:03 = "~75" (máximo histórico:
+  9). Ahora `PROYECCION_MIN_LLEGADAS = 10`, con test del caso real.
+- **"Día dentro de lo normal"** era el texto por defecto de la regla 7, sin
+  comparación. Ahora exige que la regla 2 haya podido comparar.
+- **Tooltip de barras horizontales:** `mode: 'index'` sin `axis: 'y'` buscaba
+  la fila por la X del cursor (reportado por el usuario). Corregido en
+  carreras y motivos; verificado moviendo el mouse con Playwright sobre la
+  instancia real (vía `ng.getComponent`).
+- **Empates** en hora pico (3 en "Todo") y valle (30 franjas): ahora se dicen.
+  Top: desempate explícito por visita más reciente.
+- Últimas entradas del Resumen mostraba solo el motivo principal (P2).
+
+Visto y no corregido, a decisión del usuario: el generador de datos de
+prueba da de alta a todos los alumnos "hoy" aunque tengan visitas de agosto, y
+"alumnos nuevos hoy" se leerá como "vinieron" el día que se importe el padrón.
+
+310 unitarios, 46 E2E.
+
 ## 2026-10-15 — Auditoría a mano de /estadisticas (v3.55.1)
 
 El usuario pidió confirmar que Estadísticas no da datos falsos. En vez de

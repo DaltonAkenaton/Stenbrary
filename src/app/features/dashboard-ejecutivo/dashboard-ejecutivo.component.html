@@ -259,7 +259,12 @@
               </div>
               @if (kpiHoraPico) {
                 <div class="kpi-value">{{ kpiHoraPicoStr }}</div>
-                <div class="kpi-sub">{{ kpiHoraPico.cantidad }} {{ kpiHoraPico.cantidad === 1 ? 'visita' : 'visitas' }}</div>
+                <div class="kpi-sub">
+                  {{ kpiHoraPico.cantidad }} {{ kpiHoraPico.cantidad === 1 ? 'visita' : 'visitas' }}
+                  @if (kpiHoraPicoEmpates > 1) {
+                    <br>empata con {{ kpiHoraPicoEmpates - 1 }} {{ kpiHoraPicoEmpates === 2 ? 'franja más' : 'franjas más' }}
+                  }
+                </div>
               } @else {
                 <div class="kpi-value muted">Sin datos</div>
                 <div class="kpi-sub">No hay registros</div>
@@ -718,11 +723,19 @@
             <mat-icon>nights_stay</mat-icon>
             <span>
               <strong>Día/hora valle:</strong>
-              {{ heatmapValleDia }} a las {{ formatHora(heatmapValleHora) }}
-              @if (heatmapValleCantidad !== null) {
-                ({{ heatmapValleCantidad }} {{ heatmapValleCantidad === 1 ? 'visita' : 'visitas' }})
+              @if (heatmapValleEmpates > 1) {
+                {{ heatmapValleEmpates }} franjas empatan con solo {{ heatmapValleCantidad }}
+                {{ heatmapValleCantidad === 1 ? 'visita' : 'visitas' }}, por ejemplo {{ heatmapValleDia }} a las
+                {{ formatHora(heatmapValleHora) }} — las de menos actividad <em>dentro del período del mapa de calor</em>,
+                sin contar las que no tuvieron ninguna.
+              } @else {
+                {{ heatmapValleDia }} a las {{ formatHora(heatmapValleHora) }}
+                @if (heatmapValleCantidad !== null) {
+                  ({{ heatmapValleCantidad }} {{ heatmapValleCantidad === 1 ? 'visita' : 'visitas' }})
+                }
+                — el momento con menos actividad <em>dentro del período del mapa de calor</em>,
+                sin contar las franjas que no tuvieron ninguna.
               }
-              — el momento con menos actividad <em>dentro del período del mapa de calor</em>.
               Ideal para mantenimiento o eventos.
             </span>
           </div>

@@ -303,6 +303,14 @@ export const PROYECCION_MIN_DIAS = 4;
 const PROYECCION_MAX_DIAS = 8;
 /** Hasta cuántas semanas atrás se buscan. */
 const PROYECCION_SEMANAS = 10;
+/**
+ * Mínimo de visitas que, sumando los días base, ya habían llegado a esta
+ * hora. Con menos, la fracción es ruido: 3 de 32 → "9 % del día" → 7 visitas
+ * a las 9:03 se proyectaban en ~75, en un historial cuyo máximo diario era 9
+ * (auditoría con datos de prueba, 2026-10-16). Mismo umbral que la
+ * comparación "contra el mismo día de la semana pasada" del Resumen.
+ */
+export const PROYECCION_MIN_LLEGADAS = 10;
 
 /**
  * Proyecta el total de hoy con el ritmo REAL de días parecidos: los
@@ -314,8 +322,8 @@ const PROYECCION_SEMANAS = 10;
  * ignoraba el horario configurado y suponía un flujo parejo (decisión P8).
  *
  * Devuelve `null` —y la UI no muestra nada— cuando no hay base:
- * menos de 4 días comparables, nada llegado aún a esta hora en ellos, o
- * hoy sin visitas. Un número inventado es peor que ninguno.
+ * menos de 4 días comparables, menos de 10 visitas llegadas a esta hora
+ * sumando esos días, o hoy sin visitas. Un número inventado es peor que ninguno.
  *
  * La confianza sale de qué tan bien habría acertado este mismo método en
  * los días de la base: error medio < 15 % alta, < 30 % media, si no baja.
@@ -358,7 +366,8 @@ export function proyectarCierreHoy(registros: Registro[], ahora: Date = new Date
     sumaTotal += fechas.length;
     return { hasta, total: fechas.length };
   });
-  if (sumaHasta === 0) return null; // a esta hora normalmente aún no llega nadie
+  // A esta hora normalmente aún no llega nadie, o tan pocos que no hay base.
+  if (sumaHasta < PROYECCION_MIN_LLEGADAS) return null;
 
   const fraccion = sumaHasta / sumaTotal;
   const errores = pares.map(p => Math.abs(p.hasta / fraccion - p.total) / p.total);

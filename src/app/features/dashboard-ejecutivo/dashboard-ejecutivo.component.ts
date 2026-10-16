@@ -188,6 +188,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   heatmapTotalGeneral = 0;
   /** Cantidad de visitas en la celda valle (la mínima > 0 del heatmap). */
   heatmapValleCantidad: number | null = null;
+  /** Cuántas franjas tienen esa misma cantidad mínima (1 = el valle es único). */
+  heatmapValleEmpates = 0;
   /** Día y hora del pico (para marcar con estrella). */
   heatmapPicoDia: string | null = null;
   heatmapPicoHora: number | null = null;
@@ -775,6 +777,8 @@ formatHora(h: number): string {
 
 
   kpiHoraPicoStr = '';
+  /** Franjas con la misma cantidad que la pico (1 = pico único). */
+  kpiHoraPicoEmpates = 0;
   comparativaUI: any = null;
 
 
@@ -1224,6 +1228,12 @@ formatHora(h: number): string {
     this.heatmapMaximo = maximo;
     this.heatmapPicoDia = picoCantidad > 0 ? picoDia : null;
     this.heatmapPicoHora = picoCantidad > 0 ? picoHora : null;
+    // Con poco volumen, decenas de franjas empatan en el mínimo (30 con 1
+    // visita en la auditoría 2026-10-16) y elegir una era arbitrario: el texto
+    // dice cuántas son. Las franjas con 0 no cuentan (puede ser que no abra).
+    this.heatmapValleEmpates = isFinite(valleCantidad)
+      ? resultado.data.filter(i => i.cantidad === valleCantidad && this.heatmapHoras.includes(i.hora)).length
+      : 0;
     this.heatmapValleDia = isFinite(valleCantidad) ? valleDia : null;
     this.heatmapValleHora = isFinite(valleCantidad) ? valleHora : null;
     this.heatmapValleCantidad = isFinite(valleCantidad) ? valleCantidad : null;
@@ -1455,6 +1465,7 @@ formatHora(h: number): string {
       this.kpiPromedioPorDia = promedio.promedio;
       this.kpiDiasConActividad = promedio.dias;
       this.kpiHoraPico = this.estadisticasService.calcularHoraPicoEnRango(registrosCrudos);
+      this.kpiHoraPicoEmpates = this.contarFranjasCon(registrosCrudos, this.kpiHoraPico?.cantidad ?? 0);
       this.kpiHoraPicoStr = this.kpiHoraPico 
         ? `${this.kpiHoraPico.dia} ${this.formatHora(this.kpiHoraPico.hora)}` 
         : '';
@@ -1536,6 +1547,24 @@ formatHora(h: number): string {
       this.recargando = false;
       this.cdr.markForCheck();
     }
+  }
+
+  /**
+   * Franjas (día de la semana + hora) con exactamente `cantidad` visitas. Para
+   * avisar empates en la hora pico: en "Todo el historial" de la auditoría
+   * 2026-10-16, 3 franjas tenían 7 y la tarjeta mostraba una como si fuera la única.
+   */
+  private contarFranjasCon(registros: { fechaHora: Date | string }[], cantidad: number): number {
+    if (cantidad <= 0) return 0;
+    const conteo = new Map<number, number>();
+    for (const r of registros) {
+      const d = new Date(r.fechaHora);
+      const k = d.getDay() * 24 + d.getHours();
+      conteo.set(k, (conteo.get(k) || 0) + 1);
+    }
+    let n = 0;
+    conteo.forEach(v => { if (v === cantidad) n++; });
+    return n;
   }
 
   /** Cache de matrícula → turno para fallback de registros viejos sin r.turno. */
@@ -2567,9 +2596,12 @@ this.sparkRegistros = counts;
       options: {
         indexAxis: 'y', responsive: true, maintainAspectRatio: false,
         animation: { duration: animacion },
+        // Toda la fila responde, no solo la barra (las cortas eran difíciles de atinar).
+        interaction: { mode: 'index', axis: 'y', intersect: false },
         plugins: {
           legend: { display: false },
           tooltip: {
+            position: 'nearest',
             backgroundColor: '#142033', titleColor: '#E8F4F8', bodyColor: '#E8F4F8',
             borderColor: 'rgba(0, 200, 215, 0.3)', borderWidth: 1, cornerRadius: 10, padding: 12,
             displayColors: false,
@@ -2644,10 +2676,14 @@ this.sparkRegistros = counts;
       options: {
         indexAxis: 'y', responsive: true, maintainAspectRatio: false,
         animation: { duration: this.animDuracion },
-        interaction: { mode: 'index', intersect: false },
+        // Barras horizontales: la fila se busca por la posición VERTICAL del
+        // cursor. Sin `axis: 'y'`, Chart.js usaba la horizontal y al pasar
+        // por "Enfermería" mostraba otra carrera (reportado 2026-10-16).
+        interaction: { mode: 'index', axis: 'y', intersect: false },
         plugins: {
           legend: { display: false },
           tooltip: {
+            position: 'nearest',
             backgroundColor: '#142033', titleColor: '#E8F4F8', bodyColor: '#E8F4F8',
             borderColor: 'rgba(0, 200, 215, 0.3)', borderWidth: 1, cornerRadius: 10,
             padding: 12, displayColors: false,

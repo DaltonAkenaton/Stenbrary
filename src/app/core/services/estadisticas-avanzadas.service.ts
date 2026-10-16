@@ -788,7 +788,12 @@ export class EstadisticasAvanzadasService {
       topAlumnos.push({ alumno, totalVisitas: registros.length, ultimaVisita, motivoFrecuente });
     });
 
-    return topAlumnos.sort((a, b) => b.totalVisitas - a.totalVisitas).slice(0, limite);
+    // Empate en visitas → primero quien vino más recientemente. Antes dependía
+    // del orden de llegada de los registros: con 4 alumnos empatados en el 5.º
+    // lugar, cuál salía no estaba escrito en ninguna parte.
+    return topAlumnos
+      .sort((a, b) => b.totalVisitas - a.totalVisitas || b.ultimaVisita.getTime() - a.ultimaVisita.getTime())
+      .slice(0, limite);
   }
 
   async generarInsights(

@@ -339,7 +339,7 @@ Después de detectar, el scanner abre `ConfirmacionMatriculaDialogComponent` ant
 
 ### Catálogos fijos (`core/constants/catalogos.constants.ts`)
 
-`CARRERAS` (8 opciones, UAT), `TURNOS` (`Matutino | Vespertino | Mixto`), `GRADOS` (1–10), `GRUPOS` (A–F). Editar aquí para que todos los dropdowns se actualicen.
+`CARRERAS` (8 opciones, UAT), `TURNOS` (`Matutino | Vespertino | Mixto`), `GRADOS` (1–12), `GRUPOS` (A–F). Editar aquí para que todos los dropdowns se actualicen.
 
 ### Design system
 
