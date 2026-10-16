@@ -40,7 +40,8 @@ import { AforoService } from '../../core/services/aforo.service';
  * Registro extendido con la fecha ya formateada — evita que
  * `formatearFecha(registro.fechaHora)` corra por cada fila en cada CD tick.
  */
-type RegistroDetalle = Registro & { _fechaStr: string };
+/** `_motivosStr`: todas las actividades de la visita (P2), como la constancia. */
+type RegistroDetalle = Registro & { _fechaStr: string; _motivosStr: string };
 
 const FMT_DET = new Intl.DateTimeFormat('es-MX', {
   day: '2-digit', month: '2-digit', year: 'numeric',
@@ -171,7 +172,10 @@ export class DetalleAlumnoComponent implements OnInit {
       ]);
       this.catalogoMotivos = catalogo;
       this.registros = rawRegistros.map(r =>
-        Object.assign(r, { _fechaStr: FMT_DET.format(new Date(r.fechaHora)) })
+        Object.assign(r, {
+          _fechaStr: FMT_DET.format(new Date(r.fechaHora)),
+          _motivosStr: (r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre]).join(', '),
+        })
       ) as RegistroDetalle[];
       this.registrosVisibles = this.registros.slice(0, this.limiteHistorial);
       this.calcularEstadisticas();

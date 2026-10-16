@@ -584,7 +584,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       mini.push({
         icono: 'person_add',
         valor: nuevos,
-        etiqueta: nuevos === 1 ? 'alumno nuevo hoy' : 'alumnos nuevos hoy',
+        // "Dados de alta", no "nuevos": el día que se importa el padrón son
+        // miles y "3000 alumnos nuevos hoy" se lee como que vinieron.
+        etiqueta: nuevos === 1 ? 'alumno dado de alta hoy' : 'alumnos dados de alta hoy',
         color: '#0BC4B7',
         ruta: '/alumnos',
         tooltip: 'Alumnos dados de alta en el sistema el día de hoy.',

@@ -148,6 +148,7 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
   test('Registros: el día correcto y los motivos secundarios', async ({ page }) => {
     await page.goto('/registros?fecha=2026-10-05');
     await expect(page.locator('tbody tr')).toHaveCount(3, { timeout: 15000 });   // R1: no el día 4
+    await expect(page.locator('tbody')).toContainText('Estudiar, Pedir libro');    // r2: todas sus actividades (P2)
     await page.goto('/registros?desde=2026-10-01&hasta=2026-10-07&motivo=Pedir%20libro');
     await expect(page.locator('tbody tr')).toHaveCount(2, { timeout: 15000 });   // incluye el secundario
   });
@@ -157,6 +158,8 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await page.locator('tbody tr').filter({ hasText: 'Ana' }).first().click();
     await page.locator('.alumno-link').click();
     await expect(page).toHaveURL(/\/detalle-alumno\/2200000001/);
+    await page.goto('/detalle-alumno/2200000002');                                  // Beto: r2 con 2 actividades
+    await expect(page.locator('.historial-table')).toContainText('Estudiar, Pedir libro', { timeout: 15000 });
   });
 
   test('Inactivos', async ({ page }) => {

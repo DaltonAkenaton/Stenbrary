@@ -2146,7 +2146,8 @@ this.sparkRegistros = counts;
         carrera: regs[0].carrera, totalVisitas: regs.length, ultimaVisita: ultima, motivoFrecuente,
       });
     });
-    top.sort((a, b) => b.totalVisitas - a.totalVisitas);
+    // Mismo desempate que el Top en pantalla (obtenerTopAlumnos): visita más reciente.
+    top.sort((a, b) => b.totalVisitas - a.totalVisitas || b.ultimaVisita.getTime() - a.ultimaVisita.getTime());
     return top.slice(0, limite).map((t, i) => ({ ...t, posicion: i + 1 }));
   }
 

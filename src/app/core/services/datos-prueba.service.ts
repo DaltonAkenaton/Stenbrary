@@ -171,6 +171,7 @@ export class DatosPruebaService {
 
     // ── FASE 1: Alumnos ──
     const alumnosCreados: Alumno[] = [];
+    const nuevos = new Set<string>();
     for (let i = 0; i < config.cantidadAlumnos; i++) {
       const matricula = String(PRUEBA_MATRICULA_BASE + i);
       const existente = await this.db.obtenerAlumnoPorMatricula(matricula);
@@ -179,12 +180,30 @@ export class DatosPruebaService {
       } else {
         const alumno = await this.db.crearAlumno(this.construirAlumno(matricula));
         alumnosCreados.push(alumno);
+        nuevos.add(alumno.id!);
       }
       onProgress?.({ fase: 'alumnos', actual: i + 1, total: config.cantidadAlumnos });
     }
 
     // ── FASE 2: Registros ──
     const planRegistros = this.planificarRegistros(alumnosCreados, config, motivos);
+
+    // Fecha de alta = primera visita, como cuando el alumno se registra en la
+    // puerta. Antes era "hoy" para todos: alumnos registrados hoy con visitas
+    // desde agosto, y el Resumen decía "30 alumnos nuevos hoy" (2026-10-16).
+    // Solo a los recién creados: un alumno que ya existía conserva su fecha.
+    const primeraVisita = new Map<string, Date>();
+    for (const p of planRegistros) {
+      const id = p.alumno.id!;
+      const previa = primeraVisita.get(id);
+      if (!previa || p.fechaBase < previa) primeraVisita.set(id, p.fechaBase);
+    }
+    for (const alumno of alumnosCreados) {
+      const primera = primeraVisita.get(alumno.id!);
+      if (!nuevos.has(alumno.id!) || !primera) continue;
+      alumno.fechaRegistro = primera;
+      await this.db.actualizarAlumno(alumno.id!, alumno);
+    }
     let registrosCreados = 0;
     for (const plan of planRegistros) {
       await this.crearRegistroPlanificado(plan);

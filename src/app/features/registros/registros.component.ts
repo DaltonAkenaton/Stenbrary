@@ -49,6 +49,7 @@ type RegistroRender = Registro & {
   _horaEntradaStr?: string;   // "14:30"
   _horaSalidaStr?: string;    // "16:45" o ""
   _duracionStr?: string;      // "2h 15m" o ""
+  _motivosStr?: string;       // todas las actividades de la visita (P2)
 };
 
 const FMT_FECHA = new Intl.DateTimeFormat('es-MX', {
@@ -67,6 +68,7 @@ function decorarParaTabla(r: RegistroRender): RegistroRender {
   const entrada = new Date(r._fechaTs);
   const salida = r.horaSalida ? new Date(r.horaSalida) : null;
   return Object.assign(r, {
+    _motivosStr: (r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre]).join(', '),
     _fechaDateStr: FMT_FECHA.format(entrada),
     _horaEntradaStr: FMT_HORA.format(entrada),
     _horaSalidaStr: salida ? FMT_HORA.format(salida) : '',

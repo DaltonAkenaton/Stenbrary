@@ -9,6 +9,27 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-16 — Segunda vuelta: PDF, Excel, perfiles, Inactivos, filtros (v3.56.0)
+
+Con el mismo respaldo, Playwright recorrió las pantallas, descargó los
+archivos y se compararon contra el script de Python. Sin librerías extra: el
+texto de jsPDF se sacó descomprimiendo los streams con zlib, y el xlsx es un
+ZIP con XML.
+
+Cuadró todo: PDF de Estadísticas y de Registros (resumen, carreras, actividades,
+turnos, ranking), reporte mensual de octubre, Excel (124 filas), constancia
+(visitas, 17h 57m, salidas), 3 perfiles (visitas, horas, promedio semanal,
+racha, distribución), Inactivos y 6 filtros de Registros (actividad, hora, día
+de la semana, día).
+
+Corregido: la tabla de Registros y el historial del perfil mostraban solo
+`motivoNombre` (P2); el Top del PDF (`calcularTopDelMes`, copia propia) usa el
+mismo desempate que el servicio; las dos decisiones pendientes (fecha de alta =
+primera visita en el generador, "alumnos dados de alta hoy"). Al cuadre se le
+agregó que Registros y el perfil muestren las dos actividades de r2.
+
+310 unitarios, 46 E2E.
+
 ## 2026-10-16 — Auditoría con datos generados y cálculo independiente (v3.55.2)
 
 El usuario generó 30 alumnos / 218 visitas, mandó el respaldo JSON y capturas

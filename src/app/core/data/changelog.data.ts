@@ -49,6 +49,26 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.56.0',
+    fecha: '2026-10-16',
+    titulo: 'Todas las actividades, en todas partes',
+    resumen: 'Revisamos PDF, Excel, constancias, perfiles, Inactivos y los filtros de Registros contra un cálculo independiente: todas las cifras cuadran. Quedaban dos pantallas que mostraban solo la primera actividad de cada visita.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'La tabla de Registros y el historial del perfil del alumno muestran todas las actividades de cada visita, igual que la constancia, el Excel y los conteos.',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'En el Resumen, "alumnos nuevos hoy" ahora dice "alumnos dados de alta hoy": el día que se importa el padrón son miles y se leía como si hubieran venido.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Los datos de prueba dan de alta a cada alumno el día de su primera visita, no el día en que se generaron.',
+      },
+    ],
+  },
+  {
     version: '3.55.2',
     fecha: '2026-10-16',
     titulo: 'Sin conclusiones sin datos',
