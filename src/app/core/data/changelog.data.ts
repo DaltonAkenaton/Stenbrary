@@ -49,6 +49,42 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.57.0',
+    fecha: '2026-10-17',
+    titulo: 'Importar el padrón sin sorpresas',
+    resumen: 'Correcciones de la ronda de pruebas: la importación de alumnos, el Enter al confirmar la matrícula y el cierre al final del horario.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'Importar alumnos: si el Excel llamaba "Cuenta" a la columna de matrícula, el sistema tomaba el apellido como matrícula sin avisar. Ahora la vista previa muestra qué columna se usa para cada dato y deja corregirla.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Importar alumnos aplica las mismas reglas que el registro en la puerta: el apellido materno es opcional, los nombres en MAYÚSCULAS se capitalizan, la matrícula se guarda sin la "a" (como la busca el escáner) y la carrera se reconoce aunque venga en minúsculas o sin acentos.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'La vista previa de la importación detecta las matrículas repetidas dentro del mismo archivo, y la plantilla de ejemplo ya no trae la matrícula con "a".',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Al escribir la matrícula a mano, Enter + Enter registra la entrada. Antes el segundo Enter cancelaba. Si se pasa otra credencial con la confirmación abierta, no confirma nada por accidente.',
+      },
+      {
+        tipo: 'fix',
+        texto: '"Cerrar al final del horario" pone como salida la hora de cierre (no la hora en que se revisó), cierra también las entradas de días en que la computadora estaba apagada, actualiza el conteo de "En biblioteca" y no muestra avisos en el modo quiosco.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Eliminación de registros muestra desde el inicio cuántos registros hay en el rango, y se actualiza si los datos cambian (antes decía "Eliminar 0 registros").',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'La bitácora anota cada importación de alumnos desde Excel.',
+      },
+    ],
+  },
+  {
     version: '3.56.0',
     fecha: '2026-10-16',
     titulo: 'Todas las actividades, en todas partes',

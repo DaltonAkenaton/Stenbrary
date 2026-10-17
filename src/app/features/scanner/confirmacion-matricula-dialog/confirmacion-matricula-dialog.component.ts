@@ -4,7 +4,8 @@
 // ║  Solo cambios de estilos. Lógica intacta.           ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, inject, signal } from '@angular/core';
+import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -39,6 +40,11 @@ import { MatIconModule } from '@angular/material/icon';
       <p class="dialog-message">
         Verifica que el código sea correcto antes de continuar.
       </p>
+      @if (lecturaIgnorada()) {
+        <p class="dialog-message lectura-ignorada">
+          Se pasó otra credencial: primero confirma o cancela esta matrícula.
+        </p>
+      }
 
       <!-- Acciones -->
       <div class="dialog-actions">
@@ -46,7 +52,9 @@ import { MatIconModule } from '@angular/material/icon';
           <mat-icon>close</mat-icon>
           Cancelar
         </button>
-        <button class="btn-confirm" (click)="confirmar()">
+        <!-- cdkFocusInitial: el foco iba al primer botón (Cancelar) y el
+             segundo Enter de "matrícula + Enter + Enter" CANCELABA (v3.57.0). -->
+        <button class="btn-confirm" cdkFocusInitial (click)="confirmar()">
           <mat-icon>check</mat-icon>
           Confirmar
         </button>
@@ -188,6 +196,11 @@ import { MatIconModule } from '@angular/material/icon';
       box-shadow: 0 6px 22px rgba(0, 200, 215, 0.35);
     }
 
+    .lectura-ignorada {
+      color: #F5A623;
+      font-weight: 600;
+    }
+
     .btn-cancel mat-icon,
     .btn-confirm mat-icon {
       font-size: 16px;
@@ -197,10 +210,19 @@ import { MatIconModule } from '@angular/material/icon';
   `]
 })
 export class ConfirmacionMatriculaDialogComponent {
+  /** Se pasó una credencial con el diálogo abierto: se descartó. */
+  readonly lecturaIgnorada = signal(false);
+
   constructor(
     public dialogRef: MatDialogRef<ConfirmacionMatriculaDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { matricula: string }
-  ) {}
+  ) {
+    // Con el foco en "Confirmar", el Enter que manda el lector al final de
+    // OTRA credencial confirmaría la de este alumno (el bug de v3.54.0, en
+    // otra pantalla). El servicio reconoce la ráfaga y se come su Enter.
+    const dejarDeEscuchar = inject(LectorRafagaService).escuchar(() => this.lecturaIgnorada.set(true));
+    dialogRef.afterClosed().subscribe(() => dejarDeEscuchar());
+  }
 
   confirmar(): void {
     this.dialogRef.close(true);

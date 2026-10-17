@@ -438,6 +438,27 @@ test.describe('Puerta: el lector fuera del escáner y pantallas abandonadas (v3.
     await expect(page.locator('.exito-nombre')).toHaveCount(0); // no se registró a Ana
   });
 
+  test('matrícula a mano + Enter + Enter registra la entrada (v3.57.0)', async ({ page }) => {
+    // Antes el foco quedaba en "Cancelar" y el segundo Enter cancelaba.
+    await page.locator('.matricula-input').fill('2200000001');
+    await page.locator('.matricula-input').press('Enter');
+    await expect(page.locator('app-confirmacion-matricula-dialog')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(400);                          // que termine la animación y el foco
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.student-name')).toContainText('Ana', { timeout: 10000 });
+  });
+
+  test('con la confirmación abierta, otra credencial no la confirma (v3.57.0)', async ({ page }) => {
+    await page.locator('.matricula-input').fill('2200000001');
+    await page.locator('.matricula-input').press('Enter');
+    await expect(page.locator('app-confirmacion-matricula-dialog')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(400);
+    await pasarCredencial(page, '2200000002');               // su Enter caería en "Confirmar"
+    await expect(page.getByText('Se pasó otra credencial')).toBeVisible();
+    await expect(page.locator('app-confirmacion-matricula-dialog')).toBeVisible();
+    await expect(page).toHaveURL(/\/scanner/);
+  });
+
   test('sin tocar nada 90 s, vuelve solo al escáner', async ({ page }) => {
     await pasarCredencial(page, '2200000001');
     await expect(page.locator('.student-name')).toContainText('Ana', { timeout: 10000 });
@@ -465,5 +486,113 @@ test.describe('Puerta: el lector fuera del escáner y pantallas abandonadas (v3.
 
     await page.goto('/detalle-alumno/2299999999');
     await expect(page.locator('h2').first()).toContainText('Juan Carlos García');
+  });
+});
+
+test.describe('Importar el padrón (v3.57.0)', () => {
+  test('encabezados de otro sistema, mayúsculas, prefijo "a", sin materno y repetidos', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+    await page.goto('/importar-alumnos');
+    await page.locator('input[type="file"][accept=".xlsx,.xls,.csv"]').setInputFiles(
+      path.join(__dirname, 'fixtures', 'padron-casos.xlsx'));
+
+    // "Cuenta" es la matrícula: antes caía al alias "id" y tomaba "Primer apellido".
+    const selMatricula = page.locator('.mapeo-item', { hasText: 'Matrícula' }).locator('select');
+    await expect(selMatricula).toHaveValue('Cuenta');
+    await expect(page.locator('.validacion-resumen')).toContainText(/2\s*válidos/);
+    await expect(page.locator('.validacion-resumen')).toContainText(/2\s*con errores/);   // repetida + 12345
+
+    await page.locator('.btn-import').click();
+    await expect(page.getByText('Importación Completada')).toBeVisible({ timeout: 15000 });
+
+    const guardados = await page.evaluate(async () => {
+      const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
+      return new Promise<any[]>(ok => { const r = db.transaction('alumnos').objectStore('alumnos').getAll(); r.onsuccess = () => ok(r.result); });
+    });
+    const rosa = guardados.find(a => a.matricula === '2300200001');
+    const ivan = guardados.find(a => a.matricula === '2300200002');   // sin la "a"
+    expect([rosa?.nombre, rosa?.apellidoPaterno, rosa?.carrera, rosa?.grado, rosa?.grupo, rosa?.turno])
+      .toEqual(['Rosa Elena', 'Valdez', 'Contador Público', 4, 'A', 'Matutino']);
+    expect([ivan?.apellidoPaterno, ivan?.apellidoMaterno]).toEqual(['De la Garza', '']);
+    expect(guardados.length).toBe(2);
+  });
+});
+
+test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
+  const AHORA = new Date('2026-10-14T12:00:00-05:00');   // miércoles
+
+  /** Ana adentro desde las 11:00 sin salida; config a la medida de cada prueba. */
+  async function preparar(page: import('@playwright/test').Page, config: Record<string, unknown>) {
+    await page.clock.install({ time: AHORA });
+    await page.addInitScript((cfg) => {
+      localStorage.setItem('stenbrary-setup-completado', '1');
+      if (!sessionStorage.getItem('e2e-config-puesta')) {
+        localStorage.setItem('stenbrary-config', JSON.stringify(cfg));
+        sessionStorage.setItem('e2e-config-puesta', '1');
+      }
+    }, config);
+    const entrada = new Date(AHORA.getTime() - 60 * 60_000).toISOString();
+    const alumno = (id: string, m: string, n: string) => ({ id, matricula: m, nombre: n, apellidoPaterno: 'P', apellidoMaterno: 'M', carrera: 'Ing. TI', grado: 1, grupo: 'A', turno: 'Matutino', activo: true, fechaRegistro: entrada });
+    const respaldo = {
+      meta: { version: '3.4', fecha: AHORA.toISOString(), app: 'Stenbrary', totalAlumnos: 2, totalRegistros: 1, totalMotivos: 1 },
+      alumnos: [alumno('a1', '2200000001', 'Ana'), alumno('a2', '2200000002', 'Beto')],
+      registros: [{ id: 'r1', alumnoId: 'a1', matricula: '2200000001', nombreCompleto: 'Ana P M', carrera: 'Ing. TI', motivoId: 'm1', motivoNombre: 'Estudiar', motivoIds: ['m1'], motivoNombres: ['Estudiar'], fechaHora: entrada, sincronizado: false }],
+      motivos: [{ id: 'm1', nombre: 'Estudiar', icono: 'school', orden: 1, activo: true }],
+    };
+    await page.goto('/configuracion#datos');
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles({
+      name: 'r.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(respaldo)),
+    });
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await page.locator('mat-dialog-container button').last().click();
+    await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
+    await page.goto('/scanner');
+    // El escáner tiene que estar escuchando: si no, se pierde la primera tecla del lector.
+    await expect(page.locator('.aforo-detalle')).toBeVisible({ timeout: 10000 });
+  }
+  const pasarCredencial = async (page: import('@playwright/test').Page, m: string) => {
+    await page.keyboard.type(m, { delay: 5 });
+    await page.keyboard.press('Enter');
+  };
+
+  test('aforo lleno en modo "bloquear": no deja entrar', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: true, aforoMaximo: 1, aforoModo: 'bloquear' });
+    await expect(page.locator('.aforo-detalle')).toContainText(/1\s*\/\s*1/);
+    await pasarCredencial(page, '2200000002');
+    await expect(page.getByText(/Aforo lleno/)).toBeVisible({ timeout: 10000 });
+    await expect(page).toHaveURL(/\/scanner/);
+  });
+
+  test('aforo lleno en modo "confirmar": pregunta y deja entrar si se autoriza', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: true, aforoMaximo: 1, aforoModo: 'confirmar' });
+    await pasarCredencial(page, '2200000002');
+    await expect(page.getByText('Aforo máximo alcanzado')).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: /Autorizar entrada/ }).click();
+    await expect(page.locator('.student-name')).toContainText('Beto', { timeout: 10000 });
+  });
+
+  test('aforo lleno en modo "permitir": deja entrar con aviso', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: true, aforoMaximo: 1, aforoModo: 'permitir' });
+    await pasarCredencial(page, '2200000002');
+    await expect(page.getByText(/entrada permitida con alerta/)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.student-name')).toContainText('Beto', { timeout: 10000 });
+  });
+
+  test('cerrar al final del horario: sale a la hora de cierre y el aforo baja', async ({ page }) => {
+    const dia = { cerrado: false, apertura: '07:00', cierre: '12:02' };
+    await preparar(page, {
+      registroSalidaActivo: true, aforoMaximo: 10, horarioActivo: true, cierreAlHorario: true,
+      horarios: { 0: dia, 1: dia, 2: dia, 3: dia, 4: dia, 5: dia, 6: dia },
+    });
+    await expect(page.locator('.aforo-detalle')).toContainText(/1\s*\/\s*10/);
+    await page.clock.fastForward('03:30');              // pasan las 12:02; corre la revisión de cada minuto
+    await expect(page.locator('.aforo-detalle')).toContainText(/0\s*\/\s*10/, { timeout: 10000 });
+    const salida = await page.evaluate(async () => {
+      const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
+      const r: any = await new Promise(ok => { const q = db.transaction('registros').objectStore('registros').get('r1'); q.onsuccess = () => ok(q.result); });
+      const d = new Date(r.horaSalida);
+      return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+    });
+    expect(salida).toBe('12:02');                       // la hora de cierre, no la de la revisión
   });
 });

@@ -9,6 +9,40 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-17 — Pruebas del usuario, tanda A: errores (v3.57.0)
+
+El usuario probó a mano y juntó 20 hallazgos; al pedir el inventario de
+importaciones/exportaciones salió el 21 (importación). Se corrigen en 4
+tandas. Esta es la de errores reales.
+
+- **Importación (#21), lo más grave.** Con un archivo de encabezados "Cuenta,
+  Primer apellido…", `detectarColumna` caía al alias `id`, que por
+  coincidencia parcial atrapaba "apell**id**o": matrícula = apellido, marcado
+  VÁLIDO. Además: materno obligatorio, nombres sin limpiar, la "a" de la
+  matrícula se guardaba (el escáner busca sin ella; la propia plantilla traía
+  el ejemplo con "a"), duplicados del mismo archivo invisibles en la vista
+  previa (se buscaban en el arreglo de la importación anterior), carrera en
+  minúsculas = otra carrera. Todo a `importacion.utils.ts` (puro, 15 tests):
+  coincidencia exacta normalizada antes que parcial por palabras completas,
+  nada se inventa (sin columna → `null`), y la vista previa muestra y deja
+  corregir el mapeo. E2E con `fixtures/padron-casos.xlsx` (`crear-padron.cjs`).
+- **Enter (#18).** MatDialog enfoca el primer botón: Cancelar. `cdkFocusInitial`
+  en Confirmar, y el diálogo escucha `LectorRafagaService` para que el Enter
+  de OTRA credencial no confirme la actual (el mismo riesgo que v3.54.0).
+- **Cerrar al final del horario (#2).** Solo cerraba HOY, con salida = el
+  instante de la revisión, sin refrescar aforo y con toast en quiosco. Ahora
+  `salidaAlCierre` (horarios.utils, puro) da la hora de cierre del día de la
+  entrada y `cerrarAlFinDelHorario` mira 7 días; corre cada minuto,
+  idempotente. E2E: la salida queda a la hora de cierre y el aforo baja.
+- **Aforo (#3).** E2E de los tres modos. Al escribirla, una prueba falló por
+  teclear antes de que el escáner escuchara (se perdía el primer dígito):
+  era la prueba, se espera a `.aforo-detalle`.
+- **Eliminar registros (#5).** No contaba al abrir; y la prueba destapó que
+  tampoco recontaba al cambiar los datos en la misma pantalla. `effect` sobre
+  `versionDatos`.
+
+333 unitarios, 54 E2E.
+
 ## 2026-10-16 — Segunda vuelta: PDF, Excel, perfiles, Inactivos, filtros (v3.56.0)
 
 Con el mismo respaldo, Playwright recorrió las pantallas, descargó los

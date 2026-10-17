@@ -22,6 +22,7 @@ export type AccionBitacora =
   | 'alumno-desactivado'
   | 'alumno-reactivado'
   | 'motivo-eliminado'
+  | 'alumnos-importados'
   | 'respaldo-exportado'
   | 'respaldo-importado'
   | 'datos-borrados';

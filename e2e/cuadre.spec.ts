@@ -162,6 +162,12 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await expect(page.locator('.historial-table')).toContainText('Estudiar, Pedir libro', { timeout: 15000 });
   });
 
+  test('Eliminar registros cuenta el rango por defecto al abrir (v3.57.0)', async ({ page }) => {
+    // Antes decía "Eliminar 0 registros" hasta tocar el selector.
+    await page.goto('/configuracion#datos');
+    await expect(page.getByRole('button', { name: /Eliminar 9 registros/ })).toBeVisible({ timeout: 15000 });   // 8 sep – 7 oct: todas menos la de Eva
+  });
+
   test('Inactivos', async ({ page }) => {
     await page.goto('/inactivos');
     const resumen = page.locator('.summary-row');

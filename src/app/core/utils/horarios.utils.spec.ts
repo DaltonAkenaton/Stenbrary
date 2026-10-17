@@ -3,7 +3,7 @@
 // ║  Stenbrary v3.12.1 — Tests de horario operativo      ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { verificarHorario } from './horarios.utils';
+import { salidaAlCierre, verificarHorario } from './horarios.utils';
 import { HorariosSemana } from '../services/config.service';
 
 // Día de la semana: 0=Dom, 1=Lun, ..., 6=Sáb
@@ -118,6 +118,39 @@ describe('horarios.utils', () => {
       expect(mar.getDay()).toBe(2);
       const r = verificarHorario(mar, horariosParciales);
       expect(r.abierto).toBeFalse();
+    });
+  });
+
+  // ─── Cerrar al final del horario (v3.57.0) ──────────────
+  describe('salidaAlCierre', () => {
+    // Lun–vie 07:00–20:00; sábado y domingo cerrados (HORARIO_LUN_A_VIE).
+    const lun = (h: number, m = 0) => new Date(2026, 9, 12, h, m);   // lunes 12-oct-2026
+
+    it('la salida es la hora de cierre de ESE día, no el momento de la revisión', () => {
+      const s = salidaAlCierre(lun(10), HORARIO_LUN_A_VIE, new Date(2026, 9, 12, 23, 40));
+      expect(s?.getHours()).toBe(20);
+      expect(s?.getMinutes()).toBe(0);
+    });
+
+    it('antes de la hora de cierre no hay salida todavía', () => {
+      expect(salidaAlCierre(lun(10), HORARIO_LUN_A_VIE, lun(19, 59))).toBeNull();
+    });
+
+    it('una entrada de un día anterior se cierra a la hora de cierre de su día (PC apagada)', () => {
+      const s = salidaAlCierre(lun(10), HORARIO_LUN_A_VIE, new Date(2026, 9, 14, 9, 0));
+      expect(s?.getDate()).toBe(12);
+      expect(s?.getHours()).toBe(20);
+    });
+
+    it('si ese día no abría, la salida es el fin del día', () => {
+      const sab = new Date(2026, 9, 17, 10, 0);
+      const s = salidaAlCierre(sab, HORARIO_LUN_A_VIE, new Date(2026, 9, 18, 9, 0));
+      expect([s?.getDate(), s?.getHours(), s?.getMinutes()]).toEqual([17, 23, 59]);
+    });
+
+    it('si entró después del cierre, la salida es el fin del día', () => {
+      const s = salidaAlCierre(lun(21, 30), HORARIO_LUN_A_VIE, new Date(2026, 9, 13, 8, 0));
+      expect([s?.getDate(), s?.getHours()]).toEqual([12, 23]);
     });
   });
 });

@@ -36,6 +36,7 @@ import { ToastService } from './core/services/toast.service';
 import { DiagnosticoService } from './core/services/diagnostico.service';
 import { RestablecerService } from './core/services/restablecer.service';
 import { registrarDiagnostico } from './core/utils/invariante.utils';
+import { salidaAlCierre } from './core/utils/horarios.utils';
 import { PwaUpdateService } from './core/services/pwa-update.service';
 import { QuioscoAutoService } from './core/services/quiosco-auto.service';
 import { AforoService } from './core/services/aforo.service';
@@ -97,7 +98,6 @@ export class AppComponent implements OnInit, OnDestroy {
   // ─── CIERRE POR HORARIO (v3.21) ─────────────────────────
   private cierrePorHorarioInterval: ReturnType<typeof setInterval> | null = null;
   /** Última fecha (YYYY-MM-DD) en la que ya se ejecutó el cierre por horario. */
-  private ultimoCierrePorHorarioDia = '';
 
   // ─── SESIÓN / AUTH ──────────────────────────────────────
   // Inicial del nombre (o '?') para el avatar del topbar.
@@ -300,9 +300,9 @@ export class AppComponent implements OnInit, OnDestroy {
   // ═══════════════════════════════════════════════════════
   // CIERRE POR HORARIO OPERATIVO (v3.21)
   // ═══════════════════════════════════════════════════════
-  // Polling de baja frecuencia (60 s): si está activo el cierre por horario y
-  // ya pasó la hora de cierre del día, cierra todas las entradas abiertas.
-  // Idempotente vía `ultimoCierrePorHorarioDia`.
+  // Polling de baja frecuencia (60 s): si está activo el cierre por horario,
+  // cierra las entradas abiertas cuyo cierre del día ya pasó. Idempotente: una
+  // entrada cerrada ya no es candidata (ver `checkCierrePorHorario`).
 
   private iniciarCierrePorHorario(): void {
     this.cierrePorHorarioInterval = setInterval(() => {
@@ -362,38 +362,28 @@ export class AppComponent implements OnInit, OnDestroy {
     this.actualizarApp();
   }
 
+  // ── Cierre al final del horario (v3.57.0) ──
+  // Corre en cada tick y es idempotente: solo toca entradas abiertas cuyo
+  // momento de cierre ya pasó (`salidaAlCierre`). Así se pone al día solo si
+  // la PC estaba apagada o la pestaña en segundo plano a la hora de cierre.
   private checkCierrePorHorario = async (): Promise<void> => {
-    if (document.hidden) return;
     if (!this.configService.cierreAlHorario) return;
     if (!this.configService.horarioActivo) return;
     if (!this.configService.registroSalidaActivo) return;
 
-    const ahora = new Date();
-    const diaKey = `${ahora.getFullYear()}-${ahora.getMonth()}-${ahora.getDate()}`;
-    if (this.ultimoCierrePorHorarioDia === diaKey) return;
-
-    const horarioDia = this.configService.horarios[ahora.getDay()];
-    if (!horarioDia || horarioDia.cerrado) return;
-
-    const m = /^(\d{1,2}):(\d{2})$/.exec(horarioDia.cierre || '');
-    if (!m) return;
-    const cierreMin = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-    const ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
-    if (ahoraMin < cierreMin) return;
-
-    // Pasó la hora de cierre. Cerrar y marcar el día.
-    this.ultimoCierrePorHorarioDia = diaKey;
-    try {
-      const cerrados = await this.databaseService.cerrarTodasLasEntradasAbiertas(
-        this.configService.cierreAutoConfirmar,
-      );
-      if (cerrados > 0) {
-        const sufijo = this.configService.cierreAutoConfirmar ? '' : ' (revísalas en Biblioteca)';
-        this.toastService.info(`Horario cerrado: ${cerrados} entrada(s) cerrada(s)${sufijo}`);
-      }
-    } catch {
-      // Reintentaremos en el siguiente tick si falla
-      this.ultimoCierrePorHorarioDia = '';
+    const horarios = this.configService.horarios;
+    const autoConfirmar = this.configService.cierreAutoConfirmar;
+    const cerrados = await this.databaseService.cerrarAlFinDelHorario(
+      entrada => salidaAlCierre(entrada, horarios, new Date()), autoConfirmar,
+    );
+    if (cerrados === 0) return;
+    // Antes no se refrescaba: "En biblioteca" seguía inflado hasta el siguiente escaneo.
+    await this.aforoService.refrescar();
+    if (!autoConfirmar) this.configService.setHayAutoClose(true);
+    // Igual que el cierre por horas: los alumnos frente al quiosco no necesitan enterarse.
+    if (!this.configService.modoQuioscoSignal()) {
+      const sufijo = autoConfirmar ? '' : ' (revísalas en Biblioteca)';
+      this.toastService.info(`Horario cerrado: ${cerrados} entrada(s) cerrada(s)${sufijo}`);
     }
   };
 

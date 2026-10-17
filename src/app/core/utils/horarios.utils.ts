@@ -105,3 +105,28 @@ export const DIAS_SEMANA = DIAS_NOMBRE;
 function plural(dia: string): string {
   return dia.endsWith('s') ? dia : dia + 's';
 }
+
+/**
+ * Momento en que le tocaba salir a quien entró en `entrada` y nunca registró
+ * salida, si ya pasó: la hora de cierre de ESE día. Si ese día no abría, no
+ * tiene horario válido o la persona entró después del cierre, el fin de ese
+ * día. `null` si todavía no llega ese momento.
+ *
+ * Para "Cerrar al final del horario" (v3.57.0). Antes la salida era el
+ * instante en que corría la revisión (con la pestaña en segundo plano, horas
+ * después del cierre) y solo se miraba hoy: con la PC apagada a la hora de
+ * cierre, esas entradas quedaban abiertas para siempre.
+ */
+export function salidaAlCierre(entrada: Date, horarios: HorariosSemana, ahora: Date): Date | null {
+  const finDelDia = new Date(entrada);
+  finDelDia.setHours(23, 59, 59, 999);
+  let salida = finDelDia;
+  const h = horarios[entrada.getDay()];
+  const m = h && !h.cerrado ? /^(\d{1,2}):(\d{2})$/.exec(h.cierre || '') : null;
+  if (m) {
+    const cierre = new Date(entrada);
+    cierre.setHours(parseInt(m[1], 10), parseInt(m[2], 10), 0, 0);
+    if (cierre.getTime() > entrada.getTime()) salida = cierre;
+  }
+  return salida.getTime() <= ahora.getTime() ? salida : null;
+}

@@ -10,8 +10,9 @@
 // ║  4. Resultado con conteos                            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,22 +25,12 @@ import * as XLSX from 'xlsx';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
-import { TURNOS } from '../../core/constants/catalogos.constants';
-
-/** Una fila parseada del Excel con estado de validación */
-interface FilaImportacion {
-  fila: number;
-  matricula: string;
-  nombre: string;
-  apellidoPaterno: string;
-  apellidoMaterno: string;
-  carrera: string;
-  grado: number;
-  grupo: string;
-  turno: string;
-  valido: boolean;
-  errores: string[];
-}
+import { CARRERAS, GRADOS, TURNOS } from '../../core/constants/catalogos.constants';
+import { BitacoraService } from '../../core/services/bitacora.service';
+import {
+  CAMPOS_IMPORTACION, CampoImportacion, DefCampo, FilaImportacion, MapeoColumnas,
+  camposFaltantes, detectarMapeo, procesarFilas,
+} from '../../core/utils/importacion.utils';
 
 interface ResultadoImportacion {
   total: number;
@@ -54,6 +45,7 @@ interface ResultadoImportacion {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -152,8 +144,9 @@ interface ResultadoImportacion {
           <mat-icon>lightbulb</mat-icon>
           <span>
             <strong>Consejo:</strong> Los nombres de columna no necesitan ser exactos.
-            El sistema detecta automáticamente columnas como "Matricula", "MATRÍCULA",
-            "No. Control", "Apellido_Paterno", etc.
+            El sistema reconoce columnas como "Matrícula", "Cuenta", "No. de control",
+            "Primer apellido" o "Programa educativo", y en la vista previa puedes
+            corregir qué columna se usa para cada dato.
           </span>
         </div>
       </mat-card>
@@ -166,6 +159,33 @@ interface ResultadoImportacion {
           <mat-icon>table_chart</mat-icon>
           <h2>Vista Previa</h2>
           <span class="archivo-nombre">{{ nombreArchivo }}</span>
+        </div>
+
+        <!-- Columnas: qué columna del archivo se usó para cada campo -->
+        <div class="mapeo">
+          <p class="mapeo-titulo">
+            <mat-icon>view_column</mat-icon>
+            Columnas del archivo — revisa que cada dato salga de la columna correcta
+          </p>
+          <div class="mapeo-grid">
+            @for (def of campos; track def.campo) {
+              <label class="mapeo-item" [class.mapeo-falta]="def.obligatorio && !mapeo[def.campo]">
+                <span>{{ def.etiqueta }}{{ def.obligatorio ? '' : ' (opcional)' }}</span>
+                <select [ngModel]="mapeo[def.campo] ?? ''" (ngModelChange)="cambiarMapeo(def.campo, $event)">
+                  <option value="">— no usar —</option>
+                  @for (col of columnasArchivo; track col) {
+                    <option [value]="col">{{ col }}</option>
+                  }
+                </select>
+              </label>
+            }
+          </div>
+          @if (faltantes.length > 0) {
+            <p class="mapeo-aviso">
+              <mat-icon>error</mat-icon>
+              Elige la columna de: {{ etiquetasFaltantes }}. Sin eso no se puede importar.
+            </p>
+          }
         </div>
 
         <!-- Resumen de validación -->
@@ -193,7 +213,9 @@ interface ResultadoImportacion {
             <ng-container matColumnDef="estado">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell *matCellDef="let fila">
-                @if (fila.valido) {
+                @if (fila.valido && fila.avisos.length > 0) {
+                  <mat-icon class="icon-aviso" [matTooltip]="fila.avisos.join(', ')">warning</mat-icon>
+                } @else if (fila.valido) {
                   <mat-icon class="icon-ok">check_circle</mat-icon>
                 } @else {
                   <mat-icon class="icon-error"
@@ -223,7 +245,7 @@ interface ResultadoImportacion {
             <ng-container matColumnDef="apellidos">
               <th mat-header-cell *matHeaderCellDef>Apellidos</th>
               <td mat-cell *matCellDef="let fila">
-                {{ fila.apellidoPaterno || '—' }} {{ fila.apellidoMaterno || '—' }}
+                {{ fila.apellidoPaterno || '—' }} {{ fila.apellidoMaterno }}
               </td>
             </ng-container>
 
@@ -267,7 +289,7 @@ interface ResultadoImportacion {
           </button>
           <button class="btn-action btn-import"
                   (click)="importar()"
-                  [disabled]="filasValidas === 0 || importando">
+                  [disabled]="filasValidas === 0 || importando || faltantes.length > 0">
             <mat-icon>{{ importando ? 'hourglass_empty' : 'file_download' }}</mat-icon>
             <span>{{ importando ? 'Importando...' : 'Importar ' + filasValidas + ' alumnos' }}</span>
           </button>
@@ -628,6 +650,37 @@ interface ResultadoImportacion {
 
     .icon-ok { color: #0BC4B7 !important; font-size: 18px !important; width: 18px !important; height: 18px !important; }
     .icon-error { color: #F05252 !important; font-size: 18px !important; width: 18px !important; height: 18px !important; }
+    .icon-aviso { color: #F5A623 !important; font-size: 18px !important; width: 18px !important; height: 18px !important; }
+
+    /* ── Mapeo de columnas ── */
+    .mapeo {
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 200, 215, 0.15);
+      background: rgba(0, 200, 215, 0.04);
+    }
+    .mapeo-titulo {
+      display: flex; align-items: center; gap: 8px;
+      margin: 0 0 12px; font-size: 0.85rem; color: rgba(200, 230, 240, 0.8);
+    }
+    .mapeo-titulo mat-icon { font-size: 18px; width: 18px; height: 18px; color: #00C8D7; }
+    .mapeo-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    }
+    .mapeo-item { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; color: rgba(200, 230, 240, 0.6); }
+    .mapeo-item select {
+      padding: 7px 8px; border-radius: 8px; font-size: 0.85rem;
+      background: #0F1A2A; color: #E8F4F8; border: 1px solid rgba(200, 230, 240, 0.15);
+    }
+    .mapeo-falta span { color: #F05252; font-weight: 600; }
+    .mapeo-falta select { border-color: #F05252; }
+    .mapeo-aviso {
+      display: flex; align-items: center; gap: 6px;
+      margin: 12px 0 0; font-size: 0.82rem; color: #F05252;
+    }
+    .mapeo-aviso mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
     /* ── Preview actions ── */
     .preview-actions {
@@ -723,11 +776,24 @@ export class ImportarAlumnosComponent {
   filas: FilaImportacion[] = [];
   columnasPreview = ['estado', 'fila', 'matricula', 'nombre', 'apellidos', 'carrera', 'grado', 'grupo', 'turno'];
 
+  /** Filas tal como vienen del archivo: se reprocesan si cambia el mapeo de columnas. */
+  private filasCrudas: Record<string, unknown>[] = [];
+  readonly campos = CAMPOS_IMPORTACION;
+  columnasArchivo: string[] = [];
+  mapeo: MapeoColumnas = detectarMapeo([]);
+  faltantes: DefCampo[] = [];
+
+  get etiquetasFaltantes(): string {
+    return this.faltantes.map(f => f.etiqueta).join(', ');
+  }
+
   // Matrículas ya existentes en BD (pre-validación)
   private matriculasExistentes = new Set<string>();
 
   // Resultado
   resultado: ResultadoImportacion | null = null;
+
+  private readonly bitacora = inject(BitacoraService);
 
   constructor(
     private databaseService: DatabaseService,
@@ -802,135 +868,25 @@ export class ImportarAlumnosComponent {
   // PROCESAMIENTO Y MAPEO DE COLUMNAS
   // ═══════════════════════════════════════════════
 
-  private procesarDatos(jsonData: any[]): void {
-    // Detectar columnas automáticamente
-    const primeraFila = jsonData[0];
-    const columnas = Object.keys(primeraFila);
-
-    const mapeo = {
-      matricula: this.detectarColumna(columnas, ['matricula', 'matrícula', 'no. control', 'no control', 'numero de control', 'número de control', 'no_control', 'id']),
-      nombre: this.detectarColumna(columnas, ['nombre', 'nombres', 'name', 'primer nombre']),
-      apellidoPaterno: this.detectarColumna(columnas, ['apellido paterno', 'apellido_paterno', 'paterno', 'ap paterno', 'ap_paterno', 'primer apellido']),
-      apellidoMaterno: this.detectarColumna(columnas, ['apellido materno', 'apellido_materno', 'materno', 'ap materno', 'ap_materno', 'segundo apellido']),
-      carrera: this.detectarColumna(columnas, ['carrera', 'licenciatura', 'programa', 'programa educativo', 'programa_educativo']),
-      grado: this.detectarColumna(columnas, ['grado', 'semestre', 'cuatrimestre', 'nivel', 'periodo']),
-      grupo: this.detectarColumna(columnas, ['grupo', 'seccion', 'sección', 'section', 'aula']),
-      turno: this.detectarColumna(columnas, ['turno', 'horario', 'jornada', 'shift']),
-    };
-
-    console.log('📋 Mapeo de columnas detectado:', mapeo);
-
-    this.filas = jsonData.map((row, index) => {
-      const fila: FilaImportacion = {
-        fila: index + 2, // +2 porque fila 1 es el header en Excel
-        matricula: this.limpiarTexto(row[mapeo.matricula] || ''),
-        nombre: this.limpiarTexto(row[mapeo.nombre] || ''),
-        apellidoPaterno: this.limpiarTexto(row[mapeo.apellidoPaterno] || ''),
-        apellidoMaterno: this.limpiarTexto(row[mapeo.apellidoMaterno] || ''),
-        carrera: this.limpiarTexto(row[mapeo.carrera] || ''),
-        grado: this.parsearNumero(row[mapeo.grado]),
-        grupo: this.limpiarTexto(row[mapeo.grupo] || '').toUpperCase(),
-        turno: this.normalizarTurno(this.limpiarTexto(row[mapeo.turno] || '')),
-        valido: true,
-        errores: [],
-      };
-
-      // Validar
-      this.validarFila(fila);
-
-      return fila;
-    });
+  private procesarDatos(jsonData: Record<string, unknown>[]): void {
+    this.filasCrudas = jsonData;
+    this.columnasArchivo = Object.keys(jsonData[0] ?? {});
+    // Detección automática; la vista previa muestra el resultado y deja corregirlo.
+    this.mapeo = detectarMapeo(this.columnasArchivo);
+    this.reprocesar();
   }
 
-  /**
-   * Detecta cuál columna del Excel corresponde a un campo.
-   * Busca por coincidencia parcial (case-insensitive).
-   */
-  private detectarColumna(columnas: string[], nombres: string[]): string {
-    for (const nombre of nombres) {
-      const encontrada = columnas.find(c =>
-        c.toLowerCase().trim().includes(nombre.toLowerCase())
-      );
-      if (encontrada) return encontrada;
-    }
-    // Si no detecta, buscar match exacto (sin acentos)
-    for (const nombre of nombres) {
-      const sinAcentos = this.quitarAcentos(nombre);
-      const encontrada = columnas.find(c =>
-        this.quitarAcentos(c.toLowerCase().trim()) === sinAcentos
-      );
-      if (encontrada) return encontrada;
-    }
-    // Fallback: devolver el nombre original del primer intento
-    return nombres[0];
-  }
-
-  private quitarAcentos(texto: string): string {
-    return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  }
-
-  private limpiarTexto(valor: any): string {
-    return String(valor).trim();
-  }
-
-  private parsearNumero(valor: any): number {
-    const num = parseInt(String(valor), 10);
-    return isNaN(num) ? 0 : num;
-  }
-
-  private normalizarTurno(turno: string): string {
-    const t = turno.toLowerCase().trim();
-    if (t.includes('matut') || t === 'm' || t === 'tm') return 'Matutino';
-    if (t.includes('vespert') || t === 'v' || t === 'tv') return 'Vespertino';
-    if (t.includes('mixt') || t.includes('noct') || t === 'x') return 'Mixto';
-    // Si ya viene correcto
-    if (TURNOS.includes(turno as any)) return turno;
-    return turno; // Dejar como está, la validación lo atrapará
-  }
-
-  // ═══════════════════════════════════════════════
-  // VALIDACIÓN
-  // ═══════════════════════════════════════════════
-
-  private validarFila(fila: FilaImportacion): void {
-    fila.errores = [];
-
-    if (!fila.matricula || fila.matricula.length < 3) {
-      fila.errores.push('Matrícula vacía o muy corta');
-    }
-
-    if (!fila.nombre) fila.errores.push('Nombre vacío');
-    if (!fila.apellidoPaterno) fila.errores.push('Apellido Paterno vacío');
-    if (!fila.apellidoMaterno) fila.errores.push('Apellido Materno vacío');
-
-    if (!fila.carrera) {
-      fila.errores.push('Carrera vacía');
-    }
-
-    if (!fila.grado || fila.grado < 1 || fila.grado > 12) {
-      fila.errores.push('Grado inválido (debe ser 1-12)');
-    }
-
-    if (!fila.grupo) fila.errores.push('Grupo vacío');
-
-    if (!TURNOS.includes(fila.turno as any)) {
-      fila.errores.push(`Turno inválido: "${fila.turno}" (usar Matutino, Vespertino o Mixto)`);
-    }
-
-    // Verificar duplicados DENTRO del mismo archivo
-    const duplicadoInterno = this.filas?.find(f =>
-      f !== fila && f.matricula === fila.matricula && fila.matricula !== ''
+  /** Normaliza y valida todas las filas con el mapeo actual (importacion.utils). */
+  private reprocesar(): void {
+    this.faltantes = camposFaltantes(this.mapeo);
+    this.filas = procesarFilas(
+      this.filasCrudas, this.mapeo, this.matriculasExistentes, CARRERAS, TURNOS, Math.max(...GRADOS),
     );
-    if (duplicadoInterno) {
-      fila.errores.push(`Matrícula duplicada en fila ${duplicadoInterno.fila}`);
-    }
+  }
 
-    // Verificar si ya existe en la base de datos
-    if (fila.matricula && this.matriculasExistentes.has(fila.matricula)) {
-      fila.errores.push('Matrícula ya registrada en el sistema');
-    }
-
-    fila.valido = fila.errores.length === 0;
+  cambiarMapeo(campo: CampoImportacion, columna: string): void {
+    this.mapeo = { ...this.mapeo, [campo]: columna || null };
+    this.reprocesar();
   }
 
   // ═══════════════════════════════════════════════
@@ -1003,6 +959,11 @@ export class ImportarAlumnosComponent {
         }
       }
 
+      if (resultado.importados > 0) {
+        void this.bitacora.registrar('alumnos-importados',
+          `${resultado.importados} alumnos desde "${this.nombreArchivo}"` +
+          (resultado.duplicados ? `, ${resultado.duplicados} ya existían` : ''));
+      }
       this.resultado = resultado;
       this.paso = 'resultado';
       this.loadingService.hide();
@@ -1055,7 +1016,8 @@ export class ImportarAlumnosComponent {
 
     descargarPlantilla(): void {
     const headers = ['Matrícula', 'Nombre', 'Apellido Paterno', 'Apellido Materno', 'Carrera', 'Grado', 'Grupo', 'Turno'];
-    const ejemplo = ['a2299990003', 'Juan', 'García', 'López', 'Contador Público', '4', 'A', 'Matutino'];
+    // Sin la "a": así la busca el escáner (antes el ejemplo inducía a guardarla con prefijo).
+    const ejemplo = ['2299990003', 'Juan', 'García', 'López', 'Contador Público', '4', 'A', 'Matutino'];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ejemplo]);
 

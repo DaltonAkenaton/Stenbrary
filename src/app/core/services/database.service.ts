@@ -1632,33 +1632,55 @@ export class DatabaseService {
   }
 
   /**
-   * Cierra TODAS las entradas abiertas del día sin requerir un umbral de horas.
-   * Útil para "cerrar al final del horario operativo": al llegar la hora de
-   * cierre, todas las personas que sigan dentro reciben horaSalida = ahora.
+   * "Cerrar al final del horario": a cada entrada abierta de los últimos 7
+   * días le pone como salida el momento que le tocaba según el horario
+   * (`calcularSalida`, normalmente `salidaAlCierre` de horarios.utils), si ya
+   * pasó. Recibe la función y no el horario para no acoplar la BD a la
+   * configuración.
+   *
+   * v3.57.0 — antes: solo entradas de HOY (con la PC apagada a la hora de
+   * cierre quedaban abiertas para siempre) y salida = el instante de la
+   * revisión, no la hora de cierre. Como el cierre por horas, las de días
+   * anteriores se cierran ya confirmadas (Presencia solo muestra hoy).
    *
    * @param autoConfirmar si true, NO marca cierreAutomatico
    */
-  async cerrarTodasLasEntradasAbiertas(autoConfirmar = false): Promise<number> {
+  async cerrarAlFinDelHorario(
+    calcularSalida: (entrada: Date) => Date | null,
+    autoConfirmar = false,
+  ): Promise<number> {
     try {
       await this.inicializar();
       if (!this.db) return 0;
 
-      const abiertas = await this.obtenerRegistrosAbiertoHoy();
-      const candidatos = abiertas.filter(r => !r.horaSalida);
+      const ahora = Date.now();
+      const desde = new Date(ahora - DatabaseService.VENTANA_CIERRE_DIAS * 86_400_000);
+      let recientes: Registro[];
+      try {
+        recientes = await this.db.getAllFromIndex('registros', 'by-fecha', IDBKeyRange.lowerBound(desde));
+      } catch {
+        const todos = await this.db.getAll('registros');
+        recientes = todos.filter(r => new Date(r.fechaHora) >= desde);
+      }
+      // Invitados incluidos: también cuentan en el aforo.
+      const candidatos = recientes.filter(r => !r.horaSalida);
       if (candidatos.length === 0) return 0;
 
+      const inicioHoy = new Date(ahora);
+      inicioHoy.setHours(0, 0, 0, 0);
       const tx = this.db.transaction('registros', 'readwrite');
       const store = tx.store;
-      const ahora = new Date();
       let cerrados = 0;
 
       for (const r of candidatos) {
         const actual = await store.get(r.id);
         if (!actual || actual.horaSalida) continue;
-        actual.horaSalida = ahora;
-        const dur = (ahora.getTime() - new Date(actual.fechaHora).getTime()) / 60000;
-        actual.duracionMinutos = Math.max(0, Math.round(dur));
-        actual.cierreAutomatico = !autoConfirmar;
+        const entrada = new Date(actual.fechaHora);
+        const salida = calcularSalida(entrada);
+        if (!salida) continue;
+        actual.horaSalida = salida;
+        actual.duracionMinutos = Math.max(0, Math.round((salida.getTime() - entrada.getTime()) / 60000));
+        actual.cierreAutomatico = !autoConfirmar && entrada >= inicioHoy;
         actual.salidaEstimada = true;
         this.marcarPendienteEnSitio(actual);
         await store.put(actual);
@@ -1666,8 +1688,8 @@ export class DatabaseService {
       }
 
       await tx.done;
-      this.notificarCambioDatos();
       if (cerrados > 0) {
+        this.notificarCambioDatos();
         log(`🔒 Cierre por horario: ${cerrados} entrada(s) cerrada(s)${autoConfirmar ? ' (auto-confirmadas)' : ''}`);
       }
       return cerrados;

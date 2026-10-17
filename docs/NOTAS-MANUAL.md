@@ -306,3 +306,22 @@ importados y "borrar todo". No dice **quién** (no hay cuentas en modo local).
 
 - Toda pantalla que lista visitas (Registros, historial del perfil, Últimas entradas, constancia, Excel, PDF) muestra **todas** las actividades de cada visita, separadas por coma.
 - **"Alumnos dados de alta hoy"** (Resumen): alumnos registrados en el sistema hoy, en la puerta o importados. No significa que hayan venido.
+
+## Importar alumnos (v3.57.0)
+
+- La vista previa muestra **qué columna del archivo se usó para cada dato** (Matrícula ← "Cuenta", etc.) y permite cambiarla. Si falta una columna obligatoria (matrícula, nombre, apellido paterno, carrera, grado, grupo, turno), no deja importar hasta elegirla.
+- Reglas iguales a las del registro en la puerta: apellido materno opcional; nombres en MAYÚSCULAS o minúsculas se capitalizan ("JUAN PÉREZ" → "Juan Pérez"); la matrícula se guarda sin la "a" y con 7 dígitos o más; la carrera se reconoce sin importar mayúsculas ni acentos.
+- **Carrera fuera del catálogo:** la fila se importa con un aviso amarillo (no se rechaza).
+- Matrículas repetidas en el mismo archivo: se importa la primera; las demás aparecen con error en la vista previa.
+- Volver a cargar el mismo archivo no duplica: los que ya existen se omiten.
+
+## Confirmar la matrícula (v3.57.0)
+
+- Escribir la matrícula + **Enter + Enter** registra la entrada. Esc o "Cancelar" cancelan.
+- Si se pasa una credencial con esa ventana abierta, se ignora y aparece "Primero confirma o cancela esta matrícula".
+
+## Cerrar al final del horario (v3.57.0)
+
+- A quien no registró salida, el sistema le pone como salida **la hora de cierre de ese día** (según el horario de operación). Si ese día no abría o la persona entró después del cierre, el fin del día.
+- Funciona aunque la computadora estuviera apagada a la hora de cierre: al encenderla, se cierran las entradas pendientes de los últimos 7 días. Las de días anteriores quedan confirmadas; las de hoy aparecen en "En Biblioteca" para revisar (salvo con "Confirmar automáticamente").
+- Requiere "Registro de salida", "Horario de operación" y la opción activados. Es una salida estimada: no cuenta en promedios de estancia ni en constancias.

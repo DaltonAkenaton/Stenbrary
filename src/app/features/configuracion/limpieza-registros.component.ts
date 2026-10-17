@@ -15,7 +15,7 @@
 // ║             limpieza-registros.component.ts            ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, signal, inject } from '@angular/core';
+import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -369,6 +369,19 @@ export class LimpiezaRegistrosComponent {
     private aforoService: AforoService,
     private dialog: MatDialog,
   ) {}
+
+  /**
+   * El rango por defecto ("Últimos 30 días") nunca se contaba: el conteo solo
+   * corría al cambiar el selector, y el botón decía "Eliminar 0 registros"
+   * aunque hubiera cientos (reportado 2026-10-17). Además se recuenta cada vez
+   * que cambian los datos: restaurar un respaldo en esta misma pantalla dejaba
+   * "No queda ningún registro" con la base llena. El effect corre también al
+   * crearse el componente: ese es el conteo inicial.
+   */
+  private readonly recontar = effect(() => {
+    this.databaseService.versionDatos();
+    untracked(() => { if (this.rangoSeleccionado !== 'personalizado' || this.conteoCalculado()) void this.actualizarConteo(); });
+  });
 
   // ═══════════════════════════════════════════════
   // CAMBIO DE RANGO

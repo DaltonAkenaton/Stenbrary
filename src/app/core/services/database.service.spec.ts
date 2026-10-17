@@ -412,6 +412,45 @@ describe('DatabaseService', () => {
     });
   });
 
+  describe('cerrarAlFinDelHorario (v3.57.0)', () => {
+    const ahoraFijo = (() => { const d = new Date(); d.setHours(21, 0, 0, 0); return d; })();
+    // Cierre fijo a las 20:00 cualquier día (la regla real vive en salidaAlCierre).
+    const alCierre = (e: Date) => {
+      const c = new Date(e); c.setHours(20, 0, 0, 0);
+      return c > e && c.getTime() <= Date.now() ? c : null;
+    };
+
+    beforeEach(() => { jasmine.clock().install(); jasmine.clock().mockDate(ahoraFijo); });
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('cierra a la hora de cierre, no al momento de la revisión, y queda por revisar si es de hoy', async () => {
+      const hoy10 = new Date(ahoraFijo); hoy10.setHours(10, 0, 0, 0);
+      const r = await crearRegistroConFecha(db, '1000040', hoy10);
+      expect(await db.cerrarAlFinDelHorario(alCierre)).toBe(1);
+      const g = (await db.obtenerTodosLosRegistros()).find(x => x.id === r.id)!;
+      expect(new Date(g.horaSalida!).getHours()).toBe(20);
+      expect(g.duracionMinutos).toBe(600);
+      expect(g.salidaEstimada).toBeTrue();
+      expect(g.cierreAutomatico).toBeTrue();
+    });
+
+    it('se pone al día con entradas de días anteriores (PC apagada a la hora de cierre)', async () => {
+      const ayer10 = new Date(ahoraFijo); ayer10.setDate(ayer10.getDate() - 1); ayer10.setHours(10, 0, 0, 0);
+      const r = await crearRegistroConFecha(db, '1000041', ayer10);
+      expect(await db.cerrarAlFinDelHorario(alCierre)).toBe(1);
+      const g = (await db.obtenerTodosLosRegistros()).find(x => x.id === r.id)!;
+      expect(new Date(g.horaSalida!).getDate()).toBe(ayer10.getDate());
+      expect(g.cierreAutomatico).toBeFalse();   // de un día anterior: ya confirmada
+    });
+
+    it('no toca entradas cuyo cierre todavía no llega ni las que ya tienen salida', async () => {
+      await crearRegistroConFecha(db, '1000042', new Date(ahoraFijo.getTime() - 30 * 60_000)); // 20:30, entró tras el cierre
+      const r = await crearRegistroConFecha(db, '1000043', new Date(ahoraFijo.getTime() - 5 * 3_600_000));
+      await db.registrarSalida(r.id);
+      expect(await db.cerrarAlFinDelHorario(alCierre)).toBe(0);
+    });
+  });
+
   describe('cambios que deben volver a subir a la nube', () => {
     it('desactivar un alumno ya sincronizado lo deja pendiente de subir', async () => {
       const a = await db.crearAlumno(nuevoAlumno('1000020'));
