@@ -134,6 +134,19 @@ describe('revisarIntegridad', () => {
       .toContain('entrada-abierta-antigua');
   });
 
+  it('dice cuántas de las entradas abiertas son de datos de prueba (v3.57.0)', () => {
+    const ayer = new Date(AHORA);
+    ayer.setDate(ayer.getDate() - 1);
+    const abierta = (id: string, matricula: string) =>
+      registro(id, { fechaHora: ayer, horaSalida: undefined, duracionMinutos: undefined, matricula });
+    const solo = (rs: ReturnType<typeof registro>[]) =>
+      revisarIntegridad(ALUMNOS, rs, AHORA, { moduloSalidaActivo: true })
+        .find(p => p.tipo === 'entrada-abierta-antigua')!.descripcion;
+    expect(solo([abierta('p1', '9000001'), abierta('p2', '9000002')])).toContain('Todas son de datos de prueba');
+    expect(solo([abierta('p1', '9000001'), abierta('r1', ALUMNOS[0].matricula)])).toContain('1 de ellas son de datos de prueba');
+    expect(solo([abierta('r1', ALUMNOS[0].matricula)])).not.toContain('prueba');
+  });
+
   it('señala cierres automáticos de días anteriores que nadie confirmó', () => {
     const ayer = new Date(AHORA);
     ayer.setDate(ayer.getDate() - 1);

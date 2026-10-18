@@ -21,6 +21,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Alumno, Registro } from '../models';
+import { esRegistroDePrueba } from './datos-prueba.utils';
 
 export type GravedadProblema = 'alta' | 'media' | 'baja';
 
@@ -45,6 +46,15 @@ export const ESTANCIA_MAXIMA_MIN = 14 * 60;
 
 /** Margen de tolerancia para relojes desajustados antes de marcar "futuro". */
 const TOLERANCIA_FUTURO_MIN = 5;
+
+/** " Todas son de datos de prueba…" / " N de ellas…" / "" (v3.57.0). */
+function notaDePrueba(dePrueba: number, total: number): string {
+  if (dePrueba === 0) return '';
+  if (dePrueba === total) {
+    return ' Todas son de datos de prueba (el generador deja algunas así a propósito): se van al limpiar los datos de prueba.';
+  }
+  return ` ${dePrueba} de ellas son de datos de prueba.`;
+}
 
 function ejemplosDe(items: string[]): string[] {
   return items.slice(0, 3);
@@ -83,6 +93,8 @@ export function revisarIntegridad(
   const huerfanos: string[] = [];
   const abiertasViejas: string[] = [];
   const cierresSinRevisar: string[] = [];
+  let abiertasDePrueba = 0;
+  let cierresDePrueba = 0;
 
   const matriculasConocidas = new Set(alumnos.map(a => a.matricula));
 
@@ -114,12 +126,20 @@ export function revisarIntegridad(
       huerfanos.push(etiqueta);
     }
 
-    // De días anteriores: el cierre automático solo mira las entradas de
-    // HOY, y "En Biblioteca" solo muestra las de hoy. Estas se quedaron
-    // fuera de las dos para siempre.
+    // De días anteriores: "En Biblioteca" solo muestra las de hoy, y el
+    // cierre automático solo alcanza los últimos 7 días (v3.53.0). Estas se
+    // quedaron fuera de los dos. v3.57.0: se cuentan aparte las de datos de
+    // prueba, porque el generador deja entradas abiertas a propósito y el
+    // usuario no sabía si las 508 que vio eran un problema real.
     if (entrada.getTime() < inicioHoy.getTime()) {
-      if (!r.horaSalida && opciones.moduloSalidaActivo) abiertasViejas.push(etiqueta);
-      if (r.cierreAutomatico === true) cierresSinRevisar.push(etiqueta);
+      if (!r.horaSalida && opciones.moduloSalidaActivo) {
+        abiertasViejas.push(etiqueta);
+        if (esRegistroDePrueba(r)) abiertasDePrueba++;
+      }
+      if (r.cierreAutomatico === true) {
+        cierresSinRevisar.push(etiqueta);
+        if (esRegistroDePrueba(r)) cierresDePrueba++;
+      }
     }
   });
 
@@ -196,8 +216,10 @@ export function revisarIntegridad(
     problemas.push({
       tipo: 'entrada-abierta-antigua',
       descripcion:
-        'Hay entradas de días anteriores que nunca registraron salida. No aparecen en "En Biblioteca" ' +
-        'ni las cierra el cierre automático, que solo revisa las de hoy.',
+        'Hay entradas de días anteriores que nunca registraron salida. "En Biblioteca" solo muestra las de hoy ' +
+        'y el cierre automático solo alcanza los últimos 7 días (o está apagado), así que se quedan abiertas. ' +
+        'No afectan el conteo de visitas; solo no cuentan para el tiempo de estancia.' +
+        notaDePrueba(abiertasDePrueba, abiertasViejas.length),
       gravedad: 'baja',
       afectados: abiertasViejas.length,
       ejemplos: ejemplosDe(abiertasViejas),
@@ -209,7 +231,8 @@ export function revisarIntegridad(
       tipo: 'cierre-automatico-sin-revisar',
       descripcion:
         'Hay cierres automáticos de días anteriores que nadie confirmó. "En Biblioteca" solo muestra los de hoy, ' +
-        'así que estos ya no se pueden revisar desde ahí. Su duración es estimada y no cuenta en las estadísticas.',
+        'así que estos ya no se pueden revisar desde ahí. Su duración es estimada y no cuenta en las estadísticas.' +
+        notaDePrueba(cierresDePrueba, cierresSinRevisar.length),
       gravedad: 'baja',
       afectados: cierresSinRevisar.length,
       ejemplos: ejemplosDe(cierresSinRevisar),

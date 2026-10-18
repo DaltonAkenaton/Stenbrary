@@ -363,9 +363,15 @@
 }
 
 // Cuadre de cifras (v3.57.0): verde lo que cuadra; el rojo lo pone `.es-error`.
-.cifra {
-  display: flex;
+// `.item` es columna (para los desplegables de incidencias): aquí, una fila.
+.item.cifra {
+  flex-direction: row;
   align-items: center;
   gap: 10px;
+  padding: 10px 16px;
+  text-align: left;
+
+  .item-veces { margin-left: auto; white-space: nowrap; }
 }
+.cifra-ok .item-veces { color: $text-secondary; }
 .cifra-ok .item-icon { color: #0EB07B; }

@@ -49,6 +49,22 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.57.1',
+    fecha: '2026-10-18',
+    titulo: 'Reporte del sistema más claro',
+    resumen: 'Detalles del Reporte del sistema que salieron al probar la versión anterior.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: '"Verificar cifras" muestra cada comprobación en una sola línea, con su cifra a la derecha (antes salía apilada y centrada).',
+      },
+      {
+        tipo: 'fix',
+        texto: '"Revisar datos": el aviso de entradas antiguas sin salida explicaba mal el cierre automático (alcanza los últimos 7 días, no solo hoy) y ahora aclara que no afecta el conteo de visitas. Si esas entradas son de datos de prueba, lo dice.',
+      },
+    ],
+  },
+  {
     version: '3.57.0',
     fecha: '2026-10-17',
     titulo: 'Ronda de pruebas: padrón, PIN, catálogos y cifras verificadas',

@@ -9,6 +9,20 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-18 — v3.57.1: Reporte del sistema tras la primera prueba en producción
+
+El usuario corrió "Verificar cifras" en Cloudflare con 3 meses de datos de
+prueba: 25 de 25 cuadran (2 239 visitas en el historial). Dos detalles:
+
+- La lista salía apilada y centrada: `.item` del Diagnóstico es columna (por
+  los desplegables de incidencias); `.item.cifra` la vuelve fila.
+- "Revisar datos" mostraba 508 entradas antiguas sin salida con un texto de
+  antes de v3.53.0 ("el cierre automático solo revisa las de hoy"). Eran del
+  generador, que deja ~25 % abiertas a propósito. El texto ahora dice el
+  alcance real (7 días), que no afectan el conteo de visitas y, si son de
+  datos de prueba, cuántas.
+- 358 unitarias (+1).
+
 ## 2026-10-18 — Pruebas del usuario, tanda D: catálogos y cuadre de cifras (v3.57.0, acumulada)
 
 Cierra los 21 hallazgos. Sigue acumulada en la v3.57.0 (sin publicar).
