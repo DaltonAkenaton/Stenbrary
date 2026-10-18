@@ -251,6 +251,20 @@ Los motivos se reconocen por nombre ("Estudiar" de un equipo es "Estudiar" del
 otro). Va en un solo sentido: lo que se edite o borre en la oficina no regresa
 a la puerta, así que la oficina es solo para consultar.
 
+**Qué versión gana al combinar (v3.57.2).** Si una visita o un alumno se
+cambió en los dos equipos, se queda la versión que **una persona** cambió más
+recientemente: una corrección hecha en la oficina no se pierde con el respaldo
+del día siguiente. El cierre automático no cuenta como cambio de una persona:
+la salida real que llega de la puerta reemplaza a la estimada. El resultado de
+la importación dice cuántos "se quedaron como estaban aquí". Corregir el nombre
+de una carrera (Catálogos → "Corregir en todo") se repite en el otro equipo al
+combinar. Si "Reemplazar todo" falla a la mitad, el sistema regresa solo a los
+datos que había.
+
+## Horario en "bloquear" (v3.57.2)
+Detiene las **entradas** fuera de horario (alumnos y visitantes). Las salidas
+siempre se registran: quien se queda después del cierre puede marcar su salida.
+
 ## Borrar un registro (v3.50.0)
 Registros (o el perfil del alumno) → lápiz del registro → **Eliminar**, con
 confirmación. Para un escaneo por error que nadie deshizo a tiempo. No se puede

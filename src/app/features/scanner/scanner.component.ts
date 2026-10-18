@@ -67,7 +67,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { Alumno, Registro } from '../../core/models';
 
-import { esMatriculaValidaScanner, normalizarMatricula, validarMatricula } from '../../core/utils/matricula.utils';
+import { MATRICULA_CONFIG, esMatriculaValidaScanner, normalizarMatricula, validarMatricula } from '../../core/utils/matricula.utils';
 
 import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
@@ -534,6 +534,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
         if (esMatriculaValidaScanner(normalizada)) {
           e.preventDefault();
           this.ngZone.run(() => this.procesarDeteccion(normalizada, 'usb-hid'));
+        } else if (/^\d+$/.test(normalizada) && normalizada.length > MATRICULA_CONFIG.maxDigitos) {
+          // Un libro u otro código largo: avisar en vez de no hacer nada.
+          e.preventDefault();
+          this.ngZone.run(() => {
+            this.soundService.beepError();
+            this.toastService.warning('Ese código no es una credencial de alumno.');
+          });
         }
       }
       return;
@@ -1510,12 +1517,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
   ): Promise<void> {
     this.origenEsLector = origen === 'lector';
     try {
-      // ── Verificar horario operativo antes de cualquier consulta a BD ──
-      if (!this.verificarHorarioOperativo()) {
-        this.resetEstado();
-        return;
-      }
-
+      // El horario se revisa solo antes de una ENTRADA (más abajo): hasta
+      // v3.57.1 se revisaba aquí y, en modo "bloquear", quien salía después
+      // del cierre no podía marcar su salida.
       this.cargando = true;
       this.error = null;
       // El lector ya muestra su propia barra en la tarjeta; el overlay global
@@ -1556,14 +1560,25 @@ export class ScannerComponent implements OnInit, OnDestroy {
               break;
 
             case 'cancelar':
-            default:
+            default: {
               this.toastService.info('Registro cancelado');
               this.resetEstado();
+              // Otra credencial cerró el diálogo abandonado: atenderla.
+              const pendiente = sessionStorage.getItem(CLAVE_LECTURA_PENDIENTE);
+              if (pendiente) {
+                sessionStorage.removeItem(CLAVE_LECTURA_PENDIENTE);
+                setTimeout(() => this.procesarDeteccion(pendiente, 'usb-hid'));
+              }
               return;
+            }
           }
         }
 
-        // ── Verificar aforo antes de permitir nueva entrada ───────────
+        // ── Horario y aforo: solo para una entrada nueva ──────────────
+        if (!this.verificarHorarioOperativo()) {
+          this.resetEstado();
+          return;
+        }
         const puedeEntrar = await this.verificarAforo();
         if (!puedeEntrar) {
           this.resetEstado();
@@ -1576,6 +1591,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.router.navigate(['/seleccion-motivo']);
 
       } else {
+        if (!this.verificarHorarioOperativo()) {
+          this.resetEstado();
+          return;
+        }
         // Alumno no encontrado: vamos al flujo de registro tanto en modo
         // normal como en quiosco. /registro-alumno está explícitamente
         // permitido en quiosco (ver AppComponent.rutasPermitidasEnQuiosco)
@@ -1794,7 +1813,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
       // Si el dialog se cerró con X (undefined), cancelar
       if (nombreIngresado === undefined) return;
 
-      // Verificar aforo antes de permitir acceso del visitante
+      // Un visitante también es una entrada: mismo horario y aforo (hasta
+      // v3.57.1 el horario en modo "bloquear" no lo detenía).
+      if (!this.verificarHorarioOperativo()) return;
       const puedeEntrar = await this.verificarAforo();
       if (!puedeEntrar) return;
 

@@ -6,7 +6,8 @@
 // ║  como visitante sin credencial.                      ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -49,6 +50,12 @@ import { MatInputModule } from '@angular/material/input';
           <mat-error>Escribe tu nombre o usa "Sin nombre"</mat-error>
         }
       </mat-form-field>
+      @if (lecturaIgnorada) {
+        <p class="hint lectura-ignorada">
+          Se pasó una credencial: los alumnos se registran desde el escáner,
+          no como visitantes. Termina o cierra este registro primero.
+        </p>
+      }
     </mat-dialog-content>
 
     <mat-dialog-actions align="end">
@@ -85,6 +92,7 @@ import { MatInputModule } from '@angular/material/input';
       color: var(--navy-400, #94a3b8);
       line-height: 1.5;
     }
+    .hint.lectura-ignorada { margin: 4px 0 0; color: #F5A623; font-weight: 600; }
 
     .nombre-field {
       width: 100%;
@@ -99,8 +107,19 @@ import { MatInputModule } from '@angular/material/input';
 export class InvitadoNombreDialogComponent {
   nombre = '';
   mostrarError = false;
+  /** v3.57.2: se pasó una credencial con el diálogo abierto. */
+  lecturaIgnorada = false;
 
-  constructor(private dialogRef: MatDialogRef<InvitadoNombreDialogComponent>) {}
+  constructor(private dialogRef: MatDialogRef<InvitadoNombreDialogComponent>) {
+    // Sin esto, los dígitos de la credencial de un alumno quedaban escritos
+    // como nombre del visitante. El servicio se come el Enter; aquí se
+    // borran los dígitos que alcanzaron a caer en el campo.
+    const dejarDeEscuchar = inject(LectorRafagaService).escuchar(leida => {
+      this.nombre = this.nombre.replace(new RegExp('[aA]?' + leida), '').trim();
+      this.lecturaIgnorada = true;
+    });
+    dialogRef.afterClosed().subscribe(() => dejarDeEscuchar());
+  }
 
   confirmar(): void {
     if (!this.nombre.trim()) {

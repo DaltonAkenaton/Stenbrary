@@ -6,7 +6,7 @@
 import {
   CatalogoEscolar, agregarCarrera, agregarGrupo, alternarCarrera, buscarCarrera, cambiarRangoGrados,
   carrerasActivas, catalogoInicial, claveCatalogo, combinarCatalogos, gradosDe, normalizarCatalogo,
-  opcionesCarrera, quitarGrupo, renombrarCarrera,
+  aplicarRenombre, opcionesCarrera, quitarGrupo, renombrarCarrera,
 } from './catalogos.utils';
 
 function ok(r: ReturnType<typeof agregarCarrera>): CatalogoEscolar {
@@ -100,5 +100,19 @@ describe('catalogos.utils', () => {
 
   it('la clave ignora acentos, mayúsculas y espacios', () => {
     expect(claveCatalogo('  Enfermería  General ')).toBe('enfermeria general');
+  });
+
+  it('aplicarRenombre repite una corrección del otro equipo (v3.57.2)', () => {
+    const base = catalogoInicial();
+    const vieja = base.carreras[0].nombre;
+    const r = aplicarRenombre(base, vieja, 'Carrera Corregida');
+    expect(buscarCarrera(r, 'Carrera Corregida')?.id).toBe(base.carreras[0].id);
+    expect(buscarCarrera(r, vieja)).toBeUndefined();
+    // Si aquí ya existe el nombre nuevo, la vieja solo se desactiva.
+    const otra = base.carreras[1].nombre;
+    const r2 = aplicarRenombre(base, vieja, otra);
+    expect(buscarCarrera(r2, vieja)?.activa).toBeFalse();
+    // Nada que cambiar: el mismo objeto.
+    expect(aplicarRenombre(base, 'No existe', 'X Y Z')).toBe(base);
   });
 });

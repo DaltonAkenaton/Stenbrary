@@ -8,10 +8,16 @@
 // ║    2. Nuevo acceso (crea registro nuevo)              ║
 // ║    3. Cancelar                                        ║
 // ║                                                      ║
+// ║  v3.57.2: escucha al lector. Con el foco en "Marcar   ║
+// ║  mi salida", el Enter de la credencial del siguiente  ║
+// ║  alumno registraba la salida del anterior.            ║
+// ║                                                      ║
 // ║  UBICACIÓN: features/scanner/registro-duplicado-dialog║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, inject, signal } from '@angular/core';
+import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
+import { CLAVE_LECTURA_PENDIENTE, decidirLecturaEnFlujo } from '../../../core/utils/flujo-puerta.utils';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -43,7 +49,7 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
     MatIconModule,
   ],
   template: `
-    <div class="dialog-container" [class.quiosco]="data.modoQuiosco">
+    <div class="dialog-container" [class.quiosco]="data.modoQuiosco" (pointerdown)="tocado()">
 
       <div class="dialog-icon">
         <mat-icon>{{ data.modoQuiosco ? 'waving_hand' : 'history' }}</mat-icon>
@@ -103,6 +109,12 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
           }
         }
       </p>
+
+      @if (lecturaIgnorada()) {
+        <p class="dialog-message lectura-ignorada">
+          Se pasó otra credencial: primero elige una opción o cierra este aviso.
+        </p>
+      }
 
       <div class="dialog-actions" [class.vertical]="data.modoQuiosco">
         @if (!data.yaRegistroSalida) {
@@ -207,6 +219,7 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
     .info-divider { height: 1px; background: var(--border-subtle); margin: 2px 0; }
 
     .dialog-message { font-family: var(--font-body); font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; }
+    .dialog-message.lectura-ignorada { color: var(--amber-300); font-weight: 600; }
 
     .dialog-actions {
       display: flex; gap: 10px; width: 100%;
@@ -352,10 +365,36 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
   `]
 })
 export class RegistroDuplicadoDialogComponent {
+  /** Se pasó otra credencial mientras alguien usaba el diálogo: se descartó. */
+  readonly lecturaIgnorada = signal(false);
+  private ultimoToque = Date.now();
+
   constructor(
     public dialogRef: MatDialogRef<RegistroDuplicadoDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: RegistroDuplicadoData,
-  ) {}
+  ) {
+    // El servicio se come el Enter del lector. Misma regla que "elegir
+    // actividad": si nadie toca el diálogo en 20 s, la credencial de otro
+    // alumno lo cierra y el escáner la atiende.
+    const dejarDeEscuchar = inject(LectorRafagaService).escuchar(leida => {
+      const decision = decidirLecturaEnFlujo({
+        matriculaFlujo: this.data.matricula,
+        leida,
+        msSinInteraccion: Date.now() - this.ultimoToque,
+      });
+      if (decision === 'atender') {
+        sessionStorage.setItem(CLAVE_LECTURA_PENDIENTE, leida);
+        this.cancelar();
+      } else {
+        this.lecturaIgnorada.set(true);
+      }
+    });
+    dialogRef.afterClosed().subscribe(() => dejarDeEscuchar());
+  }
+
+  tocado(): void {
+    this.ultimoToque = Date.now();
+  }
 
   registrarSalida(): void {
     this.dialogRef.close('salida' as RegistroDuplicadoResultado);

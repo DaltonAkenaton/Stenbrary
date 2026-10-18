@@ -157,7 +157,11 @@ export function validarMatricula(valor: string): ValidacionMatricula {
 export function esMatriculaValidaScanner(texto: string): boolean {
   if (!texto) return false;
   const limpio = texto.trim();
-  return /^\d+$/.test(limpio) && limpio.length >= MATRICULA_CONFIG.minDigitos;
+  // Tope de dígitos (v3.57.2): sin él, el código de barras de un libro
+  // (ISBN, 13 dígitos) pasaba por matrícula y abría el registro de alumno.
+  return /^\d+$/.test(limpio)
+    && limpio.length >= MATRICULA_CONFIG.minDigitos
+    && limpio.length <= MATRICULA_CONFIG.maxDigitos;
 }
 
 /**

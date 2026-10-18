@@ -24,7 +24,7 @@ export class BitacoraService {
   private readonly config = inject(ConfigService);
 
   /** `refId`: id de la visita o el alumno borrado, para repetir el borrado en el otro equipo. */
-  registrar(accion: AccionBitacora, detalle = '', refId?: string): void {
+  registrar(accion: AccionBitacora, detalle = '', refId?: string, renombre?: { de: string; a: string }): void {
     const evento: EventoBitacora = {
       id: uuidv4(),
       fechaHora: new Date().toISOString(),
@@ -32,6 +32,7 @@ export class BitacoraService {
       detalle,
       equipo: this.config.nombreEquipo,
       ...(refId ? { refId } : {}),
+      ...(renombre ? { renombre } : {}),
     };
     this.db.agregarEventoBitacora(evento).catch(err => logError('❌ Bitácora:', err));
   }
@@ -56,6 +57,26 @@ export function idsBorrados(eventos: readonly EventoBitacora[]): { registros: Se
     else if (e.accion === 'alumno-eliminado') alumnos.add(e.refId);
   }
   return { registros, alumnos };
+}
+
+/**
+ * Correcciones de nombre de carrera según la bitácora, de la más vieja a la
+ * más nueva (v3.57.2). Sin repetidos: el mismo evento puede venir de los dos
+ * equipos.
+ */
+export function renombresCarrera(eventos: readonly EventoBitacora[]): { de: string; a: string }[] {
+  const vistos = new Set<string>();
+  return eventos
+    .filter(e => e?.accion === 'catalogo-cambiado' && e.renombre?.de && e.renombre?.a && !vistos.has(e.id) && vistos.add(e.id))
+    .sort((x, y) => x.fechaHora.localeCompare(y.fechaHora))
+    .map(e => ({ de: e.renombre!.de, a: e.renombre!.a }));
+}
+
+/** El nombre de hoy de una carrera, aplicando las correcciones en orden. */
+export function traducirCarrera(nombre: string, renombres: readonly { de: string; a: string }[]): string {
+  let actual = nombre;
+  for (const r of renombres) if (actual === r.de) actual = r.a;
+  return actual;
 }
 
 // ── Textos para el detalle ──────────────────────────────

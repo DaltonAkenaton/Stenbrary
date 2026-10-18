@@ -230,6 +230,9 @@ export class RegistroAlumnoComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.dejarDeVigilar?.();
+    // Salir por el menú dejaba la matrícula: "Registrar alumno" volvía a
+    // abrir con la de un escaneo viejo, bloqueada.
+    sessionStorage.removeItem('matriculaTemp');
   }
 
   async cancelar(): Promise<void> {

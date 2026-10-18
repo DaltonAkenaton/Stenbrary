@@ -12,8 +12,8 @@
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
-import { BitacoraService, idsBorrados } from './bitacora.service';
-import { CatalogoEscolar, combinarCatalogos, normalizarCatalogo } from '../utils/catalogos.utils';
+import { BitacoraService, idsBorrados, renombresCarrera, traducirCarrera } from './bitacora.service';
+import { CatalogoEscolar, aplicarRenombre, combinarCatalogos, normalizarCatalogo } from '../utils/catalogos.utils';
 import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 
@@ -61,6 +61,8 @@ export interface ResultadoImportacion {
   borradosAplicados: number;
   /** Carreras y grupos que el respaldo agregó al catálogo de aquí (v3.57.0). */
   catalogoNuevos: number;
+  /** Alumnos y visitas que se quedaron como estaban: aquí se editaron después (v3.57.2). */
+  conservados: number;
   errores: string[];
 }
 
@@ -122,7 +124,9 @@ export class BackupService {
       link.href = url;
       link.download = nombreArchivo;
       link.click();
-      URL.revokeObjectURL(url);
+      // Revocar en el mismo instante puede cancelar la descarga en algunos
+      // navegadores: el archivo de respaldo saldría vacío o no saldría.
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
 
       console.log('✅ Backup exportado:', nombreArchivo);
       // Registrar el timestamp para el recordatorio de respaldo.
@@ -187,7 +191,9 @@ export class BackupService {
 
   async importarBackup(
     datos: BackupData,
-    modo: 'merge' | 'replace' = 'merge'
+    modo: 'merge' | 'replace' = 'merge',
+    /** Uso interno: regresando a la copia previa tras un fallo. */
+    deshaciendo = false,
   ): Promise<ResultadoImportacion> {
     const resultado: ResultadoImportacion = {
       exitoso: false,
@@ -201,11 +207,18 @@ export class BackupService {
       registrosNuevos: 0,
       borradosAplicados: 0,
       catalogoNuevos: 0,
+      conservados: 0,
       errores: [],
     };
 
+    // v3.57.2: "Reemplazar" borra primero y luego escribe. Si algo fallaba a
+    // la mitad, la base quedaba vacía o a medias. Copia en memoria de lo que
+    // había, para regresar a ella si falla.
+    let copiaPrevia: BackupData | null = null;
+
     try {
       if (modo === 'replace') {
+        if (!deshaciendo) copiaPrevia = await this.exportarBackup();
         await this.databaseService.limpiarTodosDatos();
         // limpiarTodosDatos() recrea los motivos default con ids nuevos. Si el
         // respaldo trae su catálogo, ese manda: se restaura tal cual (ids,
@@ -272,6 +285,7 @@ export class BackupService {
       const eventosEntrantes = datos.bitacora ?? [];
       let omitirAlumno: (id: string) => boolean = () => false;
       let omitirRegistro: (r: Registro) => boolean = () => false;
+      let traducir = (carrera: string) => carrera;
       if (modo === 'merge') {
         const locales = await this.databaseService.obtenerBitacora();
         const conocidos = new Set(locales.map(e => e.id));
@@ -284,7 +298,26 @@ export class BackupService {
         const todos = idsBorrados([...locales, ...eventosEntrantes]);
         omitirAlumno = id => todos.alumnos.has(id);
         omitirRegistro = r => todos.registros.has(r.id) || todos.alumnos.has(r.alumnoId);
+
+        // ── Correcciones de nombre de carrera (v3.57.2) ──
+        // Igual que los borrados: las nuevas se repiten aquí, y todas
+        // traducen lo que llegue con el nombre viejo.
+        const renNuevos = renombresCarrera(eventosEntrantes.filter(e => !conocidos.has(e.id)));
+        const catalogoAntes = this.configService.catalogoEscolar;
+        let catalogo = catalogoAntes;
+        for (const r of renNuevos) {
+          await this.databaseService.renombrarCarreraEnDatos(r.de, r.a);
+          if (catalogo) catalogo = aplicarRenombre(catalogo, r.de, r.a);
+        }
+        if (catalogo && catalogo !== catalogoAntes) this.configService.setCatalogoEscolar(catalogo);
+        const renTodos = renombresCarrera([...locales, ...eventosEntrantes]);
+        if (renTodos.length > 0) traducir = carrera => traducirCarrera(carrera, renTodos);
       }
+      const conCarreraDeHoy = <T extends { carrera?: string }>(x: T): T => {
+        if (!x?.carrera) return x;
+        const c = traducir(x.carrera);
+        return c === x.carrera ? x : { ...x, carrera: c };
+      };
 
       // ── Importar Alumnos (deduplicar por matrícula) ──
       // Se restauran TAL CUAL: conservan su `id` original, y con él los
@@ -292,8 +325,10 @@ export class BackupService {
       // `crearAlumno()` generaba ids nuevos y rompía esa relación.
       // v3.53.0: en lote (una transacción), no fila por fila.
       const alumnosOmitibles = new Set(datos.alumnos.filter(a => a?.id && omitirAlumno(a.id)).map(a => a.id!));
-      const resAlumnos = await this.databaseService.restaurarAlumnosLote(datos.alumnos, alumnosOmitibles);
-      resultado.alumnosImportados = resAlumnos.nuevos + resAlumnos.actualizados + resAlumnos.iguales;
+      const resAlumnos = await this.databaseService.restaurarAlumnosLote(
+        datos.alumnos.map(conCarreraDeHoy), alumnosOmitibles, modo === 'merge');
+      resultado.alumnosImportados = resAlumnos.nuevos + resAlumnos.actualizados + resAlumnos.iguales + resAlumnos.conservados;
+      resultado.conservados += resAlumnos.conservados;
       resultado.alumnosNuevos = resAlumnos.nuevos;
       resultado.alumnosOmitidos = resAlumnos.omitidos;
 
@@ -305,10 +340,12 @@ export class BackupService {
       // horaSalida, duracionMinutos, motivoIds/motivoNombres y turno.
       // v3.53.0: en lote. Un año (50 000 visitas) pasaba de 70–120 s.
       const resRegistros = await this.databaseService.restaurarRegistrosLote(
-        datos.registros.map(r => remapearMotivos(r, mapaMotivos)),
+        datos.registros.map(r => conCarreraDeHoy(remapearMotivos(r, mapaMotivos))),
         omitirRegistro,
+        modo === 'merge',
       );
-      resultado.registrosImportados = resRegistros.nuevos + resRegistros.actualizados + resRegistros.iguales;
+      resultado.registrosImportados = resRegistros.nuevos + resRegistros.actualizados + resRegistros.iguales + resRegistros.conservados;
+      resultado.conservados += resRegistros.conservados;
       resultado.registrosNuevos = resRegistros.nuevos;
       resultado.errores.push(...resRegistros.errores);
 
@@ -321,7 +358,8 @@ export class BackupService {
       // Reemplazar = el del archivo tal cual. Combinar = el de aquí manda y
       // solo se suman las carreras y grupos que falten.
       if (datos.catalogoEscolar) {
-        const remoto = normalizarCatalogo(datos.catalogoEscolar);
+        const leido = normalizarCatalogo(datos.catalogoEscolar);
+        const remoto = { ...leido, carreras: leido.carreras.map(c => ({ ...c, nombre: traducir(c.nombre) })) };
         if (modo === 'replace') {
           this.configService.setCatalogoEscolar(remoto);
         } else {
@@ -332,6 +370,7 @@ export class BackupService {
       }
 
       resultado.exitoso = true;
+      if (deshaciendo) return resultado;   // lo anota quien deshace
       const origen = datos.meta?.equipo ? ` de "${datos.meta.equipo}"` : '';
       const borrados = resultado.borradosAplicados ? `, ${resultado.borradosAplicados} borradas allá` : '';
       this.bitacora.registrar(
@@ -345,6 +384,14 @@ export class BackupService {
     } catch (error: any) {
       resultado.errores.push(`Error general: ${error.message}`);
       console.error('❌ Error durante importación:', error);
+      if (copiaPrevia) {
+        const vuelta = await this.importarBackup(copiaPrevia, 'replace', true);
+        resultado.errores.push(vuelta.exitoso
+          ? 'No se cambió nada: se regresó a los datos que había antes.'
+          : 'No se pudieron regresar los datos anteriores: restaura tu último respaldo.');
+        this.bitacora.registrar('respaldo-importado',
+          `Falló "reemplazar" (${error.message}); ${vuelta.exitoso ? 'se regresó a los datos anteriores' : 'NO se pudieron regresar los datos anteriores'}`);
+      }
       return resultado;
     }
   }

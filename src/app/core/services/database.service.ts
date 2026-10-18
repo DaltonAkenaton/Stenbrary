@@ -31,6 +31,12 @@ import { invariante } from '../utils/invariante.utils';
  * Huella de una fila para saber si cambió, sin los metadatos de sync (que el
  * import siempre reescribe). Las fechas salen como ISO en ambos lados.
  */
+/** `editadoEn` en ms; sin ella (datos de antes de v3.57.2), 0 = la más vieja. */
+function msEditado(fila: { editadoEn?: Date | string }): number {
+  const t = fila.editadoEn ? new Date(fila.editadoEn).getTime() : 0;
+  return Number.isNaN(t) ? 0 : t;
+}
+
 function huella(fila: object): string {
   const { _syncStatus, _lastSyncedAt, ...resto } = fila as Record<string, unknown>;
   void _syncStatus; void _lastSyncedAt;
@@ -260,9 +266,12 @@ export class DatabaseService {
   // la bandeja `/sincronizacion` lo consume después para subir el
   // batch supervisado. No tocamos los timestamps de negocio
   // (fechaRegistro / fechaHora), solo metadata interna.
-  private markPending<T extends { _syncStatus?: string; _lastSyncedAt?: Date }>(row: T): T {
+  //
+  // v3.57.2: `editado` estampa `editadoEn` (ver el modelo): lo hizo una
+  // persona. Restaurar y los cierres automáticos pasan `false`.
+  private markPending<T extends { _syncStatus?: string; _lastSyncedAt?: Date }>(row: T, editado = true): T {
     this.notificarCambioSync();
-    return { ...row, _syncStatus: 'pending', _lastSyncedAt: undefined };
+    return { ...row, _syncStatus: 'pending', _lastSyncedAt: undefined, ...(editado ? { editadoEn: new Date() } : {}) };
   }
 
   /**
@@ -272,9 +281,13 @@ export class DatabaseService {
    * tiempo cambiaba la fila local y la bandeja nunca la volvía a ofrecer:
    * la nube se quedaba con la versión vieja (auditoría 2026-10).
    */
-  private marcarPendienteEnSitio(row: { _syncStatus?: string; _lastSyncedAt?: Date }): void {
+  private marcarPendienteEnSitio(
+    row: { _syncStatus?: string; _lastSyncedAt?: Date; editadoEn?: Date },
+    editado = true,
+  ): void {
     row._syncStatus = 'pending';
     row._lastSyncedAt = undefined;
+    if (editado) row.editadoEn = new Date();
     this.notificarCambioSync();
   }
 
@@ -403,11 +416,16 @@ export class DatabaseService {
   // (50 000 visitas) tardaba 70–120 s en una PC rápida. Aquí todo va en una
   // transacción por store y las escrituras se encadenan sin esperar cada una.
 
-  /** Alumnos: conserva ids; omite matrículas que ya son de OTRO alumno. */
+  /**
+   * Alumnos: conserva ids; omite matrículas que ya son de OTRO alumno.
+   * `combinar` (v3.57.2): si el de aquí se editó después que el del archivo,
+   * se queda el de aquí (`conservados`). Reemplazar escribe siempre.
+   */
   async restaurarAlumnosLote(
     lista: Alumno[],
     omitirIds: ReadonlySet<string> = new Set(),
-  ): Promise<{ nuevos: number; actualizados: number; iguales: number; omitidos: number }> {
+    combinar = false,
+  ): Promise<{ nuevos: number; actualizados: number; iguales: number; omitidos: number; conservados: number }> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
@@ -415,22 +433,29 @@ export class DatabaseService {
     const existentes = await tx.store.getAll();
     const idPorMatricula = new Map(existentes.map(a => [a.matricula, a.id]));
     const actuales = new Map(existentes.map(a => [a.id, huella(a)]));
+    const editadoAqui = new Map(existentes.map(a => [a.id, msEditado(a)]));
     const escrituras: Promise<unknown>[] = [];
-    let nuevos = 0, actualizados = 0, iguales = 0, omitidos = 0;
+    let nuevos = 0, actualizados = 0, iguales = 0, omitidos = 0, conservados = 0;
 
     for (const alumno of lista) {
       if (!alumno?.id || !alumno.matricula || omitirIds.has(alumno.id)) { omitidos++; continue; }
       const dueno = idPorMatricula.get(alumno.matricula);
       if (dueno && dueno !== alumno.id) { omitidos++; continue; }
+      const editadoEn = this.aFecha(alumno.editadoEn);
       const fila: Alumno = {
         ...alumno,
         fechaRegistro: this.aFecha(alumno.fechaRegistro) ?? new Date(),
+        ...(editadoEn ? { editadoEn } : {}),
         _syncStatus: 'pending',
         _lastSyncedAt: undefined,
       };
       const previa = actuales.get(alumno.id);
       const h = huella(fila);
       if (previa === h) { iguales++; continue; } // igual que el que ya está: no se reescribe
+      if (combinar && previa !== undefined && (editadoAqui.get(alumno.id) ?? 0) > msEditado(fila)) {
+        conservados++;
+        continue;
+      }
       escrituras.push(tx.store.put(fila));
       if (previa === undefined) nuevos++; else actualizados++;
       actuales.set(alumno.id, h);
@@ -443,14 +468,18 @@ export class DatabaseService {
       this.notificarCambioSync();
       this.notificarCambioDatos();
     }
-    return { nuevos, actualizados, iguales, omitidos };
+    return { nuevos, actualizados, iguales, omitidos, conservados };
   }
 
-  /** Registros: conserva id, fechas, salida y motivos. `omitir` filtra los borrados. */
+  /**
+   * Registros: conserva id, fechas, salida y motivos. `omitir` filtra los
+   * borrados. `combinar`: como en alumnos, gana la edición más reciente.
+   */
   async restaurarRegistrosLote(
     lista: Registro[],
     omitir: (r: Registro) => boolean = () => false,
-  ): Promise<{ nuevos: number; actualizados: number; iguales: number; omitidos: number; errores: string[] }> {
+    combinar = false,
+  ): Promise<{ nuevos: number; actualizados: number; iguales: number; omitidos: number; conservados: number; errores: string[] }> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');
 
@@ -458,10 +487,12 @@ export class DatabaseService {
     // filas/s con 4 índices) y de un día a otro casi todo llega igual. Un
     // año (50 000 visitas) pasaba de 45–65 s a lo que tarde leerlo.
     const tx = this.db.transaction('registros', 'readwrite');
-    const actuales = new Map((await tx.store.getAll()).map(r => [r.id, huella(r)]));
+    const existentes = await tx.store.getAll();
+    const actuales = new Map(existentes.map(r => [r.id, huella(r)]));
+    const editadoAqui = new Map(existentes.map(r => [r.id, msEditado(r)]));
     const escrituras: Promise<unknown>[] = [];
     const errores: string[] = [];
-    let nuevos = 0, actualizados = 0, iguales = 0, omitidos = 0;
+    let nuevos = 0, actualizados = 0, iguales = 0, omitidos = 0, conservados = 0;
 
     for (const registro of lista) {
       if (!registro?.id) { errores.push('Registro sin id'); continue; }
@@ -469,16 +500,22 @@ export class DatabaseService {
       const fechaHora = this.aFecha(registro.fechaHora);
       if (!fechaHora) { errores.push(`Registro omitido: ${registro.matricula} (sin fechaHora válida)`); continue; }
       const horaSalida = this.aFecha(registro.horaSalida);
+      const editadoEn = this.aFecha(registro.editadoEn);
       const fila: Registro = {
         ...registro,
         fechaHora,
         ...(horaSalida ? { horaSalida } : {}),
+        ...(editadoEn ? { editadoEn } : {}),
         _syncStatus: 'pending',
         _lastSyncedAt: undefined,
       };
       const previa = actuales.get(registro.id);
       const h = huella(fila);
       if (previa === h) { iguales++; continue; }
+      if (combinar && previa !== undefined && (editadoAqui.get(registro.id) ?? 0) > msEditado(fila)) {
+        conservados++;
+        continue;
+      }
       escrituras.push(tx.store.put(fila));
       if (previa === undefined) nuevos++; else actualizados++;
       actuales.set(registro.id, h);
@@ -490,7 +527,7 @@ export class DatabaseService {
       this.notificarCambioSync();
       this.notificarCambioDatos();
     }
-    return { nuevos, actualizados, iguales, omitidos, errores };
+    return { nuevos, actualizados, iguales, omitidos, conservados, errores };
   }
 
   /** Borra visitas por id (borrados que llegan en la bitácora de otro equipo). */
@@ -569,7 +606,7 @@ export class DatabaseService {
     row: T,
     origen: 'backup' | 'nube',
   ): T {
-    return origen === 'nube' ? this.markSynced(row) : this.markPending(row);
+    return origen === 'nube' ? this.markSynced(row) : this.markPending(row, false);
   }
 
   /**
@@ -1613,7 +1650,7 @@ export class DatabaseService {
         actual.cierreAutomatico = !autoConfirmar && new Date(actual.fechaHora) >= inicioHoy;
         // La salida la inventó el sistema: queda marcada aunque se confirme.
         actual.salidaEstimada = true;
-        this.marcarPendienteEnSitio(actual);
+        this.marcarPendienteEnSitio(actual, false);   // automático: no es una edición
         await store.put(actual);
         cerrados++;
       }
@@ -1682,7 +1719,7 @@ export class DatabaseService {
         actual.duracionMinutos = Math.max(0, Math.round((salida.getTime() - entrada.getTime()) / 60000));
         actual.cierreAutomatico = !autoConfirmar && entrada >= inicioHoy;
         actual.salidaEstimada = true;
-        this.marcarPendienteEnSitio(actual);
+        this.marcarPendienteEnSitio(actual, false);   // automático: no es una edición
         await store.put(actual);
         cerrados++;
       }
@@ -1753,6 +1790,11 @@ export class DatabaseService {
    * alumnos y en las visitas, en una transacción. Las visitas guardan la
    * carrera como texto (foto del momento), así que sin esto Estadísticas
    * mostraría la carrera vieja y la nueva como dos filas.
+   *
+   * No estampa `editadoEn` (v3.57.2): la corrección viaja aparte, en la
+   * bitácora, y el otro equipo la repite. Si contara como edición, una
+   * salida real registrada en la puerta antes de la corrección perdería
+   * contra esta versión al combinar.
    */
   async renombrarCarreraEnDatos(viejo: string, nuevo: string): Promise<{ alumnos: number; registros: number }> {
     await this.inicializar();
@@ -1764,14 +1806,14 @@ export class DatabaseService {
     for (const a of await tx.objectStore('alumnos').getAll()) {
       if (a.carrera !== viejo) continue;
       a.carrera = nuevo;
-      this.marcarPendienteEnSitio(a);
+      this.marcarPendienteEnSitio(a, false);
       escrituras.push(tx.objectStore('alumnos').put(a));
       alumnos++;
     }
     for (const r of await tx.objectStore('registros').getAll()) {
       if (r.carrera !== viejo) continue;
       r.carrera = nuevo;
-      this.marcarPendienteEnSitio(r);
+      this.marcarPendienteEnSitio(r, false);
       escrituras.push(tx.objectStore('registros').put(r));
       registros++;
     }

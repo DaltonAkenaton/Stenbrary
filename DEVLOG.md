@@ -9,6 +9,35 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-18 — v3.57.2: revisión a fondo de la puerta y los respaldos
+
+El usuario pidió buscar errores no detectados antes de instalar, sin funciones
+nuevas. Revisión por riesgo: puerta → respaldos → fechas → lo nuevo de v3.57.
+
+**Qué se hizo / descubrió**
+- *Puerta.* El horario se revisaba antes de buscar al alumno: en "bloquear",
+  nadie podía marcar su salida tras el cierre. Ahora solo antes de una
+  entrada (también la del visitante, que no lo revisaba). Los diálogos del
+  escáner no escuchaban al lector: con el foco en "Registrar salida", el
+  Enter del siguiente alumno marcaba la salida del anterior; en "visitante"
+  sus dígitos quedaban como nombre. `esMatriculaValidaScanner` no tenía tope:
+  un ISBN-13 abría el registro de alumno nuevo. Nombre con espacio final sin
+  materno. `alumnoActual`/`matriculaTemp` sobrevivían a salir por el menú.
+- *Respaldos.* Combinar era "el último import gana": la puerta deshacía lo
+  corregido en la oficina. Campo `editadoEn` (solo cambios de una persona; el
+  cierre automático no, si no la estimada de la oficina le ganaba a la salida
+  real). Las correcciones de carrera viajan en la bitácora como los borrados
+  (`renombre`), y `renombrarCarreraEnDatos` ya no cuenta como edición (si no,
+  una salida real anterior a la corrección perdía). Reemplazar borraba antes
+  de escribir sin vuelta atrás: ahora copia en memoria y regresa si falla.
+  `revokeObjectURL` inmediato (puede cancelar la descarga).
+- *Fechas.* Sin hallazgos: ya auditado (AUDITORIA-2026-10) y con TZ en CI.
+- *PIN y código de recuperación.* Sin hallazgos.
+
+**Verificación**: lint 0 errores (123 avisos), 366 unitarias (+8), 67 E2E
+(+3: salida con horario cerrado, credencial con "¿salida o nueva visita?"
+abierto, ISBN), build de producción.
+
 ## 2026-10-18 — v3.57.1: Reporte del sistema tras la primera prueba en producción
 
 El usuario corrió "Verificar cifras" en Cloudflare con 3 meses de datos de

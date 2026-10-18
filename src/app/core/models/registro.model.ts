@@ -58,4 +58,11 @@ export interface Registro {
   // es la fuente nueva (3 estados). Sin _syncStatus se asume `synced`.
   _syncStatus?: 'pending' | 'synced' | 'rejected';
   _lastSyncedAt?: Date;
+  /**
+   * Última vez que una PERSONA la creó o cambió (entrada, salida, corrección)
+   * — v3.57.2. Al combinar un respaldo gana la más reciente. El cierre
+   * automático NO la toca: si no, la salida estimada de la oficina le ganaba
+   * a la salida real que llegaba de la puerta.
+   */
+  editadoEn?: Date;
 }

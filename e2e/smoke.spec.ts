@@ -672,6 +672,52 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     });
     expect(salida).toBe('12:02');                       // la hora de cierre, no la de la revisión
   });
+
+  // ── Revisión de la puerta (v3.57.2) ─────────────────────────
+  const leerR1 = (page: import('@playwright/test').Page) => page.evaluate(async () => {
+    const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
+    return new Promise<any>(ok => { const q = db.transaction('registros').objectStore('registros').get('r1'); q.onsuccess = () => ok(q.result); });
+  });
+
+  test('horario en "bloquear": ya cerrado, la salida SÍ se registra y la entrada no', async ({ page }) => {
+    const dia = { cerrado: false, apertura: '07:00', cierre: '11:30' };   // son las 12:00
+    await preparar(page, {
+      registroSalidaActivo: true, aforoMaximo: 10, horarioActivo: true, horarioModo: 'bloquear',
+      horarios: { 0: dia, 1: dia, 2: dia, 3: dia, 4: dia, 5: dia, 6: dia },
+    });
+    await pasarCredencial(page, '2200000001');                     // Ana sale tarde
+    await page.locator('app-registro-duplicado-dialog .btn-salida').click({ timeout: 10000 });
+    await expect(page.locator('.toast-message', { hasText: 'Salida registrada' })).toBeVisible({ timeout: 10000 });
+    expect((await leerR1(page)).horaSalida).toBeTruthy();
+
+    await page.clock.fastForward('00:02');
+    await pasarCredencial(page, '2200000002');                     // Beto quiere entrar
+    await expect(page.getByText(/Ya cerró/)).toBeVisible({ timeout: 10000 });
+    await expect(page).toHaveURL(/\/scanner/);
+  });
+
+  test('con "¿salida o nueva visita?" abierto, la credencial del siguiente no marca la salida', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: true, aforoMaximo: 10 });
+    await pasarCredencial(page, '2200000001');
+    await expect(page.locator('app-registro-duplicado-dialog')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(400);                                // el foco queda en "Registrar salida"
+    await pasarCredencial(page, '2200000002');
+    await expect(page.getByText('Se pasó otra credencial')).toBeVisible();
+    expect((await leerR1(page)).horaSalida).toBeFalsy();           // Ana sigue adentro
+
+    // Ana se fue sin contestar: pasados 20 s, la credencial de Beto lo cierra y entra él.
+    await page.clock.fastForward('00:25');
+    await pasarCredencial(page, '2200000002');
+    await expect(page.locator('.student-name')).toContainText('Beto', { timeout: 10000 });
+    expect((await leerR1(page)).horaSalida).toBeFalsy();
+  });
+
+  test('el código de barras de un libro no abre el registro de alumno', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: true, aforoMaximo: 10 });
+    await pasarCredencial(page, '9786071512819');                  // ISBN-13
+    await expect(page.getByText('Ese código no es una credencial')).toBeVisible({ timeout: 10000 });
+    await expect(page).toHaveURL(/\/scanner/);
+  });
 });
 
 test.describe('Claridad: Configuración, bitácora y salidas estimadas (v3.57.0)', () => {

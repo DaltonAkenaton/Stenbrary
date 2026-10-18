@@ -46,4 +46,11 @@ export interface EventoBitacora {
    * oficina (el import combina, nunca quita).
    */
   refId?: string;
+  /**
+   * Corrección del nombre de una carrera, solo en "catalogo-cambiado"
+   * (v3.57.2). Como los borrados: al combinar, el otro equipo la repite y
+   * traduce las visitas que lleguen con el nombre viejo. Sin esto, el
+   * respaldo de la puerta volvía a meter el nombre viejo en la oficina.
+   */
+  renombre?: { de: string; a: string };
 }

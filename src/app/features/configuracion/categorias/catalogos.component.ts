@@ -145,8 +145,10 @@ export class CatalogosCategoriaComponent implements OnInit {
       this.config.setCatalogoEscolar(prueba.catalogo);
       try {
         const n = await this.db.renombrarCarreraEnDatos(c.nombre, nuevo);
+        // `renombre`: el otro equipo la repite al combinar el respaldo (v3.57.2).
         this.bitacora.registrar('catalogo-cambiado',
-          `Carrera "${c.nombre}" corregida a "${nuevo}" (${n.alumnos} alumnos y ${n.registros} visitas actualizados)`);
+          `Carrera "${c.nombre}" corregida a "${nuevo}" (${n.alumnos} alumnos y ${n.registros} visitas actualizados)`,
+          undefined, { de: c.nombre, a: nuevo });
         this.toast.success(`Nombre corregido en el catálogo, ${n.alumnos} alumnos y ${n.registros} visitas`);
       } catch {
         this.toast.error('El catálogo cambió, pero no se pudieron actualizar los alumnos y visitas');

@@ -216,3 +216,22 @@ export function combinarCatalogos(local: CatalogoEscolar, remoto: CatalogoEscola
   nuevo.gradoMax = Math.max(nuevo.gradoMax, remoto.gradoMax);
   return { catalogo: nuevo, nuevos };
 }
+
+/**
+ * Repite aquí una corrección de nombre hecha en el otro equipo (v3.57.2,
+ * llega por la bitácora del respaldo). Si aquí ya existe una carrera con el
+ * nombre nuevo, la vieja solo se desactiva: una carrera no se borra.
+ * Devuelve el mismo objeto si no había nada que cambiar.
+ */
+export function aplicarRenombre(c: CatalogoEscolar, de: string, a: string): CatalogoEscolar {
+  const vieja = buscarCarrera(c, de);
+  if (!vieja) return c;
+  const yaEsta = buscarCarrera(c, a);
+  if (yaEsta && yaEsta.id !== vieja.id) {
+    if (!vieja.activa) return c;
+    const r = alternarCarrera(c, vieja.id);
+    return r.ok ? r.catalogo : c;
+  }
+  const r = renombrarCarrera(c, vieja.id, a);
+  return r.ok ? r.catalogo : c;
+}

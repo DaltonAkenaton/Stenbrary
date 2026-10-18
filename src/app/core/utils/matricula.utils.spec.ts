@@ -128,6 +128,11 @@ describe('matricula.utils', () => {
     it('acepta con espacios externos (se trimean)', () => {
       expect(esMatriculaValidaScanner('  2299990001  ')).toBeTrue();
     });
+
+    it('rechaza códigos más largos que la matrícula máxima (ISBN de un libro)', () => {
+      expect(esMatriculaValidaScanner('9786071512819')).toBeFalse();
+      expect(esMatriculaValidaScanner('1'.repeat(MATRICULA_CONFIG.maxDigitos))).toBeTrue();
+    });
   });
 
   describe('normalizarMatricula', () => {

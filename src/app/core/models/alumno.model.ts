@@ -35,6 +35,13 @@ export interface Alumno {
   // importador one-shot o nunca subidos pero no nos importa hasta editarlos).
   _syncStatus?: 'pending' | 'synced' | 'rejected';
   _lastSyncedAt?: Date;
+  /**
+   * Última vez que una PERSONA lo creó o cambió en este u otro equipo
+   * (v3.57.2). Al combinar un respaldo, la versión con la fecha más reciente
+   * gana: sin esto, el archivo de la puerta deshacía lo corregido en la
+   * oficina. Los cambios automáticos no la tocan. Sin ella = la más vieja.
+   */
+  editadoEn?: Date;
 }
 
 export interface AlumnoCompleto extends Alumno {

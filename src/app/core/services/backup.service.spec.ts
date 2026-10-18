@@ -486,4 +486,104 @@ describe('BackupService — round-trip', () => {
       expect((await db.obtenerBitacora()).map(e => e.id)).toEqual(['ev-3', 'ev-2']);
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  describe('combinar: gana la edición más reciente (v3.57.2)', () => {
+    it('lo corregido aquí no lo deshace un respaldo con la versión vieja', async () => {
+      const { registro } = await sembrar();
+      const dePuerta = porJSON(await backup.exportarBackup());
+      const corregida = new Date(2026, 1, 10, 12, 0);
+      await db.actualizarRegistroManual(registro.id, { horaSalida: corregida });   // la oficina corrige
+
+      const res = await backup.importarBackup(dePuerta, 'merge');
+      expect(res.conservados).toBe(1);
+      const [r] = await db.obtenerTodosLosRegistros();
+      expect(new Date(r.horaSalida!).getTime()).toBe(corregida.getTime());
+
+      // Si el del archivo se editó DESPUÉS, ese gana.
+      const despues = porJSON(await backup.exportarBackup());
+      despues.registros[0].horaSalida = new Date(2026, 1, 10, 13, 0);
+      despues.registros[0].editadoEn = new Date(Date.now() + 60_000);
+      await backup.importarBackup(porJSON(despues), 'merge');
+      const [r2] = await db.obtenerTodosLosRegistros();
+      expect(new Date(r2.horaSalida!).getHours()).toBe(13);
+    });
+
+    it('el cierre automático de aquí NO le gana a la salida real que llega de la puerta', async () => {
+      const { alumno } = await sembrar();
+      const entrada = new Date(Date.now() - 5 * 3_600_000);
+      const abierta = { id: 'r-abierta', alumnoId: alumno.id, matricula: alumno.matricula, nombreCompleto: 'Ana',
+        carrera: 'ISC', motivoId: 'm', motivoNombre: 'Estudiar', fechaHora: entrada, sincronizado: false } as Registro;
+      await db.restaurarRegistro(abierta);
+      const deLaPuerta = porJSON(await backup.exportarBackup());
+      await db.cerrarEntradasAntiguas(2);                      // la oficina la cierra sola (estimada)
+
+      const real = deLaPuerta.registros.find(r => r.id === 'r-abierta')!;
+      real.horaSalida = new Date(entrada.getTime() + 60 * 60_000);
+      real.duracionMinutos = 60;
+      await backup.importarBackup(porJSON(deLaPuerta), 'merge');
+      const r = (await db.obtenerTodosLosRegistros()).find(x => x.id === 'r-abierta')!;
+      expect(r.duracionMinutos).toBe(60);
+      expect(r.salidaEstimada).toBeFalsy();
+    });
+
+    it('"Reemplazar" escribe siempre, aunque lo de aquí sea más reciente', async () => {
+      const { registro } = await sembrar();
+      const archivo = porJSON(await backup.exportarBackup());
+      await db.actualizarRegistroManual(registro.id, { horaSalida: new Date(2026, 1, 10, 12, 0) });
+      const res = await backup.importarBackup(archivo, 'replace');
+      expect(res.conservados).toBe(0);
+      const [r] = await db.obtenerTodosLosRegistros();
+      expect(new Date(r.horaSalida!).getTime()).toBe(FECHA_SALIDA.getTime());
+    });
+  });
+
+  describe('corrección del nombre de una carrera entre equipos (v3.57.2)', () => {
+    const renombre = (id: string, equipo: string) => ({
+      id, fechaHora: '2026-10-14T20:00:00.000Z', accion: 'catalogo-cambiado' as const,
+      detalle: 'ISC corregida', equipo, renombre: { de: 'ISC', a: 'Ing. Sistemas' },
+    });
+
+    it('corregida aquí, el respaldo de la puerta con el nombre viejo no la deshace', async () => {
+      const { alumno } = await sembrar();
+      const dePuerta = porJSON(await backup.exportarBackup());
+      dePuerta.registros.push({ ...dePuerta.registros[0], id: 'r-nueva-puerta' });   // llegó después, nombre viejo
+      await db.renombrarCarreraEnDatos('ISC', 'Ing. Sistemas');
+      await db.agregarEventoBitacora(renombre('ev-ofi', 'Oficina'));
+
+      await backup.importarBackup(porJSON(dePuerta), 'merge');
+      const carreras = (await db.obtenerTodosLosRegistros()).map(r => r.carrera);
+      expect(carreras.length).toBe(2);
+      expect(new Set(carreras)).toEqual(new Set(['Ing. Sistemas']));
+      expect((await db.obtenerAlumnoPorId(alumno.id!))!.carrera).toBe('Ing. Sistemas');
+    });
+
+    it('corregida en la puerta, al combinar se repite aquí', async () => {
+      await sembrar();
+      const dePuerta = porJSON(await backup.exportarBackup());
+      dePuerta.alumnos.forEach(a => a.carrera = 'Ing. Sistemas');
+      dePuerta.registros.forEach(r => r.carrera = 'Ing. Sistemas');
+      dePuerta.bitacora = [renombre('ev-puerta', 'Puerta')];
+
+      await backup.importarBackup(dePuerta, 'merge');
+      expect((await db.obtenerTodosLosRegistros()).map(r => r.carrera)).toEqual(['Ing. Sistemas']);
+      expect((await db.obtenerTodosLosAlumnos()).map(a => a.carrera)).toEqual(['Ing. Sistemas']);
+    });
+  });
+
+  it('si "Reemplazar" falla a la mitad, regresa a los datos que había (v3.57.2)', async () => {
+    const { registro } = await sembrar();
+    const archivo = porJSON(await backup.exportarBackup());
+    archivo.registros = [{ ...archivo.registros[0], id: 'otro' }];
+    const original = db.restaurarRegistrosLote.bind(db);
+    let llamadas = 0;
+    spyOn(db, 'restaurarRegistrosLote').and.callFake((...args: Parameters<DatabaseService['restaurarRegistrosLote']>) =>
+      ++llamadas === 1 ? Promise.reject(new Error('disco lleno')) : original(...args));
+
+    const res = await backup.importarBackup(archivo, 'replace');
+    expect(res.exitoso).toBeFalse();
+    expect(res.errores.join(' ')).toContain('se regresó a los datos que había antes');
+    expect((await db.obtenerTodosLosRegistros()).map(r => r.id)).toEqual([registro.id]);
+    expect((await db.obtenerTodosLosAlumnos()).length).toBe(1);
+  });
 });

@@ -275,10 +275,17 @@
             @if (resultadoImportacion.alumnosOmitidos > 0) {
               · {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos (matrícula ya usada aquí)
             }
+            @if (resultadoImportacion.conservados > 0) {
+              · {{ resultadoImportacion.conservados }} se quedaron como estaban aquí (se corrigieron aquí después)
+            }
             @if (resultadoImportacion.errores.length > 0) {
               · {{ resultadoImportacion.errores.length }} con error
             }
           </span>
+        } @else {
+          @for (e of resultadoImportacion.errores.slice(0, 3); track $index) {
+            <span class="result-detalle">{{ e }}</span>
+          }
         }
       </div>
     </div>

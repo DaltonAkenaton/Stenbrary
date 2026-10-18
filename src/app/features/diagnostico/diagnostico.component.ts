@@ -173,7 +173,7 @@ export class DiagnosticoComponent {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);   // en el acto puede cancelar la descarga
 
       this.toast.success('Reporte descargado. Envíalo a quien da soporte.');
     } catch {

@@ -229,9 +229,9 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
     try {
       this.registrando = true;
 
-      const nombreCompleto = this.esInvitado
-        ? `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`.trim() || 'Visitante'
-        : `${this.alumno.nombre} ${this.alumno.apellidoPaterno} ${this.alumno.apellidoMaterno}`;
+      // Sin apellido materno (opcional desde v3.54.0) quedaba un espacio al
+      // final del nombre guardado en la visita.
+      const nombreCompleto = this.nombreCompletoStr || 'Visitante';
 
       const primero = this.motivosSeleccionados[0];
 
@@ -364,6 +364,9 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.dejarDeVigilar?.();
+    // Salir por el menú dejaba al alumno en sesión: la pantalla se podía
+    // reabrir por URL con sus datos. (Recargar no destruye: sí sobrevive.)
+    sessionStorage.removeItem('alumnoActual');
     if (this.exitoTimer) {
       clearTimeout(this.exitoTimer);
       this.exitoTimer = null;
@@ -386,13 +389,14 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
       this.nombreCompletoStr = '';
       return;
     }
+    const completo = [a.nombre, a.apellidoPaterno, a.apellidoMaterno]
+      .map(p => (p ?? '').trim()).filter(Boolean).join(' ');
     if (this.esInvitado) {
       this.nombreCortoStr = a.nombre === 'Visitante' ? 'Visitante' : a.nombre;
-      this.nombreCompletoStr =
-        `${a.nombre} ${a.apellidoPaterno} ${a.apellidoMaterno}`.trim() || 'Visitante';
+      this.nombreCompletoStr = completo || 'Visitante';
     } else {
       this.nombreCortoStr = `${a.nombre} ${a.apellidoPaterno}`;
-      this.nombreCompletoStr = `${a.nombre} ${a.apellidoPaterno} ${a.apellidoMaterno}`;
+      this.nombreCompletoStr = completo;
     }
   }
 }

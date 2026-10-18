@@ -49,6 +49,46 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.57.2',
+    fecha: '2026-10-18',
+    titulo: 'Revisión de la puerta y de los respaldos',
+    resumen: 'Correcciones que salieron de revisar a fondo, antes de instalar, lo que más daño haría si fallara: el registro en la puerta y los respaldos.',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'Con el horario en "bloquear", quien sale después de la hora de cierre ya puede marcar su salida. El horario solo detiene las entradas, también la de los visitantes (antes los visitantes pasaban aunque estuviera cerrado).',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Si la ventana "¿salida o nueva visita?" se quedaba abierta y el siguiente alumno pasaba su credencial, se registraba la salida del anterior. Ahora la credencial no presiona nada; y si nadie toca la ventana en 20 segundos, se cierra y se atiende al siguiente.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Al combinar un respaldo gana la versión que alguien cambió más recientemente: una visita corregida en la oficina ya no regresa a como estaba cuando llega el respaldo de la puerta. El cierre automático no cuenta como cambio, así que la salida real que llega de la puerta reemplaza a la estimada.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Corregir el nombre de una carrera en un equipo se repite en el otro al combinar el respaldo, y las visitas que lleguen con el nombre viejo se guardan con el nuevo: Estadísticas ya no la vuelve a partir en dos.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Si "Reemplazar todo" falla a la mitad, el sistema regresa solo a los datos que había antes, en vez de quedar vacío.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'El código de barras de un libro leído en la puerta avisa "Ese código no es una credencial" en vez de abrir el registro de alumno nuevo.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Una credencial pasada con la ventana de visitante abierta ya no queda escrita como nombre del visitante, ni en la búsqueda de "Salida de visitante".',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Detalles: el nombre de quien no tiene apellido materno se guardaba con un espacio al final; salir por el menú a la mitad de un registro ya no deja sus datos en pantalla para la próxima vez; la descarga del respaldo es más segura en algunos navegadores.',
+      },
+    ],
+  },
+  {
     version: '3.57.1',
     fecha: '2026-10-18',
     titulo: 'Reporte del sistema más claro',

@@ -15,7 +15,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable, NgZone, inject } from '@angular/core';
-import { esMatriculaValidaScanner, normalizarMatricula } from '../utils/matricula.utils';
+import { MATRICULA_CONFIG, esMatriculaValidaScanner, normalizarMatricula } from '../utils/matricula.utils';
 import { decidirLecturaEnFlujo } from '../utils/flujo-puerta.utils';
 
 /** Igual que el escáner: cubre el modo Bluetooth del lector. */
@@ -139,13 +139,18 @@ export class LectorRafagaService {
       const candidata = normalizarMatricula(this.buffer);
       const rapida = ahora - this.inicio <= MAX_TOTAL_MS;
       this.buffer = '';
-      if (rapida && /^\d+$/.test(candidata) && esMatriculaValidaScanner(candidata)) {
+      const esRafaga = rapida && /^\d+$/.test(candidata) && candidata.length >= MATRICULA_CONFIG.minDigitos;
+      if (esRafaga) {
         // El Enter es del lector, no de la persona: que no presione nada.
+        // También el de un código que no es matrícula (el ISBN de un libro,
+        // v3.57.2): ese no se atiende, pero tampoco debe confirmar nada.
         e.preventDefault();
         e.stopImmediatePropagation();
         this.enterDelLectorTs = ahora;
-        const cb = this.oyente;
-        this.zone.run(() => cb(candidata));
+        if (esMatriculaValidaScanner(candidata)) {
+          const cb = this.oyente;
+          this.zone.run(() => cb(candidata));
+        }
       }
       return;
     }

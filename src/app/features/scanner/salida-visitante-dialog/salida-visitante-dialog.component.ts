@@ -8,7 +8,8 @@
 // ║  quiosco, donde /presencia está oculta.              ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, signal, computed } from '@angular/core';
+import { Component, Inject, signal, computed, inject } from '@angular/core';
+import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -48,6 +49,13 @@ export interface SalidaVisitanteResultado {
                autocomplete="off"
                spellcheck="false" />
       </div>
+
+      @if (lecturaIgnorada()) {
+        <p class="dlg-aviso">
+          Se pasó una credencial: los alumnos marcan su salida pasándola en el
+          escáner. Cierra esta lista y vuelve a pasarla.
+        </p>
+      }
 
       <div class="dlg-list" role="list">
         @if (filtrados().length === 0) {
@@ -116,6 +124,7 @@ export interface SalidaVisitanteResultado {
     }
     .dlg-search input::placeholder { color: #6B7E96; }
 
+    .dlg-aviso { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: #F5A623; font-weight: 600; }
     .dlg-list {
       flex: 1; min-height: 120px;
       overflow-y: auto;
@@ -184,7 +193,19 @@ export class SalidaVisitanteDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<SalidaVisitanteDialogComponent, SalidaVisitanteResultado | null>,
     @Inject(MAT_DIALOG_DATA) public data: SalidaVisitanteData,
-  ) {}
+  ) {
+    // v3.57.2: la credencial de un alumno escribía sus dígitos en la
+    // búsqueda (y la lista quedaba vacía). Se borran; esta lista es solo
+    // para visitantes, el alumno marca su salida desde el escáner.
+    const dejarDeEscuchar = inject(LectorRafagaService).escuchar(leida => {
+      this.filtro = this.filtro.replace(new RegExp('[aA]?' + leida), '').trim();
+      this.filtroSignal.set(this.filtro);
+      this.lecturaIgnorada.set(true);
+    });
+    dialogRef.afterClosed().subscribe(() => dejarDeEscuchar());
+  }
+
+  readonly lecturaIgnorada = signal(false);
 
   seleccionar(v: Registro): void {
     this.dialogRef.close({
