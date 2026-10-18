@@ -51,9 +51,21 @@ export const CHANGELOG: VersionChangelog[] = [
   {
     version: '3.57.0',
     fecha: '2026-10-17',
-    titulo: 'Ronda de pruebas: padrón, PIN y claridad',
+    titulo: 'Ronda de pruebas: padrón, PIN, catálogos y cifras verificadas',
     resumen: 'Correcciones de la ronda de pruebas: la importación de alumnos, el Enter al confirmar, el cierre al final del horario, el PIN del coordinador para los borrados (con código de recuperación) y pantallas que se explican solas.',
     cambios: [
+      {
+        tipo: 'feat',
+        texto: 'Nuevo Configuración → Catálogos: las carreras se agregan, renombran o desactivan, y los grupos y el rango de grados se editan, sin esperar una versión nueva. Al renombrar eliges si es una corrección (cambia también en alumnos y visitas anteriores) o una carrera nueva que convive con la anterior.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Importar alumnos avisa qué carreras del Excel no están en el catálogo y permite agregarlas desde la vista previa. El catálogo viaja en el respaldo para que la puerta y la oficina ofrezcan la misma lista.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Reporte del sistema → "Verificar cifras": compara los totales de hoy, 7 días, el mes y todo el historial entre la base de datos, Estadísticas (gráfica, mapa de calor, carreras, actividades) y el Resumen. Lo que no cuadre sale en rojo.',
+      },
       {
         tipo: 'feat',
         texto: 'Eliminar registros por fechas, reemplazar todo con un respaldo y restablecer el sistema piden el PIN del coordinador (el mismo del modo quiosco), y ofrecen descargar un respaldo en el mismo paso.',

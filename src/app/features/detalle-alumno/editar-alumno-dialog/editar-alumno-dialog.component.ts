@@ -21,7 +21,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatabaseService } from '../../../core/services/database.service';
 import { Alumno } from '../../../core/models';
-import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../../core/constants/catalogos.constants';
+import { TURNOS } from '../../../core/constants/catalogos.constants';
+import { gradosDe, opcionesCarrera } from '../../../core/utils/catalogos.utils';
+import { ConfigService } from '../../../core/services/config.service';
 import { logError } from '../../../core/utils/logger';
 import { limpiarNombre } from '../../../core/utils/nombres.utils';
 import { BitacoraService, describirAlumno } from '../../../core/services/bitacora.service';
@@ -226,10 +228,15 @@ export class EditarAlumnoDialogComponent implements OnInit {
   guardando = false;
   error: string | null = null;
 
-  // FIX v3.4: Catálogos centralizados (fuente única de verdad)
-  carreras = CARRERAS;
-  grados = GRADOS;
-  grupos = GRUPOS;
+  // v3.57.0: del catálogo editable. Se suman los valores que ya tiene el
+  // alumno aunque no estén (carrera desactivada, grupo quitado): si no, el
+  // select los dejaría en blanco y guardar los borraría.
+  private readonly datos = inject<{ alumno: Alumno }>(MAT_DIALOG_DATA);
+  private readonly catalogo = inject(ConfigService).catalogoEscolar;
+  carreras = opcionesCarrera(this.catalogo, this.datos.alumno.carrera);
+  grados = [...new Set([...gradosDe(this.catalogo), this.datos.alumno.grado].filter(g => g > 0))].sort((a, b) => a - b);
+  grupos = this.datos.alumno.grupo && !this.catalogo.grupos.includes(this.datos.alumno.grupo)
+    ? [...this.catalogo.grupos, this.datos.alumno.grupo] : this.catalogo.grupos;
   turnos = TURNOS;
 
   private readonly bitacora = inject(BitacoraService);

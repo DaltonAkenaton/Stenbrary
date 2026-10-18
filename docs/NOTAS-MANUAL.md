@@ -370,3 +370,29 @@ El Excel trae una segunda hoja que explica cada columna: Actividades (todas las 
 - **Configuración → Bitácora:** nombre del equipo (con botón Guardar) y la bitácora, con filtros por tipo, equipo, fechas y texto (sin importar acentos ni mayúsculas).
 - **Configuración → Avanzado:** accesos directos, herramientas de prueba (con PIN) y restablecer.
 - En la interfaz se dice **"actividad"** (antes a veces "motivo"): es lo mismo.
+
+## Catálogos: carreras, grupos y grados (v3.57.0)
+
+Configuración → Catálogos.
+
+- **Agregar** una carrera: aparece al registrar alumnos y se reconoce al importar el Excel (sin importar mayúsculas ni acentos).
+- **Desactivar**: deja de ofrecerse al registrar, pero sus alumnos y visitas se conservan y siguen en Estadísticas. No hay "borrar".
+- **Renombrar** pregunta qué hacer con lo ya registrado:
+  - **Corregir en todo**: el nombre estaba mal escrito. Cambia también en los alumnos y visitas anteriores; Estadísticas muestra una sola carrera.
+  - **Cambió de nombre**: la carrera nueva convive con la anterior (p. ej. una generación con plan nuevo). La anterior queda desactivada con sus datos y Estadísticas muestra las dos.
+- Abajo aparecen las carreras que están en tus datos pero no en el catálogo (de un Excel o de un nombre viejo), con "Agregar al catálogo".
+- **Grupos**: agregar y quitar. Quitar uno no cambia a los alumnos que ya lo tienen.
+- **Grados**: rango libre (por ejemplo, del 1 al 12 para incluir rezagados).
+- Los turnos (Matutino, Vespertino, Mixto) no se editan.
+- El catálogo viaja en el respaldo: al **combinar**, solo se suman las carreras y grupos que falten; al **reemplazar**, queda el del archivo.
+
+## Verificar cifras (v3.57.0)
+
+Reporte del sistema → **Verificar cifras**. Para hoy, los últimos 7 días, este mes y todo el historial compara:
+
+- el total de visitas guardadas (la base de datos, igual que Registros y "Eliminar registros");
+- el total de Estadísticas, la suma de las barras, la suma del mapa de calor, visitas por carrera + visitantes y el total de la gráfica de actividades;
+- el Resumen de hoy;
+- que ninguna visita esté sin actividad.
+
+Todo en verde = las pantallas dicen lo mismo. Algo en rojo = no entregar reportes de ese periodo y mandar el reporte del sistema a soporte (ya incluye qué no cuadró). Recomendado: una vez por semana durante el primer mes.

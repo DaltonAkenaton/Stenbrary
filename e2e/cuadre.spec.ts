@@ -205,6 +205,53 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await expect(page.locator('.dashboard-ejecutivo-container')).toContainText('(actividad eliminada)', { timeout: 15000 });
   });
 
+  test('Catálogos: agregar la carrera de los datos, corregir su nombre en todo y "cambió de nombre" (v3.57.0)', async ({ page }) => {
+    await page.goto('/configuracion#catalogos');
+    const fuera = page.locator('.cat-fuera');
+    await expect(fuera).toContainText('Ing. TI');                   // las del fixture no están en el catálogo
+    await expect(fuera).toContainText('3 alumnos · 7 visitas');
+    await fuera.locator('.cat-carrera').filter({ hasText: 'Ing. TI' }).getByRole('button', { name: /Agregar al catálogo/ }).click();
+    await fuera.locator('.cat-carrera').filter({ hasText: 'Derecho' }).getByRole('button', { name: /Agregar al catálogo/ }).click();
+    await expect(page.locator('.cat-fuera')).toHaveCount(0);
+
+    // Corregir: alumnos y visitas pasadas cambian de nombre.
+    const ti = page.locator('.cat-lista .cat-carrera').filter({ hasText: 'Ing. TI' });
+    await ti.getByRole('button', { name: /Renombrar/ }).click();
+    await page.locator('.cat-renombre').fill('Tecnologías de la Información e IA');
+    await page.locator('.cat-renombre').press('Enter');
+    await expect(page.locator('app-confirm-dialog')).toContainText('tiene 3 alumnos y 7 visitas');
+    await page.locator('app-confirm-dialog .btn-confirm.btn-info:not(.btn-alternativa)').click();
+    await expect(page.locator('app-toast-container')).toContainText('3 alumnos y 7 visitas');
+    await page.goto('/registros?desde=2026-10-01&hasta=2026-10-07');
+    await expect(page.locator('tbody')).toContainText('Tecnologías de la Información e IA', { timeout: 15000 });
+    await expect(page.locator('tbody')).not.toContainText('Ing. TI');
+
+    // Cambió de nombre: la vieja queda desactivada con sus datos.
+    await page.goto('/configuracion#catalogos');
+    await page.locator('.cat-lista .cat-carrera')
+      .filter({ has: page.locator('.cat-nombre > span', { hasText: /^Derecho$/ }) })   // no "Licenciatura en Derecho"
+      .getByRole('button', { name: /Renombrar/ }).click();
+    await page.locator('.cat-renombre').fill('Derecho y Ciencias Jurídicas');
+    await page.locator('.cat-renombre').press('Enter');
+    await page.locator('app-confirm-dialog .btn-alternativa').click();
+    await expect(page.locator('.cat-carrera.inactiva')).toContainText('Derecho');
+    await expect(page.locator('.cat-carrera.inactiva')).toContainText('3 alumnos');
+    // Al registrar se ofrece la nueva, no la desactivada.
+    await page.goto('/registro-alumno');
+    await page.locator('mat-select[formcontrolname="carrera"]').click();
+    const opciones = page.locator('mat-option');
+    await expect(opciones.filter({ hasText: 'Derecho y Ciencias Jurídicas' })).toHaveCount(1);
+    await expect(opciones.filter({ hasText: /^\s*Derecho\s*$/ })).toHaveCount(0);
+    await expect(opciones.filter({ hasText: 'Tecnologías de la Información e IA' })).toHaveCount(1);
+  });
+
+  test('Diagnóstico: las cifras cuadran entre pantallas (v3.57.0)', async ({ page }) => {
+    await page.goto('/diagnostico');
+    await page.getByRole('button', { name: /Verificar cifras/ }).click();
+    await expect(page.locator('.cuadre-cifras .seccion-titulo')).toContainText('Todas las cifras cuadran', { timeout: 15000 });
+    await expect(page.locator('.cuadre-cifras .cifra.es-error')).toHaveCount(0);
+  });
+
   test('Inactivos', async ({ page }) => {
     await page.goto('/inactivos');
     const resumen = page.locator('.summary-row');

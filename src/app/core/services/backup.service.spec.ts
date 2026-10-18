@@ -22,6 +22,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { DatabaseService } from './database.service';
 import { BackupService, BackupData } from './backup.service';
 import { Alumno, Registro } from '../models';
+import { CatalogoEscolar, agregarCarrera, catalogoInicial } from '../utils/catalogos.utils';
 
 function resetIndexedDB() {
   (globalThis as any).indexedDB = new IDBFactory();
@@ -349,6 +350,39 @@ describe('BackupService — round-trip', () => {
       expect(motivos.length).toBe(5);
       expect(motivos.find(m => m.nombre === 'Estudiar')!.id).toBe(idOrigen);
       expect((await db.obtenerTodosLosRegistros())[0].motivoId).toBe(idOrigen);
+    });
+  });
+
+  describe('catálogo de carreras (v3.57.0)', () => {
+    /** Doble con el catálogo en memoria, como ConfigService. */
+    function conCatalogo(cat: CatalogoEscolar) {
+      const cfg = { catalogoEscolar: cat, setCatalogoEscolar(c: CatalogoEscolar) { cfg.catalogoEscolar = c; } };
+      return { cfg, servicio: new BackupService(db, cfg as any, bitacoraStub) };
+    }
+
+    it('viaja en el respaldo; combinar suma lo que falta y reemplazar trae el del archivo', async () => {
+      const puerta = agregarCarrera(catalogoInicial(), 'Ingeniería Civil');
+      if (!puerta.ok) throw new Error(puerta.error);
+      const datos = porJSON(await conCatalogo(puerta.catalogo).servicio.exportarBackup());
+      expect(datos.catalogoEscolar!.carreras.some(c => c.nombre === 'Ingeniería Civil')).toBeTrue();
+
+      const oficina = conCatalogo(catalogoInicial());
+      const r = await oficina.servicio.importarBackup(datos, 'merge');
+      expect(r.catalogoNuevos).toBe(1);
+      expect(oficina.cfg.catalogoEscolar.carreras.length).toBe(9);
+      expect((await oficina.servicio.importarBackup(datos, 'merge')).catalogoNuevos).toBe(0);
+
+      const otra = conCatalogo({ ...catalogoInicial(), grupos: ['Z'] });
+      await otra.servicio.importarBackup(datos, 'replace');
+      expect(otra.cfg.catalogoEscolar.grupos).toEqual(['A', 'B', 'C', 'D', 'E', 'F']);
+    });
+
+    it('un respaldo sin catálogo no toca el de aquí', async () => {
+      const aqui = conCatalogo({ ...catalogoInicial(), grupos: ['Z'] });
+      const datos = porJSON(await aqui.servicio.exportarBackup());
+      delete datos.catalogoEscolar;
+      await aqui.servicio.importarBackup(datos, 'replace');
+      expect(aqui.cfg.catalogoEscolar.grupos).toEqual(['Z']);
     });
   });
 

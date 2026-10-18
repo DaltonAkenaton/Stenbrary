@@ -122,6 +122,52 @@
     }
   }
 
+  <!-- ══════════ CUADRE DE CIFRAS (v3.57.0) ══════════ -->
+  <!-- Las cifras de cada pantalla salen por caminos distintos; aquí se
+       comparan entre sí. Pedido del usuario: que nadie entregue un reporte
+       con datos que no cuadran sin saberlo. -->
+  <section class="panel accion revision">
+    <div class="accion-texto">
+      <span class="accion-titulo">Verificar que las cifras cuadran</span>
+      <p class="accion-sub">
+        Compara el total de visitas de hoy, los últimos 7 días, este mes y todo el historial
+        entre la base de datos, Estadísticas (gráfica, mapa de calor, carreras, actividades) y
+        el Resumen. Si algo no cuadra, sale en rojo. Conviene correrlo una vez por semana.
+      </p>
+    </div>
+    <button class="btn-primario btn-verificar-cifras" (click)="verificarCifras()" [disabled]="verificando()">
+      <mat-icon>rule</mat-icon>
+      {{ verificando() ? 'Verificando…' : 'Verificar cifras' }}
+    </button>
+  </section>
+
+  @if (cifras(); as lista) {
+    <section class="panel cuadre-cifras">
+      <h2 class="seccion-titulo">
+        @if (cifrasMal() === 0) { Todas las cifras cuadran ({{ lista.length }} comprobaciones) }
+        @else { {{ cifrasMal() }} de {{ lista.length }} comprobaciones NO cuadran }
+      </h2>
+      <ul class="lista">
+        @for (c of lista; track $index) {
+          <li class="item cifra" [class.es-error]="!c.ok" [class.cifra-ok]="c.ok">
+            <mat-icon class="item-icon">{{ c.ok ? 'check_circle' : 'cancel' }}</mat-icon>
+            <span class="problema-desc"><strong>{{ c.periodo }}:</strong> {{ c.descripcion }}</span>
+            <span class="item-veces">
+              @if (c.ok) { {{ c.obtenido | number }} }
+              @else { {{ c.obtenido | number }} ≠ {{ c.esperado | number }} }
+            </span>
+          </li>
+        }
+      </ul>
+      @if (cifrasMal() > 0) {
+        <p class="accion-sub">
+          No entregues reportes de esos periodos hasta revisarlo. Descarga el reporte del sistema
+          (abajo) y envíalo a soporte: ya incluye qué no cuadró.
+        </p>
+      }
+    </section>
+  }
+
   @if (!hayIncidencias()) {
     <section class="panel estado-ok">
       <mat-icon>check_circle</mat-icon>

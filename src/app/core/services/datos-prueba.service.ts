@@ -20,10 +20,11 @@
 // ║  - Registros marcados con dispositivo = 'SEED-TEST'   ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { Alumno, Motivo } from '../models';
-import { CARRERAS, GRADOS, GRUPOS } from '../constants/catalogos.constants';
+import { ConfigService } from './config.service';
+import { carrerasActivas, gradosDe } from '../utils/catalogos.utils';
 import { esMatriculaPrueba, PRUEBA_DISPOSITIVO, PRUEBA_MATRICULA_BASE } from '../utils/datos-prueba.utils';
 
 // Las marcas viven en utils para que estadísticas pueda reconocerlas sin
@@ -119,6 +120,8 @@ const APELLIDOS = [
 
 @Injectable({ providedIn: 'root' })
 export class DatosPruebaService {
+  private readonly config = inject(ConfigService);
+
   constructor(private db: DatabaseService) {}
 
   /**
@@ -343,9 +346,10 @@ export class DatosPruebaService {
       nombre: this.pick(NOMBRES),
       apellidoPaterno: this.pick(APELLIDOS),
       apellidoMaterno: this.pick(APELLIDOS),
-      carrera: this.pick(CARRERAS),
-      grado: this.pick(GRADOS),
-      grupo: this.pick(GRUPOS),
+      // v3.57.0: del catálogo editable, para que las pruebas usen las carreras reales.
+      carrera: this.pick(carrerasActivas(this.config.catalogoEscolar)),
+      grado: this.pick(gradosDe(this.config.catalogoEscolar)),
+      grupo: this.pick(this.config.catalogoEscolar.grupos),
       turno: this.pickTurnoPonderado(),
       activo: true,
       datosExtra: {},

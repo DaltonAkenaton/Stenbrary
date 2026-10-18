@@ -287,14 +287,22 @@ Anotadas en sesión v3.17.x para después de la entrega; el coordinador pidió e
 - [ ] **Modo "alto contraste"** con tema separado.
 - [ ] **Atajos de teclado**: H = hero, R = refrescar, P = personalizar PDF.
 
-### 2.3.1 Catálogos editables desde UI 🔴 (bloquea venta a otras universidades)
+### 2.3.1 Catálogos editables desde UI ✅ (v3.57.0, 2026-10-18)
 
-- [ ] **`CARRERAS` editables desde `/configuracion`**: hoy son constantes en `catalogos.constants.ts`. Problema real: las carreras se renombran con el tiempo (ej. "Licenciatura en Enfermería" no existe en la facultad del coordinador; su propia carrera ya se renombró y volverá a renombrarse). **Requisitos:**
+> Hecho: Configuración → Catálogos (`catalogos.utils.ts`, `ConfigService.catalogoEscolar`).
+> Carreras: agregar, renombrar ("corregir en todo" = migración bulk de alumnos y
+> visitas en una transacción; "cambió de nombre" = la vieja queda desactivada),
+> desactivar (nunca borrar). Grupos y rango de grados editables. Turnos fijos a
+> propósito. Viaja en el respaldo (combinar = solo suma lo que falta). Persistencia
+> en `ConfigService` (localStorage), no en un store nuevo: en la Fase 2 pasa a una
+> tabla con `organization_id`. Lo de abajo queda como registro del pedido original.
+
+- [x] **`CARRERAS` editables desde `/configuracion`**: hoy son constantes en `catalogos.constants.ts`. Problema real: las carreras se renombran con el tiempo (ej. "Licenciatura en Enfermería" no existe en la facultad del coordinador; su propia carrera ya se renombró y volverá a renombrarse). **Requisitos:**
   - CRUD completo (agregar, renombrar, desactivar — no eliminar si hay alumnos/registros vinculados).
   - **Migración bulk**: al renombrar carrera X → Y, actualizar todos los alumnos y registros que la tenían. Confirmación con conteo previo.
   - Persistencia en `ConfigService` / IndexedDB store nuevo (`catalogos`).
   - Dropdown del registro-alumno y filtro de `/alumnos` leen del servicio, no de constantes.
-- [ ] **`TURNOS`, `GRADOS`, `GRUPOS` igualmente editables** (menos crítico — estos son más estables que carreras).
+- [x] **`GRADOS`, `GRUPOS` editables** (TURNOS siguen fijos: Estadísticas reparte por ellos) (menos crítico — estos son más estables que carreras).
 
 ### 2.3.2 Permisos y sensibilidad 🟡
 

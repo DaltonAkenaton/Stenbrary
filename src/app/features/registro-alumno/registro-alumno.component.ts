@@ -24,7 +24,9 @@ import { DatabaseService } from '../../core/services/database.service';
 import { Alumno } from '../../core/models';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
-import { CARRERAS, GRADOS, GRUPOS, TURNOS } from '../../core/constants/catalogos.constants';
+import { TURNOS } from '../../core/constants/catalogos.constants';
+import { ConfigService } from '../../core/services/config.service';
+import { carrerasActivas, gradosDe } from '../../core/utils/catalogos.utils';
 import { validarMatricula, MATRICULA_CONFIG, normalizarMatricula } from '../../core/utils/matricula.utils';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { log, logError } from '../../core/utils/logger';
@@ -62,10 +64,11 @@ export class RegistroAlumnoComponent implements OnInit, OnDestroy {
   matriculaBloqueada = false;
   vieneDelScanner = false;
 
-  // FIX v3.4: Catálogos centralizados (fuente única de verdad)
-  carreras = CARRERAS;
-  grados = GRADOS;
-  grupos = GRUPOS;
+  // v3.57.0: del catálogo editable (Configuración → Catálogos), no del código.
+  private readonly catalogo = inject(ConfigService).catalogoEscolar;
+  carreras = carrerasActivas(this.catalogo);
+  grados = gradosDe(this.catalogo);
+  grupos = this.catalogo.grupos;
   turnos = TURNOS;
 
   constructor(

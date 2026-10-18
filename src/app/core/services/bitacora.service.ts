@@ -98,6 +98,7 @@ export const ACCIONES_BITACORA: Record<AccionBitacora, { etiqueta: string; icono
   'alumno-reactivado':   { etiqueta: 'Reactivó un alumno',           icono: 'person_add',     grupo: 'cambios' },
   'motivo-eliminado':    { etiqueta: 'Borró una actividad',          icono: 'label_off',      grupo: 'cambios' },
   'alumnos-importados':  { etiqueta: 'Importó alumnos desde Excel',  icono: 'upload_file',    grupo: 'cambios' },
+  'catalogo-cambiado':   { etiqueta: 'Cambió el catálogo',           icono: 'list_alt',       grupo: 'cambios' },
   'respaldo-exportado':  { etiqueta: 'Descargó un respaldo',         icono: 'download',       grupo: 'respaldos' },
   'respaldo-importado':  { etiqueta: 'Importó un respaldo',          icono: 'upload',         grupo: 'respaldos' },
   'datos-borrados':      { etiqueta: 'Borró todos los datos',        icono: 'delete_forever', grupo: 'respaldos', alerta: true },

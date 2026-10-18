@@ -122,6 +122,7 @@ export class CommandPaletteService {
       nav('nav-config-experiencia', 'Configuración → Experiencia', 'celebration',       '/configuracion#experiencia', ['experiencia', 'celebracion', 'animacion']),
       nav('nav-config-bitacora',    'Configuración → Bitácora',           'history',    '/configuracion#bitacora',    ['bitacora', 'historial', 'auditoria', 'seguridad', 'equipo']),
       nav('nav-config-calendario',  'Configuración → Calendario escolar', 'event',      '/configuracion#calendario',  ['calendario', 'periodo', 'semestre', 'festivo', 'inhabil', 'vacaciones']),
+      nav('nav-config-catalogos',   'Configuración → Catálogos',   'list_alt',          '/configuracion#catalogos',   ['catalogo', 'carrera', 'carreras', 'grupo', 'grado', 'licenciatura']),
       nav('nav-config-datos',       'Configuración → Datos',       'storage',           '/configuracion#datos',       ['datos', 'respaldo', 'backup', 'restore', 'limpieza']),
       nav('nav-config-avanzado',    'Configuración → Avanzado',    'warning',           '/configuracion#avanzado',    ['avanzado', 'peligro', 'eliminar']),
     ];

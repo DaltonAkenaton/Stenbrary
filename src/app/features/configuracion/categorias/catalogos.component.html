@@ -1,0 +1,130 @@
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  categorias/catalogos.component.html  (v3.57.0)      ║ -->
+<!-- ║  Carreras + grupos + grados                          ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── CARRERAS ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>school</mat-icon>
+    <h2>Carreras</h2>
+  </div>
+  <p class="section-desc">
+    Las que se ofrecen al registrar un alumno y con las que se reconoce la columna "Carrera" al
+    importar un Excel. Una carrera <strong style="color:#E8F4F8">no se borra</strong>: se desactiva,
+    y sus alumnos y visitas se conservan.
+  </p>
+
+  <ul class="cat-lista">
+    @for (c of carreras(); track c.id) {
+      <li class="cat-carrera" [class.inactiva]="!c.activa">
+        @if (editando() === c.id) {
+          <input class="cat-input cat-renombre" type="text" maxlength="120"
+                 [(ngModel)]="nombreEditado"
+                 (keydown.enter)="guardarRenombre(c)" (keydown.escape)="cancelarRenombre()">
+          <div class="cat-acciones">
+            <button class="btn-inline btn-inline-active" (click)="guardarRenombre(c)"><mat-icon>check</mat-icon> Guardar</button>
+            <button class="btn-inline" (click)="cancelarRenombre()">Cancelar</button>
+          </div>
+        } @else {
+          <div class="cat-nombre">
+            <span>{{ c.nombre }}</span>
+            <small>
+              @if (!c.activa) { <strong>Desactivada</strong> · }
+              {{ uso(c.nombre).alumnos | number }} {{ uso(c.nombre).alumnos === 1 ? 'alumno' : 'alumnos' }} ·
+              {{ uso(c.nombre).visitas | number }} {{ uso(c.nombre).visitas === 1 ? 'visita' : 'visitas' }}
+            </small>
+          </div>
+          <div class="cat-acciones">
+            <button class="btn-inline btn-renombrar" (click)="empezarARenombrar(c)"><mat-icon>edit</mat-icon> Renombrar</button>
+            <button class="btn-inline btn-alternar" (click)="alternar(c)">
+              <mat-icon>{{ c.activa ? 'visibility_off' : 'visibility' }}</mat-icon>
+              {{ c.activa ? 'Desactivar' : 'Activar' }}
+            </button>
+          </div>
+        }
+      </li>
+    }
+  </ul>
+
+  <div class="cat-agregar">
+    <input class="cat-input cat-nueva-carrera" type="text" maxlength="120" placeholder="Nombre de la carrera nueva"
+           [(ngModel)]="nuevaCarrera" (keydown.enter)="agregarCarrera()">
+    <button class="btn-inline btn-inline-active" [disabled]="!nuevaCarrera.trim()" (click)="agregarCarrera()">
+      <mat-icon>add</mat-icon> Agregar
+    </button>
+  </div>
+
+  @if (fueraDeCatalogo().length > 0) {
+    <div class="cat-fuera">
+      <p class="section-hint" style="color:#F5A623;">
+        <mat-icon>warning</mat-icon>
+        Estas carreras aparecen en tus alumnos o visitas pero no están en el catálogo (por ejemplo,
+        de un Excel o de un nombre anterior). Agrégalas si son válidas, o usa "Renombrar" en la
+        correcta para unificarlas.
+      </p>
+      <ul class="cat-lista">
+        @for (f of fueraDeCatalogo(); track f.nombre) {
+          <li class="cat-carrera">
+            <div class="cat-nombre">
+              <span>{{ f.nombre }}</span>
+              <small>{{ f.alumnos | number }} alumnos · {{ f.visitas | number }} visitas</small>
+            </div>
+            <div class="cat-acciones">
+              <button class="btn-inline" (click)="agregarCarrera(f.nombre)"><mat-icon>playlist_add</mat-icon> Agregar al catálogo</button>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>
+
+<!-- ── GRUPOS ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>groups_2</mat-icon>
+    <h2>Grupos</h2>
+  </div>
+  <p class="section-desc">Los que se ofrecen al registrar un alumno. Quitar uno no cambia a los alumnos que ya lo tienen.</p>
+  <div class="cat-chips">
+    @for (g of catalogo().grupos; track g) {
+      <span class="cat-chip">
+        {{ g }}
+        <button type="button" class="cat-chip-quitar" [attr.aria-label]="'Quitar grupo ' + g" (click)="quitarGrupo(g)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </span>
+    }
+  </div>
+  <div class="cat-agregar">
+    <input class="cat-input cat-nuevo-grupo" type="text" maxlength="10" placeholder="Ej. G"
+           [(ngModel)]="nuevoGrupo" (keydown.enter)="agregarGrupo()">
+    <button class="btn-inline btn-inline-active" [disabled]="!nuevoGrupo.trim()" (click)="agregarGrupo()">
+      <mat-icon>add</mat-icon> Agregar grupo
+    </button>
+  </div>
+</div>
+
+<!-- ── GRADOS ── -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>stairs</mat-icon>
+    <h2>Grados (semestres)</h2>
+  </div>
+  <p class="section-desc">
+    Del primero al último que se ofrece al registrar y que se acepta al importar. Incluye a los
+    rezagados (p. ej. hasta 12 si la carrera dura 9 semestres).
+  </p>
+  <div class="cat-agregar">
+    <label class="cat-grado">Desde
+      <input class="cat-input cat-grado-min" type="number" min="1" max="20" [(ngModel)]="gradoMin">
+    </label>
+    <label class="cat-grado">hasta
+      <input class="cat-input cat-grado-max" type="number" min="1" max="20" [(ngModel)]="gradoMax">
+    </label>
+    <button class="btn-inline btn-inline-active" [disabled]="!gradosSinGuardar" (click)="guardarGrados()">
+      <mat-icon>save</mat-icon> Guardar
+    </button>
+  </div>
+</div>

@@ -9,6 +9,38 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-18 — Pruebas del usuario, tanda D: catálogos y cuadre de cifras (v3.57.0, acumulada)
+
+Cierra los 21 hallazgos. Sigue acumulada en la v3.57.0 (sin publicar).
+
+- **Catálogos editables (#19, ESTADO §2.3.1).** Diseño aprobado por el
+  usuario: `catalogos.utils.ts` (puras, 9 tests) + `ConfigService.catalogoEscolar`
+  con signal. Carrera = `{ id, nombre, activa }`: el id es estable para que
+  renombrar no la parta y para la tabla de la Fase 2. Renombrar pregunta:
+  "Corregir en todo" (`renombrarCarreraEnDatos`, alumnos + registros en una
+  transacción, con `marcarPendienteEnSitio`) o "Cambió de nombre" (la vieja se
+  desactiva y se agrega la nueva). Nunca se borra una carrera.
+  - **Persistencia en localStorage y no en un store nuevo:** el catálogo es
+    configuración, no datos; evitarlo ahorra subir `DB_VERSION`. Para que la
+    puerta y la oficina tengan la misma lista viaja en el respaldo:
+    combinar solo suma (manda el equipo local), reemplazar pone el del archivo.
+  - Formularios: registrar ofrece las activas; editar suma la que ya tiene el
+    alumno (si no, el select la dejaba en blanco y guardar la borraba). La
+    importación empareja también contra las desactivadas y ofrece "Agregar al
+    catálogo" para las desconocidas. El generador de datos de prueba usa el catálogo.
+  - Configuración → Catálogos lista además las carreras que están en los datos
+    y no en el catálogo (el fixture del cuadre tiene "Ing. TI" y "Derecho").
+- **Cuadre de cifras (#14).** `CuadreCifrasService`: por periodo (hoy, 7 días,
+  mes, historial), el conteo directo de la base contra cada camino de
+  Estadísticas (caché indexada, barras, mapa de calor, carreras + invitados,
+  actividades) y el Resumen. Lo que no cuadra se anota en el diagnóstico, que
+  viaja en el reporte a soporte. Test con base real (fake-indexeddb + TestBed)
+  y un spy que desvía un camino para ver el rojo.
+- 357 unitarias (+14, 19 archivos), 64 E2E (+2 en el cuadre).
+
+**Sigue:** publicar v3.57.0 cuando el usuario lo diga; después, documentación
+(guías, piloto, instalación) solo cuando lo pida.
+
 ## 2026-10-18 — Pruebas del usuario, tanda C: claridad (v3.57.0, acumulada)
 
 Sigue sin publicarse: se acumula en la v3.57.0 y el tag se mueve otra vez.

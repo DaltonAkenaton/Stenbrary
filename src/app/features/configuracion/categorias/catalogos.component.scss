@@ -1,0 +1,112 @@
+// categorias/catalogos.component.scss — Stenbrary v3.57.0
+
+.cat-lista {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cat-carrera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: rgba(0, 200, 215, 0.04);
+  border: 1px solid rgba(0, 200, 215, 0.12);
+  border-radius: 10px;
+
+  &.inactiva { opacity: 0.6; }
+}
+
+.cat-nombre {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+
+  span { color: #E8F4F8; font-size: 0.9rem; overflow-wrap: anywhere; }
+  small { color: rgba(200, 230, 240, 0.55); font-size: 0.75rem; }
+}
+
+.cat-acciones {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cat-agregar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cat-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  background: #142033;
+  border: 1px solid rgba(0, 200, 215, 0.22);
+  border-radius: 10px;
+  color: #E8F4F8;
+  font-family: inherit;
+  font-size: 0.9rem;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(0, 200, 215, 0.55);
+  }
+}
+
+.cat-renombre { flex-basis: 100%; }
+.cat-nuevo-grupo { max-width: 140px; }
+
+.cat-grado {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(200, 230, 240, 0.65);
+  font-size: 0.85rem;
+
+  .cat-input { width: 80px; flex: none; }
+}
+
+.cat-fuera { margin-top: 18px; }
+
+.cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid rgba(0, 200, 215, 0.25);
+  border-radius: 999px;
+  color: #E8F4F8;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.cat-chip-quitar {
+  display: inline-flex;
+  padding: 2px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: rgba(200, 230, 240, 0.55);
+  cursor: pointer;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover { color: #F05252; background: rgba(240, 82, 82, 0.1); }
+}

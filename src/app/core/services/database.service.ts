@@ -1727,6 +1727,60 @@ export class DatabaseService {
     }
   }
 
+  // ==================== CATÁLOGOS (v3.57.0) ====================
+
+  /**
+   * Cuántos alumnos y visitas hay por nombre de carrera, tal como está
+   * guardado. La pantalla de Catálogos lo usa para decir qué afecta un cambio.
+   */
+  async contarPorCarrera(): Promise<Map<string, { alumnos: number; visitas: number }>> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    const conteo = new Map<string, { alumnos: number; visitas: number }>();
+    const sumar = (carrera: string | undefined, campo: 'alumnos' | 'visitas') => {
+      if (!carrera) return;
+      const c = conteo.get(carrera) ?? { alumnos: 0, visitas: 0 };
+      c[campo]++;
+      conteo.set(carrera, c);
+    };
+    for (const a of await this.db.getAll('alumnos')) sumar(a.carrera, 'alumnos');
+    for (const r of await this.db.getAll('registros')) if (r.matricula !== 'INVITADO') sumar(r.carrera, 'visitas');
+    return conteo;
+  }
+
+  /**
+   * "Corregir el nombre" de una carrera: cambia el texto guardado en los
+   * alumnos y en las visitas, en una transacción. Las visitas guardan la
+   * carrera como texto (foto del momento), así que sin esto Estadísticas
+   * mostraría la carrera vieja y la nueva como dos filas.
+   */
+  async renombrarCarreraEnDatos(viejo: string, nuevo: string): Promise<{ alumnos: number; registros: number }> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+    if (!viejo || !nuevo || viejo === nuevo) return { alumnos: 0, registros: 0 };
+    const tx = this.db.transaction(['alumnos', 'registros'], 'readwrite');
+    const escrituras: Promise<unknown>[] = [];
+    let alumnos = 0, registros = 0;
+    for (const a of await tx.objectStore('alumnos').getAll()) {
+      if (a.carrera !== viejo) continue;
+      a.carrera = nuevo;
+      this.marcarPendienteEnSitio(a);
+      escrituras.push(tx.objectStore('alumnos').put(a));
+      alumnos++;
+    }
+    for (const r of await tx.objectStore('registros').getAll()) {
+      if (r.carrera !== viejo) continue;
+      r.carrera = nuevo;
+      this.marcarPendienteEnSitio(r);
+      escrituras.push(tx.objectStore('registros').put(r));
+      registros++;
+    }
+    await Promise.all(escrituras);
+    await tx.done;
+    if (alumnos || registros) this.notificarCambioDatos();
+    return { alumnos, registros };
+  }
+
   // ==================== ELIMINACIÓN MASIVA ====================
 
   /**

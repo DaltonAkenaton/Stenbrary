@@ -151,6 +151,7 @@ export function procesarFilas(
   carrerasCatalogo: readonly string[],
   turnosValidos: readonly string[],
   gradoMax = 12,
+  gradoMin = 1,
 ): FilaImportacion[] {
   const carreraPorClave = new Map(carrerasCatalogo.map(c => [sinAcentos(c), c]));
   const valor = (row: Record<string, unknown>, campo: CampoImportacion) => {
@@ -188,7 +189,7 @@ export function procesarFilas(
     }
 
     const grado = parsearGrado(valor(row, 'grado'));
-    if (grado < 1 || grado > gradoMax) errores.push(`Grado inválido (debe ser 1–${gradoMax})`);
+    if (grado < gradoMin || grado > gradoMax) errores.push(`Grado inválido (debe ser ${gradoMin}–${gradoMax})`);
 
     const grupo = texto(valor(row, 'grupo')).toUpperCase();
     if (!grupo) errores.push('Grupo vacío');

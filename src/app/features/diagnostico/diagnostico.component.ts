@@ -26,6 +26,7 @@ import { DiagnosticoService, Incidencia } from '../../core/services/diagnostico.
 import { ToastService } from '../../core/services/toast.service';
 import { DatabaseService } from '../../core/services/database.service';
 import { revisarIntegridad, ProblemaIntegridad } from '../../core/utils/integridad.utils';
+import { CuadreCifrasService, ComprobacionCifra } from '../../core/services/cuadre-cifras.service';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -100,6 +101,33 @@ export class DiagnosticoComponent {
       });
     } finally {
       this.revisando.set(false);
+    }
+  }
+
+  // ─── Cuadre de cifras (v3.57.0) ─────────────────────────
+  private readonly cuadre = inject(CuadreCifrasService);
+  protected readonly verificando = signal(false);
+  protected readonly cifras = signal<ComprobacionCifra[] | null>(null);
+  protected readonly cifrasMal = computed(() => (this.cifras() ?? []).filter(c => !c.ok).length);
+
+  protected async verificarCifras(): Promise<void> {
+    if (this.verificando()) return;
+    this.verificando.set(true);
+    try {
+      const lista = await this.cuadre.verificar();
+      this.cifras.set(lista);
+      const malas = lista.filter(c => !c.ok);
+      // A la bitácora técnica: viaja en el reporte que se manda a soporte.
+      malas.forEach(c => this.diagnostico.anomalia('datos', `Cifras que no cuadran: ${c.periodo} — ${c.descripcion}`, {
+        esperado: c.esperado, obtenido: c.obtenido,
+      }));
+      if (malas.length === 0) this.toast.success(`Las ${lista.length} comprobaciones cuadran.`);
+      else this.toast.error(`${malas.length} comprobaciones no cuadran. Revisa la lista.`);
+    } catch (err) {
+      this.toast.error('No se pudieron verificar las cifras.');
+      this.diagnostico.error('datos', 'Falló el cuadre de cifras', { detalle: (err as Error)?.message });
+    } finally {
+      this.verificando.set(false);
     }
   }
 

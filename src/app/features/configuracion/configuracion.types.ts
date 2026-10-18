@@ -15,6 +15,7 @@ export type CategoriaConfigId =
   | 'quiosco'
   | 'experiencia'
   | 'calendario'
+  | 'catalogos'
   | 'datos'
   | 'bitacora'
   | 'avanzado';
@@ -97,6 +98,16 @@ export const CATEGORIAS_CONFIG: CategoriaConfig[] = [
     keywords: [
       'calendario', 'periodo', 'semestre', 'primavera', 'verano', 'otono', 'otoño',
       'festivo', 'feriado', 'inhabil', 'vacaciones', 'ciclo', 'escolar', 'uat',
+    ],
+  },
+  {
+    id: 'catalogos',
+    nombre: 'Catálogos',
+    icono: 'list_alt',
+    descripcion: 'Carreras, grupos y grados que se ofrecen al registrar e importar',
+    keywords: [
+      'catalogo', 'carrera', 'carreras', 'licenciatura', 'grupo', 'grupos', 'grado', 'grados',
+      'semestre', 'renombrar', 'desactivar', 'agregar',
     ],
   },
   {

@@ -269,6 +269,9 @@
             @if (resultadoImportacion.motivosImportados > 0) {
               · {{ resultadoImportacion.motivosImportados }} actividades nuevas
             }
+            @if (resultadoImportacion.catalogoNuevos > 0) {
+              · {{ resultadoImportacion.catalogoNuevos }} carreras o grupos nuevos en el catálogo
+            }
             @if (resultadoImportacion.alumnosOmitidos > 0) {
               · {{ resultadoImportacion.alumnosOmitidos }} alumnos omitidos (matrícula ya usada aquí)
             }

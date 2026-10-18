@@ -19,6 +19,7 @@
 import { Injectable, signal } from '@angular/core';
 import { CalendarioEscolar, calendarioInicial } from '../utils/calendario.utils';
 import { PIN_MAX_DIGITOS } from '../utils/quiosco.utils';
+import { CatalogoEscolar, catalogoInicial, copiarCatalogo, normalizarCatalogo } from '../utils/catalogos.utils';
 
 /**
  * Modos de control de aforo:
@@ -165,6 +166,10 @@ interface AppConfig {
   // ── Calendario escolar (v3.43.0) ──
   /** Periodos y días inhábiles, capturados a mano. Default: UAT 2026. */
   calendarioEscolar: CalendarioEscolar;
+
+  // ── Catálogos editables (v3.57.0) ──
+  /** Carreras, grupos y rango de grados. Default: los que estaban fijos en el código. */
+  catalogoEscolar: CatalogoEscolar;
 }
 
 /** Copia profunda: el calendario por defecto no debe mutarse al editar. */
@@ -216,6 +221,7 @@ const DEFAULT_CONFIG: AppConfig = {
   zoomScannerDefault: 1,
   camaraPreferida: 'auto',
   calendarioEscolar: calendarioInicial(),
+  catalogoEscolar: catalogoInicial(),
 };
 
 const STORAGE_KEY = 'stenbrary-config';
@@ -247,6 +253,10 @@ export class ConfigService {
   private _calendario = signal<CalendarioEscolar>(copiarCalendario(calendarioInicial()));
   readonly calendarioSignal = this._calendario.asReadonly();
 
+  // Signal del catálogo: los formularios y la importación leen las opciones de aquí.
+  private _catalogo = signal<CatalogoEscolar>(catalogoInicial());
+  readonly catalogoSignal = this._catalogo.asReadonly();
+
   setHayAutoClose(valor: boolean): void {
     this._hayAutoClose.set(valor);
   }
@@ -256,6 +266,22 @@ export class ConfigService {
     this._modoQuiosco.set(this.config.modoQuiosco);
     this._ultimoRespaldoTs.set(this.config.ultimoRespaldoTs);
     this._calendario.set(copiarCalendario(this.config.calendarioEscolar));
+    this._catalogo.set(copiarCatalogo(this.config.catalogoEscolar));
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // CATÁLOGOS (v3.57.0)
+  // ═══════════════════════════════════════════════════════
+
+  get catalogoEscolar(): CatalogoEscolar {
+    return this._catalogo();
+  }
+
+  setCatalogoEscolar(cat: CatalogoEscolar): void {
+    const limpio = normalizarCatalogo(cat);
+    this.config.catalogoEscolar = copiarCatalogo(limpio);
+    this._catalogo.set(limpio);
+    this.guardar();
   }
 
   // ═══════════════════════════════════════════════════════
@@ -744,9 +770,11 @@ export class ConfigService {
       ...DEFAULT_CONFIG,
       horarios: { ...DEFAULT_HORARIOS },
       calendarioEscolar: copiarCalendario(calendarioInicial()),
+      catalogoEscolar: catalogoInicial(),
     };
     this.guardar();
     this._calendario.set(copiarCalendario(this.config.calendarioEscolar));
+    this._catalogo.set(copiarCatalogo(this.config.catalogoEscolar));
     this._modoQuiosco.set(this.config.modoQuiosco);
     this._ultimoRespaldoTs.set(this.config.ultimoRespaldoTs);
     this._hayAutoClose.set(false);
@@ -764,10 +792,12 @@ export class ConfigService {
         const calendarioEscolar = copiarCalendario(
           esCalendarioValido(parsed.calendarioEscolar) ? parsed.calendarioEscolar : calendarioInicial(),
         );
-        return { ...DEFAULT_CONFIG, ...parsed, horarios, calendarioEscolar };
+        // Instalaciones previas a v3.57.0: el catálogo que estaba fijo en el código.
+        const catalogoEscolar = normalizarCatalogo(parsed.catalogoEscolar);
+        return { ...DEFAULT_CONFIG, ...parsed, horarios, calendarioEscolar, catalogoEscolar };
       }
     } catch { /* silenciar */ }
-    return { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS }, calendarioEscolar: copiarCalendario(calendarioInicial()) };
+    return { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS }, calendarioEscolar: copiarCalendario(calendarioInicial()), catalogoEscolar: catalogoInicial() };
   }
 
   private guardar(): void {

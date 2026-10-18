@@ -32,6 +32,7 @@ import { QuioscoCategoriaComponent } from './categorias/quiosco.component';
 import { ExperienciaCategoriaComponent } from './categorias/experiencia.component';
 import { DatosCategoriaComponent } from './categorias/datos.component';
 import { CalendarioCategoriaComponent } from './categorias/calendario.component';
+import { CatalogosCategoriaComponent } from './categorias/catalogos.component';
 import { AvanzadoCategoriaComponent } from './categorias/avanzado.component';
 import { BitacoraCategoriaComponent } from './categorias/bitacora.component';
 
@@ -52,6 +53,7 @@ const DEFAULT_CATEGORIA: CategoriaConfigId = 'general';
     ExperienciaCategoriaComponent,
     DatosCategoriaComponent,
     CalendarioCategoriaComponent,
+    CatalogosCategoriaComponent,
     AvanzadoCategoriaComponent,
     BitacoraCategoriaComponent,
   ],
@@ -67,7 +69,7 @@ export class ConfiguracionV2Component implements OnInit, OnDestroy {
   // pueda volver a marcar alguna como "beta" si en el futuro se añade una nueva.
   readonly migradas = new Set<CategoriaConfigId>([
     'general', 'escaner', 'operacion', 'quiosco',
-    'experiencia', 'calendario', 'datos', 'bitacora', 'avanzado',
+    'experiencia', 'calendario', 'catalogos', 'datos', 'bitacora', 'avanzado',
   ]);
 
   /** Callback del sub-componente Datos para refrescar conteos en otras categorías. */

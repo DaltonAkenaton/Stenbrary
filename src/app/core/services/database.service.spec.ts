@@ -103,6 +103,29 @@ describe('DatabaseService', () => {
     });
   });
 
+  describe('catálogos: contar y corregir el nombre de una carrera (v3.57.0)', () => {
+    it('cuenta por carrera y el renombre cambia alumnos y visitas, nada más', async () => {
+      const a = await db.crearAlumno({ ...nuevoAlumno('2200000001'), carrera: 'Lic. en TI' } as any);
+      await db.crearAlumno({ ...nuevoAlumno('2200000002'), carrera: 'Derecho' } as any);
+      await db.crearRegistro({ alumnoId: a.id!, matricula: '2200000001', nombreCompleto: 'X', carrera: 'Lic. en TI', motivoId: 'm1', motivoNombre: 'Estudiar' });
+      await db.crearRegistro({ alumnoId: a.id!, matricula: '2200000001', nombreCompleto: 'X', carrera: 'Lic. en TI', motivoId: 'm1', motivoNombre: 'Estudiar' });
+      await db.crearRegistro({ alumnoId: 'inv', matricula: 'INVITADO', nombreCompleto: 'Y', carrera: 'Visitante', motivoId: 'm1', motivoNombre: 'Estudiar' });
+
+      const antes = await db.contarPorCarrera();
+      expect(antes.get('Lic. en TI')).toEqual({ alumnos: 1, visitas: 2 });
+      expect(antes.has('Visitante')).toBeFalse();              // los invitados no son de ninguna carrera
+
+      const version = db.versionDatos();
+      expect(await db.renombrarCarreraEnDatos('Lic. en TI', 'Lic. en TI e IA')).toEqual({ alumnos: 1, registros: 2 });
+      expect(db.versionDatos()).toBeGreaterThan(version);
+      const despues = await db.contarPorCarrera();
+      expect(despues.has('Lic. en TI')).toBeFalse();
+      expect(despues.get('Lic. en TI e IA')).toEqual({ alumnos: 1, visitas: 2 });
+      expect(despues.get('Derecho')).toEqual({ alumnos: 1, visitas: 0 });
+      expect(await db.renombrarCarreraEnDatos('No existe', 'Otra')).toEqual({ alumnos: 0, registros: 0 });
+    });
+  });
+
   describe('eliminarRegistrosPorRango con fechas de un <input type="date">', () => {
     // Regresión de la auditoría 2026-10 (R2): el componente convertía
     // '2026-03-10' con new Date(), que es medianoche UTC; en México eso

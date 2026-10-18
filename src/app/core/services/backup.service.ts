@@ -13,6 +13,7 @@ import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
 import { BitacoraService, idsBorrados } from './bitacora.service';
+import { CatalogoEscolar, combinarCatalogos, normalizarCatalogo } from '../utils/catalogos.utils';
 import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 
@@ -32,6 +33,11 @@ export interface BackupData {
   motivos: Motivo[];
   /** Bitácora del equipo (v3.52.0). Opcional por retrocompatibilidad. */
   bitacora?: EventoBitacora[];
+  /**
+   * Catálogo de carreras, grupos y grados (v3.57.0). Opcional: los viejos no
+   * lo traen. Viaja para que la puerta y la oficina ofrezcan la misma lista.
+   */
+  catalogoEscolar?: CatalogoEscolar;
 }
 
 export interface ValidacionBackup {
@@ -53,6 +59,8 @@ export interface ResultadoImportacion {
   registrosNuevos: number;
   /** Visitas borradas aquí porque se borraron en el otro equipo (v3.53.0). */
   borradosAplicados: number;
+  /** Carreras y grupos que el respaldo agregó al catálogo de aquí (v3.57.0). */
+  catalogoNuevos: number;
   errores: string[];
 }
 
@@ -93,6 +101,7 @@ export class BackupService {
       registros,
       motivos,
       bitacora,
+      catalogoEscolar: this.configService.catalogoEscolar,
     };
   }
 
@@ -191,6 +200,7 @@ export class BackupService {
       alumnosNuevos: 0,
       registrosNuevos: 0,
       borradosAplicados: 0,
+      catalogoNuevos: 0,
       errores: [],
     };
 
@@ -306,6 +316,20 @@ export class BackupService {
       // Se combina siempre, también en 'replace': la bitácora no se borra
       // nunca, y la del equipo de origen es lo que la oficina quiere ver.
       resultado.eventosBitacora = await this.databaseService.restaurarBitacoraLote(eventosEntrantes);
+
+      // ── Catálogo (v3.57.0) ──
+      // Reemplazar = el del archivo tal cual. Combinar = el de aquí manda y
+      // solo se suman las carreras y grupos que falten.
+      if (datos.catalogoEscolar) {
+        const remoto = normalizarCatalogo(datos.catalogoEscolar);
+        if (modo === 'replace') {
+          this.configService.setCatalogoEscolar(remoto);
+        } else {
+          const { catalogo, nuevos } = combinarCatalogos(this.configService.catalogoEscolar, remoto);
+          if (nuevos > 0) this.configService.setCatalogoEscolar(catalogo);
+          resultado.catalogoNuevos = nuevos;
+        }
+      }
 
       resultado.exitoso = true;
       const origen = datos.meta?.equipo ? ` de "${datos.meta.equipo}"` : '';

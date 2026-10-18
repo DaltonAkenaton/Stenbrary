@@ -1,3 +1,8 @@
+// Valores de FÁBRICA de los catálogos (v3.57.0). Lo que se usa en la app es
+// el catálogo editable de Configuración → Catálogos (ConfigService.catalogoEscolar,
+// core/utils/catalogos.utils.ts); esto solo siembra una instalación nueva.
+// TURNOS sí se usa directo: no es editable.
+
  export const CARRERAS: string[] = [
   'Contador Público',
   'Licenciatura en Administración',

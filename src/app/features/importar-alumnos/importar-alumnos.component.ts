@@ -25,7 +25,9 @@ import * as XLSX from 'xlsx';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
-import { CARRERAS, GRADOS, TURNOS } from '../../core/constants/catalogos.constants';
+import { TURNOS } from '../../core/constants/catalogos.constants';
+import { ConfigService } from '../../core/services/config.service';
+import { agregarCarrera, buscarCarrera } from '../../core/utils/catalogos.utils';
 import { BitacoraService } from '../../core/services/bitacora.service';
 import {
   CAMPOS_IMPORTACION, CampoImportacion, DefCampo, FilaImportacion, MapeoColumnas,
@@ -187,6 +189,25 @@ interface ResultadoImportacion {
             </p>
           }
         </div>
+
+        <!-- Carreras que no están en el catálogo (v3.57.0) -->
+        @if (carrerasNuevas.length > 0) {
+          <div class="mapeo carreras-nuevas">
+            <p class="mapeo-titulo">
+              <mat-icon class="icon-aviso">warning</mat-icon>
+              Carreras que no están en el catálogo. Se importan tal cual; agrégalas si son válidas,
+              o corrige el Excel si están mal escritas.
+            </p>
+            @for (c of carrerasNuevas; track c.nombre) {
+              <div class="carrera-nueva">
+                <span><strong>{{ c.nombre }}</strong> · {{ c.filas }} {{ c.filas === 1 ? 'fila' : 'filas' }}</span>
+                <button mat-stroked-button type="button" (click)="agregarCarreraAlCatalogo(c.nombre)">
+                  <mat-icon>playlist_add</mat-icon> Agregar al catálogo
+                </button>
+              </div>
+            }
+          </div>
+        }
 
         <!-- Resumen de validación -->
         <div class="validacion-resumen">
@@ -681,6 +702,10 @@ interface ResultadoImportacion {
       margin: 12px 0 0; font-size: 0.82rem; color: #F05252;
     }
     .mapeo-aviso mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .carrera-nueva {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding: 6px 0; font-size: 0.85rem;
+    }
 
     /* ── Preview actions ── */
     .preview-actions {
@@ -794,6 +819,7 @@ export class ImportarAlumnosComponent {
   resultado: ResultadoImportacion | null = null;
 
   private readonly bitacora = inject(BitacoraService);
+  private readonly configService = inject(ConfigService);
 
   constructor(
     private databaseService: DatabaseService,
@@ -879,9 +905,31 @@ export class ImportarAlumnosComponent {
   /** Normaliza y valida todas las filas con el mapeo actual (importacion.utils). */
   private reprocesar(): void {
     this.faltantes = camposFaltantes(this.mapeo);
+    // v3.57.0: del catálogo editable. Se emparejan también las desactivadas
+    // (un padrón viejo las trae) para no partir la carrera en dos nombres.
+    const cat = this.configService.catalogoEscolar;
     this.filas = procesarFilas(
-      this.filasCrudas, this.mapeo, this.matriculasExistentes, CARRERAS, TURNOS, Math.max(...GRADOS),
+      this.filasCrudas, this.mapeo, this.matriculasExistentes, cat.carreras.map(c => c.nombre), TURNOS,
+      cat.gradoMax, cat.gradoMin,
     );
+    const fuera = new Map<string, number>();
+    for (const f of this.filas) {
+      if (f.carrera && !buscarCarrera(cat, f.carrera)) fuera.set(f.carrera, (fuera.get(f.carrera) ?? 0) + 1);
+    }
+    this.carrerasNuevas = [...fuera.entries()].map(([nombre, filas]) => ({ nombre, filas }));
+  }
+
+  /** Carreras del archivo que no están en el catálogo (v3.57.0). */
+  carrerasNuevas: { nombre: string; filas: number }[] = [];
+
+  /** "Agregar al catálogo" desde la vista previa: queda disponible para registrar. */
+  agregarCarreraAlCatalogo(nombre: string): void {
+    const r = agregarCarrera(this.configService.catalogoEscolar, nombre);
+    if (!r.ok) { this.toastService.warning(r.error); return; }
+    this.configService.setCatalogoEscolar(r.catalogo);
+    this.bitacora.registrar('catalogo-cambiado', `Carrera agregada desde la importación: ${nombre}`);
+    this.toastService.success(`"${nombre}" agregada al catálogo`);
+    this.reprocesar();
   }
 
   cambiarMapeo(campo: CampoImportacion, columna: string): void {

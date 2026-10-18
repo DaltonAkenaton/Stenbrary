@@ -341,7 +341,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Configuración detallada',
     descripcion:
-      'Nueve categorías con todos los ajustes finos: general, escáner, operación, quiosco, experiencia, calendario, datos, bitácora y avanzado.',
+      'Diez categorías con todos los ajustes finos: general, escáner, operación, quiosco, experiencia, calendario, catálogos, datos, bitácora y avanzado.',
     icono: 'settings',
     area: 'administracion',
     donde: 'Configuración',
@@ -362,6 +362,14 @@ export const FUNCIONES: Funcion[] = [
     icono: 'calendar_month',
     area: 'administracion',
     donde: 'Configuración → Calendario',
+  },
+  {
+    titulo: 'Catálogos de carreras, grupos y grados',
+    descripcion:
+      'Las carreras se agregan, renombran o desactivan sin tocar el sistema. Al renombrar se elige si es una corrección (cambia también lo anterior) o una carrera nueva que convive con la vieja.',
+    icono: 'list_alt',
+    area: 'administracion',
+    donde: 'Configuración → Catálogos',
   },
   {
     titulo: 'Bitácora',
@@ -490,6 +498,15 @@ export const FUNCIONES: Funcion[] = [
     descripcion:
       'Si algo falla, el sistema lo anota solo. Un botón descarga un archivo para enviar a soporte, sin tener que explicar nada.',
     icono: 'health_and_safety',
+    area: 'tecnico',
+    donde: 'Reporte del sistema',
+    ruta: '/diagnostico',
+  },
+  {
+    titulo: 'Verificación de cifras',
+    descripcion:
+      'Compara los totales entre la base de datos, Estadísticas y el Resumen (hoy, 7 días, el mes y todo el historial). Si algo no cuadra sale en rojo, antes de entregar un reporte.',
+    icono: 'rule',
     area: 'tecnico',
     donde: 'Reporte del sistema',
     ruta: '/diagnostico',
