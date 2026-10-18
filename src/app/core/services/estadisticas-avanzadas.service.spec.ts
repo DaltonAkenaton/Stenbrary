@@ -128,6 +128,10 @@ const REGISTROS: Registro[] = [
 const MOTIVOS = [
   { id: 'motivo-Estudiar', nombre: 'Estudiar', icono: 'book', orden: 1, activo: true, color: '#AAAAAA' },
   { id: 'motivo-Pedir libro', nombre: 'Pedir libro', icono: 'menu_book', orden: 2, activo: true },
+  // Desde v3.57.0 una actividad fuera del catálogo se marca "(actividad
+  // eliminada)": el catálogo del mock tiene que traer todas las que usan los registros.
+  { id: 'motivo-Investigación', nombre: 'Investigación', icono: 'search', orden: 3, activo: true },
+  { id: 'motivo-Otro', nombre: 'Otro', icono: 'more_horiz', orden: 4, activo: true },
 ];
 
 /** Mock mínimo: el servicio solo consume estos tres métodos. */

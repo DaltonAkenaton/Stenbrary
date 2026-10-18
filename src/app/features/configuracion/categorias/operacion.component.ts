@@ -8,6 +8,8 @@
 // ║     confirmación auto, cierre al horario)             ║
 // ║   - Control de aforo (capacidad + modo)               ║
 // ║   - Detección de duplicados (umbral)                  ║
+// ║   - v3.57.0: Horarios de operación (de Quiosco) y     ║
+// ║     Alertas de inactividad (de Experiencia)           ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
@@ -16,7 +18,9 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToastService } from '../../../core/services/toast.service';
-import { ConfigService, AforoModo } from '../../../core/services/config.service';
+import { RouterLink } from '@angular/router';
+import { ConfigService, AforoModo, HorarioModo } from '../../../core/services/config.service';
+import { DIAS_SEMANA } from '../../../core/utils/horarios.utils';
 
 @Component({
   selector: 'app-config-operacion',
@@ -24,6 +28,7 @@ import { ConfigService, AforoModo } from '../../../core/services/config.service'
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     MatIconModule,
     MatTooltipModule,
   ],
@@ -32,6 +37,30 @@ import { ConfigService, AforoModo } from '../../../core/services/config.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OperacionCategoriaComponent {
+
+  readonly diasSemana = DIAS_SEMANA.map((nombre, indice) => ({ indice, nombre }));
+
+  readonly opcionesHorarioModo: { valor: HorarioModo; etiqueta: string; descripcion: string }[] = [
+    {
+      valor: 'advertir',
+      etiqueta: 'Solo advertir',
+      descripcion: 'Muestra un aviso pero permite registrar.',
+    },
+    {
+      valor: 'bloquear',
+      etiqueta: 'Bloquear',
+      descripcion: 'Bloquea el registro fuera del horario configurado.',
+    },
+  ];
+
+  readonly opcionesUmbralInactividad = [
+    { valor: 7,   etiqueta: '7 días' },
+    { valor: 15,  etiqueta: '15 días' },
+    { valor: 30,  etiqueta: '30 días' },
+    { valor: 60,  etiqueta: '60 días' },
+    { valor: 90,  etiqueta: '90 días' },
+    { valor: 180, etiqueta: '6 meses' },
+  ];
 
   readonly opcionesAutoSalida = [
     { valor: 0,  etiqueta: 'No cerrar' },
@@ -106,8 +135,8 @@ export class OperacionCategoriaComponent {
     this.configService.setCierreAutoConfirmar(nuevo);
     this.toastService.success(
       nuevo
-        ? 'Las salidas por timeout se confirmarán automáticamente'
-        : 'Las salidas por timeout requerirán revisión manual',
+        ? 'Las salidas que ponga el sistema se confirmarán solas'
+        : 'Las salidas que ponga el sistema habrá que revisarlas en En Biblioteca',
     );
     this.cdr.markForCheck();
   }
@@ -120,6 +149,63 @@ export class OperacionCategoriaComponent {
         ? 'Al llegar la hora de cierre se cerrarán todas las entradas pendientes'
         : 'Cierre por horario desactivado',
     );
+    this.cdr.markForCheck();
+  }
+
+  // ─── Horarios ───────────────────────────────────────
+  toggleHorarioActivo(): void {
+    const nuevo = !this.configService.horarioActivo;
+    this.configService.setHorarioActivo(nuevo);
+    this.toastService.info(
+      nuevo ? 'Horarios de operación activados' : 'Horarios desactivados'
+    );
+    this.cdr.markForCheck();
+  }
+
+  setHorarioModo(modo: HorarioModo): void {
+    this.configService.setHorarioModo(modo);
+    const op = this.opcionesHorarioModo.find(o => o.valor === modo);
+    if (op) this.toastService.info(`Fuera de horario: ${op.etiqueta}`);
+    this.cdr.markForCheck();
+  }
+
+  toggleDiaCerrado(dia: number): void {
+    const actual = this.configService.horarios[dia];
+    const nuevoCerrado = !actual.cerrado;
+    this.configService.setHorarioDia(dia, { ...actual, cerrado: nuevoCerrado });
+    const nombre = DIAS_SEMANA[dia] ?? `Día ${dia}`;
+    this.toastService.success(
+      nuevoCerrado ? `${nombre}: cerrado` : `${nombre}: abierto ${actual.apertura}–${actual.cierre}`,
+    );
+    this.cdr.markForCheck();
+  }
+
+  setHorarioCampo(dia: number, campo: 'apertura' | 'cierre', valor: string): void {
+    const actual = this.configService.horarios[dia];
+    this.configService.setHorarioDia(dia, { ...actual, [campo]: valor });
+    const nombre = DIAS_SEMANA[dia] ?? `Día ${dia}`;
+    const etiqueta = campo === 'apertura' ? 'apertura' : 'cierre';
+    this.avisoDiferido(
+      `horario-${dia}-${campo}`,
+      `${nombre} — ${etiqueta}: ${valor}`,
+    );
+    this.cdr.markForCheck();
+  }
+
+  /** "Cerrar al final del horario" depende del horario: lleva a él. */
+  irAHorario(): void {
+    document.getElementById('horario-operacion')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ─── Inactividad ────────────────────────────────────
+  setUmbralInactividad(dias: number): void {
+    const n = Math.max(0, Math.min(3650, Math.floor(dias) || 0));
+    this.configService.setUmbralInactividadDias(n);
+    if (n === 0) {
+      this.toastService.info('Alertas de inactividad desactivadas');
+    } else {
+      this.toastService.info(`Umbral de inactividad: ${n} días`);
+    }
     this.cdr.markForCheck();
   }
 

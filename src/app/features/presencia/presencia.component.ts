@@ -27,6 +27,8 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
 import { Registro } from '../../core/models';
 import { formatearDuracion } from '../../core/utils/tiempo.utils';
 import { logError } from '../../core/utils/logger';
+import { BitacoraService, describirRegistro } from '../../core/services/bitacora.service';
+import { CorregirHoraDialogComponent, CorregirHoraData } from './corregir-hora-dialog.component';
 
 const REFRESH_MS = 30_000;
 
@@ -716,6 +718,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
     private soundService: SoundService,
     public aforoService: AforoService,
     private dialog: MatDialog,
+    private bitacora: BitacoraService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -796,17 +799,24 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       width: '380px',
       data: {
         titulo: esCierreAuto ? 'Confirmar salida estimada' : 'Registrar salida',
+        // v3.57.0: no siempre es "por superar N h": también cierra el final del horario.
         mensaje: esCierreAuto
-          ? `El sistema estimó la salida de ${registro.nombreCompleto} a las ${FMT_HORA_PRES.format(new Date(registro.horaSalida!))} por superar ${this.configService.horasAutoSalida}h sin registrar salida. ¿Confirmar y cerrar este registro?`
+          ? `${registro.nombreCompleto} no registró su salida y el sistema la puso a las ${FMT_HORA_PRES.format(new Date(registro.horaSalida!))}. ` +
+            'Confírmala tal cual o corrige la hora si sabes cuándo salió.'
           : `${registro.nombreCompleto} — ${registro._elapsedStr} en biblioteca.`,
         variante: esCierreAuto ? 'warning' : 'info',
         textoConfirmar: esCierreAuto ? 'Confirmar y cerrar' : 'Confirmar salida',
         icono: esCierreAuto ? 'warning' : 'logout',
+        ...(esCierreAuto ? { textoAlternativa: 'Corregir hora', iconoAlternativa: 'edit_calendar' } : {}),
       } as ConfirmDialogData,
     });
 
-    const confirmado = await dialogRef.afterClosed().toPromise();
-    if (!confirmado) return;
+    const respuesta = await dialogRef.afterClosed().toPromise();
+    if (respuesta === 'alternativa') {
+      await this.corregirHora(registro);
+      return;
+    }
+    if (respuesta !== true) return;
 
     try {
       this.loadingService.show('Registrando...');
@@ -834,6 +844,35 @@ export class PresenciaComponent implements OnInit, OnDestroy {
       logError('Error al registrar la salida:', err);
       this.loadingService.hide();
       this.toastService.error('Error al registrar la salida');
+    }
+  }
+
+  /** Salida estimada → hora real escrita por el personal (v3.57.0). */
+  private async corregirHora(registro: RegistroPresencia): Promise<void> {
+    const ref = this.dialog.open<CorregirHoraDialogComponent, CorregirHoraData, Date>(CorregirHoraDialogComponent, {
+      width: '400px',
+      maxWidth: '94vw',
+      data: {
+        nombre: registro.nombreCompleto,
+        entrada: new Date(registro.fechaHora),
+        salidaEstimada: new Date(registro.horaSalida!),
+      },
+    });
+    const salida = await ref.afterClosed().toPromise();
+    if (!salida) return;
+    try {
+      // actualizarRegistroManual quita `salidaEstimada` y `cierreAutomatico`.
+      const actualizado = await this.databaseService.actualizarRegistroManual(registro.id, { horaSalida: salida });
+      this.bitacora.registrar('registro-editado',
+        `${describirRegistro(registro)}: salida estimada corregida a las ${FMT_HORA_PRES.format(salida)}`);
+      this.toastService.success(`Salida corregida — ${formatearDuracion(actualizado.duracionMinutos ?? 0, true)} de estancia`);
+      const restantes = this.registros().filter(r => r.id !== registro.id);
+      this.registros.set(restantes);
+      this.configService.setHayAutoClose(restantes.some(r => r.cierreAutomatico === true));
+      this.aforoService.setOcupacion(restantes.filter(r => !r.horaSalida).length);
+    } catch (err) {
+      logError('Error al corregir la salida:', err);
+      this.toastService.error('No se pudo corregir la hora de salida');
     }
   }
 

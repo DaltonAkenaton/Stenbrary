@@ -5,7 +5,7 @@
 // ║                                                      ║
 // ║  Contiene:                                            ║
 // ║   - Modo Quiosco (toggle + PIN + volver solo, v3.49)  ║
-// ║   - Horarios de Operación (editor por día + modo)     ║
+// ║   (Horarios de Operación pasó a Operación, v3.57.0)  ║
 // ║                                                      ║
 // ║  Recordatorio: el PIN solo se pide para DESACTIVAR    ║
 // ║  el modo quiosco (no para acceder a /presencia ni     ║
@@ -23,8 +23,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shared/components/pin/pin-coordinador-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
-import { ConfigService, HorarioModo } from '../../../core/services/config.service';
-import { DIAS_SEMANA } from '../../../core/utils/horarios.utils';
+import { ConfigService } from '../../../core/services/config.service';
 import { BitacoraService } from '../../../core/services/bitacora.service';
 
 @Component({
@@ -42,22 +41,7 @@ import { BitacoraService } from '../../../core/services/bitacora.service';
 })
 export class QuioscoCategoriaComponent {
 
-  readonly diasSemana = DIAS_SEMANA.map((nombre, indice) => ({ indice, nombre }));
-
-  readonly opcionesHorarioModo: { valor: HorarioModo; etiqueta: string; descripcion: string }[] = [
-    {
-      valor: 'advertir',
-      etiqueta: 'Solo advertir',
-      descripcion: 'Muestra un toast de advertencia pero permite registrar.',
-    },
-    {
-      valor: 'bloquear',
-      etiqueta: 'Bloquear',
-      descripcion: 'Bloquea el registro fuera del horario configurado.',
-    },
-  ];
-
-  // Debounce de toast para inputs continuos (PIN, time inputs).
+  // Debounce de toast para inputs continuos.
   private toastDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private readonly bitacora = inject(BitacoraService);
@@ -133,46 +117,6 @@ export class QuioscoCategoriaComponent {
     this.debouncedToast(
       'quiosco-auto',
       min ? `Vuelve solo al quiosco tras ${min} min sin uso` : 'Ya no vuelve solo al quiosco',
-    );
-    this.cdr.markForCheck();
-  }
-
-  // ─── Horarios ───────────────────────────────────────
-  toggleHorarioActivo(): void {
-    const nuevo = !this.configService.horarioActivo;
-    this.configService.setHorarioActivo(nuevo);
-    this.toastService.info(
-      nuevo ? 'Horarios de operación activados' : 'Horarios desactivados'
-    );
-    this.cdr.markForCheck();
-  }
-
-  setHorarioModo(modo: HorarioModo): void {
-    this.configService.setHorarioModo(modo);
-    const op = this.opcionesHorarioModo.find(o => o.valor === modo);
-    if (op) this.toastService.info(`Fuera de horario: ${op.etiqueta}`);
-    this.cdr.markForCheck();
-  }
-
-  toggleDiaCerrado(dia: number): void {
-    const actual = this.configService.horarios[dia];
-    const nuevoCerrado = !actual.cerrado;
-    this.configService.setHorarioDia(dia, { ...actual, cerrado: nuevoCerrado });
-    const nombre = DIAS_SEMANA[dia] ?? `Día ${dia}`;
-    this.toastService.success(
-      nuevoCerrado ? `${nombre}: cerrado` : `${nombre}: abierto ${actual.apertura}–${actual.cierre}`,
-    );
-    this.cdr.markForCheck();
-  }
-
-  setHorarioCampo(dia: number, campo: 'apertura' | 'cierre', valor: string): void {
-    const actual = this.configService.horarios[dia];
-    this.configService.setHorarioDia(dia, { ...actual, [campo]: valor });
-    const nombre = DIAS_SEMANA[dia] ?? `Día ${dia}`;
-    const etiqueta = campo === 'apertura' ? 'apertura' : 'cierre';
-    this.debouncedToast(
-      `horario-${dia}-${campo}`,
-      `${nombre} — ${etiqueta}: ${valor}`,
     );
     this.cdr.markForCheck();
   }

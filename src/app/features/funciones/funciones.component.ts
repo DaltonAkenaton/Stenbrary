@@ -39,13 +39,18 @@ import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
 import {
-  FUNCIONES,
+  funcionesVisibles,
   GRUPOS_FUNCIONES,
   Funcion,
   AreaFuncion,
 } from '../../core/data/funciones.data';
 import { CHANGELOG } from '../../core/data/changelog.data';
 import { FuncionIlustracionComponent } from './ilustracion/ilustracion.component';
+import { environment } from '../../../environments/environment';
+import { isNubeActiva } from '../../core/auth/supabase.client';
+
+/** Como en Configuración: lo de la nube solo si se muestra o este equipo ya la tiene. */
+const CATALOGO = funcionesVisibles(environment.mostrarConexionNube || isNubeActiva());
 
 /**
  * Quita acentos y pasa a minúsculas: buscar "estadisticas" debe encontrar
@@ -89,19 +94,19 @@ export class FuncionesComponent implements OnDestroy {
 
   protected readonly grupos = GRUPOS_FUNCIONES;
   protected readonly version = CHANGELOG[0]?.version ?? '';
-  protected readonly totalFunciones = FUNCIONES.length;
+  protected readonly totalFunciones = CATALOGO.length;
 
   protected readonly busqueda = signal('');
   protected readonly areaActiva = signal<AreaFuncion | 'todas'>('todas');
   protected readonly modoPresentacion = signal(false);
 
-  protected readonly destacadas = FUNCIONES.filter(f => f.destacada);
+  protected readonly destacadas = CATALOGO.filter(f => f.destacada);
 
   protected readonly visibles = computed<Funcion[]>(() => {
     const q = normalizar(this.busqueda().trim());
     const area = this.areaActiva();
 
-    return FUNCIONES.filter(f => {
+    return CATALOGO.filter(f => {
       if (area !== 'todas' && f.area !== area) return false;
       if (!q) return true;
       return (
@@ -565,7 +570,7 @@ export class FuncionesComponent implements OnDestroy {
   }
 
   protected contarEnArea(area: AreaFuncion): number {
-    return FUNCIONES.filter(f => f.area === area).length;
+    return CATALOGO.filter(f => f.area === area).length;
   }
 
   ngOnDestroy(): void {

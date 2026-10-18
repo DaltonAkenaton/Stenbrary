@@ -257,7 +257,7 @@ export class ExportarPdfDialogComponent {
     { key: 'topAlumnos',     label: 'Top alumnos',       descripcion: 'Los 10 alumnos con más visitas en el período.',       icono: 'emoji_events' },
     { key: 'tablaRegistros', label: 'Tabla de registros',descripcion: 'Lista detallada de cada visita (puede ser largo).',   icono: 'list_alt' },
     { key: 'carreras',       label: 'Distribución por carrera', descripcion: 'Conteo y porcentaje de visitas por carrera.',  icono: 'school' },
-    { key: 'motivos',        label: 'Distribución por motivo',  descripcion: 'Conteo y porcentaje por actividad/motivo.',     icono: 'pie_chart' },
+    { key: 'motivos',        label: 'Distribución por actividad',  descripcion: 'Conteo y porcentaje por actividad.',     icono: 'pie_chart' },
     { key: 'turnos',         label: 'Distribución por turno',   descripcion: 'Matutino / Vespertino / Mixto con porcentajes.',icono: 'work_history' },
   ];
 

@@ -136,9 +136,9 @@ export class GeneralCategoriaComponent implements OnInit {
       this.procesando = true;
       const eliminados = await this.backupService.limpiarMotivosDuplicados();
       if (eliminados > 0) {
-        this.toastService.success(`${eliminados} motivos duplicados eliminados`);
+        this.toastService.success(`${eliminados} actividades duplicadas eliminadas`);
       } else {
-        this.toastService.info('No se encontraron motivos duplicados');
+        this.toastService.info('No se encontraron actividades duplicadas');
       }
       await this.cargarInfo();
     } catch {

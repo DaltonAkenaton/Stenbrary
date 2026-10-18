@@ -68,8 +68,8 @@
         <button class="btn-auto-refresh"
           [class.active]="autoRefreshActivo"
           (click)="toggleAutoRefresh()"
-          [attr.aria-label]="autoRefreshActivo ? 'Auto-refresh activo, clic para desactivar' : 'Auto-refresh desactivado, clic para activar'"
-          [matTooltip]="autoRefreshActivo ? 'Auto-refresh activo (30s) — clic para desactivar' : 'Auto-refresh desactivado — clic para activar'">
+          [attr.aria-label]="autoRefreshActivo ? 'Se actualiza solo; clic para desactivar' : 'No se actualiza solo; clic para activar'"
+          [matTooltip]="autoRefreshActivo ? 'Se actualiza solo cada 30 s — clic para desactivar' : 'No se actualiza solo — clic para activar'">
           @if (autoRefreshActivo) {
             <span class="pulse-dot"></span>
           }
@@ -77,7 +77,7 @@
         </button>
         <button class="btn-refresh"
           (click)="refrescarManual()"
-          aria-label="Actualizar datos del dashboard"
+          aria-label="Actualizar datos del resumen"
           matTooltip="Actualizar datos">
           <mat-icon [class.spinning]="actualizando">refresh</mat-icon>
         </button>

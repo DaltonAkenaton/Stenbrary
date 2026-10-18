@@ -186,14 +186,14 @@ export class DatosCategoriaComponent {
     try {
       this.procesando = true;
       this.cdr.markForCheck();
-      this.loadingService.show('Generando backup...');
+      this.loadingService.show('Generando respaldo...');
       const resultado = await this.backupService.descargarBackup();
       this.loadingService.hide();
       this.ultimoBackup = new Date().toLocaleString('es-MX');
-      this.toastService.success(`Backup descargado: ${resultado.nombreArchivo}`);
+      this.toastService.success(`Respaldo descargado: ${resultado.nombreArchivo}`);
     } catch {
       this.loadingService.hide();
-      this.toastService.error('Error al generar el backup');
+      this.toastService.error('Error al generar el respaldo');
     } finally {
       this.procesando = false;
       this.cdr.markForCheck();
@@ -300,14 +300,14 @@ export class DatosCategoriaComponent {
     try {
       this.procesando = true;
       this.cdr.markForCheck();
-      this.loadingService.show('Limpiando motivos duplicados...');
+      this.loadingService.show('Limpiando actividades duplicadas...');
       const eliminados = await this.backupService.limpiarMotivosDuplicados();
       this.loadingService.hide();
       if (eliminados > 0) {
-        this.toastService.success(`${eliminados} motivos duplicados eliminados`);
+        this.toastService.success(`${eliminados} actividades duplicadas eliminadas`);
         this.datosCambiaron.emit();
       } else {
-        this.toastService.info('No se encontraron motivos duplicados');
+        this.toastService.info('No se encontraron actividades duplicadas');
       }
     } catch {
       this.loadingService.hide();

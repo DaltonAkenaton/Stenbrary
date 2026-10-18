@@ -146,3 +146,21 @@ export function desplazarDias(fecha: Date, dias: number): Date {
   d.setDate(d.getDate() + dias);
   return d;
 }
+
+/**
+ * La hora escrita, el mismo día de la entrada. `null` si es inválida, antes
+ * de la entrada o después de ahora.
+ * Corrige una salida estimada en "En Biblioteca" (v3.57.0).
+ */
+export function salidaCorregida(hora: string, entrada: Date, ahora: Date): Date | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hora ?? '');
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return null;
+  const d = new Date(entrada);
+  d.setHours(Number(m[1]), Number(m[2]), 0, 0);
+  if (Number.isNaN(d.getTime())) return null;
+  // Misma hora y minuto de la entrada vale (0 min); antes, no.
+  const entradaMin = new Date(entrada);
+  entradaMin.setSeconds(0, 0);
+  if (d.getTime() < entradaMin.getTime() || d.getTime() > ahora.getTime()) return null;
+  return d;
+}

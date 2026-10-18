@@ -51,8 +51,8 @@ export const CHANGELOG: VersionChangelog[] = [
   {
     version: '3.57.0',
     fecha: '2026-10-17',
-    titulo: 'Importar el padrón sin sorpresas, y el PIN protege lo que no se deshace',
-    resumen: 'Correcciones de la ronda de pruebas: la importación de alumnos, el Enter al confirmar la matrícula, el cierre al final del horario y el PIN del coordinador para los borrados, con código de recuperación.',
+    titulo: 'Ronda de pruebas: padrón, PIN y claridad',
+    resumen: 'Correcciones de la ronda de pruebas: la importación de alumnos, el Enter al confirmar, el cierre al final del horario, el PIN del coordinador para los borrados (con código de recuperación) y pantallas que se explican solas.',
     cambios: [
       {
         tipo: 'feat',
@@ -69,6 +69,38 @@ export const CHANGELOG: VersionChangelog[] = [
       {
         tipo: 'cambio',
         texto: 'El PIN ya no se ve ni se escribe directamente en Configuración: "Cambiar PIN" pide el actual y el nuevo dos veces. Es de 4 a 6 dígitos en todas partes (el asistente aceptaba 8 y se guardaban solo 6).',
+      },
+      {
+        tipo: 'feat',
+        texto: 'En Biblioteca: una salida que puso el sistema ahora se puede corregir con la hora real ("Corregir hora"). Deja de ser estimada y su tiempo de estancia ya cuenta en los promedios.',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'Configuración → Operación reúne el Horario de operación (antes en Quiosco) y las Alertas de inactividad (antes en Experiencia). "Cerrar al final del horario" lleva directo al horario.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Bitácora: filtros por fechas y búsqueda por texto (nombre, matrícula, acción). El nombre del equipo se guarda con un botón Guardar y avisa si quedó sin guardar.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Eliminar una actividad que ya se usó recomienda desactivarla. Si se elimina, sus visitas la conservan y Estadísticas, PDF y perfiles la muestran como "(actividad eliminada)". El conteo de uso ya no dice 0 si la actividad se había renombrado.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Estadísticas y el PDF explican por qué el % de actividades suma más de 100 % (una visita puede tener varias) y cuántas actividades hay en promedio por visita.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'La proyección del día dice "Hoy cerraría con ~X visitas en total · van Y, faltan ~Z". La tarjeta de comparación muestra la cifra corta ("↑ 8.8%") con la explicación debajo, sin cortarse.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'El Excel de registros trae una hoja "Notas" que explica cada columna (por ejemplo, qué es "Salida estimada").',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'Textos en español en toda la interfaz (respaldo, escáner, vista previa, predeterminado…) y "Actividades" en lugar de "Motivos" en el menú y las pantallas. "Qué puede hacer" se actualizó con las funciones nuevas y ya no anuncia la nube mientras no esté disponible.',
       },
       {
         tipo: 'fix',

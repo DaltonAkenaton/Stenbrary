@@ -76,7 +76,7 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
   },
   historico30m: {
     label: 'Histórico 30 meses (extremo)',
-    descripcion: '2500 alumnos · 900 días · stress',
+    descripcion: '2500 alumnos · 900 días · prueba de carga',
     config: { cantidadAlumnos: 2500, ventanaDias: 900, registrosPorAlumnoPorMes: 1.5 },
   },
 };

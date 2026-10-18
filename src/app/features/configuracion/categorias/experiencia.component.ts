@@ -7,13 +7,12 @@
 // ║   - Animación celebratoria (toggle + frecuencia)      ║
 // ║   - Tiempo de pantalla de éxito (presets + custom)    ║
 // ║     y preview de los 8 temas                          ║
-// ║   - Alertas de inactividad (umbral en días)           ║
+// ║   (Alertas de inactividad pasó a Operación, v3.57.0) ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToastService } from '../../../core/services/toast.service';
@@ -26,7 +25,6 @@ import { SuccessAnimationComponent } from '../../../shared/components/success-an
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     MatIconModule,
     MatTooltipModule,
     SuccessAnimationComponent,
@@ -49,15 +47,6 @@ export class ExperienciaCategoriaComponent {
     { valor: 5000,  etiqueta: 'Normal (5 s)' },
     { valor: 8000,  etiqueta: 'Lenta (8 s)' },
     { valor: 12000, etiqueta: 'Quiosco (12 s)' },
-  ];
-
-  readonly opcionesUmbralInactividad = [
-    { valor: 7,   etiqueta: '7 días' },
-    { valor: 15,  etiqueta: '15 días' },
-    { valor: 30,  etiqueta: '30 días' },
-    { valor: 60,  etiqueta: '60 días' },
-    { valor: 90,  etiqueta: '90 días' },
-    { valor: 180, etiqueta: '6 meses' },
   ];
 
   /** IDs deben coincidir con los del SuccessAnimationComponent. */
@@ -147,18 +136,6 @@ export class ExperienciaCategoriaComponent {
   cerrarPreviewAnimacion(): void {
     this.mostrarPreviewAnimacion = false;
     this.temaPreview = undefined;
-    this.cdr.markForCheck();
-  }
-
-  // ─── Inactividad ────────────────────────────────────
-  setUmbralInactividad(dias: number): void {
-    const n = Math.max(0, Math.min(3650, Math.floor(dias) || 0));
-    this.configService.setUmbralInactividadDias(n);
-    if (n === 0) {
-      this.toastService.info('Alertas de inactividad desactivadas');
-    } else {
-      this.toastService.info(`Umbral de inactividad: ${n} días`);
-    }
     this.cdr.markForCheck();
   }
 

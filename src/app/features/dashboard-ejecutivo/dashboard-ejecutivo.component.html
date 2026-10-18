@@ -13,7 +13,7 @@
 
     <div class="header-info">
       <div class="header-title-row">
-        <h1>Dashboard Ejecutivo</h1>
+        <h1>Estadísticas</h1>
         <button mat-icon-button class="header-help-btn"
                 (click)="refrescarDatos()"
                 [disabled]="cargando || recargando"
@@ -148,7 +148,7 @@
   @if (!cargando) {
 
     <!-- TABS NAV -->
-    <nav class="tabs-nav" role="tablist" aria-label="Secciones del dashboard">
+    <nav class="tabs-nav" role="tablist" aria-label="Secciones de estadísticas">
       @for (t of tabs; track t.key) {
         <button class="tab-btn"
                 role="tab"
@@ -237,9 +237,10 @@
                   help_outline
                 </mat-icon>
               </div>
-              <div class="kpi-value">{{ tendenciaUI.texto }}</div>
+              <div class="kpi-value kpi-tendencia-valor">{{ tendenciaUI.corto }}</div>
               @if (tendencia) {
                 <div class="kpi-sub">
+                  @if (tendenciaUI.detalle) { {{ tendenciaUI.detalle }}<br> }
                   {{ tendencia.actual | number }} ahora · {{ tendencia.anterior | number }} antes
                 </div>
               }
@@ -371,7 +372,7 @@
               <div class="kpi-icon"><mat-icon>star</mat-icon></div>
               <div class="kpi-body">
                 <div class="kpi-label">
-                  Motivo más frecuente
+                  Actividad más frecuente
                   <mat-icon class="info-icon"
                             matTooltip="La actividad incluida en más visitas del período. Si una visita marcó varias actividades, cuenta para cada una; por eso el % es 'de las visitas que la incluyeron'."
                             matTooltipPosition="above">
@@ -387,16 +388,20 @@
       </section>
 
       <!-- INSIGHTS RÁPIDOS -->
-      <section class="insights-quick" aria-label="Insights rápidos">
+      <section class="insights-quick" aria-label="Datos rápidos">
         @if (kpiProyeccionHoy) {
           <div class="iq-card iq-prediccion"
                [matTooltip]="'Estimación con el ritmo real de los últimos ' + kpiProyeccionHoy.diasBase + ' días iguales a hoy: a esta hora suele haber llegado el ' + (kpiProyeccionHoy.fraccionTipica * 100 | number:'1.0-0') + '% de las visitas del día. La confianza dice qué tan parejos fueron esos días.'"
                matTooltipPosition="above">
             <mat-icon>insights</mat-icon>
             <div class="iq-body">
-              <div class="iq-label">Hoy al cierre (proyección)</div>
-              <div class="iq-value">~{{ kpiProyeccionHoy.total | number }} visitas</div>
-              <div class="iq-sub">confianza: <strong>{{ kpiProyeccionHoy.confianza }}</strong></div>
+              <!-- v3.57.0: "~27 visitas" a secas se leía como 27 visitas MÁS. -->
+              <div class="iq-label">Hoy cerraría con (proyección)</div>
+              <div class="iq-value">~{{ kpiProyeccionHoy.total | number }} visitas en total</div>
+              <div class="iq-sub">
+                van {{ kpiProyeccionHoy.visitasHoy | number }}, faltan ~{{ (kpiProyeccionHoy.total - kpiProyeccionHoy.visitasHoy) | number }}
+                · confianza <strong>{{ kpiProyeccionHoy.confianza }}</strong>
+              </div>
             </div>
           </div>
         }
@@ -491,9 +496,9 @@
           <div class="chart-header">
             <h2>
               <mat-icon>pie_chart</mat-icon>
-              Motivos de visita
+              Actividades de las visitas
               <mat-icon class="info-icon"
-                        matTooltip="Cuántas visitas incluyeron cada motivo. Una visita con varios motivos cuenta para cada uno, así que los porcentajes pueden sumar más de 100%."
+                        matTooltip="Cuántas visitas incluyeron cada actividad. Una visita con varias actividades cuenta para cada una, así que los porcentajes pueden sumar más de 100 %."
                         matTooltipPosition="above">
                 help_outline
               </mat-icon>
@@ -503,11 +508,18 @@
             @if (kpiTotalRegistros === 0) {
               <div class="chart-empty">
                 <mat-icon>pie_chart_outline</mat-icon>
-                <p>Sin motivos para mostrar</p>
+                <p>Sin actividades para mostrar</p>
               </div>
             }
             <canvas #chartMotivos [hidden]="kpiTotalRegistros === 0"></canvas>
           </div>
+          <!-- v3.57.0: la nota se ve sin pasar el ratón por el ícono. -->
+          @if (kpiTotalRegistros > 0 && notaMotivos) {
+            <p class="nota-motivos">{{ notaMotivos }}</p>
+          }
+          @if (kpiTotalRegistros > 0 && hayMotivosEliminados) {
+            <p class="nota-motivos">«(actividad eliminada)»: ya no está en la lista de actividades, pero esas visitas sí ocurrieron.</p>
+          }
         </mat-card>
       </div>
 
@@ -582,7 +594,7 @@
               <mat-icon>grid_on</mat-icon>
               {{ labelHeatmap }}
               <mat-icon class="info-icon"
-                        matTooltip="Cada celda muestra cuántas visitas hubo en esa combinación día-hora durante el período del heatmap. Más oscuro = más concurrido."
+                        matTooltip="Cada celda muestra cuántas visitas hubo en esa combinación día-hora durante el período del mapa de calor. Más oscuro = más concurrido."
                         matTooltipPosition="above">
                 help_outline
               </mat-icon>
@@ -869,7 +881,7 @@
             <mat-icon>school</mat-icon>
             Visitas por carrera
             <mat-icon class="info-icon"
-                      matTooltip="Total de visitas de alumnos agrupadas por carrera. El tooltip de cada barra muestra alumnos distintos y promedio por alumno. Los invitados no son alumnos y no se incluyen."
+                      matTooltip="Total de visitas de alumnos agrupadas por carrera. Al pasar el ratón por cada barra se ve alumnos distintos y promedio por alumno. Los invitados no son alumnos y no se incluyen."
                       matTooltipPosition="above">
               help_outline
             </mat-icon>
@@ -966,9 +978,9 @@
           <div class="chart-header">
             <h2>
               <mat-icon>tune</mat-icon>
-              Combinaciones de motivos
+              Combinaciones de actividades
               <mat-icon class="info-icon"
-                        matTooltip="Top 5 combinaciones cuando un alumno selecciona varios motivos al mismo tiempo."
+                        matTooltip="Top 5 combinaciones cuando un alumno elige varias actividades a la vez."
                         matTooltipPosition="above">
                 help_outline
               </mat-icon>
@@ -1117,7 +1129,7 @@
         } @else {
           <div class="empty-state">
             <mat-icon>people_outline</mat-icon>
-            <p>No hay datos suficientes para generar el ranking</p>
+            <p>No hay datos suficientes para armar la lista</p>
           </div>
         }
       </mat-card>

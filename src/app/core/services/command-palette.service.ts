@@ -104,7 +104,7 @@ export class CommandPaletteService {
       nav('nav-registros',   'Ir a Registros',         'history',         '/registros',       ['registros', 'historial', 'accesos']),
       nav('nav-estadisticas','Ir a Estadísticas',      'bar_chart',       '/estadisticas',    ['estadisticas', 'graficas', 'analitica', 'ejecutivo']),
       nav('nav-inactivos',   'Ir a Inactivos',         'notifications_paused','/inactivos',   ['inactivos', 'ausentes', 'sin', 'venir']),
-      nav('nav-motivos',     'Ir a Gestión de Motivos','category',        '/gestion-motivos', ['motivos', 'actividades', 'categorias']),
+      nav('nav-motivos',     'Ir a Gestión de Actividades','category',        '/gestion-motivos', ['motivos', 'actividades', 'categorias']),
       nav('nav-importar',    'Ir a Importar Alumnos',  'upload_file',     '/importar-alumnos',['importar', 'excel', 'xlsx', 'bulk']),
       nav('nav-funciones',   'Ir a Qué puede hacer',   'auto_awesome',    '/funciones',       ['funciones', 'que', 'puede', 'hacer', 'ayuda', 'guia']),
       nav('nav-novedades',   'Ir a Novedades',         'campaign',        '/novedades',       ['novedades', 'changelog', 'cambios', 'version']),
@@ -117,9 +117,9 @@ export class CommandPaletteService {
       // Atajos directos a cada categoría de config
       nav('nav-config-general',     'Configuración → General',     'settings',          '/configuracion#general',     ['general', 'info', 'institucion']),
       nav('nav-config-escaner',     'Configuración → Escáner',     'qr_code_scanner',   '/configuracion#escaner',     ['escaner', 'sonido', 'camara', 'beep', 'privacidad', 'aviso', 'datos']),
-      nav('nav-config-operacion',   'Configuración → Operación',   'meeting_room',      '/configuracion#operacion',   ['operacion', 'salida', 'aforo', 'duplicados']),
-      nav('nav-config-quiosco',     'Configuración → Quiosco',     'tablet_android',    '/configuracion#quiosco',     ['quiosco', 'kiosk', 'horario', 'pin']),
-      nav('nav-config-experiencia', 'Configuración → Experiencia', 'celebration',       '/configuracion#experiencia', ['experiencia', 'celebracion', 'animacion', 'inactividad']),
+      nav('nav-config-operacion',   'Configuración → Operación',   'meeting_room',      '/configuracion#operacion',   ['operacion', 'salida', 'aforo', 'duplicados', 'horario', 'inactividad']),
+      nav('nav-config-quiosco',     'Configuración → Quiosco',     'tablet_android',    '/configuracion#quiosco',     ['quiosco', 'kiosk', 'pin', 'codigo']),
+      nav('nav-config-experiencia', 'Configuración → Experiencia', 'celebration',       '/configuracion#experiencia', ['experiencia', 'celebracion', 'animacion']),
       nav('nav-config-bitacora',    'Configuración → Bitácora',           'history',    '/configuracion#bitacora',    ['bitacora', 'historial', 'auditoria', 'seguridad', 'equipo']),
       nav('nav-config-calendario',  'Configuración → Calendario escolar', 'event',      '/configuracion#calendario',  ['calendario', 'periodo', 'semestre', 'festivo', 'inhabil', 'vacaciones']),
       nav('nav-config-datos',       'Configuración → Datos',       'storage',           '/configuracion#datos',       ['datos', 'respaldo', 'backup', 'restore', 'limpieza']),
@@ -294,7 +294,7 @@ export class CommandPaletteService {
       {
         id: 'accion-exportar-backup',
         label: 'Exportar respaldo ahora',
-        descripcion: 'Descarga un .json con alumnos + registros + motivos',
+        descripcion: 'Descarga un .json con alumnos + registros + actividades',
         icono: 'cloud_download',
         grupo: 'Acciones',
         tipo: 'accion',
@@ -312,10 +312,10 @@ export class CommandPaletteService {
         },
       },
 
-      // ─── Limpiar motivos duplicados ───────────────
+      // ─── Limpiar actividades duplicadas ───────────────
       {
         id: 'accion-limpiar-duplicados',
-        label: 'Limpiar motivos duplicados',
+        label: 'Limpiar actividades duplicadas',
         descripcion: 'Elimina actividades con el mismo nombre',
         icono: 'content_copy',
         grupo: 'Acciones',
@@ -327,9 +327,9 @@ export class CommandPaletteService {
             const eliminados = await this.backupService.limpiarMotivosDuplicados();
             this.loadingService.hide();
             if (eliminados > 0) {
-              this.toastService.success(`${eliminados} motivos duplicados eliminados`);
+              this.toastService.success(`${eliminados} actividades duplicadas eliminadas`);
             } else {
-              this.toastService.info('No se encontraron motivos duplicados');
+              this.toastService.info('No se encontraron actividades duplicadas');
             }
           } catch {
             this.loadingService.hide();
@@ -387,7 +387,7 @@ export class CommandPaletteService {
       {
         id: 'accion-restaurar-backup',
         label: 'Restaurar desde un archivo de respaldo',
-        descripcion: 'Abre el flujo de import en Configuración → Datos',
+        descripcion: 'Abre la importación en Configuración → Datos',
         icono: 'cloud_upload',
         grupo: 'Acciones',
         tipo: 'accion',

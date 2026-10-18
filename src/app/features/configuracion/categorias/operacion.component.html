@@ -1,7 +1,82 @@
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  categorias/operacion.component.html                 ║ -->
-<!-- ║  Registro de salida + Aforo + Duplicados             ║ -->
+<!-- ║  Horario + Salida + Aforo + Duplicados + Inactividad ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
+
+<!-- ── HORARIOS DE OPERACIÓN ── (v3.57.0: venía de Quiosco; aquí lo busca
+     "Cerrar al final del horario", que depende de él) -->
+<div class="section-card" id="horario-operacion">
+  <div class="section-header">
+    <mat-icon>schedule</mat-icon>
+    <h2>Horarios de Operación</h2>
+  </div>
+  <p class="section-desc">
+    Define el <strong style="color:#E8F4F8">horario de apertura</strong> de la biblioteca por
+    día. Fuera de horario, el escáner mostrará una advertencia o bloqueará el registro según
+    el modo elegido. Útil para evitar registros accidentales antes de abrir o después de cerrar.
+  </p>
+  <div class="sound-toggle">
+    <span class="sound-status">
+      {{ configService.horarioActivo ? 'Activado' : 'Desactivado' }}
+    </span>
+    <button class="btn-inline"
+      [class.btn-inline-active]="configService.horarioActivo"
+      (click)="toggleHorarioActivo()">
+      <mat-icon>{{ configService.horarioActivo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+      {{ configService.horarioActivo ? 'Desactivar' : 'Activar' }}
+    </button>
+  </div>
+
+  @if (configService.horarioActivo) {
+    <div style="margin-top: 18px;">
+      <div class="section-header" style="margin-bottom: 10px;">
+        <mat-icon>policy</mat-icon>
+        <h2 style="font-size: 0.95rem;">Fuera de horario</h2>
+      </div>
+      <div class="auto-close-options">
+        @for (op of opcionesHorarioModo; track op.valor) {
+          <button class="auto-close-btn"
+            [class.active]="configService.horarioModo === op.valor"
+            (click)="setHorarioModo(op.valor)"
+            [matTooltip]="op.descripcion"
+            matTooltipPosition="above">
+            {{ op.etiqueta }}
+          </button>
+        }
+      </div>
+
+      <div class="section-header" style="margin: 22px 0 10px;">
+        <mat-icon>calendar_view_week</mat-icon>
+        <h2 style="font-size: 0.95rem;">Horario semanal</h2>
+      </div>
+      <div class="horarios-grid">
+        @for (dia of diasSemana; track dia.indice) {
+          <div class="horario-row" [class.cerrado]="configService.horarios[dia.indice].cerrado">
+            <div class="horario-dia">{{ dia.nombre }}</div>
+            <div class="horario-controls">
+              <button class="btn-inline horario-toggle"
+                [class.btn-inline-active]="!configService.horarios[dia.indice].cerrado"
+                (click)="toggleDiaCerrado(dia.indice)">
+                {{ configService.horarios[dia.indice].cerrado ? 'Cerrado' : 'Abierto' }}
+              </button>
+              <input type="time"
+                class="horario-input"
+                [disabled]="configService.horarios[dia.indice].cerrado"
+                [ngModel]="configService.horarios[dia.indice].apertura"
+                (ngModelChange)="setHorarioCampo(dia.indice, 'apertura', $event)">
+              <span class="horario-sep">→</span>
+              <input type="time"
+                class="horario-input"
+                [disabled]="configService.horarios[dia.indice].cerrado"
+                [ngModel]="configService.horarios[dia.indice].cierre"
+                (ngModelChange)="setHorarioCampo(dia.indice, 'cierre', $event)">
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
 
 <!-- ── REGISTRO DE SALIDA ── -->
 <div class="section-card">
@@ -11,7 +86,7 @@
   </div>
   <p class="section-desc">
     Activa el módulo <strong style="color:#E8F4F8">En Biblioteca</strong> para llevar un control
-    de quién está en la biblioteca en este momento. Cuando está activo, el scanner detectará
+    de quién está en la biblioteca en este momento. Cuando está activo, el escáner detectará
     si un alumno ya tiene una entrada abierta y ofrecerá registrar su salida automáticamente.
   </p>
   <div class="sound-toggle">
@@ -86,7 +161,7 @@
       <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 6px;">
         <strong style="font-size: .9rem; color: #E8F4F8;">Confirmar automáticamente</strong>
         <p style="font-size: .82rem; color: rgba(200,230,240,.6); margin: 0;">
-          Cuando el sistema cierre una entrada por timeout, no requiere que la revises manualmente en Biblioteca.
+          Cuando el sistema cierre una entrada por tiempo, no hace falta revisarla a mano en En Biblioteca.
         </p>
         <div class="sound-toggle">
           <span class="sound-status">{{ configService.cierreAutoConfirmar ? 'Activado' : 'Desactivado' }}</span>
@@ -105,7 +180,11 @@
           Al llegar la hora de cierre del horario operativo, cierra TODAS las entradas
           abiertas en lugar de esperar a que pasen las horas configuradas arriba.
           @if (!configService.horarioActivo) {
-            <br><em>Requiere que el "Horario de operación" esté activo.</em>
+            <br><em>Requiere que el Horario de operación esté activo.</em>
+            <button type="button" class="btn-link-horario" (click)="irAHorario()"
+                    style="background:none;border:none;padding:0;margin-left:4px;color:#00C8D7;font:inherit;text-decoration:underline;cursor:pointer;">
+              Ir al Horario de operación ↑
+            </button>
           }
         </p>
         <div class="sound-toggle">
@@ -267,6 +346,70 @@
       Desactivado: cada escaneo se registra sin preguntar.
     } @else {
       Actualmente: {{ configService.umbralDuplicadoMin }} minutos entre registros del mismo alumno.
+    }
+  </p>
+</div>
+
+<!-- ── ALERTAS DE INACTIVIDAD ── (v3.57.0: venía de Experiencia) -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>notifications_paused</mat-icon>
+    <h2>Alertas de inactividad</h2>
+  </div>
+  <p class="section-desc">
+    Define a partir de cuántos días sin venir un alumno se considera
+    <strong style="color:#E8F4F8">inactivo</strong>. La lista aparece en
+    <a routerLink="/inactivos" style="color:#00C8D7;text-decoration:none;">Consulta → Inactivos</a>.
+    Los botones son atajos; el campo admite cualquier número.
+  </p>
+
+  <div class="auto-close-options">
+    @for (op of opcionesUmbralInactividad; track op.valor) {
+      <button class="auto-close-btn"
+        [class.active]="configService.umbralInactividadDias === op.valor"
+        (click)="setUmbralInactividad(op.valor)">
+        {{ op.etiqueta }}
+      </button>
+    }
+  </div>
+
+  <div class="aforo-input-row" style="margin-top: 14px;">
+    <label for="umbralInactividad">Días personalizados</label>
+    <div class="aforo-stepper" style="max-width: 260px;">
+      <button type="button"
+              class="stepper-btn"
+              (click)="setUmbralInactividad(configService.umbralInactividadDias - 1)"
+              [disabled]="configService.umbralInactividadDias <= 0"
+              matTooltip="Disminuir 1 día"
+              matTooltipPosition="above">
+        <mat-icon>remove</mat-icon>
+      </button>
+      <input id="umbralInactividad"
+             type="number"
+             min="0"
+             max="3650"
+             step="1"
+             class="aforo-number-input"
+             [ngModel]="configService.umbralInactividadDias"
+             (ngModelChange)="setUmbralInactividad($event)"
+             placeholder="0">
+      <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">días</span>
+      <button type="button"
+              class="stepper-btn"
+              (click)="setUmbralInactividad(configService.umbralInactividadDias + 1)"
+              matTooltip="Aumentar 1 día"
+              matTooltipPosition="above">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <p class="section-hint">
+    <mat-icon>info</mat-icon>
+    @if (configService.umbralInactividadDias === 0) {
+      Las alertas están <strong>desactivadas</strong>. La vista de Inactivos seguirá disponible con umbral ajustable en vivo.
+    } @else {
+      Alumnos que vinieron alguna vez y llevan <strong>{{ configService.umbralInactividadDias }} días o más</strong> sin volver aparecerán en la lista de Inactivos.
     }
   </p>
 </div>

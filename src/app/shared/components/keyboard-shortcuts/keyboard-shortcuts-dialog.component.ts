@@ -220,8 +220,8 @@ export class KeyboardShortcutsDialogComponent {
     {
       titulo: 'Navegación rápida',
       atajos: [
-        { keys: ['Alt', '1'], descripcion: 'Scanner (registro de entrada)' },
-        { keys: ['Alt', '2'], descripcion: 'Resumen / Dashboard' },
+        { keys: ['Alt', '1'], descripcion: 'Escáner (registro de entrada)' },
+        { keys: ['Alt', '2'], descripcion: 'Resumen' },
         { keys: ['Alt', '3'], descripcion: 'Alumnos' },
         { keys: ['Alt', '4'], descripcion: 'Registros' },
         { keys: ['Alt', '5'], descripcion: 'Estadísticas' },

@@ -15,6 +15,7 @@ import {
   fechaLocalISO,
   parseFechaLocal,
   rangoUltimosDias,
+  salidaCorregida,
 } from './tiempo.utils';
 
 describe('tiempo.utils — fechas de calendario', () => {
@@ -121,5 +122,25 @@ describe('tiempo.utils — fechas de calendario', () => {
       expect(fechaLocalISO(inicio)).toBe('2026-03-04');
       expect(inicio.getHours()).toBe(0);
     });
+  });
+});
+
+describe('tiempo.utils — corregir una salida estimada (v3.57.0)', () => {
+  const entrada = new Date(2026, 9, 14, 9, 40, 25);
+  const ahora = new Date(2026, 9, 14, 13, 0);
+
+  it('la hora escrita queda el mismo día de la entrada', () => {
+    expect(salidaCorregida('11:15', entrada, ahora)).toEqual(new Date(2026, 9, 14, 11, 15));
+  });
+
+  it('el mismo minuto de la entrada vale; antes no', () => {
+    expect(salidaCorregida('09:40', entrada, ahora)).toEqual(new Date(2026, 9, 14, 9, 40));
+    expect(salidaCorregida('09:39', entrada, ahora)).toBeNull();
+  });
+
+  it('no puede ser después de ahora ni basura', () => {
+    expect(salidaCorregida('13:01', entrada, ahora)).toBeNull();
+    expect(salidaCorregida('', entrada, ahora)).toBeNull();
+    expect(salidaCorregida('25:00', entrada, ahora)).toBeNull();
   });
 });

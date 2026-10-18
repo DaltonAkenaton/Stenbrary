@@ -166,7 +166,7 @@ export class DatosPruebaService {
 
     const motivos = await this.db.obtenerMotivosActivos();
     if (motivos.length === 0) {
-      throw new Error('No hay motivos activos. Crea al menos uno antes de generar datos.');
+      throw new Error('No hay actividades activas. Crea al menos uno antes de generar datos.');
     }
 
     // ── FASE 1: Alumnos ──

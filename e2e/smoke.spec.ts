@@ -673,3 +673,104 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     expect(salida).toBe('12:02');                       // la hora de cierre, no la de la revisión
   });
 });
+
+test.describe('Claridad: Configuración, bitácora y salidas estimadas (v3.57.0)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+  });
+
+  test('Horario e Inactividad viven en Operación, y "Cerrar al final del horario" lleva al horario', async ({ page }) => {
+    await page.goto('/configuracion#quiosco');
+    await expect(page.getByRole('heading', { name: 'Modo Quiosco' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Horarios de Operación' })).toHaveCount(0);
+    await page.goto('/configuracion#experiencia');
+    await expect(page.getByRole('heading', { name: 'Alertas de inactividad' })).toHaveCount(0);
+
+    await page.goto('/configuracion#operacion');
+    await expect(page.getByRole('heading', { name: 'Horarios de Operación' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Alertas de inactividad' })).toBeVisible();
+    // El enlace solo aparece con el registro de salida encendido y el horario apagado.
+    await page.evaluate(() => localStorage.setItem('stenbrary-config', JSON.stringify({ registroSalidaActivo: true })));
+    await page.reload();
+    await page.getByRole('button', { name: /Ir al Horario de operación/ }).click();
+    await expect(page.locator('#horario-operacion')).toBeInViewport();
+  });
+
+  test('el nombre del equipo se guarda con el botón; la bitácora filtra por texto y fechas', async ({ page }) => {
+    await page.goto('/configuracion#bitacora');
+    const guardar = page.getByRole('button', { name: /Guardar/ });
+    await expect(guardar).toBeDisabled();
+    await page.locator('#nombreEquipo').fill('Oficina');
+    await expect(page.getByText('Cambios sin guardar')).toBeVisible();
+    await guardar.click();
+    await expect(page.locator('app-toast-container')).toContainText('Guardado: este equipo se llama "Oficina"');
+    await expect(guardar).toBeDisabled();
+
+    // Dos eventos de otras fechas y equipos, escritos directo en la bitácora.
+    await page.evaluate(async () => {
+      const req = indexedDB.open('stenbrary-db');
+      await new Promise<void>((ok) => { req.onsuccess = () => ok(); });
+      const tx = req.result.transaction('bitacora', 'readwrite');
+      tx.objectStore('bitacora').put({ id: 'b1', fechaHora: new Date(2026, 0, 10, 10).toISOString(), accion: 'registro-eliminado', detalle: 'Ana López (2200000001), visita del 09/01/2026', equipo: 'Puerta' });
+      tx.objectStore('bitacora').put({ id: 'b2', fechaHora: new Date(2026, 2, 5, 10).toISOString(), accion: 'alumno-editado', detalle: 'Beto Ruiz (2200000002)', equipo: 'Oficina' });
+      await new Promise<void>((ok) => { tx.oncomplete = () => ok(); });
+    });
+    await page.reload();
+    await expect(page.locator('.bitacora-total')).toContainText('2 eventos');
+    await page.locator('.filtro-texto').fill('lopez');                  // sin acento y en minúsculas
+    await expect(page.locator('.bitacora-total')).toContainText('1 evento');
+    await expect(page.locator('.bitacora-lista')).toContainText('Ana López');
+    await page.getByRole('button', { name: /Quitar filtros/ }).click();
+    await page.locator('.filtro-desde').fill('2026-03-01');
+    await expect(page.locator('.bitacora-total')).toContainText('1 evento');
+    await expect(page.locator('.bitacora-lista')).toContainText('Beto Ruiz');
+  });
+
+  test('En Biblioteca: una salida estimada se puede corregir con la hora real', async ({ page }) => {
+    const AHORA = new Date('2026-10-14T13:00:00-05:00');
+    await page.clock.install({ time: AHORA });
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem('e2e-config-puesta')) {
+        localStorage.setItem('stenbrary-config', JSON.stringify({ registroSalidaActivo: true, horasAutoSalida: 2 }));
+        sessionStorage.setItem('e2e-config-puesta', '1');
+      }
+    });
+    const respaldo = {
+      meta: { version: '3.4', fecha: AHORA.toISOString(), app: 'Stenbrary', totalAlumnos: 1, totalRegistros: 1, totalMotivos: 1 },
+      alumnos: [{ id: 'a1', matricula: '2200000001', nombre: 'Ana', apellidoPaterno: 'P', apellidoMaterno: 'M', carrera: 'Ing. TI', grado: 1, grupo: 'A', turno: 'Matutino', activo: true, fechaRegistro: '2026-10-14T09:00:00-05:00' }],
+      registros: [{ id: 'r1', alumnoId: 'a1', matricula: '2200000001', nombreCompleto: 'Ana P M', carrera: 'Ing. TI', motivoId: 'm1', motivoNombre: 'Estudiar', motivoIds: ['m1'], motivoNombres: ['Estudiar'], fechaHora: '2026-10-14T09:40:00-05:00', horaSalida: '2026-10-14T11:40:00-05:00', duracionMinutos: 120, cierreAutomatico: true, salidaEstimada: true, sincronizado: false }],
+      motivos: [{ id: 'm1', nombre: 'Estudiar', icono: 'school', orden: 1, activo: true }],
+    };
+    await page.goto('/configuracion#datos');
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles({
+      name: 'r.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(respaldo)),
+    });
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await confirmarConPin(page);
+    await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
+
+    await page.goto('/presencia');
+    await page.getByText('Ana P M').first().click();
+    const confirmar = page.locator('app-confirm-dialog');
+    await expect(confirmar).toContainText('el sistema la puso a las 11:40');
+    await confirmar.getByRole('button', { name: /Corregir hora/ }).click();
+    const hora = page.locator('app-corregir-hora-dialog input[type="time"]');
+    await expect(hora).toHaveValue('11:40');
+    await hora.fill('09:30');                                           // antes de la entrada
+    await page.getByRole('button', { name: 'Guardar hora real' }).click();
+    await expect(page.locator('app-corregir-hora-dialog')).toContainText('Debe ser entre las 09:40');
+    await hora.fill('10:25');
+    await page.getByRole('button', { name: 'Guardar hora real' }).click();
+    await expect(page.locator('app-toast-container')).toContainText('Salida corregida');
+
+    const r = await page.evaluate(async () => {
+      const req = indexedDB.open('stenbrary-db');
+      await new Promise<void>((ok) => { req.onsuccess = () => ok(); });
+      const get = req.result.transaction('registros').objectStore('registros').get('r1');
+      return await new Promise<{ duracionMinutos: number; salidaEstimada: boolean; cierreAutomatico: boolean }>((ok) => { get.onsuccess = () => ok(get.result); });
+    });
+    expect(r.duracionMinutos).toBe(45);
+    expect(r.salidaEstimada).toBe(false);
+    expect(r.cierreAutomatico).toBe(false);
+  });
+});

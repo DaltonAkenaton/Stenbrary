@@ -85,6 +85,8 @@ import {
   tasaRetencion,
   umbralRetencionPara,
   variacionDiaria,
+  notaSumaActividades,
+  SUFIJO_ACTIVIDAD_ELIMINADA,
 } from '../../core/utils/estadisticas.utils';
 import { Motivo, Registro } from '../../core/models';
 import { periodoActual, periodoAnterior, PeriodoResuelto, rangoDePeriodo } from '../../core/utils/calendario.utils';
@@ -168,7 +170,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
 
 
   // UI Pre-calculada para la tendencia
-  tendenciaUI = { color: 'neutral', icono: 'trending_flat', texto: 'Sin cambios' };
+  /** `corto` va en la tarjeta con letra grande (v3.57.0: el texto largo ocupaba 4 renglones y se cortaba). */
+  tendenciaUI = { color: 'neutral', icono: 'trending_flat', texto: 'Sin cambios', corto: 'Sin cambios', detalle: '' };
 
   // Datos
   tendencia?: TendenciaComparativa;
@@ -911,9 +914,23 @@ formatHora(h: number): string {
            `Pico en ${this.datosDiarios.etiquetas[idxMax]} con ${max} registros.`;
   }
 
+  /** "Suma más de 100 %" (v3.57.0): misma nota que el PDF. */
+  get notaMotivos(): string | null {
+    const d = this.distribucionMotivos;
+    if (!d) return null;
+    return notaSumaActividades(
+      d.cantidades.map((cantidad, i) => ({ clave: String(i), nombre: d.etiquetas[i], cantidad })),
+      d.totalVisitas,
+    );
+  }
+
+  get hayMotivosEliminados(): boolean {
+    return !!this.distribucionMotivos?.etiquetas.some(e => e.endsWith(SUFIJO_ACTIVIDAD_ELIMINADA));
+  }
+
   ariaDescripcionMotivos(): string {
     if (!this.distribucionMotivos || this.distribucionMotivos.cantidades.length === 0)
-      return 'Gráfica de motivos sin datos';
+      return 'Gráfica de actividades sin datos';
     // % de visitas que incluyeron cada motivo (P2), no del total de marcas.
     const total = this.distribucionMotivos.totalVisitas || 1;
     return this.distribucionMotivos.etiquetas
@@ -1436,7 +1453,8 @@ formatHora(h: number): string {
       this.tendenciaUI = {
         color: this.obtenerColorTendencia(),
         icono: this.obtenerIconoTendencia(),
-        texto: this.obtenerTextoTendencia()
+        texto: this.obtenerTextoTendencia(),
+        ...this.textoTendenciaCorto(),
       };
 
       this.aplicarHeatmap(heatmap);
@@ -2269,7 +2287,7 @@ this.sparkRegistros = counts;
       const sufijo = horaFiltro ? ` (${this.formatHora(horaFiltro.desde)}–${this.formatHoraFin(horaFiltro.hasta)})` : '';
       await reportService.generarReporteAccesos(delRango, {
         tipo: 'personalizado',
-        titulo: `Dashboard ejecutivo — ${this.formatearFechaCorta(this.rangoActivo.inicio)} a ${this.formatearFechaCorta(this.rangoActivo.fin)}${sufijo}`,
+        titulo: `Estadísticas — ${this.formatearFechaCorta(this.rangoActivo.inicio)} a ${this.formatearFechaCorta(this.rangoActivo.fin)}${sufijo}`,
         fechaInicio: this.rangoActivo.inicio,
         fechaFin: this.rangoActivo.fin,
         topAlumnos: topParaReporte,
@@ -2810,6 +2828,16 @@ this.sparkRegistros = counts;
     if (this.tendencia.direccion === 'up') return `↑ ${p}% más que el período anterior`;
     if (this.tendencia.direccion === 'down') return `↓ ${p}% menos que el período anterior`;
     return 'Sin cambios significativos';
+  }
+
+  /** Cifra para la tarjeta ("↑ 8.8%") y la palabra que la explica debajo. */
+  private textoTendenciaCorto(): { corto: string; detalle: string } {
+    if (!this.tendencia) return { corto: 'Sin cambios', detalle: '' };
+    if (this.tendencia.sinReferencia) return { corto: 'Sin datos previos', detalle: 'no hay período anterior para comparar' };
+    const p = Math.abs(this.tendencia.porcentajeCambio).toFixed(1);
+    if (this.tendencia.direccion === 'up') return { corto: `↑ ${p}%`, detalle: 'más que el período anterior' };
+    if (this.tendencia.direccion === 'down') return { corto: `↓ ${p}%`, detalle: 'menos que el período anterior' };
+    return { corto: 'Sin cambios', detalle: 'casi igual que el período anterior' };
   }
 
   iconoComparativa(direccion: 'up' | 'down' | 'igual'): string {

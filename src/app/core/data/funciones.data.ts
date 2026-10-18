@@ -68,6 +68,12 @@ export interface Funcion {
    * comunica la IDEA y no envejece.
    */
   demo?: DemoVisual;
+  /**
+   * Solo existe con la conexión a la nube (v3.57.0). Mientras la UAT use el
+   * sistema en local se oculta, igual que en Configuración: anunciar algo que
+   * no se puede abrir confunde.
+   */
+  requiereNube?: boolean;
 }
 
 export interface GrupoFunciones {
@@ -126,8 +132,17 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Entrada manual',
     descripcion:
-      'Si un alumno olvidó su credencial, puede escribir su matrícula. El registro queda igual de completo.',
+      'Si un alumno olvidó su credencial, escribe su matrícula y presiona Enter dos veces (una para buscarla, otra para confirmar). El registro queda igual de completo.',
     icono: 'keyboard',
+    area: 'operacion',
+    donde: 'Pantalla principal',
+    ruta: '/scanner',
+  },
+  {
+    titulo: 'La puerta no se traba',
+    descripcion:
+      'Si alguien deja la pantalla a medias, vuelve sola al escáner. Si el siguiente alumno pasa su credencial mientras otro elige, el sistema lo atiende sin perder ninguna de las dos.',
+    icono: 'door_front',
     area: 'operacion',
     donde: 'Pantalla principal',
     ruta: '/scanner',
@@ -142,7 +157,7 @@ export const FUNCIONES: Funcion[] = [
     ruta: '/scanner',
   },
   {
-    titulo: 'Motivo de la visita',
+    titulo: 'Actividad de la visita',
     descripcion:
       'Cada acceso guarda para qué vino el alumno: estudiar, pedir un libro, trabajo escolar… Se pueden elegir varios.',
     icono: 'category',
@@ -190,7 +205,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Cierre automático de entradas',
     descripcion:
-      'Quien se va sin marcar salida no queda dentro para siempre: el sistema cierra su visita al pasar las horas que definas, o al cerrar la biblioteca.',
+      'Quien se va sin marcar salida no queda dentro para siempre: el sistema cierra su visita al pasar las horas que definas, o a la hora de cierre. Esas salidas quedan marcadas como estimadas y en En Biblioteca se pueden confirmar o corregir.',
     icono: 'auto_delete',
     area: 'operacion',
     donde: 'Configuración → Operación',
@@ -198,7 +213,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Modo quiosco',
     descripcion:
-      'La tablet queda sola en la entrada mostrando solo la pantalla de escaneo. Para salir hace falta un PIN.',
+      'La tablet queda sola en la entrada mostrando solo la pantalla de escaneo. Para salir hace falta el PIN, que se bloquea tras 5 intentos fallidos. Con el PIN se descarga el respaldo del día sin salir, y si alguien sale y lo olvida, vuelve solo tras unos minutos sin uso.',
     icono: 'tablet_android',
     area: 'operacion',
     donde: 'Configuración → Quiosco',
@@ -219,9 +234,9 @@ export const FUNCIONES: Funcion[] = [
     demo: 'resumen',
   },
   {
-    titulo: 'Estadísticas avanzadas',
+    titulo: 'Estadísticas',
     descripcion:
-      'Tendencias por período, mapa de calor de horas y días, top de alumnos, distribución por carrera y por motivo.',
+      'Tendencias por período (semana, mes o periodo escolar), mapa de calor de horas y días, top de alumnos, distribución por carrera y por actividad, y una proyección de cuántas visitas habrá hoy al cierre.',
     icono: 'insights',
     area: 'consulta',
     donde: 'Estadísticas',
@@ -261,7 +276,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Historial por alumno',
     descripcion:
-      'Todas las visitas de una persona, sus motivos habituales, sus horarios y sus insignias.',
+      'Todas las visitas de una persona, sus actividades habituales, sus horarios y sus insignias. Desde ahí se descarga su constancia de asistencia.',
     icono: 'person_search',
     area: 'consulta',
     donde: 'Alumnos → seleccionar uno',
@@ -272,7 +287,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Historial completo con filtros',
     descripcion:
-      'Todos los accesos registrados, filtrables por fecha, carrera, turno o motivo.',
+      'Todos los accesos registrados, filtrables por fecha, carrera, turno o actividad.',
     icono: 'history',
     area: 'consulta',
     donde: 'Registros',
@@ -291,12 +306,12 @@ export const FUNCIONES: Funcion[] = [
 
   // ─────────────── ADMINISTRACIÓN ───────────────
   {
-    titulo: 'Motivos personalizables',
+    titulo: 'Actividades personalizables',
     descripcion:
-      'Los motivos de visita se crean, renombran, reordenan y desactivan según lo que tenga sentido en tu biblioteca.',
+      'Las actividades se crean, renombran, reordenan y desactivan según lo que tenga sentido en tu biblioteca. Si borras una, sus visitas la conservan y los reportes la marcan como eliminada.',
     icono: 'category',
     area: 'administracion',
-    donde: 'Gestión de Motivos',
+    donde: 'Gestión de Actividades',
     ruta: '/gestion-motivos',
   },
   {
@@ -309,6 +324,7 @@ export const FUNCIONES: Funcion[] = [
     ruta: '/usuarios',
     destacada: true,
     demo: 'roles',
+    requiereNube: true,
   },
   {
     titulo: 'Asistente de configuración',
@@ -325,16 +341,48 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Configuración detallada',
     descripcion:
-      'Siete categorías con todos los ajustes finos: escáner, operación, quiosco, experiencia, datos y avanzado.',
+      'Nueve categorías con todos los ajustes finos: general, escáner, operación, quiosco, experiencia, calendario, datos, bitácora y avanzado.',
     icono: 'settings',
     area: 'administracion',
     donde: 'Configuración',
     ruta: '/configuracion',
   },
   {
+    titulo: 'PIN del coordinador',
+    descripcion:
+      'El mismo PIN del modo quiosco autoriza lo que no se deshace: eliminar registros, reemplazar con un respaldo, restablecer. Si se olvida, un código de recuperación anotado en papel permite poner uno nuevo.',
+    icono: 'password',
+    area: 'administracion',
+    donde: 'Configuración → Quiosco',
+  },
+  {
+    titulo: 'Calendario escolar',
+    descripcion:
+      'Los periodos del año y los días inhábiles. Estadísticas filtra por "periodo actual" y "periodo anterior", y el Resumen no compara un festivo contra un día normal.',
+    icono: 'calendar_month',
+    area: 'administracion',
+    donde: 'Configuración → Calendario',
+  },
+  {
+    titulo: 'Bitácora',
+    descripcion:
+      'Qué se hizo, cuándo y en qué equipo: salidas del quiosco, PIN incorrectos, visitas y alumnos editados o borrados, importaciones y respaldos. Se filtra por tipo, fechas, equipo y texto, y no se puede borrar.',
+    icono: 'history_edu',
+    area: 'administracion',
+    donde: 'Configuración → Bitácora',
+  },
+  {
+    titulo: 'Aviso de privacidad',
+    descripcion:
+      'Un texto breve junto al lector que explica a los alumnos qué datos se guardan y para qué.',
+    icono: 'privacy_tip',
+    area: 'administracion',
+    donde: 'Configuración → Escáner',
+  },
+  {
     titulo: 'Restablecer el sistema',
     descripcion:
-      'Deja todo como recién instalado. Pide un respaldo obligatorio y escribir una frase de confirmación.',
+      'Deja todo como recién instalado. Pide el PIN, un respaldo obligatorio y escribir una frase de confirmación.',
     icono: 'restart_alt',
     area: 'administracion',
     donde: 'Configuración → Avanzado',
@@ -353,7 +401,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Importar alumnos desde Excel',
     descripcion:
-      'Carga masiva desde un archivo. Detecta los nombres de columna aunque no sean exactos y avisa de los errores antes de importar.',
+      'Carga masiva desde un archivo. Muestra qué columna usará para cada dato y deja corregirla, limpia los nombres, detecta matrículas repetidas y avisa de los errores antes de importar.',
     icono: 'upload_file',
     area: 'datos',
     donde: 'Importar Alumnos',
@@ -374,7 +422,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Respaldo y restauración',
     descripcion:
-      'Un archivo con todo: alumnos, visitas y motivos. Restaurarlo devuelve la información exactamente como estaba.',
+      'Un archivo con todo: alumnos, visitas, actividades y bitácora. Restaurarlo devuelve la información exactamente como estaba; combinarlo junta los datos de la puerta y la oficina sin duplicar, y lo borrado en un equipo también se borra en el otro.',
     icono: 'backup',
     area: 'datos',
     donde: 'Configuración → Datos',
@@ -392,7 +440,7 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Eliminación por rango de fechas',
     descripcion:
-      'Borrar registros antiguos con vista previa del conteo antes de confirmar.',
+      'Borrar registros antiguos con vista previa del conteo. Pide el PIN del coordinador y ofrece descargar un respaldo antes.',
     icono: 'delete_sweep',
     area: 'datos',
     donde: 'Configuración → Datos',
@@ -407,6 +455,7 @@ export const FUNCIONES: Funcion[] = [
     ruta: '/sincronizacion',
     destacada: true,
     demo: 'nube',
+    requiereNube: true,
   },
   {
     titulo: 'Datos de prueba',
@@ -463,3 +512,8 @@ export const FUNCIONES: Funcion[] = [
     donde: 'Siempre activo',
   },
 ];
+
+/** El catálogo que se muestra: sin lo que necesita la nube si este equipo no la tiene (v3.57.0). */
+export function funcionesVisibles(nubeVisible: boolean): Funcion[] {
+  return FUNCIONES.filter(f => nubeVisible || !f.requiereNube);
+}

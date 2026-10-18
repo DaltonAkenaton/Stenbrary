@@ -22,7 +22,7 @@
       </div>
       <div class="info-stat">
         <div class="stat-value amber">{{ conteoMotivos }}</div>
-        <div class="stat-label">Motivos / actividades</div>
+        <div class="stat-label">Actividades</div>
       </div>
       <div class="info-stat">
         <div class="stat-value purple">{{ almacenamientoEstimado }}</div>
@@ -35,7 +35,7 @@
     <div class="alert-duplicates">
       <mat-icon>warning</mat-icon>
       <span>
-        Se detectaron <strong>{{ motivosDuplicados }}</strong> motivos duplicados.
+        Se detectaron <strong>{{ motivosDuplicados }}</strong> actividades duplicadas.
       </span>
       <button class="btn-inline" (click)="limpiarDuplicados()" [disabled]="procesando">
         Limpiar ahora

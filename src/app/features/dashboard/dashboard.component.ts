@@ -479,7 +479,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           valor: motivos.length,
           etiqueta: 'Tipos de actividad',
           subtexto: 'opciones de registro',
-          tooltip: 'Actividades disponibles para que los alumnos elijan al ingresar. Gestiónalas en "Gestión de Motivos".',
+          tooltip: 'Actividades disponibles para que los alumnos elijan al ingresar. Gestiónalas en "Gestión de Actividades".',
           color: '#F5A623',
           ruta: '/gestion-motivos',
         },

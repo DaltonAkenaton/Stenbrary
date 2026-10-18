@@ -641,7 +641,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
           if (!this.scannerActivo) return;
           this.cargando = false;
           this.adaptarAResolucion(video);
-          this.toastService.info('Scanner activo — apunta al código de barras');
+          this.toastService.info('Escáner activo — apunta al código de barras');
           this.detectarLinterna();
           this.iniciarLoop();
         };
@@ -653,7 +653,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.cargando = false;
       this.escaneando = false;
       this.scannerActivo = false;
-      this.toastService.error(this.error || 'Error al iniciar el scanner');
+      this.toastService.error(this.error || 'Error al iniciar el escáner');
     }
   }
 
@@ -2010,7 +2010,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         return 'No se encontró una cámara en este dispositivo.';
       case 'NotReadableError':
       case 'TrackStartError':
-        return 'La cámara está en uso por otra app. Ciérrala e intenta de nuevo.';
+        return 'La cámara está en uso por otro programa. Ciérralo e intenta de nuevo.';
       case 'OverconstrainedError':
         return 'La cámara no soporta la configuración solicitada.';
       case 'SecurityError':

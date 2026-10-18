@@ -45,7 +45,7 @@
       <mat-icon>tune</mat-icon>
       <div>
         <h3>Umbral de inactividad</h3>
-        <p>Días sin venir para considerar al alumno "inactivo". Los presets son atajos; el campo admite cualquier valor.</p>
+        <p>Días sin venir para considerar al alumno "inactivo". Los botones son atajos; el campo admite cualquier valor.</p>
       </div>
     </div>
 
@@ -83,9 +83,9 @@
       @if (configService.umbralInactividadDias !== umbralDias()) {
         <button type="button" class="btn-ghost"
                 (click)="guardarComoDefault()"
-                matTooltip="Guardar este umbral como default del sistema">
+                matTooltip="Guardar este umbral como el predeterminado del sistema">
           <mat-icon>save</mat-icon>
-          Guardar default
+          Guardar como predeterminado
         </button>
       }
     </div>

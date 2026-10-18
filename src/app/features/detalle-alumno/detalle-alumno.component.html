@@ -15,7 +15,7 @@
       <h2>{{ error }}</h2>
       <button mat-raised-button color="primary" (click)="volver()">
         <mat-icon>arrow_back</mat-icon>
-        Volver al Dashboard
+        Volver al Resumen
       </button>
     </div>
   }
@@ -168,13 +168,13 @@
           </mat-card>
 
           <mat-card class="stat-card"
-                    title="Actividad o motivo que el alumno declaró más veces al registrar sus visitas.">
+                    title="Actividad que el alumno declaró más veces al registrar sus visitas.">
             <div class="stat-icon motivo">
               <mat-icon>star</mat-icon>
             </div>
             <div class="stat-content">
               <h3>{{ estadisticas.motivoFrecuente }}</h3>
-              <p>Motivo más frecuente</p>
+              <p>Actividad más frecuente</p>
               <span class="stat-hint">sobre sus {{ estadisticas.totalVisitas }} visitas</span>
             </div>
           </mat-card>
@@ -235,7 +235,7 @@
         <mat-card class="motivos-card">
           <h3>
             <mat-icon>pie_chart</mat-icon>
-            Distribución por Motivos
+            Distribución por actividades
           </h3>
           <div class="motivos-lista">
             @for (item of estadisticas.visitasPorMotivo; track item.motivo) {

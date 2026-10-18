@@ -78,7 +78,7 @@ y grados describen alumnos.
 
 ### Alumnos inactivos
 Un alumno es inactivo si **vino al menos una vez** y lleva **N días o más** sin
-volver (días de calendario, N se configura en Configuración → Experiencia). Es
+volver (días de calendario, N se configura en Configuración → Operación). Es
 la misma cifra en Estadísticas y en la página Inactivos. Los alumnos que
 **nunca** han venido —normalmente importados del padrón desde Excel— se cuentan
 aparte y en la página Inactivos se pueden mostrar u ocultar.
@@ -90,7 +90,7 @@ El día de la semana con más visitas **en promedio** (visitas ÷ días de ese t
 con actividad), no en suma. En 30 días puede haber 5 martes y 4 lunes; sumando,
 el martes ganaba solo por aparecer más veces.
 
-### Proyección "Hoy al cierre"
+### Proyección "Hoy cerraría con"
 Se calcula con los **últimos días iguales a hoy** (hasta 8 del mismo día de la
 semana, de las últimas 10 semanas): qué parte de las visitas del día suele
 haber llegado a esta hora, y se extrapola lo que va de hoy. La confianza dice
@@ -314,7 +314,7 @@ importados y "borrar todo". No dice **quién** (no hay cuentas en modo local).
 
 ## Frases que solo salen con datos suficientes (v3.55.2)
 
-- **"Hoy al cierre (proyección)":** necesita al menos 4 días del mismo tipo (p. ej. 4 viernes) en las últimas 10 semanas y que, sumándolos, ya hubieran llegado **10 visitas o más a esta hora**. Si no, la tarjeta no aparece. Temprano por la mañana, o con poco historial, es normal que no salga.
+- **"Hoy cerraría con (proyección)":** necesita al menos 4 días del mismo tipo (p. ej. 4 viernes) en las últimas 10 semanas y que, sumándolos, ya hubieran llegado **10 visitas o más a esta hora**. Si no, la tarjeta no aparece. Temprano por la mañana, o con poco historial, es normal que no salga.
 - **"Día dentro de lo normal"** (Resumen): solo cuando se comparó con el mismo día de la semana pasada a la misma hora (10 visitas o más de referencia) y la diferencia es menor de ±30 %. Si no hay con qué comparar, el mensaje solo dice cuántos accesos van.
 - **Empates:** si varias horas tienen el mismo máximo, la hora pico dice "empata con N franjas más". El valle dice cuántas franjas tienen el mínimo y no cuenta las horas sin ninguna visita.
 - **Top de alumnos:** a igual número de visitas, primero quien vino más recientemente.
@@ -342,3 +342,31 @@ importados y "borrar todo". No dice **quién** (no hay cuentas en modo local).
 - A quien no registró salida, el sistema le pone como salida **la hora de cierre de ese día** (según el horario de operación). Si ese día no abría o la persona entró después del cierre, el fin del día.
 - Funciona aunque la computadora estuviera apagada a la hora de cierre: al encenderla, se cierran las entradas pendientes de los últimos 7 días. Las de días anteriores quedan confirmadas; las de hoy aparecen en "En Biblioteca" para revisar (salvo con "Confirmar automáticamente").
 - Requiere "Registro de salida", "Horario de operación" y la opción activados. Es una salida estimada: no cuenta en promedios de estancia ni en constancias.
+
+## Corregir una salida estimada (v3.57.0)
+
+- En "En Biblioteca", al tocar a alguien con salida estimada: **Confirmar y cerrar** la deja tal cual (sigue siendo estimada) o **Corregir hora** permite escribir la hora real.
+- La hora debe estar entre la entrada y ahora. Corregida, **deja de ser estimada**: su tiempo de estancia cuenta en promedios y constancias. Queda en la Bitácora.
+
+## Proyección y comparación, en palabras (v3.57.0)
+
+- "Hoy cerraría con ~27 visitas en total · van 12, faltan ~15": 27 es el **total** esperado del día, no visitas adicionales.
+- La tarjeta de comparación muestra la cifra ("↑ 8.8%") y debajo qué significa ("más que el período anterior") con los dos totales.
+
+## Actividades: más de 100 % y actividades eliminadas (v3.57.0)
+
+- Bajo la gráfica de actividades y bajo la tabla del PDF aparece la nota "por eso los porcentajes suman más de 100 %" con el promedio de actividades por visita, solo cuando alguna visita tuvo más de una.
+- Una actividad borrada del catálogo **sigue contando** (esas visitas pasaron) y aparece como "nombre (actividad eliminada)". Para que deje de salir como opción sin perder el nombre limpio, mejor **Desactivar**: el diálogo de eliminar lo ofrece cuando la actividad ya se usó.
+- El número de visitas que muestra ese diálogo cuenta por la actividad misma, aunque se haya renombrado.
+
+## Excel de registros: hoja "Notas" (v3.57.0)
+
+El Excel trae una segunda hoja que explica cada columna: Actividades (todas las de la visita), Salida estimada ("Sí" = la puso el sistema), Duración (vacía si la salida es estimada) e INVITADO.
+
+## Dónde quedó cada ajuste (v3.57.0)
+
+- **Configuración → Operación:** horario de operación, registro de salida y cierres, aforo, duplicados y alertas de inactividad.
+- **Configuración → Quiosco:** modo quiosco, volver solo, PIN y código de recuperación.
+- **Configuración → Bitácora:** nombre del equipo (con botón Guardar) y la bitácora, con filtros por tipo, equipo, fechas y texto (sin importar acentos ni mayúsculas).
+- **Configuración → Avanzado:** accesos directos, herramientas de prueba (con PIN) y restablecer.
+- En la interfaz se dice **"actividad"** (antes a veces "motivo"): es lo mismo.

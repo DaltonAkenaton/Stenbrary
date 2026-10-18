@@ -90,7 +90,7 @@ export class GestionMotivosComponent implements OnInit {
       this.cargando = false;
     } catch (error) {
       console.error('❌ Error al cargar motivos:', error);
-      this.toastService.error('Error al cargar los motivos');
+      this.toastService.error('Error al cargar las actividades');
       this.cargando = false;
     }
   }
@@ -124,7 +124,7 @@ export class GestionMotivosComponent implements OnInit {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '380px',
       data: {
-        titulo: `¿${accion === 'activar' ? 'Activar' : 'Desactivar'} motivo?`,
+        titulo: `¿${accion === 'activar' ? 'Activar' : 'Desactivar'} actividad?`,
         mensaje: motivo.activo
           ? `"${motivo.nombre}" dejará de aparecer como opción de actividad para los alumnos.`
           : `"${motivo.nombre}" volverá a estar disponible como opción de actividad.`,
@@ -136,68 +136,86 @@ export class GestionMotivosComponent implements OnInit {
 
     const confirmado = await dialogRef.afterClosed().toPromise();
     if (!confirmado) return;
+    await this.aplicarEstado(motivo, !motivo.activo);
+  }
 
+  /** Activa o desactiva sin preguntar (lo usan cambiarEstado y la alternativa de eliminar). */
+  private async aplicarEstado(motivo: Motivo, activo: boolean): Promise<void> {
     try {
-      this.loadingService.show(`${accion === 'activar' ? 'Activando' : 'Desactivando'} motivo...`);
+      this.loadingService.show(activo ? 'Activando actividad...' : 'Desactivando actividad...');
 
       await this.databaseService.actualizarMotivo(motivo.id!, {
         ...motivo,
-        activo: !motivo.activo,
+        activo,
       });
 
       this.loadingService.hide();
-      this.toastService.success(`Motivo ${accion === 'activar' ? 'activado' : 'desactivado'} exitosamente`);
+      this.toastService.success(activo ? `"${motivo.nombre}" vuelve a aparecer como opción` : `"${motivo.nombre}" desactivada: ya no aparece como opción`);
       await this.cargarMotivos();
     } catch (error) {
       console.error('❌ Error al cambiar estado:', error);
       this.loadingService.hide();
-      this.toastService.error('Error al cambiar el estado del motivo');
+      this.toastService.error('Error al cambiar el estado de la actividad');
     }
   }
 
   // ── Eliminar motivo ─────────────────────────────────────
   async eliminarMotivo(motivo: Motivo): Promise<void> {
-    // Consultar cuántos registros usan este motivo
+    // v3.57.0: se cuenta por id (y por nombre solo en registros viejos sin
+    // id). Por nombre, una actividad renombrada decía "0 registros" aunque
+    // tuviera cientos de visitas guardadas con el nombre anterior.
     const todosRegistros = await this.databaseService.obtenerTodosLosRegistros();
-    const registrosConMotivo = todosRegistros.filter(r =>
-      r.motivoNombre === motivo.nombre || r.motivoNombres?.includes(motivo.nombre)
-    ).length;
+    const registrosConMotivo = todosRegistros.filter(r => {
+      const ids = r.motivoIds?.length ? r.motivoIds : [r.motivoId];
+      if (motivo.id && ids.includes(motivo.id)) return true;
+      const sinId = !r.motivoId && !r.motivoIds?.length;
+      return sinId && (r.motivoNombre === motivo.nombre || !!r.motivoNombres?.includes(motivo.nombre));
+    }).length;
 
-    const mensajeUso = registrosConMotivo > 0
-      ? `Esta actividad se ha usado en ${registrosConMotivo} registro${registrosConMotivo === 1 ? '' : 's'}. Los registros existentes mantendrán el nombre.`
-      : 'Esta actividad no tiene registros asociados.';
+    const usada = registrosConMotivo > 0;
+    const mensajeUso = usada
+      ? `Se ha usado en ${registrosConMotivo} visita${registrosConMotivo === 1 ? '' : 's'}. Esas visitas la conservan y en Estadísticas y reportes aparecerá como "${motivo.nombre} (actividad eliminada)".` +
+        (motivo.activo ? ' Si solo quieres que deje de aparecer como opción, mejor desactívala.' : '')
+      : 'Esta actividad no tiene visitas asociadas.';
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '380px',
+      width: '420px',
       data: {
         titulo: `¿Eliminar "${motivo.nombre}"?`,
-        mensaje: `${mensajeUso} Esta acción no se puede deshacer.`,
+        mensaje: `${mensajeUso} Eliminar no se puede deshacer.`,
         variante: 'danger',
         textoConfirmar: 'Eliminar',
+        ...(usada && motivo.activo
+          ? { textoAlternativa: 'Desactivar', iconoAlternativa: 'visibility_off' }
+          : {}),
       } as ConfirmDialogData,
     });
 
-    const confirmado = await dialogRef.afterClosed().toPromise();
-    if (!confirmado) return;
+    const respuesta = await dialogRef.afterClosed().toPromise();
+    if (respuesta === 'alternativa') {
+      await this.aplicarEstado(motivo, false);
+      return;
+    }
+    if (respuesta !== true) return;
 
     try {
-      this.loadingService.show('Eliminando motivo...');
+      this.loadingService.show('Eliminando actividad...');
       await this.databaseService.eliminarMotivo(motivo.id!);
       this.bitacora.registrar('motivo-eliminado', motivo.nombre);
       this.loadingService.hide();
-      this.toastService.success('Motivo eliminado exitosamente');
+      this.toastService.success('Actividad eliminada');
       await this.cargarMotivos();
     } catch (error) {
       console.error('❌ Error al eliminar motivo:', error);
       this.loadingService.hide();
-      this.toastService.error('Error al eliminar el motivo');
+      this.toastService.error('Error al eliminar la actividad');
     }
   }
 
   // ── Reordenar ───────────────────────────────────────────
   async subirPrioridad(motivo: Motivo): Promise<void> {
     if (motivo.orden <= 1) {
-      this.toastService.info('El motivo ya está en la primera posición');
+      this.toastService.info('La actividad ya está en la primera posición');
       return;
     }
 
@@ -225,7 +243,7 @@ export class GestionMotivosComponent implements OnInit {
 
   async bajarPrioridad(motivo: Motivo): Promise<void> {
     if (motivo.orden >= this.motivos.length) {
-      this.toastService.info('El motivo ya está en la última posición');
+      this.toastService.info('La actividad ya está en la última posición');
       return;
     }
 

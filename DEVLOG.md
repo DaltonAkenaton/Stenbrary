@@ -9,6 +9,46 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-18 — Pruebas del usuario, tanda C: claridad (v3.57.0, acumulada)
+
+Sigue sin publicarse: se acumula en la v3.57.0 y el tag se mueve otra vez.
+
+- **Configuración (#1, #4).** Horario de operación (de Quiosco) y Alertas de
+  inactividad (de Experiencia) pasan a Operación; métodos y opciones se movieron
+  con un script, sin reescribir. "Cerrar al final del horario" tiene un botón
+  que hace scroll a `#horario-operacion`. Palabras de búsqueda del panel y
+  Ctrl+K actualizadas.
+- **Bitácora (#7, #8).** Nombre del equipo con botón Guardar (antes se
+  guardaba en `blur` sin avisar) y aviso de "sin guardar". Filtros por fechas
+  (día local con `fechaLocalISO`, no UTC) y texto sin acentos.
+- **Actividades eliminadas (#12).** `contarMotivos` marca `eliminada` (y añade
+  " (actividad eliminada)" al nombre) si hay catálogo y el id no está; los
+  registros viejos sin id se buscan por nombre. Sin catálogo no marca nada.
+  `ConfirmDialog` ganó un tercer botón opcional (`textoAlternativa`, cierra
+  con `'alternativa'`): eliminar una actividad usada ofrece "Desactivar". El
+  conteo de uso pasó de nombre a id. El mock del spec de estadísticas no traía
+  "Investigación" ni "Otro" en el catálogo y empezó a marcarlas: se completó.
+- **Textos (#13, #15, #16).** `notaSumaActividades` (una definición, la usan
+  el PDF y Estadísticas). `ProyeccionDia.visitasHoy` para "van X, faltan ~Y".
+  La tarjeta de tendencia usa `corto` + `detalle`. Hoja "Notas" en el Excel.
+- **Corregir hora (#17).** `CorregirHoraDialogComponent` + `salidaCorregida`
+  (pura, en `tiempo.utils`): entre la entrada y ahora, el mismo día.
+  `actualizarRegistroManual` ya quitaba `salidaEstimada`/`cierreAutomatico`.
+  El mensaje decía "por superar N h" aunque cerrara el horario: corregido.
+- **/funciones (#10).** Tarjetas nuevas (puerta, PIN, calendario, bitácora,
+  aviso de privacidad), textos al día, y `requiereNube` oculta Copia en la nube
+  y Roles mientras `environment.mostrarConexionNube` sea false.
+- **Espanglish (#11).** Script de detección sobre textos visibles (HTML y
+  literales) + reemplazos uno a uno. "Motivo" → "Actividad" en lo visible
+  (menú "Gestión de Actividades"); la ruta `/gestion-motivos` y el código no
+  cambian. Se quedan "clic" (es español) y "Top".
+- **Lección de herramientas:** en este entorno el Bash colapsa `\\` dentro de
+  heredocs; los scripts con regex van con Write, no con `cat <<EOF`.
+- 343 unitarias (+5), 62 E2E (+4).
+
+**Sigue:** tanda D — #19 catálogos editables (proponer diseño antes) y #14
+autoverificación de cifras en Diagnóstico.
+
 ## 2026-10-18 — Pruebas del usuario, tanda B: seguridad (v3.57.0, acumulada)
 
 La v3.57.0 no se publicó; según la política de versiones, la tanda B entra en

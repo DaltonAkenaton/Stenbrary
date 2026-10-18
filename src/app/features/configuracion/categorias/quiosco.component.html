@@ -1,6 +1,6 @@
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  categorias/quiosco.component.html                   ║ -->
-<!-- ║  Modo Quiosco + Horarios de Operación                ║ -->
+<!-- ║  Modo Quiosco + PIN del coordinador                  ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 
 <!-- ── MODO QUIOSCO ── -->
@@ -12,8 +12,8 @@
   <p class="section-desc">
     Pensado para una <strong style="color:#E8F4F8">tablet o computadora dedicada</strong> a la
     entrada de la biblioteca. Oculta el menú lateral, la barra superior y la barra inferior
-    para dejar solo el scanner y el flujo de registro. El personal podrá salir del modo con
-    una <strong>pulsación larga (3 s)</strong> en cualquier área del scanner y el PIN configurado.
+    para dejar solo el escáner y el flujo de registro. El personal podrá salir del modo con
+    una <strong>pulsación larga (3 s)</strong> en cualquier área del escáner y el PIN configurado.
   </p>
   <div class="sound-toggle">
     <span class="sound-status">
@@ -123,78 +123,4 @@
       </p>
     }
   </div>
-</div>
-
-<!-- ── HORARIOS DE OPERACIÓN ── -->
-<div class="section-card">
-  <div class="section-header">
-    <mat-icon>schedule</mat-icon>
-    <h2>Horarios de Operación</h2>
-  </div>
-  <p class="section-desc">
-    Define el <strong style="color:#E8F4F8">horario de apertura</strong> de la biblioteca por
-    día. Fuera de horario, el scanner mostrará una advertencia o bloqueará el registro según
-    el modo elegido. Útil para evitar registros accidentales antes de abrir o después de cerrar.
-  </p>
-  <div class="sound-toggle">
-    <span class="sound-status">
-      {{ configService.horarioActivo ? 'Activado' : 'Desactivado' }}
-    </span>
-    <button class="btn-inline"
-      [class.btn-inline-active]="configService.horarioActivo"
-      (click)="toggleHorarioActivo()">
-      <mat-icon>{{ configService.horarioActivo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
-      {{ configService.horarioActivo ? 'Desactivar' : 'Activar' }}
-    </button>
-  </div>
-
-  @if (configService.horarioActivo) {
-    <div style="margin-top: 18px;">
-      <div class="section-header" style="margin-bottom: 10px;">
-        <mat-icon>policy</mat-icon>
-        <h2 style="font-size: 0.95rem;">Fuera de horario</h2>
-      </div>
-      <div class="auto-close-options">
-        @for (op of opcionesHorarioModo; track op.valor) {
-          <button class="auto-close-btn"
-            [class.active]="configService.horarioModo === op.valor"
-            (click)="setHorarioModo(op.valor)"
-            [matTooltip]="op.descripcion"
-            matTooltipPosition="above">
-            {{ op.etiqueta }}
-          </button>
-        }
-      </div>
-
-      <div class="section-header" style="margin: 22px 0 10px;">
-        <mat-icon>calendar_view_week</mat-icon>
-        <h2 style="font-size: 0.95rem;">Horario semanal</h2>
-      </div>
-      <div class="horarios-grid">
-        @for (dia of diasSemana; track dia.indice) {
-          <div class="horario-row" [class.cerrado]="configService.horarios[dia.indice].cerrado">
-            <div class="horario-dia">{{ dia.nombre }}</div>
-            <div class="horario-controls">
-              <button class="btn-inline horario-toggle"
-                [class.btn-inline-active]="!configService.horarios[dia.indice].cerrado"
-                (click)="toggleDiaCerrado(dia.indice)">
-                {{ configService.horarios[dia.indice].cerrado ? 'Cerrado' : 'Abierto' }}
-              </button>
-              <input type="time"
-                class="horario-input"
-                [disabled]="configService.horarios[dia.indice].cerrado"
-                [ngModel]="configService.horarios[dia.indice].apertura"
-                (ngModelChange)="setHorarioCampo(dia.indice, 'apertura', $event)">
-              <span class="horario-sep">→</span>
-              <input type="time"
-                class="horario-input"
-                [disabled]="configService.horarios[dia.indice].cerrado"
-                [ngModel]="configService.horarios[dia.indice].cierre"
-                (ngModelChange)="setHorarioCampo(dia.indice, 'cierre', $event)">
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-  }
 </div>

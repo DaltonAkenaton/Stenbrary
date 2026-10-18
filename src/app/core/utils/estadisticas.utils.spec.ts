@@ -25,6 +25,7 @@ import {
   umbralRetencionPara,
   variacionDiaria,
   contarMotivos,
+  notaSumaActividades,
   diaSemanaMasConcurrido,
   diasConActividad,
   duracionReal,
@@ -113,6 +114,30 @@ describe('estadisticas.utils', () => {
       expect(r[0].nombre).toBe('Estudio individual');
       expect(r[0].cantidad).toBe(2);
       expect(r[0].color).toBe('#111111');
+    });
+
+    it('una actividad borrada del catálogo sigue contando, marcada como eliminada (v3.57.0)', () => {
+      const r = contarMotivos([
+        reg(new Date(2026, 2, 2), { motivoId: 'm-hola', motivoNombre: 'hola', motivoIds: ['m-hola', 'm-libro'], motivoNombres: ['hola', 'Pedir libro'] }),
+        reg(new Date(2026, 2, 3), { motivoId: undefined as unknown as string, motivoNombre: 'Pedir libro', motivoIds: undefined, motivoNombres: undefined }),
+      ], catalogo);
+      const hola = r.find(c => c.clave === 'm-hola')!;
+      expect(hola.nombre).toBe('hola (actividad eliminada)');
+      expect(hola.eliminada).toBeTrue();
+      expect(r.find(c => c.clave === 'm-libro')!.eliminada).toBeUndefined();
+      // Registro viejo sin id: se reconoce por nombre, no se marca.
+      expect(r.find(c => c.clave === 'Pedir libro')!.eliminada).toBeUndefined();
+      // Sin catálogo no se puede saber: no se marca.
+      expect(contarMotivos([reg(new Date(2026, 2, 2), { motivoId: 'm-hola', motivoNombre: 'hola', motivoIds: ['m-hola'], motivoNombres: ['hola'] })])[0].nombre).toBe('hola');
+    });
+
+    it('la nota de "suma más de 100 %" solo aparece si alguna visita tuvo varias actividades (v3.57.0)', () => {
+      const una = [{ clave: 'a', nombre: 'A', cantidad: 3 }, { clave: 'b', nombre: 'B', cantidad: 1 }];
+      expect(notaSumaActividades(una, 4)).toBeNull();
+      expect(notaSumaActividades(una, 0)).toBeNull();
+      const varias = [{ clave: 'a', nombre: 'A', cantidad: 20 }, { clave: 'b', nombre: 'B', cantidad: 7 }];
+      expect(notaSumaActividades(varias, 20)).toContain('más de 100 %');
+      expect(notaSumaActividades(varias, 20)).toContain('1.35 actividades por visita');
     });
 
     it('un motivo repetido dentro de la misma visita cuenta una sola vez', () => {

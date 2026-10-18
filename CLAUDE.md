@@ -78,7 +78,7 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **338 specs unitarios en verde**, en 17 archivos —
+Suite activa: **343 specs unitarios en verde**, en 17 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
@@ -94,8 +94,8 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**58 tests E2E** con
-Playwright (36 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 14 en `cuadre.spec.ts` — este
+**62 tests E2E** con
+Playwright (39 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 15 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +

@@ -94,7 +94,15 @@ export interface ConteoMotivo {
   /** Visitas que incluyeron este motivo. */
   cantidad: number;
   color?: string;
+  /**
+   * Ya no está en el catálogo (se borró). Conservarla en las cifras es lo
+   * correcto —las visitas pasaron—, pero el nombre lo dice (v3.57.0): en el
+   * PDF de abril aparecía "hola" sin explicar de dónde salía.
+   */
+  eliminada?: boolean;
 }
+
+export const SUFIJO_ACTIVIDAD_ELIMINADA = ' (actividad eliminada)';
 
 /**
  * Cuenta motivos: una visita con 3 motivos suma un punto a cada uno, así
@@ -107,6 +115,7 @@ export interface ConteoMotivo {
  */
 export function contarMotivos(registros: Registro[], catalogo: Motivo[] = []): ConteoMotivo[] {
   const porId = new Map(catalogo.filter(m => m.id).map(m => [m.id as string, m]));
+  const porNombre = new Map(catalogo.map(m => [m.nombre, m]));
   const conteo = new Map<string, ConteoMotivo>();
 
   for (const r of registros) {
@@ -118,18 +127,37 @@ export function contarMotivos(registros: Registro[], catalogo: Motivo[] = []): C
       const clave = id || guardado;
       if (vistos.has(clave)) return; // un motivo repetido en la misma visita cuenta una vez
       vistos.add(clave);
-      const enCatalogo = id ? porId.get(id) : undefined;
+      // Registros viejos sin id: se buscan por nombre.
+      const enCatalogo = id ? porId.get(id) : porNombre.get(guardado);
+      // Sin catálogo (quien llama no lo pasó) no se puede saber: no se marca.
+      const eliminada = catalogo.length > 0 && !enCatalogo && guardado !== 'Sin motivo';
       const item = conteo.get(clave);
       if (item) item.cantidad++;
       else conteo.set(clave, {
         clave,
-        nombre: enCatalogo?.nombre ?? guardado,
+        nombre: enCatalogo?.nombre ?? (eliminada ? guardado + SUFIJO_ACTIVIDAD_ELIMINADA : guardado),
         cantidad: 1,
         color: enCatalogo?.color,
+        ...(eliminada ? { eliminada: true } : {}),
       });
     });
   }
   return [...conteo.values()].sort((a, b) => b.cantidad - a.cantidad || a.nombre.localeCompare(b.nombre));
+}
+
+/**
+ * Nota para las tablas de actividades (v3.57.0). Si alguna visita tuvo más de
+ * una actividad, la columna de % suma más de 100 % y hay que decirlo: el
+ * coordinador vio 135 % en el PDF y pensó que era un error. `null` si suma
+ * exactamente 100 % (o no hay visitas).
+ */
+export function notaSumaActividades(conteo: ConteoMotivo[], totalVisitas: number): string | null {
+  if (totalVisitas <= 0) return null;
+  const suma = conteo.reduce((s, c) => s + c.cantidad, 0);
+  if (suma <= totalVisitas) return null;
+  const promedio = (Math.round((suma / totalVisitas) * 100) / 100).toString();
+  return 'Una visita puede incluir varias actividades, por eso los porcentajes suman más de 100 %. ' +
+    `En promedio, ${promedio} actividades por visita.`;
 }
 
 /** El motivo con más visitas, o `null` si no hay. */
@@ -288,8 +316,10 @@ export function contarUnaSolaVisita(alumnos: Alumno[], registros: Registro[]): n
 // ═══════════════════════════════════════════════════════
 
 export interface ProyeccionDia {
-  /** Visitas estimadas al cierre de hoy. */
+  /** Visitas estimadas al cierre de hoy (el total del día, no las que faltan). */
   total: number;
+  /** Las que ya llegaron hoy (v3.57.0: la tarjeta dice "van X, faltan ~Y"). */
+  visitasHoy: number;
   /** Fracción del día que suele haber llegado a esta hora (0–1). */
   fraccionTipica: number;
   /** Cuántos días del historial sostienen la estimación. */
@@ -375,6 +405,7 @@ export function proyectarCierreHoy(registros: Registro[], ahora: Date = new Date
 
   return {
     total: Math.max(visitasHoy, Math.round(visitasHoy / fraccion)),
+    visitasHoy,
     fraccionTipica: fraccion,
     diasBase: base.length,
     confianza: errorMedio < 0.15 ? 'alta' : errorMedio < 0.3 ? 'media' : 'baja',

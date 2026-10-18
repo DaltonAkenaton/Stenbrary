@@ -16,7 +16,7 @@ import { Alumno, Motivo, Registro } from '../models';
 import type jsPDF from 'jspdf';
 import type autoTableT from 'jspdf-autotable';
 import { fechaLocalISO } from '../utils/tiempo.utils';
-import { contarMotivos, duracionReal, esInvitado, esSalidaEstimada, resumirEstancia } from '../utils/estadisticas.utils';
+import { contarMotivos, duracionReal, esInvitado, esSalidaEstimada, notaSumaActividades, resumirEstancia } from '../utils/estadisticas.utils';
 
 // Formateadores creados una vez: `toLocaleDateString` arma uno por llamada y
 // en tablas de miles de filas era la mayor parte del tiempo (ver export.service).
@@ -435,7 +435,7 @@ export class ReportService {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 30, 30);
-    doc.text('Ranking de Alumnos Más Frecuentes', margin, startY);
+    doc.text('Alumnos Más Frecuentes', margin, startY);
 
     // Subtítulo descriptivo
     doc.setFontSize(8);
@@ -663,7 +663,29 @@ export class ReportService {
       },
     });
 
-    return (doc as any).lastAutoTable.finalY + 10;
+    // v3.57.0: la tabla se explica sola (suma > 100 % y actividades borradas).
+    let y = (doc as any).lastAutoTable.finalY + 5;
+    const notas = [
+      notaSumaActividades(conteo, total),
+      conteo.some(c => c.eliminada)
+        ? '"(actividad eliminada)": ya no está en la lista de actividades, pero esas visitas sí ocurrieron y se cuentan.'
+        : null,
+    ].filter((n): n is string => !!n);
+    if (notas.length > 0) {
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(110, 110, 110);
+      const ancho = doc.internal.pageSize.getWidth() - margin * 2;
+      for (const nota of notas) {
+        const lineas = doc.splitTextToSize(nota, ancho);
+        doc.text(lineas, margin, y);
+        y += lineas.length * 3.6 + 1;
+      }
+      y += 4;
+    } else {
+      y += 5;
+    }
+    return y;
   }
 
   // ═══════════════════════════════════════════════

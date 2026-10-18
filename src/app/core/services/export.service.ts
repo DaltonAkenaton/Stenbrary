@@ -82,6 +82,22 @@ export class ExportService {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Registros');
 
+    // v3.57.0: el archivo se explica solo. El coordinador preguntó qué era
+    // "Salida estimada"; quien reciba el Excel por correo no tiene a quién.
+    const notas = XLSX.utils.aoa_to_sheet([
+      ['Columna', 'Qué significa'],
+      ['Fecha / Hora', 'Cuándo entró el alumno (hora de la computadora donde se registró).'],
+      ['Actividades', 'Todas las que marcó en esa visita, separadas por comas. Una visita puede tener varias.'],
+      ['Salida', 'Hora de salida. Vacía si nadie la registró y el sistema no la cerró.'],
+      ['Duración (min)', 'Minutos dentro de la biblioteca. Solo cuando la salida la registró una persona; vacía si la salida es estimada.'],
+      ['Salida estimada', '"Sí" = la salida la puso el sistema (cierre automático por tiempo o al final del horario), no el alumno. Por eso no se usa para calcular promedios de estancia.'],
+      ['Matrícula INVITADO', 'Visitante sin matrícula (no es alumno del padrón).'],
+      [],
+      ['Generado', `${FMT_FECHA.format(new Date())} ${hora(new Date())} · ${registros.length} visitas`],
+    ]);
+    notas['!cols'] = [{ wch: 20 }, { wch: 110 }];
+    XLSX.utils.book_append_sheet(wb, notas, 'Notas');
+
     const nombre = nombreArchivo || `registros_stenbrary_${this.fechaHoy()}`;
     // Sin `compression` SheetJS guarda el ZIP sin comprimir: 120 000 visitas
     // pesaban 53 MB, demasiado para un correo.

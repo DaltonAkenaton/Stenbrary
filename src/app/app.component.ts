@@ -533,7 +533,7 @@ export class AppComponent implements OnInit, OnDestroy {
    */
   private itemsAdministracion(): NavItem[] {
     const items: NavItem[] = [
-      { icon: 'category', label: 'Gestión de Motivos', route: '/gestion-motivos' },
+      { icon: 'category', label: 'Gestión de Actividades', route: '/gestion-motivos' },
       { icon: 'auto_awesome', label: 'Qué puede hacer', route: '/funciones'     },
       { icon: 'campaign', label: 'Novedades',          route: '/novedades'       },
     ];
@@ -569,7 +569,7 @@ export class AppComponent implements OnInit, OnDestroy {
   // ─── BOTTOM NAV (móvil) ──────────────────────────────────
   get bottomNavItems(): NavItem[] {
     const items: NavItem[] = [
-      { icon: 'qr_code_scanner', label: 'Scanner',   route: '/scanner',  exact: true },
+      { icon: 'qr_code_scanner', label: 'Escáner',   route: '/scanner',  exact: true },
       { icon: 'dashboard',       label: 'Resumen',   route: '/dashboard'             },
       { icon: 'groups',          label: 'Alumnos',   route: '/alumnos'               },
     ];
@@ -593,7 +593,7 @@ export class AppComponent implements OnInit, OnDestroy {
       '/alumnos':           'Alumnos',
       '/registros':         'Registros',
       '/estadisticas':      'Estadísticas',
-      '/gestion-motivos':   'Gestión de Motivos',
+      '/gestion-motivos':   'Gestión de Actividades',
       '/configuracion':     'Configuración',
       '/importar-alumnos':  'Importar Alumnos',
       '/presencia':         'En Biblioteca Ahora',

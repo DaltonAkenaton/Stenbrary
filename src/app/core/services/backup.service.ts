@@ -146,9 +146,9 @@ export class BackupService {
     }
 
     if (!datos.meta) {
-      errores.push('Falta el campo "meta" — no parece ser un backup de Stenbrary');
+      errores.push('Falta el campo "meta" — no parece ser un respaldo de Stenbrary');
     } else if (datos.meta.app !== 'Stenbrary') {
-      errores.push(`App desconocida: "${datos.meta.app}" (se esperaba "Stenbrary")`);
+      errores.push(`Programa desconocido: "${datos.meta.app}" (se esperaba "Stenbrary")`);
     }
 
     if (!Array.isArray(datos.alumnos)) errores.push('Falta el array "alumnos"');

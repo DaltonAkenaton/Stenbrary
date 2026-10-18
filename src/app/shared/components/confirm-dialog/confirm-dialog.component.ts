@@ -31,6 +31,12 @@ export interface ConfirmDialogData {
   textoConfirmar?: string;
   textoCancelar?: string;
   icono?: string;
+  /**
+   * Tercer botón con la opción recomendada en vez de la peligrosa (v3.57.0):
+   * "Desactivar" en lugar de "Eliminar". Cierra con `'alternativa'`.
+   */
+  textoAlternativa?: string;
+  iconoAlternativa?: string;
 }
 
 @Component({
@@ -62,6 +68,12 @@ export interface ConfirmDialogData {
           <mat-icon>close</mat-icon>
           {{ data.textoCancelar || 'Cancelar' }}
         </button>
+        @if (data.textoAlternativa) {
+          <button class="btn-confirm btn-info btn-alternativa" (click)="alternativa()">
+            <mat-icon>{{ data.iconoAlternativa || 'check' }}</mat-icon>
+            {{ data.textoAlternativa }}
+          </button>
+        }
         <button [class]="'btn-confirm btn-' + variante" (click)="confirmar()">
           <mat-icon>{{ iconoBoton }}</mat-icon>
           {{ data.textoConfirmar || 'Confirmar' }}
@@ -175,6 +187,7 @@ export interface ConfirmDialogData {
 
     .dialog-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       width: 100%;
       margin-top: 4px;
@@ -284,5 +297,9 @@ export class ConfirmDialogComponent {
 
   cancelar(): void {
     this.dialogRef.close(false);
+  }
+
+  alternativa(): void {
+    this.dialogRef.close('alternativa');
   }
 }

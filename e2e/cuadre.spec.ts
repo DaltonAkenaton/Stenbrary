@@ -64,7 +64,7 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     expect(hero).toMatch(/Estudiar en 3 visitas · 50% de ellas/);           // cada motivo suma (P2)
     expect(iq).toMatch(/Día más concurrido Lunes/i);
     expect(iq).toMatch(/16\.7%/);                                            // 1 invitado de 6
-    expect(iq).not.toMatch(/Hoy al cierre/);                                 // < 4 miércoles de historial (P8)
+    expect(iq).not.toMatch(/Hoy cerraría con/);                               // < 4 miércoles de historial (P8)
   });
 
   test('Esta semana se compara con lunes–miércoles de la semana pasada', async ({ page }) => {
@@ -183,6 +183,26 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await page.getByRole('button', { name: /Eliminar 9 registros/ }).click();
     await confirmarConPin(page);
     await expect(page.getByRole('button', { name: /Eliminar 0 registros/ })).toBeVisible({ timeout: 15000 });
+  });
+
+  test('Actividades: borrar una usada recomienda desactivarla; si se borra, se marca (v3.57.0)', async ({ page }) => {
+    await page.goto('/estadisticas?p=ultimos30&tab=resumen');
+    // r2 tiene dos actividades: en 30 días, 10 actividades en 9 visitas.
+    await expect(page.locator('.nota-motivos').first()).toContainText('suman más de 100 %', { timeout: 15000 });
+    await expect(page.locator('.nota-motivos').first()).toContainText('1.11 actividades por visita');
+
+    await page.goto('/gestion-motivos');
+    await page.locator('.motivo-row').filter({ hasText: 'Pedir libro' }).locator('.btn-delete').click();
+    const dialogo = page.locator('app-confirm-dialog');
+    await expect(dialogo).toContainText('Se ha usado en 2 visitas');           // por id, incluye el secundario de r2
+    await dialogo.getByRole('button', { name: /Desactivar/ }).click();
+    await expect(page.locator('.motivo-row').filter({ hasText: 'Pedir libro' })).toHaveClass(/row-inactivo/);
+
+    await page.locator('.motivo-row').filter({ hasText: 'Trabajo escolar' }).locator('.btn-delete').click();
+    await page.locator('app-confirm-dialog .btn-confirm.btn-danger').click();
+    await expect(page.locator('.motivo-row').filter({ hasText: 'Trabajo escolar' })).toHaveCount(0);
+    await page.goto('/estadisticas?p=ultimos30&tab=resumen');
+    await expect(page.locator('.dashboard-ejecutivo-container')).toContainText('(actividad eliminada)', { timeout: 15000 });
   });
 
   test('Inactivos', async ({ page }) => {

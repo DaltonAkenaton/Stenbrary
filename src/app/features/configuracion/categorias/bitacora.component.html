@@ -1,6 +1,7 @@
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  categorias/bitacora.component.html                  ║ -->
 <!-- ║  Nombre del equipo + bitácora de acciones (v3.52.0)  ║ -->
+<!-- ║  v3.57.0: botón Guardar; filtros fecha y texto       ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 
 <!-- ── NOMBRE DEL EQUIPO ── -->
@@ -15,15 +16,27 @@
   </p>
   <div class="aforo-input-row">
     <label for="nombreEquipo">Nombre</label>
-    <input id="nombreEquipo"
-           class="equipo-input"
-           type="text"
-           maxlength="40"
-           placeholder="Ej. Puerta"
-           [(ngModel)]="nombreEquipo"
-           (blur)="guardarNombreEquipo()"
-           (keydown.enter)="guardarNombreEquipo()">
+    <div class="equipo-fila">
+      <input id="nombreEquipo"
+             class="equipo-input"
+             type="text"
+             maxlength="40"
+             placeholder="Ej. Puerta"
+             [ngModel]="nombreEquipo()"
+             (ngModelChange)="nombreEquipo.set($event)"
+             (keydown.enter)="guardarNombreEquipo()">
+      <button class="btn-inline btn-inline-active btn-guardar-equipo"
+              [disabled]="!sinGuardar()"
+              (click)="guardarNombreEquipo()">
+        <mat-icon>save</mat-icon> Guardar
+      </button>
+    </div>
   </div>
+  @if (sinGuardar()) {
+    <p class="section-hint aviso-sin-guardar">
+      <mat-icon>edit</mat-icon> Cambios sin guardar: toca Guardar o presiona Enter.
+    </p>
+  }
 </div>
 
 <!-- ── BITÁCORA ── -->
@@ -43,6 +56,26 @@
       <button class="auto-close-btn" [class.active]="filtro() === f.id" (click)="setFiltro(f.id)">
         {{ f.etiqueta }}
       </button>
+    }
+  </div>
+
+  <!-- Fechas y texto (v3.57.0) -->
+  <div class="bitacora-filtros">
+    <label>
+      <span>Desde</span>
+      <input type="date" class="equipo-input filtro-desde" [ngModel]="desde()" (ngModelChange)="setDesde($event)" [max]="hasta() || null">
+    </label>
+    <label>
+      <span>Hasta</span>
+      <input type="date" class="equipo-input filtro-hasta" [ngModel]="hasta()" (ngModelChange)="setHasta($event)" [min]="desde() || null">
+    </label>
+    <label class="filtro-texto-label">
+      <span>Buscar</span>
+      <input type="search" class="equipo-input filtro-texto" placeholder="Nombre, matrícula, acción…"
+             [ngModel]="texto()" (ngModelChange)="setTexto($event)">
+    </label>
+    @if (hayFiltrosExtra) {
+      <button class="btn-inline" (click)="limpiarFiltros()"><mat-icon>filter_alt_off</mat-icon> Quitar filtros</button>
     }
   </div>
 
