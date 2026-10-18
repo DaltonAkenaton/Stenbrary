@@ -51,9 +51,25 @@ export const CHANGELOG: VersionChangelog[] = [
   {
     version: '3.57.0',
     fecha: '2026-10-17',
-    titulo: 'Importar el padrón sin sorpresas',
-    resumen: 'Correcciones de la ronda de pruebas: la importación de alumnos, el Enter al confirmar la matrícula y el cierre al final del horario.',
+    titulo: 'Importar el padrón sin sorpresas, y el PIN protege lo que no se deshace',
+    resumen: 'Correcciones de la ronda de pruebas: la importación de alumnos, el Enter al confirmar la matrícula, el cierre al final del horario y el PIN del coordinador para los borrados, con código de recuperación.',
     cambios: [
+      {
+        tipo: 'feat',
+        texto: 'Eliminar registros por fechas, reemplazar todo con un respaldo y restablecer el sistema piden el PIN del coordinador (el mismo del modo quiosco), y ofrecen descargar un respaldo en el mismo paso.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Código de recuperación del PIN: se muestra al poner el PIN para anotarlo en papel. Si el PIN se olvida, "¿Olvidaste el PIN?" lo pide y deja poner uno nuevo. Si ya tenías PIN, genera tu código en Configuración → Quiosco.',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'Los datos de prueba pasan a Configuración → Avanzado → Herramientas de prueba, escondidos detrás del PIN. Se quitó el botón desactivado "Eliminar todos los datos" (lo cubre Restablecer).',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'El PIN ya no se ve ni se escribe directamente en Configuración: "Cambiar PIN" pide el actual y el nuevo dos veces. Es de 4 a 6 dígitos en todas partes (el asistente aceptaba 8 y se guardaban solo 6).',
+      },
       {
         tipo: 'fix',
         texto: 'Importar alumnos: si el Excel llamaba "Cuenta" a la columna de matrícula, el sistema tomaba el apellido como matrícula sin avisar. Ahora la vista previa muestra qué columna se usa para cada dato y deja corregirla.',

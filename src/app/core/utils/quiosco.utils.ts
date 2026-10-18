@@ -99,3 +99,49 @@ export function textoUltimoRespaldo(ts: number, ahora: Date = new Date()): strin
   if (dias === 1) return 'ayer';
   return `hace ${dias} días`;
 }
+
+// ── Reglas del PIN y código de recuperación (v3.57.0) ───
+// El asistente aceptaba 4–8 dígitos, Configuración 4–6 y el guardado cortaba
+// a 6: un PIN de 8 escrito en el asistente se guardaba recortado y no volvía
+// a abrir el quiosco. Una sola regla, aquí.
+
+export const PIN_MIN_DIGITOS = 4;
+export const PIN_MAX_DIGITOS = 6;
+
+export function esPinValido(pin: string): boolean {
+  const p = pin ?? '';
+  return /^[0-9]+$/.test(p) && p.length >= PIN_MIN_DIGITOS && p.length <= PIN_MAX_DIGITOS;
+}
+
+/**
+ * Sin I, O, 0 ni 1: se confunden al copiarlo a mano de un papel. 32 símbolos,
+ * así que cada byte aleatorio da uno sin sesgo (`& 31`).
+ */
+const ALFABETO_CODIGO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const LARGO_CODIGO = 12;
+
+/**
+ * Código de recuperación del PIN: "K7QM-2XPA-9TDF". Se anota en papel al poner
+ * el PIN; si el PIN se olvida, lo reemplaza una vez y obliga a poner otro.
+ * `bytes` solo se pasa en las pruebas.
+ */
+export function generarCodigoRecuperacion(
+  bytes: Uint8Array = crypto.getRandomValues(new Uint8Array(LARGO_CODIGO)),
+): string {
+  let codigo = '';
+  for (let i = 0; i < LARGO_CODIGO; i++) {
+    if (i > 0 && i % 4 === 0) codigo += '-';
+    codigo += ALFABETO_CODIGO[(bytes[i] ?? 0) & 31];
+  }
+  return codigo;
+}
+
+/** Mayúsculas y sin guiones ni espacios: se puede escribir como venga. */
+export function normalizarCodigoRecuperacion(texto: string): string {
+  return (texto ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+export function codigoRecuperacionCoincide(intento: string, guardado: string): boolean {
+  const g = normalizarCodigoRecuperacion(guardado);
+  return g.length === LARGO_CODIGO && normalizarCodigoRecuperacion(intento) === g;
+}

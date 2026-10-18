@@ -4,7 +4,7 @@
 // ║                                                      ║
 // ║  Componente standalone para eliminar registros por    ║
 // ║  rango de fecha. Muestra preview (conteo) antes de    ║
-// ║  confirmar con ConfirmDialog variante danger.         ║
+// ║  confirmar con el PIN del coordinador (v3.57.0).      ║
 // ║                                                      ║
 // ║  OPCIONES DE INTEGRACIÓN:                            ║
 // ║  A) Embeber en configuracion.component.html:          ║
@@ -30,7 +30,7 @@ import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 import { AforoService } from '../../core/services/aforo.service';
-import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../shared/components/pin/pin-coordinador-dialog.component';
 import { coincide } from '../../core/utils/invariante.utils';
 import { parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
 import { BitacoraService } from '../../core/services/bitacora.service';
@@ -142,7 +142,7 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
       <!-- Nota de seguridad -->
       <p class="nota-seguridad">
         <mat-icon>info</mat-icon>
-        Esta acción es irreversible. Se recomienda hacer un backup antes de eliminar.
+        No se puede deshacer. Pide el PIN del coordinador y ofrece descargar un respaldo antes.
       </p>
 
     </div>
@@ -438,15 +438,19 @@ export class LimpiezaRegistrosComponent {
 
     const rangoTexto = this.obtenerTextoRango();
 
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
+    // v3.57.0: con el PIN del coordinador, y con el respaldo a un clic en el
+    // mismo paso — antes bastaba un clic de cualquiera que abriera Configuración.
+    const dialogRef = this.dialog.open(PinCoordinadorDialogComponent, {
+      width: '420px',
+      maxWidth: '94vw',
       data: {
         titulo: `¿Eliminar ${this.conteoRegistros()} registro${this.conteoRegistros() !== 1 ? 's' : ''}?`,
         mensaje: `Se eliminarán permanentemente todos los registros de acceso del periodo: ${rangoTexto}. Los datos de alumnos NO se verán afectados.`,
-        variante: 'danger',
         textoConfirmar: 'Eliminar registros',
         icono: 'delete_forever',
-      } as ConfirmDialogData,
+        peligro: true,
+        ofrecerRespaldo: true,
+      } as PinCoordinadorData,
     });
 
     const confirmado = await dialogRef.afterClosed().toPromise();

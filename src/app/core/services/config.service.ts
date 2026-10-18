@@ -18,6 +18,7 @@
 
 import { Injectable, signal } from '@angular/core';
 import { CalendarioEscolar, calendarioInicial } from '../utils/calendario.utils';
+import { PIN_MAX_DIGITOS } from '../utils/quiosco.utils';
 
 /**
  * Modos de control de aforo:
@@ -87,8 +88,10 @@ interface AppConfig {
 
   // ── Modo quiosco (v3.9.0) ──
   modoQuiosco: boolean;
-  /** PIN de 4 dígitos para salir del modo quiosco. Vacío = sin PIN (peligroso). */
+  /** PIN de 4–6 dígitos: sale del quiosco y autoriza borrados (v3.57.0). Vacío = sin PIN (peligroso). */
   quioscoPin: string;
+  /** Código para reponer el PIN olvidado (v3.57.0). Vacío = no se ha generado. */
+  quioscoCodigoRecuperacion: string;
   /** Minutos sin uso para volver solo al modo quiosco. 0 = apagado (v3.49.0). */
   quioscoAutoMinutos: number;
 
@@ -187,6 +190,7 @@ const DEFAULT_CONFIG: AppConfig = {
   aforoModo: 'permitir',
   modoQuiosco: false,
   quioscoPin: '0000',
+  quioscoCodigoRecuperacion: '',
   quioscoAutoMinutos: 0,
   horarioActivo: false,
   horarios: DEFAULT_HORARIOS,
@@ -363,8 +367,17 @@ export class ConfigService {
   }
 
   setQuioscoPin(pin: string): void {
-    const limpio = (pin || '').replace(/\D/g, '').slice(0, 6);
+    const limpio = (pin || '').replace(/\D/g, '').slice(0, PIN_MAX_DIGITOS);
     this.config.quioscoPin = limpio;
+    this.guardar();
+  }
+
+  get quioscoCodigoRecuperacion(): string {
+    return this.config.quioscoCodigoRecuperacion ?? '';
+  }
+
+  setQuioscoCodigoRecuperacion(codigo: string): void {
+    this.config.quioscoCodigoRecuperacion = codigo;
     this.guardar();
   }
 

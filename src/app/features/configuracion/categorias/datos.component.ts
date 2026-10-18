@@ -8,7 +8,7 @@
 // ║   - Backup (exportar JSON completo)                   ║
 // ║   - Restore (importar JSON con merge/replace)         ║
 // ║   - Eliminación masiva por rango (sub-comp existente) ║
-// ║   - Datos de prueba (sub-comp existente)              ║
+// ║   (Datos de prueba pasó a Avanzado, tras PIN: v3.57) ║
 // ║   - Mantenimiento (limpiar motivos duplicados)        ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -22,9 +22,8 @@ import { BackupService, BackupData, ResultadoImportacion } from '../../../core/s
 import { ToastService } from '../../../core/services/toast.service';
 import { LoadingService } from '../../../core/services/loading.service';
 import { ConfigService, RecordatorioRespaldoModo } from '../../../core/services/config.service';
-import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shared/components/pin/pin-coordinador-dialog.component';
 import { LimpiezaRegistrosComponent } from '../limpieza-registros.component';
-import { DatosPruebaComponent } from '../datos-prueba.component';
 
 @Component({
   selector: 'app-config-datos',
@@ -36,7 +35,6 @@ import { DatosPruebaComponent } from '../datos-prueba.component';
     MatTooltipModule,
     MatDialogModule,
     LimpiezaRegistrosComponent,
-    DatosPruebaComponent,
   ],
   templateUrl: './datos.component.html',
   styleUrls: ['../configuracion.styles.scss'],
@@ -238,15 +236,19 @@ export class DatosCategoriaComponent {
     if (!this.backupPreview) return;
 
     if (modo === 'replace') {
-      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-        width: '400px',
+      // v3.57.0: con PIN. El respaldo que ofrece es el de los datos ACTUALES:
+      // si el archivo elegido era el equivocado, con él se vuelve atrás.
+      const dialogRef = this.dialog.open(PinCoordinadorDialogComponent, {
+        width: '420px',
+        maxWidth: '94vw',
         data: {
           titulo: '¿Reemplazar TODOS los datos?',
-          mensaje: 'Se borrarán todos los datos actuales y se reemplazarán con el backup. Esta acción no se puede deshacer.',
-          variante: 'danger',
+          mensaje: 'Se borrarán todos los datos actuales y se reemplazarán con los del archivo. No se puede deshacer.',
           textoConfirmar: 'Reemplazar todo',
           icono: 'swap_horiz',
-        } as ConfirmDialogData,
+          peligro: true,
+          ofrecerRespaldo: true,
+        } as PinCoordinadorData,
       });
 
       const confirmado = await dialogRef.afterClosed().toPromise();
@@ -316,8 +318,4 @@ export class DatosCategoriaComponent {
     }
   }
 
-  // ─── Datos de prueba ────────────────────────────────
-  onDatosPruebaCambiaron(): void {
-    this.datosCambiaron.emit();
-  }
 }

@@ -1,6 +1,7 @@
 <!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  categorias/avanzado.component.html                  ║ -->
-<!-- ║  Accesos directos + Zona peligrosa                   ║ -->
+<!-- ║  Accesos directos + Herramientas de prueba +         ║ -->
+<!-- ║  Zona peligrosa (v3.57.0)                            ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 
 <!-- ── ACCESOS DIRECTOS ── -->
@@ -32,7 +33,7 @@
     <button class="shortcut-btn" (click)="navegar('/estadisticas')">
       <mat-icon>bar_chart</mat-icon>
       <div class="shortcut-info">
-        <span class="shortcut-title">Estadísticas Avanzadas</span>
+        <span class="shortcut-title">Estadísticas</span>
         <span class="shortcut-desc">Gráficas, tendencias y análisis del sistema</span>
       </div>
       <mat-icon class="shortcut-arrow">chevron_right</mat-icon>
@@ -109,6 +110,31 @@
   </div>
 }
 
+<!-- ── HERRAMIENTAS DE PRUEBA (v3.57.0) ──
+     Antes vivían en Datos, a la vista y sin PIN. Se abren con el PIN y se
+     esconden otra vez al salir de Configuración. -->
+<div class="section-card">
+  <div class="section-header">
+    <mat-icon>science</mat-icon>
+    <h2>Herramientas de prueba</h2>
+  </div>
+  <p class="section-desc">
+    Generan alumnos y visitas falsas para probar el sistema con volumen, y las borran después.
+    No hacen falta para el uso diario. Piden el PIN del coordinador.
+  </p>
+  <div class="danger-actions">
+    <button class="btn-action btn-herramientas-prueba" (click)="alternarHerramientasPrueba()">
+      <mat-icon>{{ herramientasPrueba() ? 'visibility_off' : 'lock' }}</mat-icon>
+      <span>{{ herramientasPrueba() ? 'Ocultar herramientas de prueba' : 'Mostrar herramientas de prueba' }}</span>
+    </button>
+  </div>
+  @if (herramientasPrueba()) {
+    <div style="margin-top: 18px;">
+      <app-datos-prueba />
+    </div>
+  }
+</div>
+
 <!-- ── ZONA PELIGROSA ── -->
 <div class="section-card danger-zone">
   <div class="section-header danger">
@@ -116,8 +142,8 @@
     <h2>Zona Peligrosa — Lee antes de usar</h2>
   </div>
   <p class="section-desc">
-    Las acciones de esta sección <strong>no se pueden deshacer</strong>.
-    Antes de continuar, asegúrate de haber descargado una copia de seguridad arriba.
+    Las acciones de esta sección <strong>no se pueden deshacer</strong> y piden el PIN del coordinador.
+    Antes de continuar, descarga un respaldo en Configuración → Datos.
     Si tienes dudas, contacta al administrador del sistema.
   </p>
   <div class="danger-actions">
@@ -134,8 +160,8 @@
       <p class="danger-note">
         <mat-icon>info</mat-icon>
         Borra alumnos, visitas y TODA la configuración, y abre el asistente
-        inicial. Pide descargar un respaldo antes y escribir una frase de
-        confirmación.
+        inicial. Pide el PIN, descargar un respaldo antes y escribir una frase
+        de confirmación.
       </p>
     } @else {
       <p class="danger-note">
@@ -143,19 +169,5 @@
         Restablecer el sistema requiere el rol de super administrador.
       </p>
     }
-
-    <button class="btn-action btn-danger"
-            (click)="limpiarTodosDatos()"
-            [disabled]="procesando || !DESTRUCCION_HABILITADA"
-            matTooltip="Desactivado por seguridad. Solo el desarrollador puede activar esta función en el código fuente."
-            matTooltipPosition="above">
-      <mat-icon>delete_forever</mat-icon>
-      <span>Eliminar todos los datos</span>
-    </button>
-    <p class="danger-note">
-      <mat-icon>lock</mat-icon>
-      Esta acción está desactivada por seguridad. Para habilitarla, el desarrollador debe cambiar
-      <code>DESTRUCCION_HABILITADA</code> a <code>true</code> en el código fuente.
-    </p>
   </div>
 </div>

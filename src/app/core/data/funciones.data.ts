@@ -411,10 +411,10 @@ export const FUNCIONES: Funcion[] = [
   {
     titulo: 'Datos de prueba',
     descripcion:
-      'Genera alumnos y visitas ficticias con un patrón realista, para probar el sistema o hacer demostraciones.',
+      'Genera alumnos y visitas ficticias con un patrón realista, para probar el sistema o hacer demostraciones. Se abren con el PIN del coordinador.',
     icono: 'science',
     area: 'datos',
-    donde: 'Configuración → Datos',
+    donde: 'Configuración → Avanzado → Herramientas de prueba',
   },
 
   // ─────────────── TÉCNICO ───────────────

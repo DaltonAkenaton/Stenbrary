@@ -103,12 +103,12 @@ export const CATEGORIAS_CONFIG: CategoriaConfig[] = [
     id: 'datos',
     nombre: 'Datos',
     icono: 'storage',
-    descripcion: 'Respaldo, backup, restore, limpieza y datos de prueba',
+    descripcion: 'Respaldo, restaurar y eliminar registros por fechas',
     keywords: [
       'respaldo', 'backup', 'recordatorio', 'programado',
       'restore', 'restaurar', 'importar', 'exportar', 'descargar',
       'limpieza', 'limpiar', 'eliminar', 'rango',
-      'prueba', 'seed', 'generar', 'mantenimiento',
+      'mantenimiento',
     ],
   },
   {
@@ -125,10 +125,10 @@ export const CATEGORIAS_CONFIG: CategoriaConfig[] = [
     id: 'avanzado',
     nombre: 'Avanzado',
     icono: 'warning',
-    descripcion: 'Accesos directos y zona peligrosa',
+    descripcion: 'Accesos directos, herramientas de prueba y restablecer',
     keywords: [
       'avanzado', 'accesos', 'directos', 'shortcuts',
-      'peligro', 'eliminar', 'todo', 'danger', 'destruccion',
+      'peligro', 'restablecer', 'fabrica', 'prueba', 'seed', 'generar', 'herramientas',
     ],
   },
 ];

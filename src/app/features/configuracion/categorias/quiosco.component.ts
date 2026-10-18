@@ -10,6 +10,9 @@
 // ║  Recordatorio: el PIN solo se pide para DESACTIVAR    ║
 // ║  el modo quiosco (no para acceder a /presencia ni     ║
 // ║  vistas frecuentes — eso expondría el PIN al alumno). ║
+// ║  v3.57.0: también autoriza borrados; cambiarlo pide   ║
+// ║  el actual, y el código de recuperación se genera     ║
+// ║  aquí.                                                ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
@@ -17,6 +20,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shared/components/pin/pin-coordinador-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfigService, HorarioModo } from '../../../core/services/config.service';
 import { DIAS_SEMANA } from '../../../core/utils/horarios.utils';
@@ -56,6 +61,7 @@ export class QuioscoCategoriaComponent {
   private toastDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private readonly bitacora = inject(BitacoraService);
+  private readonly dialog = inject(MatDialog);
 
   constructor(
     public configService: ConfigService,
@@ -76,21 +82,45 @@ export class QuioscoCategoriaComponent {
     this.cdr.markForCheck();
   }
 
-  setQuioscoPin(valor: string): void {
-    this.configService.setQuioscoPin(valor);
-    const pin = this.configService.quioscoPin;
-    this.debouncedToast(
-      'quiosco-pin',
-      pin ? `PIN del modo quiosco: ${pin.length} dígito(s)` : 'PIN del modo quiosco eliminado',
-    );
-    // Se anota al terminar de escribir, no por cada dígito. Nunca el PIN en sí.
-    const prev = this.toastDebounceTimers.get('bitacora-pin');
-    if (prev) clearTimeout(prev);
-    this.toastDebounceTimers.set('bitacora-pin', setTimeout(() => {
-      this.bitacora.registrar('pin-cambiado', pin ? `${pin.length} dígitos` : 'PIN eliminado');
-      this.toastDebounceTimers.delete('bitacora-pin');
-    }, 1500));
+  // ─── PIN y código de recuperación (v3.57.0) ─────────
+  // Antes el PIN se escribía en un campo de texto que guardaba cada tecla: a
+  // medio escribir quedaba un PIN de 1 dígito, y se leía en claro. Ahora pasa
+  // por el diálogo, que pide el actual (o el código) y el nuevo dos veces.
+
+  async cambiarPin(): Promise<void> {
+    if (await this.abrirPin({
+      titulo: this.configService.quioscoPin ? 'Cambiar el PIN' : 'Poner PIN',
+      mensaje: 'Primero el PIN actual. Después escribirás el nuevo dos veces y verás su código de recuperación.',
+      icono: 'key',
+      cambiarPin: true,
+    })) {
+      this.toastService.success('PIN guardado. Anota el código de recuperación.');
+    }
     this.cdr.markForCheck();
+  }
+
+  async generarCodigo(): Promise<void> {
+    if (await this.abrirPin({
+      titulo: 'Código de recuperación',
+      mensaje: this.configService.quioscoCodigoRecuperacion
+        ? 'Se genera uno nuevo y el anterior deja de servir.'
+        : 'Con él podrás poner un PIN nuevo si olvidas el actual.',
+      icono: 'vpn_key',
+      soloCodigo: true,
+    })) {
+      this.toastService.success('Código de recuperación nuevo guardado.');
+    }
+    this.cdr.markForCheck();
+  }
+
+  private async abrirPin(data: PinCoordinadorData): Promise<boolean> {
+    const ref = this.dialog.open(PinCoordinadorDialogComponent, {
+      width: '420px',
+      maxWidth: '94vw',
+      disableClose: true,   // el código se muestra una vez: que no se cierre por un clic afuera
+      data,
+    });
+    return !!(await ref.afterClosed().toPromise());
   }
 
   /** Atajos; el input libre acepta 0–240. */

@@ -33,6 +33,7 @@ import { SoundService } from '../../core/services/sound.service';
 import { RestablecerService } from '../../core/services/restablecer.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
+import { PIN_MAX_DIGITOS, esPinValido, generarCodigoRecuperacion } from '../../core/utils/quiosco.utils';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -127,6 +128,9 @@ export class BienvenidaComponent implements OnDestroy {
 
   protected modoQuiosco = false;
   protected quioscoPin = this.config.quioscoPin;
+  /** Se muestra junto al PIN para anotarlos juntos; se guarda con él (v3.57.0). */
+  protected readonly codigoRecuperacion = generarCodigoRecuperacion();
+  protected readonly PIN_MAX = PIN_MAX_DIGITOS;
   protected umbralInactividadDias = this.config.umbralInactividadDias;
   protected umbralRespaldoDias = this.config.umbralRecordatorioRespaldoDias;
 
@@ -387,8 +391,11 @@ export class BienvenidaComponent implements OnDestroy {
       case 'quiosco':
         // El PIN se guarda aunque el modo quede apagado: así ya está listo
         // el día que lo enciendan desde Configuración.
-        if (/^\d{4,8}$/.test(this.quioscoPin)) {
+        // v3.57.0: 4–6 dígitos como en todo el sistema. Aquí se aceptaban 8 y
+        // el guardado los cortaba a 6: ese PIN ya no abría el quiosco.
+        if (esPinValido(this.quioscoPin)) {
           this.config.setQuioscoPin(this.quioscoPin);
+          this.config.setQuioscoCodigoRecuperacion(this.codigoRecuperacion);
         }
         // El modo quiosco NO se aplica aquí, solo se recuerda la elección.
         //
@@ -463,6 +470,6 @@ export class BienvenidaComponent implements OnDestroy {
 
   /** Validación mínima del PIN, mostrada en vivo. */
   protected get pinValido(): boolean {
-    return /^\d{4,8}$/.test(this.quioscoPin);
+    return esPinValido(this.quioscoPin);
   }
 }

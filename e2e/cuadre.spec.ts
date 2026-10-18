@@ -18,6 +18,7 @@
 
 import { test, expect, Page } from '@playwright/test';
 import path from 'node:path';
+import { confirmarConPin } from './helpers';
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'cuadre.json');
 
@@ -36,7 +37,7 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await page.goto('/configuracion#datos');
     await page.locator('input[type="file"][accept=".json"]').setInputFiles(FIXTURE);
     await page.getByRole('button', { name: /Reemplazar todo/ }).click();
-    await page.locator('mat-dialog-container button').last().click();
+    await confirmarConPin(page);
     await expect(page.locator('.import-result.success')).toContainText('Importación exitosa', { timeout: 15000 });
   });
 
@@ -166,6 +167,22 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     // Antes decía "Eliminar 0 registros" hasta tocar el selector.
     await page.goto('/configuracion#datos');
     await expect(page.getByRole('button', { name: /Eliminar 9 registros/ })).toBeVisible({ timeout: 15000 });   // 8 sep – 7 oct: todas menos la de Eva
+  });
+
+  test('Eliminar registros pide el PIN; con el incorrecto no borra (v3.57.0)', async ({ page }) => {
+    await page.goto('/configuracion#datos');
+    await page.getByRole('button', { name: /Eliminar 9 registros/ }).click({ timeout: 15000 });
+    const dialogo = page.locator('app-pin-coordinador-dialog');
+    await expect(dialogo.getByRole('button', { name: /Descargar respaldo antes/ })).toBeVisible();
+    await dialogo.locator('.pin-input').fill('1111');
+    await dialogo.locator('.pin-confirmar').click();
+    await expect(dialogo.locator('.pin-error')).toContainText('Te quedan 4 intentos');
+    await dialogo.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page.getByRole('button', { name: /Eliminar 9 registros/ })).toBeVisible();   // no borró nada
+
+    await page.getByRole('button', { name: /Eliminar 9 registros/ }).click();
+    await confirmarConPin(page);
+    await expect(page.getByRole('button', { name: /Eliminar 0 registros/ })).toBeVisible({ timeout: 15000 });
   });
 
   test('Inactivos', async ({ page }) => {

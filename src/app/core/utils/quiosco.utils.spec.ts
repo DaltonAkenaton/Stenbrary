@@ -6,6 +6,7 @@
 import {
   debeVolverAQuiosco, EstadoQuiosco, INTENTOS_PIN_INICIAL, PIN_BLOQUEO_MS, PIN_MAX_FALLOS,
   leerIntentosPin, msBloqueoPin, normalizarIntentosPin, registrarFalloPin, textoUltimoRespaldo,
+  esPinValido, generarCodigoRecuperacion, normalizarCodigoRecuperacion, codigoRecuperacionCoincide,
 } from './quiosco.utils';
 
 const MIN = 60_000;
@@ -77,5 +78,38 @@ describe('quiosco.utils — último respaldo (v3.53.0)', () => {
     expect(textoUltimoRespaldo(new Date(2026, 9, 13, 23, 59).getTime(), ahora)).toBe('ayer');
     expect(textoUltimoRespaldo(new Date(2026, 9, 10, 12, 0).getTime(), ahora)).toBe('hace 4 días');
     expect(textoUltimoRespaldo(0, ahora)).toBe('nunca');
+  });
+});
+
+describe('quiosco.utils — reglas del PIN y código de recuperación (v3.57.0)', () => {
+  it('el PIN es de 4 a 6 dígitos, en todas partes', () => {
+    expect(esPinValido('1234')).toBeTrue();
+    expect(esPinValido('123456')).toBeTrue();
+    expect(esPinValido('123')).toBeFalse();
+    expect(esPinValido('1234567')).toBeFalse();   // el asistente aceptaba 8 y se guardaba recortado
+    expect(esPinValido('12a4')).toBeFalse();
+    expect(esPinValido('')).toBeFalse();
+  });
+
+  it('el código tiene 3 grupos de 4, sin caracteres que se confundan', () => {
+    const c = generarCodigoRecuperacion();
+    expect(c).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    expect(c).not.toMatch(/[IO01]/);
+  });
+
+  it('cada byte da un símbolo (determinista con los mismos bytes)', () => {
+    const bytes = new Uint8Array([0, 1, 2, 3, 31, 32, 33, 255, 8, 9, 10, 11]);
+    expect(generarCodigoRecuperacion(bytes)).toBe('ABCD-9AB9-JKLM');
+  });
+
+  it('se acepta en minúsculas, sin guiones o con espacios', () => {
+    expect(normalizarCodigoRecuperacion(' k7qm-2xpa 9tdf ')).toBe('K7QM2XPA9TDF');
+    expect(codigoRecuperacionCoincide('k7qm 2xpa 9tdf', 'K7QM-2XPA-9TDF')).toBeTrue();
+    expect(codigoRecuperacionCoincide('K7QM-2XPA-9TDG', 'K7QM-2XPA-9TDF')).toBeFalse();
+  });
+
+  it('sin código guardado nada coincide (ni siquiera vacío)', () => {
+    expect(codigoRecuperacionCoincide('', '')).toBeFalse();
+    expect(codigoRecuperacionCoincide('ABC', 'ABC')).toBeFalse();
   });
 });

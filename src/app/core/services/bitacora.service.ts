@@ -87,6 +87,8 @@ export const ACCIONES_BITACORA: Record<AccionBitacora, { etiqueta: string; icono
   'pin-fallido':         { etiqueta: 'PIN incorrecto',               icono: 'password',       grupo: 'quiosco', alerta: true },
   'pin-bloqueado':       { etiqueta: 'PIN bloqueado por intentos',   icono: 'gpp_maybe',      grupo: 'quiosco', alerta: true },
   'pin-cambiado':        { etiqueta: 'Cambió el PIN',                icono: 'key',            grupo: 'quiosco' },
+  'pin-recuperado':      { etiqueta: 'Usó el código de recuperación', icono: 'lock_reset',   grupo: 'quiosco', alerta: true },
+  'codigo-generado':     { etiqueta: 'Generó un código de recuperación', icono: 'vpn_key',   grupo: 'quiosco' },
   'registro-editado':    { etiqueta: 'Editó una visita',             icono: 'edit',           grupo: 'cambios' },
   'registro-eliminado':  { etiqueta: 'Borró una visita',             icono: 'delete',         grupo: 'cambios', alerta: true },
   'registros-limpiados': { etiqueta: 'Limpió visitas por fechas',    icono: 'delete_sweep',   grupo: 'cambios', alerta: true },

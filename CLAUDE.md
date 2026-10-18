@@ -78,7 +78,7 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **333 specs unitarios en verde**, en 17 archivos —
+Suite activa: **338 specs unitarios en verde**, en 17 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
@@ -94,8 +94,8 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**54 tests E2E** con
-Playwright (33 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 13 en `cuadre.spec.ts` — este
+**58 tests E2E** con
+Playwright (36 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 14 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
@@ -354,7 +354,7 @@ Sidebar (64px colapsado / 220px expandido) + topbar + bottom nav (≤768px). Sec
 
 `bottomNavItems` swapea "Registros" por "Biblioteca" cuando el módulo de salida está activo. El sidebar se auto-cierra en móvil al navegar (suscripción a `NavigationEnd`, `window.innerWidth < 768`).
 
-En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la clase `kiosk-mode` que oculta sidebar, topbar y bottom nav; además `AppComponent` intercepta `NavigationEnd` y redirige a `/scanner` cualquier ruta que no sea parte del flujo operativo (`/scanner`, `/seleccion-motivo`, `/registro-alumno`). Se sale con pulsación larga (3 s) o 5 toques en el scanner + PIN configurado en `ConfigService`. Desde v3.52.0 el PIN se bloquea 5 min tras 5 fallos (`stenbrary-pin-intentos` en localStorage, funciones puras en `quiosco.utils.ts`) y, con el PIN correcto, el diálogo ofrece "Descargar respaldo" sin salir del quiosco además de "Salir".
+En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la clase `kiosk-mode` que oculta sidebar, topbar y bottom nav; además `AppComponent` intercepta `NavigationEnd` y redirige a `/scanner` cualquier ruta que no sea parte del flujo operativo (`/scanner`, `/seleccion-motivo`, `/registro-alumno`). Se sale con pulsación larga (3 s) o 5 toques en el scanner + PIN configurado en `ConfigService`. Desde v3.52.0 el PIN se bloquea 5 min tras 5 fallos (`stenbrary-pin-intentos` en localStorage, funciones puras en `quiosco.utils.ts`) y, con el PIN correcto, el diálogo ofrece "Descargar respaldo" sin salir del quiosco además de "Salir". **Desde v3.57.0 el mismo PIN autoriza lo que no se deshace** (eliminar registros por fechas, reemplazar con un respaldo, restablecer, herramientas de prueba) con `PinCoordinadorDialogComponent` (`shared/components/pin/`), y el límite de intentos vive en `PinService`, compartido por todos los diálogos. PIN de 4–6 dígitos (`esPinValido`); código de recuperación (`quioscoCodigoRecuperacion`, se muestra una sola vez) para reponerlo. Una acción destructiva nueva debe pedir este diálogo; en la Fase 2 lo reemplaza `roleGuard`.
 
 ### Horarios de operación (`core/utils/horarios.utils.ts`)
 

@@ -367,12 +367,12 @@ export class CommandPaletteService {
       {
         id: 'accion-datos-prueba',
         label: 'Generar datos de prueba',
-        descripcion: 'Abre la herramienta en Configuración → Datos',
+        descripcion: 'Configuración → Avanzado → Herramientas de prueba (pide el PIN)',
         icono: 'science',
         grupo: 'Acciones',
         tipo: 'accion',
         keywords: ['datos', 'prueba', 'seed', 'generar', 'demo', 'test'],
-        ejecutar: () => void this.router.navigateByUrl('/configuracion#datos'),
+        ejecutar: () => void this.router.navigateByUrl('/configuracion#avanzado'),
       },
       {
         id: 'accion-limpieza-rango',

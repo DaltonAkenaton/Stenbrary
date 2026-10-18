@@ -105,7 +105,7 @@ parejo todo el día.
 
 ## Otros comportamientos documentables (v3.44.0)
 
-- **Datos de prueba:** si existen (Configuración → Datos → Datos de prueba), el
+- **Datos de prueba:** si existen (Configuración → Avanzado → Herramientas de prueba, con PIN), el
   Resumen y Estadísticas muestran un aviso: todas las cifras los incluyen hasta
   que se limpian.
 - **Umbral de inactividad = 0** significa "alertas desactivadas": Estadísticas
@@ -266,6 +266,23 @@ Tras **5 PIN incorrectos** el diálogo se bloquea **5 minutos** (aunque se
 recargue la página) y cada intento queda en la Bitácora. Con el PIN correcto
 hay dos opciones: **Descargar respaldo** (el equipo sigue en modo quiosco: es la
 rutina diaria para llevar los datos a la oficina) o **Salir del modo quiosco**.
+
+## PIN del coordinador y código de recuperación (v3.57.0)
+El **mismo PIN del modo quiosco** se pide para lo que no se deshace: eliminar
+registros por fechas, reemplazar todo con un respaldo, restablecer el sistema y
+abrir las herramientas de prueba (Configuración → Avanzado). Esos diálogos
+ofrecen descargar un respaldo en el mismo paso. Los intentos fallidos cuentan
+juntos en todos los diálogos (5 fallos = 5 minutos de bloqueo).
+
+- El PIN es de **4 a 6 dígitos**. Ya no se ve en Configuración: "Cambiar PIN"
+  pide el actual y el nuevo dos veces.
+- **Código de recuperación** (como `K7QM-2XPA-9TDF`): se muestra **una sola
+  vez**, al poner el PIN (asistente inicial, Cambiar PIN o "Generar código" en
+  Configuración → Quiosco). Se anota en papel junto con el PIN, fuera del equipo.
+- Si se olvida el PIN: "¿Olvidaste el PIN?" → escribir el código (minúsculas y
+  sin guiones también valen) → poner un PIN nuevo, que trae un código nuevo; el
+  usado deja de servir. Queda en la Bitácora ("Usó el código de recuperación").
+- Sin PIN configurado, cualquiera puede hacer esas acciones: el diálogo lo avisa.
 
 ## Bitácora (v3.52.0)
 Configuración → Bitácora. Anota **qué** se hizo, **cuándo** y **en qué

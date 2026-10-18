@@ -59,43 +59,70 @@
     </div>
   </div>
 
-  @if (configService.modoQuiosco || configService.quioscoAutoMinutos > 0) {
-    <div style="margin-top: 18px;">
-      <div class="aforo-input-row">
-        <label for="quioscoPin">PIN de salida (4–6 dígitos)</label>
-        <div class="aforo-stepper" style="max-width: 220px;">
-          <input id="quioscoPin"
-                 type="text"
-                 inputmode="numeric"
-                 maxlength="6"
-                 class="aforo-number-input"
-                 [ngModel]="configService.quioscoPin"
-                 (ngModelChange)="setQuioscoPin($event)"
-                 placeholder="0000">
-        </div>
-      </div>
-      @if (!configService.quioscoPin) {
-        <p class="section-hint" style="color:#F5A623;">
-          <mat-icon>warning</mat-icon>
-          Sin PIN configurado — cualquiera podrá salir del modo quiosco.
-        </p>
-      } @else if (configService.quioscoPin === '0000') {
-        <p class="section-hint" style="color:#F5A623;">
-          <mat-icon>warning</mat-icon>
-          Es el PIN de fábrica: cámbialo antes de dejar el equipo a la vista de los alumnos.
-        </p>
-      } @else {
-        <p class="section-hint" style="color: rgba(0,200,215,0.5)">
-          <mat-icon>lock</mat-icon>
-          PIN activo — pulsación larga + PIN para salir.
-        </p>
-      }
-      <p class="section-hint">
-        5 intentos incorrectos bloquean el PIN 5 minutos, y cada intento queda en la Bitácora.
-        Con el PIN correcto se puede <strong>descargar el respaldo sin salir del quiosco</strong>.
-      </p>
+  <!-- Siempre visible desde v3.57.0: el PIN también autoriza borrados. -->
+  <div style="margin-top: 18px;">
+    <!-- v3.57.0: el PIN ya no se ve ni se escribe aquí. Antes cualquiera que
+         abriera Configuración lo leía en claro y lo cambiaba sin saberlo, y
+         ahora el mismo PIN autoriza los borrados. Cambiarlo pide el actual. -->
+    <div class="section-header" style="margin-bottom: 6px;">
+      <mat-icon>password</mat-icon>
+      <h2 style="font-size: 0.95rem;">PIN del coordinador</h2>
     </div>
-  }
+    <p class="section-hint" style="margin-bottom: 10px;">
+      Sirve para salir del modo quiosco y para autorizar lo que no se deshace: eliminar
+      registros por fechas, reemplazar con un respaldo, restablecer y las herramientas de prueba.
+    </p>
+    <div class="sound-toggle">
+      <span class="sound-status">{{ configService.quioscoPin ? 'PIN de ' + configService.quioscoPin.length + ' dígitos' : 'Sin PIN' }}</span>
+      <button class="btn-inline btn-cambiar-pin" (click)="cambiarPin()">
+        <mat-icon>key</mat-icon>
+        {{ configService.quioscoPin ? 'Cambiar PIN' : 'Poner PIN' }}
+      </button>
+    </div>
+    @if (!configService.quioscoPin) {
+      <p class="section-hint" style="color:#F5A623;">
+        <mat-icon>warning</mat-icon>
+        Sin PIN configurado — cualquiera podrá salir del modo quiosco.
+      </p>
+    } @else if (configService.quioscoPin === '0000') {
+      <p class="section-hint" style="color:#F5A623;">
+        <mat-icon>warning</mat-icon>
+        Es el PIN de fábrica: cámbialo antes de dejar el equipo a la vista de los alumnos.
+      </p>
+    } @else {
+      <p class="section-hint" style="color: rgba(0,200,215,0.5)">
+        <mat-icon>lock</mat-icon>
+        PIN activo — pulsación larga + PIN para salir.
+      </p>
+    }
+    <p class="section-hint">
+      5 intentos incorrectos bloquean el PIN 5 minutos, y cada intento queda en la Bitácora.
+      Con el PIN correcto se puede <strong>descargar el respaldo sin salir del quiosco</strong>.
+    </p>
+
+    <!-- Código de recuperación (v3.57.0) -->
+    <div class="sound-toggle" style="margin-top: 14px;">
+      <span class="sound-status">
+        {{ configService.quioscoCodigoRecuperacion ? 'Código de recuperación: generado' : 'Sin código de recuperación' }}
+      </span>
+      <button class="btn-inline btn-generar-codigo" (click)="generarCodigo()">
+        <mat-icon>vpn_key</mat-icon>
+        {{ configService.quioscoCodigoRecuperacion ? 'Generar uno nuevo' : 'Generar código' }}
+      </button>
+    </div>
+    @if (!configService.quioscoCodigoRecuperacion) {
+      <p class="section-hint" style="color:#F5A623;">
+        <mat-icon>warning</mat-icon>
+        Si olvidas el PIN no habrá forma de salir del modo quiosco ni de autorizar borrados.
+        Genera un código y anótalo en papel junto con el PIN.
+      </p>
+    } @else {
+      <p class="section-hint">
+        Si olvidas el PIN, toca «¿Olvidaste el PIN?» y escribe el código: te pedirá uno nuevo.
+        El código solo se muestra al generarlo.
+      </p>
+    }
+  </div>
 </div>
 
 <!-- ── HORARIOS DE OPERACIÓN ── -->

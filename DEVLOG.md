@@ -9,6 +9,46 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-18 — Pruebas del usuario, tanda B: seguridad (v3.57.0, acumulada)
+
+La v3.57.0 no se publicó; según la política de versiones, la tanda B entra en
+la misma entrada y el tag se mueve.
+
+- **PIN para lo que no se deshace (#6).** Decisión del usuario: el mismo PIN del
+  quiosco. El límite de intentos pasó del diálogo del quiosco a `PinService`
+  para que todos los diálogos compartan la cuenta (si no, 5 + 5 intentos).
+  `PinCoordinadorDialogComponent` en eliminar registros, reemplazar con un
+  respaldo (ofrece descargar el estado ACTUAL antes) y Restablecer (antes de
+  su frase).
+- **Hallazgo al hacerlo:** Configuración mostraba el PIN en claro en un campo
+  que guardaba cada tecla (a medio escribir quedaba un PIN de 1 dígito). Sin
+  arreglarlo, el PIN no protegía nada: cualquiera lo leía o lo cambiaba. Ahora
+  "Cambiar PIN" pide el actual. La tarjeta del PIN se ve siempre, no solo con
+  el quiosco encendido.
+- **Avanzado (#9).** Fuera "Eliminar todos los datos" (desactivado con una
+  constante de código). Datos de prueba pasa de Datos a Avanzado →
+  Herramientas de prueba, tras el PIN y solo en memoria. El acceso directo se
+  llama "Estadísticas".
+- **Código de recuperación (#20).** 12 símbolos sin I/O/0/1, de
+  `crypto.getRandomValues`, se muestra una vez. Recuperar obliga a poner un PIN
+  nuevo (y por tanto un código nuevo). En una acción destructiva, tras
+  recuperar se vuelve a pedir el PIN: "Ya lo anoté" no debe disparar el borrado.
+  Las instalaciones que ya tenían PIN no tienen código: Configuración lo avisa
+  en ámbar.
+- **PIN de 4–6 en todas partes.** El asistente aceptaba 8 y `setQuioscoPin`
+  cortaba a 6: ese PIN no volvía a abrir el quiosco. Al reescribir la regla, la
+  primera versión de `esPinValido` tenía un `\d` sin escapar dentro de un
+  template literal y rechazaba todo PIN. La prueba unitaria lo atrapó antes de
+  la E2E.
+- 338 unitarias (+5), 58 E2E (+4: PIN al eliminar registros, recuperación en
+  el quiosco, herramientas de prueba, cambiar PIN). Las 4 E2E que restauran un
+  respaldo con "Reemplazar todo" usan ahora `e2e/helpers.ts → confirmarConPin`.
+
+**Sigue:** tanda C (claridad: mover Horario e Inactividad a Operación, guardar
+nombre del equipo, filtros de bitácora, actividades eliminadas, textos de
+proyección y %, hoja Notas del Excel, corregir hora en Presencia, /funciones,
+espanglish).
+
 ## 2026-10-17 — Pruebas del usuario, tanda A: errores (v3.57.0)
 
 El usuario probó a mano y juntó 20 hallazgos; al pedir el inventario de

@@ -14,6 +14,7 @@
 
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
+import { confirmarConPin } from './helpers';
 
 test.describe('Smoke: shell y componentes globales', () => {
   // Un navegador limpio + base vacía = instalación nueva, y desde v3.30 eso
@@ -360,6 +361,82 @@ test.describe('Quiosco: PIN con límite, respaldo sin salir y bitácora (v3.52.0
     await expect(lista).toContainText('Descargó un respaldo');
     await expect(lista.locator('.evento-equipo').first()).toHaveText('Puerta');
   });
+
+  test('con el código de recuperación se pone un PIN nuevo y se sale (v3.57.0)', async ({ page }) => {
+    await page.evaluate(() => {
+      const c = JSON.parse(localStorage.getItem('stenbrary-config')!);
+      localStorage.setItem('stenbrary-config', JSON.stringify({ ...c, quioscoCodigoRecuperacion: 'ABCD-EFGH-JKLM' }));
+    });
+    await page.reload();
+    await abrirPin(page);
+    await page.getByRole('button', { name: '¿Olvidaste el PIN?' }).click();
+    const codigo = page.locator('.codigo-input');
+    await codigo.fill('abcd efgh jkln');                       // equivocado: cuenta como intento
+    await codigo.press('Enter');
+    await expect(page.locator('.pin-error')).toContainText('Código incorrecto');
+    await codigo.fill('abcd efgh jklm');                       // minúsculas y sin guiones: vale
+    await codigo.press('Enter');
+
+    await page.locator('.nuevo-pin-1').fill('1357');
+    await page.locator('.nuevo-pin-2').fill('1358');
+    await page.getByRole('button', { name: 'Guardar PIN' }).click();
+    await expect(page.locator('.pin-error')).toContainText('no coinciden');
+    await page.locator('.nuevo-pin-2').fill('1357');
+    await page.getByRole('button', { name: 'Guardar PIN' }).click();
+    const nuevo = (await page.locator('.codigo-recuperacion').innerText()).trim();
+    expect(nuevo).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    expect(nuevo).not.toBe('ABCD-EFGH-JKLM');                  // el usado deja de servir
+    await page.getByRole('button', { name: 'Ya lo anoté' }).click();
+    await page.getByRole('button', { name: /Salir del modo quiosco/ }).click();
+    await expect(page.locator('.kiosk-mode')).toHaveCount(0);
+
+    const guardado = await page.evaluate(() => JSON.parse(localStorage.getItem('stenbrary-config')!));
+    expect(guardado.quioscoPin).toBe('1357');
+    expect(guardado.quioscoCodigoRecuperacion).toBe(nuevo);
+    await page.goto('/configuracion#bitacora');
+    await expect(page.locator('.bitacora-lista')).toContainText('Usó el código de recuperación');
+  });
+});
+
+test.describe('PIN del coordinador para lo que no se deshace (v3.57.0)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+  });
+
+  test('las herramientas de prueba están escondidas tras el PIN; ya no hay "Eliminar todos los datos"', async ({ page }) => {
+    await page.goto('/configuracion#datos');
+    await expect(page.locator('app-limpieza-registros')).toBeVisible();
+    await expect(page.locator('app-datos-prueba')).toHaveCount(0);
+
+    await page.goto('/configuracion#avanzado');
+    await expect(page.getByText('Restablecer el sistema (dejarlo como nuevo)')).toBeVisible();
+    await expect(page.getByText('Eliminar todos los datos')).toHaveCount(0);
+    await expect(page.getByText('DESTRUCCION_HABILITADA')).toHaveCount(0);
+    await expect(page.locator('app-datos-prueba')).toHaveCount(0);
+    await page.getByRole('button', { name: /Mostrar herramientas de prueba/ }).click();
+    await confirmarConPin(page);
+    await expect(page.locator('app-datos-prueba')).toBeVisible();
+  });
+
+  test('cambiar el PIN pide el actual; el PIN ya no se lee en Configuración', async ({ page }) => {
+    await page.goto('/configuracion#quiosco');
+    await expect(page.locator('#quioscoPin')).toHaveCount(0);
+    await expect(page.getByText('Sin código de recuperación')).toBeVisible();
+    await page.getByRole('button', { name: /Cambiar PIN/ }).click();
+    await confirmarConPin(page, '9999');
+    await expect(page.locator('.pin-error')).toContainText('PIN incorrecto');
+    await page.locator('app-pin-coordinador-dialog .pin-input').fill('0000');
+    await page.locator('.pin-confirmar').click();
+    await page.locator('.nuevo-pin-1').fill('482916');
+    await page.locator('.nuevo-pin-2').fill('482916');
+    await page.locator('.nuevo-pin-2').press('Enter');
+    await expect(page.locator('.codigo-recuperacion')).toBeVisible();
+    await page.getByRole('button', { name: 'Ya lo anoté' }).click();
+    await expect(page.getByText('PIN de 6 dígitos')).toBeVisible();
+    await expect(page.getByText('Código de recuperación: generado')).toBeVisible();
+    const guardado = await page.evaluate(() => JSON.parse(localStorage.getItem('stenbrary-config')!));
+    expect(guardado.quioscoPin).toBe('482916');
+  });
 });
 
 test.describe('Puerta 24/7: cierre automático sin abrir "En Biblioteca" (v3.53.0)', () => {
@@ -388,7 +465,7 @@ test.describe('Puerta 24/7: cierre automático sin abrir "En Biblioteca" (v3.53.
       name: 'r.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(respaldo)),
     });
     await page.getByRole('button', { name: /Reemplazar todo/ }).click();
-    await page.locator('mat-dialog-container button').last().click();
+    await confirmarConPin(page);
     await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
 
     await page.goto('/scanner');
@@ -408,7 +485,7 @@ test.describe('Puerta: el lector fuera del escáner y pantallas abandonadas (v3.
     await page.goto('/configuracion#datos');
     await page.locator('input[type="file"][accept=".json"]').setInputFiles(FIXTURE);
     await page.getByRole('button', { name: /Reemplazar todo/ }).click();
-    await page.locator('mat-dialog-container button').last().click();
+    await confirmarConPin(page);
     await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
     await page.goto('/scanner');
     await expect(page.locator('app-scanner')).toBeVisible();
@@ -544,7 +621,7 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
       name: 'r.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(respaldo)),
     });
     await page.getByRole('button', { name: /Reemplazar todo/ }).click();
-    await page.locator('mat-dialog-container button').last().click();
+    await confirmarConPin(page);
     await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
     await page.goto('/scanner');
     // El escáner tiene que estar escuchando: si no, se pierde la primera tecla del lector.

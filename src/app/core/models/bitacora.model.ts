@@ -14,6 +14,8 @@ export type AccionBitacora =
   | 'pin-fallido'
   | 'pin-bloqueado'
   | 'pin-cambiado'
+  | 'pin-recuperado'
+  | 'codigo-generado'
   | 'registro-editado'
   | 'registro-eliminado'
   | 'registros-limpiados'
