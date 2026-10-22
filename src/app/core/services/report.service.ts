@@ -30,6 +30,8 @@ export interface FiltrosReporte {
   busqueda?: string;
   carrera?: string;
   motivo?: string;
+  /** Otros filtros ya descritos en palabras ("Solo visitantes", v3.58.0). */
+  otros?: string[];
 }
 
 /** Datos mínimos de un alumno destacado para incluir en el PDF. */
@@ -364,6 +366,7 @@ export class ReportService {
     if (filtros.busqueda) {
       partes.push(`Búsqueda: "${filtros.busqueda}"`);
     }
+    partes.push(...(filtros.otros ?? []));
 
     if (partes.length === 0) return null;
 

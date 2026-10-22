@@ -70,6 +70,7 @@ import {
   conteoMensual,
   cuartilesDeCeldas,
   diaSemanaMasConcurrido,
+  revisarDiasDelPeriodo,
   distribucionPorGrado,
   distribucionPorTurno,
   esInvitado,
@@ -187,6 +188,8 @@ export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDes
   heatmapMaximo = 0;
   /** Totales por fila (día) y por columna (hora) para mostrar al margen del heatmap. */
   heatmapTotalesPorDia: Record<string, number> = {};
+  /** 'Lunes' → cuántos lunes del período tuvieron visitas (divisor del promedio). */
+  heatmapDiasConActividad = new Map<string, number>();
   heatmapTotalesPorHora: Record<number, number> = {};
   heatmapTotalGeneral = 0;
   /** Cantidad de visitas en la celda valle (la mínima > 0 del heatmap). */
@@ -223,6 +226,8 @@ heatmapFilas: {
   etiqueta: string;
   totalDia: number;
   totalDiaTooltip: string;
+  /** Visitas ÷ días de ese tipo con actividad: lo que decide "Día más concurrido" (v3.58.0). */
+  promedioDia: string;
   celdas: {
     hora: number;
     cantidad: number;
@@ -299,6 +304,17 @@ formatHora(h: number): string {
   /** Proyección del total de hoy con el historial real (P8). null = no hay base. */
   kpiProyeccionHoy: ProyeccionDia | null = null;
   kpiDiaSemanaTop = '';
+  /**
+   * v3.58.0 — día récord y días que debían abrir sin ninguna visita
+   * (señal de que la puerta estuvo apagada). `sinVisitas` va vacío con el
+   * filtro de hora: "sin visitas de 9 a 10" no dice nada de la puerta.
+   */
+  kpiDiasPeriodo: {
+    record: { texto: string; iso: string; cantidad: number; empates: number } | null;
+    sinVisitas: { texto: string; iso: string }[];
+    diasHabiles: number;
+    revisaHuecos: boolean;
+  } | null = null;
   kpiDistribucionGrado: { grado: number; cantidad: number; porcentaje: number }[] = [];
   kpiCombinacionesMotivos: { combo: string; cantidad: number; porcentaje: number; anchoStr?: string }[] = [];
   kpiVariacionDiaria = 0; // coeficiente de variación %
@@ -1177,6 +1193,7 @@ formatHora(h: number): string {
     this.heatmapHoras = resultado.horas;
     this.heatmapRango = resultado.rango;
     this.heatmapFechasPorDia = resultado.fechasPorDia;
+    this.heatmapDiasConActividad = resultado.diasConActividad;
 
     // Pre-computar matriz [día][hora] → cantidad para acceso O(1)
     const matriz: Record<string, Record<number, number>> = {};
@@ -1506,6 +1523,7 @@ formatHora(h: number): string {
       this.calcularCombinacionesMotivos(registrosCrudos);
       this.calcularVariacionDiaria(diarios);
       this.calcularDiaSemanaTop(registrosCrudos);
+      await this.calcularDiasDelPeriodo(registrosCrudos, rango);
       this.calcularPctInvitados(registrosCrudos);
       await this.calcularPrediccionHoy();
       // diariosDomingoIdx (Tier A: tinte de domingos en barras diarias)
@@ -1773,11 +1791,19 @@ formatHora(h: number): string {
 private precalcularFilasHeatmap(): void {
   this.heatmapFilas = this.diasSemana.map(dia => {
     const totalDia = this.heatmapTotalesPorDia[dia] ?? 0;
+    // Sin esto, "Día más concurrido: Martes" no se podía comprobar en
+    // ninguna pantalla (verificación ago–sep, 2026-10-22).
+    const diasActivos = this.heatmapDiasConActividad.get(dia) ?? 0;
+    const promedio = diasActivos > 0 ? (totalDia / diasActivos).toFixed(1) : '';
+    const plural = dia === 'Sábado' || dia === 'Domingo' ? `${dia.toLowerCase()}s` : dia.toLowerCase();
     return {
       dia,
       etiqueta: this.etiquetaDia(dia),
       totalDia,
-      totalDiaTooltip: `Total de ${dia}: ${totalDia} visitas en el período mostrado`,
+      promedioDia: promedio,
+      totalDiaTooltip: diasActivos > 0
+        ? `Total de ${dia}: ${totalDia} visitas en ${diasActivos} ${diasActivos === 1 ? dia.toLowerCase() : plural} con visitas = ${promedio} por ${dia.toLowerCase()}`
+        : `Total de ${dia}: sin visitas en el período mostrado`,
       celdas: this.heatmapHoras.map(hora => {
         const cantidad   = this.heatmapMatriz[dia]?.[hora] ?? 0;
         const esPico     = this.heatmapPicoDia === dia && this.heatmapPicoHora === hora;
@@ -1861,6 +1887,31 @@ this.sparkRegistros = counts;
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const idx = diaSemanaMasConcurrido(registros);
     this.kpiDiaSemanaTop = idx === null ? '' : dias[idx];
+  }
+
+  private async calcularDiasDelPeriodo(registros: Registro[], rango: RangoFechas): Promise<void> {
+    // El inicio de "Todo el historial" = el primer registro de la base (con caché).
+    const historico = await this.estadisticasService.crearRangoHistorico();
+    const r = revisarDiasDelPeriodo(registros, rango.inicio, rango.fin,
+      this.configService.horarios, this.configService.calendarioEscolar, new Date(), historico.inicio);
+    const fmt = new Intl.DateTimeFormat('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+    this.kpiDiasPeriodo = {
+      record: r.masVisitas && {
+        texto: fmt.format(r.masVisitas.fecha), iso: fechaLocalISO(r.masVisitas.fecha),
+        cantidad: r.masVisitas.cantidad, empates: r.masVisitas.empates,
+      },
+      sinVisitas: this.filtroHoraActivo ? [] : r.sinVisitas.map(d => ({ texto: fmt.format(d), iso: fechaLocalISO(d) })),
+      diasHabiles: r.diasHabiles,
+      revisaHuecos: !this.filtroHoraActivo && r.diasHabiles > 0,
+    };
+  }
+
+  /** Con el filtro de hora puesto, la lista lo lleva también: si no, las cifras no coinciden. */
+  verRegistrosDelDia(iso: string): void {
+    const hora = this.horaFiltro;
+    this.router.navigate(['/registros'], {
+      queryParams: hora ? { fecha: iso, hora_desde: hora.desde, hora_hasta: hora.hasta } : { fecha: iso },
+    });
   }
 
   /** Tier B12: % invitados vs alumnos del período. */

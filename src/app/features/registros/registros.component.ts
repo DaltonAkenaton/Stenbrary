@@ -1,7 +1,8 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  RUTA: src/app/features/registros/                   ║
 // ║        registros.component.ts                        ║
-// ║  Stenbrary v3.4 — Fix exportación CSV                ║
+// ║  Stenbrary v3.58.0 — Filtros por tipo, salida y      ║
+// ║  duración; orden por columna; autocompletado.        ║
 // ║                                                      ║
 // ║  FIX v3.4:                                           ║
 // ║  - exportarCSV() escapa campos con comas/comillas    ║
@@ -21,6 +22,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Registro, Alumno, Motivo } from '../../core/models';
@@ -32,6 +34,10 @@ import { esSalidaEstimada, incluyeMotivo } from '../../core/utils/estadisticas.u
 import { logError } from '../../core/utils/logger';
 import { BitacoraService, describirRegistro } from '../../core/services/bitacora.service';
 import { LoadingService } from '../../core/services/loading.service';
+import {
+  CampoOrden, FiltroSalida, FiltroTipo, Orden, coincideBusqueda, coincideDuracion,
+  coincideSalida, coincideTipo, ordenarRegistros, sinAcentos, sugerirAlumnos,
+} from '../../core/utils/registros-filtros.utils';
 import { cederPintado, elegirDetallePdf } from '../../shared/components/confirm-dialog/detalle-pdf';
 
 type RangoFecha = 'hoy' | 'ayer' | 'semana' | 'mes' | 'todo' | 'personalizado';
@@ -95,6 +101,7 @@ function decorarParaTabla(r: RegistroRender): RegistroRender {
     MatTooltipModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './registros.component.html',
   styleUrl: './registros.component.scss',
@@ -124,6 +131,22 @@ export class RegistrosComponent implements OnInit {
     /** Día de la semana 0..6 (0=Dom). null = sin filtro. Llega por query-param
      *  desde el drill-down del heatmap del dashboard. */
     diaSemana: null as number | null,
+    // v3.58.0 — pedidos en la verificación de agosto–septiembre.
+    tipo: '' as FiltroTipo,
+    salida: '' as FiltroSalida,
+    duracionMin: null as number | null,
+    duracionMax: null as number | null,
+  });
+
+  /** De la más nueva a la más vieja = el orden en que llegan de la base. */
+  orden = signal<Orden>({ campo: 'fecha', dir: 'desc' });
+
+  private alumnosSig = signal<Alumno[]>([]);
+  /** Alumnos que coinciden con lo escrito en la búsqueda (autocompletado). */
+  sugerencias = computed(() => {
+    const texto = this.filtros().busqueda;
+    if (sinAcentos(texto).length < 2) return [];
+    return sugerirAlumnos(this.alumnosSig(), texto);
   });
 
   horasDisponibles: number[] = Array.from({ length: 24 }, (_, i) => i);
@@ -246,6 +269,7 @@ columnas: string[] = [
       // Precomputar timestamp y strings de display una sola vez por registro
       this.todosRegistros.set(registros.map(buildRegistroRender));
       this.todosAlumnos = alumnos;
+      this.alumnosSig.set(alumnos);
       this.motivos = motivos;
 
       const carreras = new Set<string>();
@@ -304,7 +328,7 @@ columnas: string[] = [
     const todos = this.todosRegistros();
     const { tsMin, tsMax } = this.rangoFiltroTs(f);
 
-    const termino = f.busqueda.trim().toLowerCase();
+    const termino = sinAcentos(f.busqueda);
     const motivoFiltro = f.motivo;
     const carreraFiltro = f.carrera;
     const horaActiva = f.horaActiva;
@@ -328,14 +352,16 @@ columnas: string[] = [
         }
         if (diaSemana !== null && d.getDay() !== diaSemana) continue;
       }
-      if (termino) {
-        const m = r.matricula.toLowerCase();
-        const n = r.nombreCompleto.toLowerCase();
-        if (!m.includes(termino) && !n.includes(termino)) continue;
-      }
+      if (!coincideBusqueda(r, termino)) continue;
+      if (!coincideTipo(r, f.tipo)) continue;
+      if (!coincideSalida(r, f.salida)) continue;
+      if (!coincideDuracion(r, f.duracionMin, f.duracionMax)) continue;
       resultado.push(r);
     }
-    return resultado;
+    const orden = this.orden();
+    // El orden por defecto es el de la base: no se paga un sort de 120 000 filas.
+    if (orden.campo === 'fecha' && orden.dir === 'desc') return resultado;
+    return ordenarRegistros(resultado, orden, r => r._fechaTs);
   });
 
   get registrosFiltrados(): RegistroRender[] {
@@ -361,7 +387,8 @@ columnas: string[] = [
 
   get hayFiltrosActivos(): boolean {
     const f = this.filtros();
-    return !!(f.busqueda || f.motivo || f.carrera || f.horaActiva || f.diaSemana !== null);
+    return !!(f.busqueda || f.motivo || f.carrera || f.horaActiva || f.diaSemana !== null
+      || f.tipo || f.salida || f.duracionMin !== null || f.duracionMax !== null);
   }
 
   // ─── ACCIONES ──────────────────────────────────────────
@@ -370,11 +397,34 @@ columnas: string[] = [
     this.paginaActual.set(0);
   }
 
+  /** Minutos de duración: vacío = sin límite; negativo no tiene sentido. */
+  setDuracion(campo: 'duracionMin' | 'duracionMax', valor: string | number | null): void {
+    const n = valor === null || valor === '' ? null : Math.max(0, Math.floor(+valor));
+    this.filtros.update(f => ({ ...f, [campo]: n !== null && Number.isFinite(n) ? n : null }));
+    this.paginaActual.set(0);
+  }
+
+  /** Clic en el encabezado: ordena por esa columna; otro clic invierte. */
+  ordenarPor(campo: CampoOrden): void {
+    this.orden.update(o => o.campo === campo
+      ? { campo, dir: o.dir === 'asc' ? 'desc' : 'asc' }
+      // Fecha y duración empiezan por lo más reciente / más largo; texto, de la A a la Z.
+      : { campo, dir: campo === 'fecha' || campo === 'duracion' ? 'desc' : 'asc' });
+    this.paginaActual.set(0);
+  }
+
+  iconoOrden(campo: CampoOrden): string {
+    const o = this.orden();
+    if (o.campo !== campo) return 'unfold_more';
+    return o.dir === 'asc' ? 'arrow_upward' : 'arrow_downward';
+  }
+
   limpiarFiltros(): void {
     this.filtros.set({
       busqueda: '', rangoFecha: 'hoy', motivo: '', carrera: '',
       horaActiva: false, horaDesde: 7, horaHasta: 21,
       diaSemana: null,
+      tipo: '', salida: '', duracionMin: null, duracionMax: null,
     });
     this.fechaPersonalizadaInicioSig.set('');
     this.fechaPersonalizadaFinSig.set('');
@@ -480,6 +530,20 @@ columnas: string[] = [
     }
   }
 
+  /** Los filtros de v3.58.0, en palabras, para la cabecera del PDF. */
+  private describirFiltrosExtra(f: ReturnType<RegistrosComponent['filtros']>): string[] {
+    const partes: string[] = [];
+    if (f.tipo) partes.push(f.tipo === 'visitante' ? 'Solo visitantes' : 'Solo alumnos');
+    if (f.salida) partes.push({ real: 'Salida real', sistema: 'Salida puesta por el sistema', sin: 'Sin salida' }[f.salida]);
+    // Solo caracteres WinAnsi: la Helvetica de jsPDF no trae "∞" ni "–", y
+    // uno solo vuelve ilegible toda la línea de filtros (revisión v3.58.0).
+    const { duracionMin: min, duracionMax: max } = f;
+    if (min !== null && max !== null) partes.push(`Duración: ${min} a ${max} min`);
+    else if (min !== null) partes.push(`Duración: desde ${min} min`);
+    else if (max !== null) partes.push(`Duración: hasta ${max} min`);
+    return partes;
+  }
+
   /** Evita un segundo clic mientras jsPDF trabaja (bloquea el hilo). */
   generandoPdf = false;
 
@@ -505,11 +569,13 @@ columnas: string[] = [
     const tipo = tipoMap[f.rangoFecha] || 'personalizado';
 
     // Mismo rango que la lista. Sin límite (p. ej. "Todo"), el período
-    // real son las fechas de los datos — `datos` viene de más nuevo a más viejo.
+    // real son las fechas de los datos (ya no vienen siempre de más nuevo a
+    // más viejo: la tabla se puede ordenar por otra columna).
     const { tsMin, tsMax } = this.rangoFiltroTs(f);
-    const fechaInicio = Number.isFinite(tsMin)
-      ? new Date(tsMin) : new Date(datos[datos.length - 1]._fechaTs);
-    const fechaFin = Number.isFinite(tsMax) ? new Date(tsMax) : new Date(datos[0]._fechaTs);
+    let primero = Infinity, ultimo = -Infinity;
+    for (const r of datos) { if (r._fechaTs < primero) primero = r._fechaTs; if (r._fechaTs > ultimo) ultimo = r._fechaTs; }
+    const fechaInicio = new Date(Number.isFinite(tsMin) ? tsMin : primero);
+    const fechaFin = new Date(Number.isFinite(tsMax) ? tsMax : ultimo);
 
     // Antes no se esperaba: el aviso de "generado" salía antes que el PDF y
     // un fallo de jsPDF no se le mostraba a nadie.
@@ -525,6 +591,7 @@ columnas: string[] = [
           busqueda: f.busqueda || undefined,
           carrera: f.carrera || undefined,
           motivo: f.motivo || undefined,
+          otros: this.describirFiltrosExtra(f),
         },
         ...(eleccion === 'resumen' ? { secciones: { tablaRegistros: false } } : {}),
       });

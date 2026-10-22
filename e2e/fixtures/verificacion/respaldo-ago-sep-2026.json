@@ -1,0 +1,4975 @@
+{
+  "meta": {
+    "version": "3.57.2",
+    "fecha": "2026-10-01T09:00:00-05:00",
+    "app": "Stenbrary",
+    "totalAlumnos": 25,
+    "totalRegistros": 215,
+    "totalMotivos": 5,
+    "equipo": "Verificación ago–sep"
+  },
+  "alumnos": [
+    {
+      "id": "ver-al-01",
+      "matricula": "2300100001",
+      "nombre": "Valeria",
+      "apellidoPaterno": "Garza",
+      "apellidoMaterno": "Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 7,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-02",
+      "matricula": "2300100002",
+      "nombre": "Diego",
+      "apellidoPaterno": "Martínez",
+      "apellidoMaterno": "Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 7,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-03",
+      "matricula": "2300100003",
+      "nombre": "Fernanda",
+      "apellidoPaterno": "López",
+      "apellidoMaterno": "Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 5,
+      "grupo": "B",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-04",
+      "matricula": "2300100004",
+      "nombre": "Andrés",
+      "apellidoPaterno": "Hernández",
+      "apellidoMaterno": "",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 5,
+      "grupo": "B",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-05",
+      "matricula": "2300100005",
+      "nombre": "Sofía",
+      "apellidoPaterno": "Ramírez",
+      "apellidoMaterno": "Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 3,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-06",
+      "matricula": "2300100006",
+      "nombre": "Emiliano",
+      "apellidoPaterno": "Torres",
+      "apellidoMaterno": "Villarreal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 3,
+      "grupo": "C",
+      "turno": "Mixto",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-07",
+      "matricula": "2300100007",
+      "nombre": "Camila",
+      "apellidoPaterno": "Flores",
+      "apellidoMaterno": "Guerra",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 1,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-08",
+      "matricula": "2300100008",
+      "nombre": "Mateo",
+      "apellidoPaterno": "Rodríguez",
+      "apellidoMaterno": "Leal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "grado": 1,
+      "grupo": "B",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-09",
+      "matricula": "2300200001",
+      "nombre": "Regina",
+      "apellidoPaterno": "González",
+      "apellidoMaterno": "Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "grado": 9,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-10",
+      "matricula": "2300200002",
+      "nombre": "Santiago",
+      "apellidoPaterno": "Pérez",
+      "apellidoMaterno": "Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "grado": 9,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-11",
+      "matricula": "2300200003",
+      "nombre": "Ximena",
+      "apellidoPaterno": "Sánchez",
+      "apellidoMaterno": "Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "grado": 6,
+      "grupo": "B",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-12",
+      "matricula": "2300200004",
+      "nombre": "Leonardo",
+      "apellidoPaterno": "Cruz",
+      "apellidoMaterno": "Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "grado": 6,
+      "grupo": "B",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-13",
+      "matricula": "2300200005",
+      "nombre": "Daniela",
+      "apellidoPaterno": "Morales",
+      "apellidoMaterno": "Zamora",
+      "carrera": "Licenciatura en Derecho",
+      "grado": 4,
+      "grupo": "A",
+      "turno": "Mixto",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-14",
+      "matricula": "2300200006",
+      "nombre": "Sebastián",
+      "apellidoPaterno": "Reyes",
+      "apellidoMaterno": "Lozano",
+      "carrera": "Licenciatura en Derecho",
+      "grado": 2,
+      "grupo": "C",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-15",
+      "matricula": "2300300001",
+      "nombre": "Mariana",
+      "apellidoPaterno": "Jiménez",
+      "apellidoMaterno": "Cavazos",
+      "carrera": "Contador Público",
+      "grado": 8,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-16",
+      "matricula": "2300300002",
+      "nombre": "Gael",
+      "apellidoPaterno": "Díaz",
+      "apellidoMaterno": "Montemayor",
+      "carrera": "Contador Público",
+      "grado": 8,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-17",
+      "matricula": "2300300003",
+      "nombre": "Paola",
+      "apellidoPaterno": "Vázquez",
+      "apellidoMaterno": "Rocha",
+      "carrera": "Contador Público",
+      "grado": 6,
+      "grupo": "B",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-18",
+      "matricula": "2300300004",
+      "nombre": "Rodrigo",
+      "apellidoPaterno": "Castillo",
+      "apellidoMaterno": "Ayala",
+      "carrera": "Contador Público",
+      "grado": 4,
+      "grupo": "A",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-19",
+      "matricula": "2300300005",
+      "nombre": "Andrea",
+      "apellidoPaterno": "Ruiz",
+      "apellidoMaterno": "Barrera",
+      "carrera": "Contador Público",
+      "grado": 2,
+      "grupo": "B",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-20",
+      "matricula": "2300300006",
+      "nombre": "Jorge",
+      "apellidoPaterno": "Mendoza",
+      "apellidoMaterno": "Olivares",
+      "carrera": "Contador Público",
+      "grado": 2,
+      "grupo": "C",
+      "turno": "Mixto",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-21",
+      "matricula": "2300400001",
+      "nombre": "Natalia",
+      "apellidoPaterno": "Aguilar",
+      "apellidoMaterno": "Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "grado": 7,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-22",
+      "matricula": "2300400002",
+      "nombre": "Iker",
+      "apellidoPaterno": "Ortiz",
+      "apellidoMaterno": "Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "grado": 7,
+      "grupo": "A",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-23",
+      "matricula": "2300400003",
+      "nombre": "Renata",
+      "apellidoPaterno": "Chávez",
+      "apellidoMaterno": "Medina",
+      "carrera": "Licenciatura en Enfermería",
+      "grado": 5,
+      "grupo": "B",
+      "turno": "Vespertino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-24",
+      "matricula": "2300400004",
+      "nombre": "Bruno",
+      "apellidoPaterno": "Ramos",
+      "apellidoMaterno": "Esparza",
+      "carrera": "Licenciatura en Enfermería",
+      "grado": 3,
+      "grupo": "A",
+      "turno": "Mixto",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    },
+    {
+      "id": "ver-al-25",
+      "matricula": "2300400005",
+      "nombre": "Lucía",
+      "apellidoPaterno": "Herrera",
+      "apellidoMaterno": "Cárdenas",
+      "carrera": "Licenciatura en Enfermería",
+      "grado": 1,
+      "grupo": "B",
+      "turno": "Matutino",
+      "activo": true,
+      "fechaRegistro": "2026-07-01T09:00:00-05:00",
+      "datosExtra": {}
+    }
+  ],
+  "registros": [
+    {
+      "id": "ver-001",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-01T09:32:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-01T10:14:00-05:00",
+      "duracionMinutos": 42
+    },
+    {
+      "id": "ver-002",
+      "alumnoId": "ver-al-18",
+      "matricula": "2300300004",
+      "nombreCompleto": "Rodrigo Castillo Ayala",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-03T13:08:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-03T13:43:00-05:00",
+      "duracionMinutos": 35
+    },
+    {
+      "id": "ver-003",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-04T13:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-04T14:21:00-05:00",
+      "duracionMinutos": 22
+    },
+    {
+      "id": "ver-004",
+      "alumnoId": "ver-al-14",
+      "matricula": "2300200006",
+      "nombreCompleto": "Sebastián Reyes Lozano",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-05T10:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-05T10:30:00-05:00",
+      "duracionMinutos": 30
+    },
+    {
+      "id": "ver-005",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-05T11:54:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-05T12:37:00-05:00",
+      "duracionMinutos": 43
+    },
+    {
+      "id": "ver-006",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-05T17:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-05T19:03:00-05:00",
+      "duracionMinutos": 119
+    },
+    {
+      "id": "ver-007",
+      "alumnoId": "invitado-ver-7",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-05T18:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false
+    },
+    {
+      "id": "ver-008",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-06T09:42:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-06T11:23:00-05:00",
+      "duracionMinutos": 101
+    },
+    {
+      "id": "ver-009",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-06T11:49:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-06T13:33:00-05:00",
+      "duracionMinutos": 104
+    },
+    {
+      "id": "ver-010",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-06T12:12:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-06T15:10:00-05:00",
+      "duracionMinutos": 178
+    },
+    {
+      "id": "ver-011",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-07T18:37:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-07T18:55:00-05:00",
+      "duracionMinutos": 18
+    },
+    {
+      "id": "ver-012",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-08T10:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-08T11:23:00-05:00",
+      "duracionMinutos": 79
+    },
+    {
+      "id": "ver-013",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro",
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Otro",
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-10T13:31:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-10T15:52:00-05:00",
+      "duracionMinutos": 141
+    },
+    {
+      "id": "ver-014",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-08-11T17:22:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-11T17:49:00-05:00",
+      "duracionMinutos": 27
+    },
+    {
+      "id": "ver-015",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Investigación",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-12T12:18:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-12T12:37:00-05:00",
+      "duracionMinutos": 19
+    },
+    {
+      "id": "ver-016",
+      "alumnoId": "invitado-ver-16",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-12T14:40:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false
+    },
+    {
+      "id": "ver-017",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-13T09:39:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-13T10:38:00-05:00",
+      "duracionMinutos": 59
+    },
+    {
+      "id": "ver-018",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo",
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar",
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-13T10:23:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-13T20:00:00-05:00",
+      "duracionMinutos": 577,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-019",
+      "alumnoId": "invitado-ver-19",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-13T11:06:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-08-13T11:59:00-05:00",
+      "duracionMinutos": 53
+    },
+    {
+      "id": "ver-020",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Investigación"
+      ],
+      "fechaHora": "2026-08-14T09:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-14T11:02:00-05:00",
+      "duracionMinutos": 95
+    },
+    {
+      "id": "ver-021",
+      "alumnoId": "ver-al-06",
+      "matricula": "2300100006",
+      "nombreCompleto": "Emiliano Torres Villarreal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-14T12:30:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-08-14T13:47:00-05:00",
+      "duracionMinutos": 77
+    },
+    {
+      "id": "ver-022",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-15T08:57:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-15T14:00:00-05:00",
+      "duracionMinutos": 303,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-023",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-17T07:33:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-17T08:02:00-05:00",
+      "duracionMinutos": 29
+    },
+    {
+      "id": "ver-024",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-17T11:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-17T14:09:00-05:00",
+      "duracionMinutos": 185
+    },
+    {
+      "id": "ver-025",
+      "alumnoId": "ver-al-06",
+      "matricula": "2300100006",
+      "nombreCompleto": "Emiliano Torres Villarreal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-17T11:32:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-08-17T12:07:00-05:00",
+      "duracionMinutos": 35
+    },
+    {
+      "id": "ver-026",
+      "alumnoId": "ver-al-12",
+      "matricula": "2300200004",
+      "nombreCompleto": "Leonardo Cruz Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-08-17T13:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-17T13:33:00-05:00",
+      "duracionMinutos": 29
+    },
+    {
+      "id": "ver-027",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-18T09:05:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino"
+    },
+    {
+      "id": "ver-028",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-18T09:35:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-18T11:10:00-05:00",
+      "duracionMinutos": 95
+    },
+    {
+      "id": "ver-029",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-18T10:28:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-18T13:11:00-05:00",
+      "duracionMinutos": 163
+    },
+    {
+      "id": "ver-030",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-18T11:24:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-18T13:30:00-05:00",
+      "duracionMinutos": 126
+    },
+    {
+      "id": "ver-031",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-18T13:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-18T13:57:00-05:00",
+      "duracionMinutos": 30
+    },
+    {
+      "id": "ver-032",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-18T16:48:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-18T17:33:00-05:00",
+      "duracionMinutos": 45
+    },
+    {
+      "id": "ver-033",
+      "alumnoId": "ver-al-24",
+      "matricula": "2300400004",
+      "nombreCompleto": "Bruno Ramos Esparza",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-08-19T08:42:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-08-19T20:00:00-05:00",
+      "duracionMinutos": 678,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-034",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-19T09:16:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-19T10:41:00-05:00",
+      "duracionMinutos": 85
+    },
+    {
+      "id": "ver-035",
+      "alumnoId": "ver-al-14",
+      "matricula": "2300200006",
+      "nombreCompleto": "Sebastián Reyes Lozano",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-19T11:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-19T13:54:00-05:00",
+      "duracionMinutos": 115
+    },
+    {
+      "id": "ver-036",
+      "alumnoId": "ver-al-07",
+      "matricula": "2300100007",
+      "nombreCompleto": "Camila Flores Guerra",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-19T15:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-19T18:41:00-05:00",
+      "duracionMinutos": 162
+    },
+    {
+      "id": "ver-037",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-20T12:01:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-20T12:54:00-05:00",
+      "duracionMinutos": 53
+    },
+    {
+      "id": "ver-038",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-20T12:10:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-20T14:08:00-05:00",
+      "duracionMinutos": 118
+    },
+    {
+      "id": "ver-039",
+      "alumnoId": "ver-al-23",
+      "matricula": "2300400003",
+      "nombreCompleto": "Renata Chávez Medina",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-20T15:25:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-20T17:36:00-05:00",
+      "duracionMinutos": 131
+    },
+    {
+      "id": "ver-040",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Investigación",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-20T16:31:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-20T17:56:00-05:00",
+      "duracionMinutos": 85
+    },
+    {
+      "id": "ver-041",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-21T12:44:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-21T13:38:00-05:00",
+      "duracionMinutos": 54
+    },
+    {
+      "id": "ver-042",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-21T13:45:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-21T20:00:00-05:00",
+      "duracionMinutos": 375,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-043",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-22T09:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-22T10:26:00-05:00",
+      "duracionMinutos": 82
+    },
+    {
+      "id": "ver-044",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-24T06:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-24T08:30:00-05:00",
+      "duracionMinutos": 91
+    },
+    {
+      "id": "ver-045",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-24T09:36:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-24T10:58:00-05:00",
+      "duracionMinutos": 82
+    },
+    {
+      "id": "ver-046",
+      "alumnoId": "ver-al-13",
+      "matricula": "2300200005",
+      "nombreCompleto": "Daniela Morales Zamora",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-24T10:49:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-08-24T13:43:00-05:00",
+      "duracionMinutos": 174
+    },
+    {
+      "id": "ver-047",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-08-24T12:49:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-24T13:46:00-05:00",
+      "duracionMinutos": 57
+    },
+    {
+      "id": "ver-048",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-24T13:12:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-24T13:40:00-05:00",
+      "duracionMinutos": 28
+    },
+    {
+      "id": "ver-049",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-24T13:29:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-24T14:46:00-05:00",
+      "duracionMinutos": 77
+    },
+    {
+      "id": "ver-050",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-24T16:20:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-24T16:55:00-05:00",
+      "duracionMinutos": 35
+    },
+    {
+      "id": "ver-051",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-25T07:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-25T07:20:00-05:00",
+      "duracionMinutos": 20
+    },
+    {
+      "id": "ver-052",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-25T08:51:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-25T09:07:00-05:00",
+      "duracionMinutos": 16
+    },
+    {
+      "id": "ver-053",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-25T12:01:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-25T13:18:00-05:00",
+      "duracionMinutos": 77
+    },
+    {
+      "id": "ver-054",
+      "alumnoId": "ver-al-23",
+      "matricula": "2300400003",
+      "nombreCompleto": "Renata Chávez Medina",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion",
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Investigación",
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-25T12:05:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-25T12:26:00-05:00",
+      "duracionMinutos": 21
+    },
+    {
+      "id": "ver-055",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo",
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar",
+        "Investigación"
+      ],
+      "fechaHora": "2026-08-25T14:06:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-25T14:30:00-05:00",
+      "duracionMinutos": 24
+    },
+    {
+      "id": "ver-056",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-25T14:12:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-25T14:48:00-05:00",
+      "duracionMinutos": 36
+    },
+    {
+      "id": "ver-057",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-25T16:23:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-25T16:43:00-05:00",
+      "duracionMinutos": 20
+    },
+    {
+      "id": "ver-058",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo",
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar",
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-25T16:29:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-25T17:39:00-05:00",
+      "duracionMinutos": 70
+    },
+    {
+      "id": "ver-059",
+      "alumnoId": "invitado-ver-59",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-08-25T17:34:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-08-25T17:57:00-05:00",
+      "duracionMinutos": 23
+    },
+    {
+      "id": "ver-060",
+      "alumnoId": "ver-al-06",
+      "matricula": "2300100006",
+      "nombreCompleto": "Emiliano Torres Villarreal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-26T08:14:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-08-26T11:00:00-05:00",
+      "duracionMinutos": 166
+    },
+    {
+      "id": "ver-061",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-26T08:19:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-26T11:23:00-05:00",
+      "duracionMinutos": 184
+    },
+    {
+      "id": "ver-062",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-26T11:06:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-26T14:23:00-05:00",
+      "duracionMinutos": 197
+    },
+    {
+      "id": "ver-063",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-26T16:37:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-26T16:54:00-05:00",
+      "duracionMinutos": 17
+    },
+    {
+      "id": "ver-064",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-26T18:30:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-26T20:00:00-05:00",
+      "duracionMinutos": 90
+    },
+    {
+      "id": "ver-065",
+      "alumnoId": "ver-al-23",
+      "matricula": "2300400003",
+      "nombreCompleto": "Renata Chávez Medina",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-27T10:16:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-27T11:00:00-05:00",
+      "duracionMinutos": 44
+    },
+    {
+      "id": "ver-066",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-27T12:55:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-27T14:59:00-05:00",
+      "duracionMinutos": 124
+    },
+    {
+      "id": "ver-067",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-27T13:48:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-27T14:19:00-05:00",
+      "duracionMinutos": 31
+    },
+    {
+      "id": "ver-068",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-27T17:54:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-27T18:31:00-05:00",
+      "duracionMinutos": 37
+    },
+    {
+      "id": "ver-069",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-27T18:45:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-27T20:01:00-05:00",
+      "duracionMinutos": 76
+    },
+    {
+      "id": "ver-070",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-28T13:32:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-28T16:41:00-05:00",
+      "duracionMinutos": 189
+    },
+    {
+      "id": "ver-071",
+      "alumnoId": "invitado-ver-71",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-08-28T15:53:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-08-28T19:02:00-05:00",
+      "duracionMinutos": 189
+    },
+    {
+      "id": "ver-072",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-28T19:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-28T20:05:00-05:00",
+      "duracionMinutos": 6
+    },
+    {
+      "id": "ver-073",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-08-29T08:31:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-29T10:24:00-05:00",
+      "duracionMinutos": 113
+    },
+    {
+      "id": "ver-074",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-29T11:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino"
+    },
+    {
+      "id": "ver-075",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-31T11:48:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-08-31T13:02:00-05:00",
+      "duracionMinutos": 74
+    },
+    {
+      "id": "ver-076",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-08-31T12:37:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-31T13:57:00-05:00",
+      "duracionMinutos": 80
+    },
+    {
+      "id": "ver-077",
+      "alumnoId": "ver-al-24",
+      "matricula": "2300400004",
+      "nombreCompleto": "Bruno Ramos Esparza",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-31T13:19:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-08-31T13:55:00-05:00",
+      "duracionMinutos": 36
+    },
+    {
+      "id": "ver-078",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-08-31T13:43:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-08-31T15:36:00-05:00",
+      "duracionMinutos": 113
+    },
+    {
+      "id": "ver-079",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-08-31T19:50:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-01T07:05:00-05:00",
+      "duracionMinutos": 675
+    },
+    {
+      "id": "ver-080",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-01T07:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-01T09:00:00-05:00",
+      "duracionMinutos": 120
+    },
+    {
+      "id": "ver-081",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-01T09:50:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-01T10:06:00-05:00",
+      "duracionMinutos": 16
+    },
+    {
+      "id": "ver-082",
+      "alumnoId": "ver-al-19",
+      "matricula": "2300300005",
+      "nombreCompleto": "Andrea Ruiz Barrera",
+      "carrera": "Contador Público",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-01T11:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-01T11:16:00-05:00",
+      "duracionMinutos": 16
+    },
+    {
+      "id": "ver-083",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-01T11:17:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-01T11:36:00-05:00",
+      "duracionMinutos": 19
+    },
+    {
+      "id": "ver-084",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-01T13:16:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-01T14:38:00-05:00",
+      "duracionMinutos": 82
+    },
+    {
+      "id": "ver-085",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-01T13:35:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-01T14:25:00-05:00",
+      "duracionMinutos": 50
+    },
+    {
+      "id": "ver-086",
+      "alumnoId": "invitado-ver-86",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-09-01T14:05:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-01T14:33:00-05:00",
+      "duracionMinutos": 28
+    },
+    {
+      "id": "ver-087",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-01T15:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-01T18:01:00-05:00",
+      "duracionMinutos": 177
+    },
+    {
+      "id": "ver-088",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-01T16:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-01T20:00:00-05:00",
+      "duracionMinutos": 236,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-089",
+      "alumnoId": "ver-al-12",
+      "matricula": "2300200004",
+      "nombreCompleto": "Leonardo Cruz Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-09-02T10:02:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-02T11:35:00-05:00",
+      "duracionMinutos": 93
+    },
+    {
+      "id": "ver-090",
+      "alumnoId": "ver-al-07",
+      "matricula": "2300100007",
+      "nombreCompleto": "Camila Flores Guerra",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-02T10:56:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-02T12:59:00-05:00",
+      "duracionMinutos": 123
+    },
+    {
+      "id": "ver-091",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-02T11:06:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-02T13:48:00-05:00",
+      "duracionMinutos": 162
+    },
+    {
+      "id": "ver-092",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-02T12:26:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-02T13:04:00-05:00",
+      "duracionMinutos": 38
+    },
+    {
+      "id": "ver-093",
+      "alumnoId": "ver-al-24",
+      "matricula": "2300400004",
+      "nombreCompleto": "Bruno Ramos Esparza",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-02T12:50:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-02T13:28:00-05:00",
+      "duracionMinutos": 38
+    },
+    {
+      "id": "ver-094",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-02T12:52:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-02T13:51:00-05:00",
+      "duracionMinutos": 59
+    },
+    {
+      "id": "ver-095",
+      "alumnoId": "ver-al-12",
+      "matricula": "2300200004",
+      "nombreCompleto": "Leonardo Cruz Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-03T11:34:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-03T20:00:00-05:00",
+      "duracionMinutos": 506,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-096",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-03T13:49:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-03T14:52:00-05:00",
+      "duracionMinutos": 63
+    },
+    {
+      "id": "ver-097",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-03T13:54:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-03T15:42:00-05:00",
+      "duracionMinutos": 108
+    },
+    {
+      "id": "ver-098",
+      "alumnoId": "ver-al-23",
+      "matricula": "2300400003",
+      "nombreCompleto": "Renata Chávez Medina",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-03T17:51:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-03T18:16:00-05:00",
+      "duracionMinutos": 25
+    },
+    {
+      "id": "ver-099",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-03T18:55:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-03T19:31:00-05:00",
+      "duracionMinutos": 36
+    },
+    {
+      "id": "ver-100",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-04T09:56:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-04T10:35:00-05:00",
+      "duracionMinutos": 39
+    },
+    {
+      "id": "ver-101",
+      "alumnoId": "invitado-ver-101",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-04T11:03:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-04T12:54:00-05:00",
+      "duracionMinutos": 111
+    },
+    {
+      "id": "ver-102",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-04T14:21:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-04T14:57:00-05:00",
+      "duracionMinutos": 36
+    },
+    {
+      "id": "ver-103",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro",
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Pedir libro",
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-05T10:19:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-05T11:07:00-05:00",
+      "duracionMinutos": 48
+    },
+    {
+      "id": "ver-104",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-05T13:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-05T14:00:00-05:00",
+      "duracionMinutos": 1
+    },
+    {
+      "id": "ver-105",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-06T10:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-06T11:00:00-05:00",
+      "duracionMinutos": 60
+    },
+    {
+      "id": "ver-106",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-07T08:13:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-07T08:34:00-05:00",
+      "duracionMinutos": 21
+    },
+    {
+      "id": "ver-107",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-07T11:46:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-07T14:11:00-05:00",
+      "duracionMinutos": 145
+    },
+    {
+      "id": "ver-108",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-07T13:14:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-07T14:47:00-05:00",
+      "duracionMinutos": 93
+    },
+    {
+      "id": "ver-109",
+      "alumnoId": "ver-al-13",
+      "matricula": "2300200005",
+      "nombreCompleto": "Daniela Morales Zamora",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-07T15:01:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-07T17:42:00-05:00",
+      "duracionMinutos": 161
+    },
+    {
+      "id": "ver-110",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-07T15:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-07T16:27:00-05:00",
+      "duracionMinutos": 28
+    },
+    {
+      "id": "ver-111",
+      "alumnoId": "ver-al-12",
+      "matricula": "2300200004",
+      "nombreCompleto": "Leonardo Cruz Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-07T16:42:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-07T18:36:00-05:00",
+      "duracionMinutos": 114
+    },
+    {
+      "id": "ver-112",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro",
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Pedir libro",
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-08T09:42:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-08T20:00:00-05:00",
+      "duracionMinutos": 618,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-113",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-08T09:43:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-08T10:06:00-05:00",
+      "duracionMinutos": 23
+    },
+    {
+      "id": "ver-114",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-08T10:01:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-08T20:00:00-05:00",
+      "duracionMinutos": 599,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-115",
+      "alumnoId": "ver-al-24",
+      "matricula": "2300400004",
+      "nombreCompleto": "Bruno Ramos Esparza",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-08T10:57:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-08T12:46:00-05:00",
+      "duracionMinutos": 109
+    },
+    {
+      "id": "ver-116",
+      "alumnoId": "ver-al-06",
+      "matricula": "2300100006",
+      "nombreCompleto": "Emiliano Torres Villarreal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-08T11:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-08T11:57:00-05:00",
+      "duracionMinutos": 30
+    },
+    {
+      "id": "ver-117",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-08T11:38:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-08T12:44:00-05:00",
+      "duracionMinutos": 66
+    },
+    {
+      "id": "ver-118",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-08T12:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-08T13:30:00-05:00",
+      "duracionMinutos": 31
+    },
+    {
+      "id": "ver-119",
+      "alumnoId": "ver-al-12",
+      "matricula": "2300200004",
+      "nombreCompleto": "Leonardo Cruz Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-08T13:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-08T13:45:00-05:00",
+      "duracionMinutos": 45
+    },
+    {
+      "id": "ver-120",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-08T15:51:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-08T16:32:00-05:00",
+      "duracionMinutos": 41
+    },
+    {
+      "id": "ver-121",
+      "alumnoId": "invitado-ver-121",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo",
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar",
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-08T15:54:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-08T16:12:00-05:00",
+      "duracionMinutos": 18
+    },
+    {
+      "id": "ver-122",
+      "alumnoId": "invitado-ver-122",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-09T07:03:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-09T08:45:00-05:00",
+      "duracionMinutos": 102
+    },
+    {
+      "id": "ver-123",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-09T08:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-09T09:55:00-05:00",
+      "duracionMinutos": 115
+    },
+    {
+      "id": "ver-124",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-09T11:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-09T12:06:00-05:00",
+      "duracionMinutos": 62
+    },
+    {
+      "id": "ver-125",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-09T11:10:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-09T11:10:00-05:00",
+      "duracionMinutos": 0
+    },
+    {
+      "id": "ver-126",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-09T13:32:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-09T14:08:00-05:00",
+      "duracionMinutos": 36
+    },
+    {
+      "id": "ver-127",
+      "alumnoId": "ver-al-07",
+      "matricula": "2300100007",
+      "nombreCompleto": "Camila Flores Guerra",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-09T13:40:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-09T14:06:00-05:00",
+      "duracionMinutos": 26
+    },
+    {
+      "id": "ver-128",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-09T17:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-09T18:28:00-05:00",
+      "duracionMinutos": 61
+    },
+    {
+      "id": "ver-129",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-10T07:05:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-10T13:05:00-05:00",
+      "duracionMinutos": 360
+    },
+    {
+      "id": "ver-130",
+      "alumnoId": "ver-al-14",
+      "matricula": "2300200006",
+      "nombreCompleto": "Sebastián Reyes Lozano",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-10T10:14:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-10T11:44:00-05:00",
+      "duracionMinutos": 90
+    },
+    {
+      "id": "ver-131",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-10T10:22:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-10T11:23:00-05:00",
+      "duracionMinutos": 61
+    },
+    {
+      "id": "ver-132",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-10T10:42:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-10T12:15:00-05:00",
+      "duracionMinutos": 93
+    },
+    {
+      "id": "ver-133",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-10T12:52:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-10T14:27:00-05:00",
+      "duracionMinutos": 95
+    },
+    {
+      "id": "ver-134",
+      "alumnoId": "ver-al-18",
+      "matricula": "2300300004",
+      "nombreCompleto": "Rodrigo Castillo Ayala",
+      "carrera": "Contador Público",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-10T13:06:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-10T14:33:00-05:00",
+      "duracionMinutos": 87
+    },
+    {
+      "id": "ver-135",
+      "alumnoId": "ver-al-12",
+      "matricula": "2300200004",
+      "nombreCompleto": "Leonardo Cruz Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-10T18:25:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-10T19:37:00-05:00",
+      "duracionMinutos": 72
+    },
+    {
+      "id": "ver-136",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-11T11:18:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-11T11:48:00-05:00",
+      "duracionMinutos": 30
+    },
+    {
+      "id": "ver-137",
+      "alumnoId": "ver-al-24",
+      "matricula": "2300400004",
+      "nombreCompleto": "Bruno Ramos Esparza",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-11T11:42:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-11T12:13:00-05:00",
+      "duracionMinutos": 31
+    },
+    {
+      "id": "ver-138",
+      "alumnoId": "ver-al-13",
+      "matricula": "2300200005",
+      "nombreCompleto": "Daniela Morales Zamora",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-11T14:39:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-11T16:42:00-05:00",
+      "duracionMinutos": 123
+    },
+    {
+      "id": "ver-139",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-12T10:35:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-12T12:25:00-05:00",
+      "duracionMinutos": 110
+    },
+    {
+      "id": "ver-140",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-09-12T14:05:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-12T14:25:00-05:00",
+      "duracionMinutos": 20
+    },
+    {
+      "id": "ver-141",
+      "alumnoId": "ver-al-13",
+      "matricula": "2300200005",
+      "nombreCompleto": "Daniela Morales Zamora",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-14T08:16:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-14T11:30:00-05:00",
+      "duracionMinutos": 194
+    },
+    {
+      "id": "ver-142",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-14T09:07:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-14T09:25:00-05:00",
+      "duracionMinutos": 18
+    },
+    {
+      "id": "ver-143",
+      "alumnoId": "ver-al-25",
+      "matricula": "2300400005",
+      "nombreCompleto": "Lucía Herrera Cárdenas",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-09-14T10:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-14T10:48:00-05:00",
+      "duracionMinutos": 21
+    },
+    {
+      "id": "ver-144",
+      "alumnoId": "ver-al-06",
+      "matricula": "2300100006",
+      "nombreCompleto": "Emiliano Torres Villarreal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-14T12:20:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-14T12:42:00-05:00",
+      "duracionMinutos": 22
+    },
+    {
+      "id": "ver-145",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-14T14:39:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-14T15:20:00-05:00",
+      "duracionMinutos": 41
+    },
+    {
+      "id": "ver-146",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-15T08:40:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-15T09:23:00-05:00",
+      "duracionMinutos": 43
+    },
+    {
+      "id": "ver-147",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-15T10:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-15T10:05:00-05:00",
+      "duracionMinutos": 5
+    },
+    {
+      "id": "ver-148",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-15T10:10:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-15T11:30:00-05:00",
+      "duracionMinutos": 80
+    },
+    {
+      "id": "ver-149",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-15T10:14:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-15T13:25:00-05:00",
+      "duracionMinutos": 191
+    },
+    {
+      "id": "ver-150",
+      "alumnoId": "invitado-ver-150",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-15T11:21:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-15T13:11:00-05:00",
+      "duracionMinutos": 110
+    },
+    {
+      "id": "ver-151",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-15T13:59:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-15T16:52:00-05:00",
+      "duracionMinutos": 173
+    },
+    {
+      "id": "ver-152",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-15T14:49:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-15T17:24:00-05:00",
+      "duracionMinutos": 155
+    },
+    {
+      "id": "ver-153",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-15T17:41:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-15T18:05:00-05:00",
+      "duracionMinutos": 24
+    },
+    {
+      "id": "ver-154",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-15T18:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-15T19:02:00-05:00",
+      "duracionMinutos": 35
+    },
+    {
+      "id": "ver-155",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-16T10:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-16T10:40:00-05:00",
+      "duracionMinutos": 40
+    },
+    {
+      "id": "ver-156",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-17T08:19:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-17T08:34:00-05:00",
+      "duracionMinutos": 15
+    },
+    {
+      "id": "ver-157",
+      "alumnoId": "invitado-ver-157",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-17T08:55:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-17T11:43:00-05:00",
+      "duracionMinutos": 168
+    },
+    {
+      "id": "ver-158",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-17T09:57:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-17T11:52:00-05:00",
+      "duracionMinutos": 115
+    },
+    {
+      "id": "ver-159",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-17T10:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-17T12:01:00-05:00",
+      "duracionMinutos": 94
+    },
+    {
+      "id": "ver-160",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-17T11:37:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-17T20:00:00-05:00",
+      "duracionMinutos": 503,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-161",
+      "alumnoId": "ver-al-23",
+      "matricula": "2300400003",
+      "nombreCompleto": "Renata Chávez Medina",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro",
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro",
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-17T16:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-17T17:30:00-05:00",
+      "duracionMinutos": 90
+    },
+    {
+      "id": "ver-162",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-18T09:19:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-18T09:52:00-05:00",
+      "duracionMinutos": 33
+    },
+    {
+      "id": "ver-163",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro",
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Pedir libro",
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-18T09:32:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-18T09:50:00-05:00",
+      "duracionMinutos": 18
+    },
+    {
+      "id": "ver-164",
+      "alumnoId": "invitado-ver-164",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Laura Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion",
+        "m-libro",
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Investigación",
+        "Pedir libro",
+        "Otro"
+      ],
+      "fechaHora": "2026-09-18T11:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-18T12:00:00-05:00",
+      "duracionMinutos": 60
+    },
+    {
+      "id": "ver-165",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-18T14:21:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-18T20:00:00-05:00",
+      "duracionMinutos": 339,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-166",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-19T09:46:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-19T11:23:00-05:00",
+      "duracionMinutos": 97
+    },
+    {
+      "id": "ver-167",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-21T10:43:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-21T11:43:00-05:00",
+      "duracionMinutos": 60
+    },
+    {
+      "id": "ver-168",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-21T12:24:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-21T12:44:00-05:00",
+      "duracionMinutos": 20
+    },
+    {
+      "id": "ver-169",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-21T12:49:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-21T14:12:00-05:00",
+      "duracionMinutos": 83
+    },
+    {
+      "id": "ver-170",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-21T13:56:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-21T16:34:00-05:00",
+      "duracionMinutos": 158
+    },
+    {
+      "id": "ver-171",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-21T14:20:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-21T16:43:00-05:00",
+      "duracionMinutos": 143
+    },
+    {
+      "id": "ver-172",
+      "alumnoId": "ver-al-24",
+      "matricula": "2300400004",
+      "nombreCompleto": "Bruno Ramos Esparza",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-21T16:08:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-21T16:56:00-05:00",
+      "duracionMinutos": 48
+    },
+    {
+      "id": "ver-173",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-22T10:23:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-22T11:29:00-05:00",
+      "duracionMinutos": 66
+    },
+    {
+      "id": "ver-174",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-22T10:36:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-22T11:04:00-05:00",
+      "duracionMinutos": 28
+    },
+    {
+      "id": "ver-175",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-22T11:13:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-22T11:45:00-05:00",
+      "duracionMinutos": 32
+    },
+    {
+      "id": "ver-176",
+      "alumnoId": "ver-al-22",
+      "matricula": "2300400002",
+      "nombreCompleto": "Iker Ortiz Guajardo",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-09-22T11:25:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino"
+    },
+    {
+      "id": "ver-177",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-09-22T13:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-22T13:47:00-05:00",
+      "duracionMinutos": 43
+    },
+    {
+      "id": "ver-178",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-22T15:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-22T20:00:00-05:00",
+      "duracionMinutos": 300,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-179",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-22T17:03:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-22T19:03:00-05:00",
+      "duracionMinutos": 120
+    },
+    {
+      "id": "ver-180",
+      "alumnoId": "ver-al-18",
+      "matricula": "2300300004",
+      "nombreCompleto": "Rodrigo Castillo Ayala",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-22T17:09:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-22T18:51:00-05:00",
+      "duracionMinutos": 102
+    },
+    {
+      "id": "ver-181",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-22T18:23:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-22T20:00:00-05:00",
+      "duracionMinutos": 97
+    },
+    {
+      "id": "ver-182",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-23T07:33:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-23T10:25:00-05:00",
+      "duracionMinutos": 172
+    },
+    {
+      "id": "ver-183",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-23T09:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino"
+    },
+    {
+      "id": "ver-184",
+      "alumnoId": "ver-al-25",
+      "matricula": "2300400005",
+      "nombreCompleto": "Lucía Herrera Cárdenas",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro"
+      ],
+      "motivoNombres": [
+        "Otro"
+      ],
+      "fechaHora": "2026-09-23T13:11:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-23T13:53:00-05:00",
+      "duracionMinutos": 42
+    },
+    {
+      "id": "ver-185",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-23T13:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-23T15:25:00-05:00",
+      "duracionMinutos": 118
+    },
+    {
+      "id": "ver-186",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-23T17:42:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-23T18:55:00-05:00",
+      "duracionMinutos": 73
+    },
+    {
+      "id": "ver-187",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-23T18:56:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-23T19:56:00-05:00",
+      "duracionMinutos": 60
+    },
+    {
+      "id": "ver-188",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-24T11:09:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-24T12:15:00-05:00",
+      "duracionMinutos": 66
+    },
+    {
+      "id": "ver-189",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-24T15:56:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-24T16:36:00-05:00",
+      "duracionMinutos": 40
+    },
+    {
+      "id": "ver-190",
+      "alumnoId": "ver-al-19",
+      "matricula": "2300300005",
+      "nombreCompleto": "Andrea Ruiz Barrera",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-24T16:15:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-24T16:36:00-05:00",
+      "duracionMinutos": 21
+    },
+    {
+      "id": "ver-191",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-24T16:29:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-24T18:41:00-05:00",
+      "duracionMinutos": 132
+    },
+    {
+      "id": "ver-192",
+      "alumnoId": "invitado-ver-192",
+      "matricula": "INVITADO",
+      "nombreCompleto": "Visitante",
+      "carrera": "Visitante",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Investigación",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-25T10:00:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "horaSalida": "2026-09-25T12:55:00-05:00",
+      "duracionMinutos": 175
+    },
+    {
+      "id": "ver-193",
+      "alumnoId": "ver-al-07",
+      "matricula": "2300100007",
+      "nombreCompleto": "Camila Flores Guerra",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-25T16:34:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino"
+    },
+    {
+      "id": "ver-194",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-25T17:45:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-25T18:20:00-05:00",
+      "duracionMinutos": 35
+    },
+    {
+      "id": "ver-195",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar",
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Estudiar",
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-26T11:07:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-26T12:45:00-05:00",
+      "duracionMinutos": 98
+    },
+    {
+      "id": "ver-196",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-28T10:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-28T11:24:00-05:00",
+      "duracionMinutos": 80
+    },
+    {
+      "id": "ver-197",
+      "alumnoId": "ver-al-10",
+      "matricula": "2300200002",
+      "nombreCompleto": "Santiago Pérez Elizondo",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-investigacion",
+      "motivoNombre": "Investigación",
+      "motivoIds": [
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-28T11:23:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-28T13:18:00-05:00",
+      "duracionMinutos": 115
+    },
+    {
+      "id": "ver-198",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-28T12:58:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-28T13:31:00-05:00",
+      "duracionMinutos": 33
+    },
+    {
+      "id": "ver-199",
+      "alumnoId": "ver-al-17",
+      "matricula": "2300300003",
+      "nombreCompleto": "Paola Vázquez Rocha",
+      "carrera": "Contador Público",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-28T13:16:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-28T14:12:00-05:00",
+      "duracionMinutos": 56
+    },
+    {
+      "id": "ver-200",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-28T14:50:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-28T15:29:00-05:00",
+      "duracionMinutos": 39
+    },
+    {
+      "id": "ver-201",
+      "alumnoId": "ver-al-05",
+      "matricula": "2300100005",
+      "nombreCompleto": "Sofía Ramírez Peña",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-28T18:23:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-28T19:43:00-05:00",
+      "duracionMinutos": 80
+    },
+    {
+      "id": "ver-202",
+      "alumnoId": "ver-al-04",
+      "matricula": "2300100004",
+      "nombreCompleto": "Andrés Hernández",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-29T07:36:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-29T08:48:00-05:00",
+      "duracionMinutos": 72
+    },
+    {
+      "id": "ver-203",
+      "alumnoId": "ver-al-15",
+      "matricula": "2300300001",
+      "nombreCompleto": "Mariana Jiménez Cavazos",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-29T12:15:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-29T12:47:00-05:00",
+      "duracionMinutos": 32
+    },
+    {
+      "id": "ver-204",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-29T12:27:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-29T14:07:00-05:00",
+      "duracionMinutos": 100
+    },
+    {
+      "id": "ver-205",
+      "alumnoId": "ver-al-12",
+      "matricula": "2300200004",
+      "nombreCompleto": "Leonardo Cruz Benavides",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro",
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Pedir libro",
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-29T12:36:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-29T15:46:00-05:00",
+      "duracionMinutos": 190
+    },
+    {
+      "id": "ver-206",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-29T13:03:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-29T13:53:00-05:00",
+      "duracionMinutos": 50
+    },
+    {
+      "id": "ver-207",
+      "alumnoId": "ver-al-02",
+      "matricula": "2300100002",
+      "nombreCompleto": "Diego Martínez Salinas",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-trabajo",
+      "motivoNombre": "Trabajo escolar",
+      "motivoIds": [
+        "m-trabajo"
+      ],
+      "motivoNombres": [
+        "Trabajo escolar"
+      ],
+      "fechaHora": "2026-09-29T13:06:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-29T13:25:00-05:00",
+      "duracionMinutos": 19
+    },
+    {
+      "id": "ver-208",
+      "alumnoId": "ver-al-06",
+      "matricula": "2300100006",
+      "nombreCompleto": "Emiliano Torres Villarreal",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-29T17:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Mixto",
+      "horaSalida": "2026-09-29T17:37:00-05:00",
+      "duracionMinutos": 33
+    },
+    {
+      "id": "ver-209",
+      "alumnoId": "ver-al-03",
+      "matricula": "2300100003",
+      "nombreCompleto": "Fernanda López Cantú",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-29T18:35:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-29T19:12:00-05:00",
+      "duracionMinutos": 37
+    },
+    {
+      "id": "ver-210",
+      "alumnoId": "ver-al-11",
+      "matricula": "2300200003",
+      "nombreCompleto": "Ximena Sánchez Tamez",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-30T08:11:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-30T09:09:00-05:00",
+      "duracionMinutos": 58
+    },
+    {
+      "id": "ver-211",
+      "alumnoId": "ver-al-01",
+      "matricula": "2300100001",
+      "nombreCompleto": "Valeria Garza Treviño",
+      "carrera": "Licenciatura en Tecnologías de la Información",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-30T11:39:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-30T20:00:00-05:00",
+      "duracionMinutos": 501,
+      "salidaEstimada": true
+    },
+    {
+      "id": "ver-212",
+      "alumnoId": "ver-al-16",
+      "matricula": "2300300002",
+      "nombreCompleto": "Gael Díaz Montemayor",
+      "carrera": "Contador Público",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-30T12:45:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-30T15:26:00-05:00",
+      "duracionMinutos": 161
+    },
+    {
+      "id": "ver-213",
+      "alumnoId": "ver-al-09",
+      "matricula": "2300200001",
+      "nombreCompleto": "Regina González Ochoa",
+      "carrera": "Licenciatura en Derecho",
+      "motivoId": "m-libro",
+      "motivoNombre": "Pedir libro",
+      "motivoIds": [
+        "m-libro"
+      ],
+      "motivoNombres": [
+        "Pedir libro"
+      ],
+      "fechaHora": "2026-09-30T13:38:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-30T13:58:00-05:00",
+      "duracionMinutos": 20
+    },
+    {
+      "id": "ver-214",
+      "alumnoId": "ver-al-23",
+      "matricula": "2300400003",
+      "nombreCompleto": "Renata Chávez Medina",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-otro",
+      "motivoNombre": "Otro",
+      "motivoIds": [
+        "m-otro",
+        "m-investigacion"
+      ],
+      "motivoNombres": [
+        "Otro",
+        "Investigación"
+      ],
+      "fechaHora": "2026-09-30T14:50:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Vespertino",
+      "horaSalida": "2026-09-30T16:44:00-05:00",
+      "duracionMinutos": 114
+    },
+    {
+      "id": "ver-215",
+      "alumnoId": "ver-al-21",
+      "matricula": "2300400001",
+      "nombreCompleto": "Natalia Aguilar Saldaña",
+      "carrera": "Licenciatura en Enfermería",
+      "motivoId": "m-estudiar",
+      "motivoNombre": "Estudiar",
+      "motivoIds": [
+        "m-estudiar"
+      ],
+      "motivoNombres": [
+        "Estudiar"
+      ],
+      "fechaHora": "2026-09-30T17:04:00-05:00",
+      "dispositivo": "Puerta",
+      "sincronizado": false,
+      "turno": "Matutino",
+      "horaSalida": "2026-09-30T19:35:00-05:00",
+      "duracionMinutos": 151
+    }
+  ],
+  "motivos": [
+    {
+      "id": "m-estudiar",
+      "nombre": "Estudiar",
+      "icono": "menu_book",
+      "orden": 1,
+      "activo": true,
+      "fechaCreacion": "2026-07-01T09:00:00-05:00"
+    },
+    {
+      "id": "m-libro",
+      "nombre": "Pedir libro",
+      "icono": "book",
+      "orden": 2,
+      "activo": true,
+      "fechaCreacion": "2026-07-01T09:00:00-05:00"
+    },
+    {
+      "id": "m-trabajo",
+      "nombre": "Trabajo escolar",
+      "icono": "assignment",
+      "orden": 3,
+      "activo": true,
+      "fechaCreacion": "2026-07-01T09:00:00-05:00"
+    },
+    {
+      "id": "m-investigacion",
+      "nombre": "Investigación",
+      "icono": "search",
+      "orden": 4,
+      "activo": true,
+      "fechaCreacion": "2026-07-01T09:00:00-05:00"
+    },
+    {
+      "id": "m-otro",
+      "nombre": "Otro",
+      "icono": "more_horiz",
+      "orden": 5,
+      "activo": true,
+      "fechaCreacion": "2026-07-01T09:00:00-05:00"
+    }
+  ]
+}

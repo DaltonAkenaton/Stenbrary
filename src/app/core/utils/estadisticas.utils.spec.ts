@@ -10,6 +10,7 @@
 
 import { Alumno, Motivo, Registro } from '../models';
 import {
+  revisarDiasDelPeriodo,
   calcularInactividad,
   contarUnaSolaVisita,
   rangoAnteriorDeUnidad,
@@ -486,5 +487,57 @@ describe('estadisticas.utils', () => {
       expect(rangoAnteriorDeUnidad({ tipo: 'periodo', anterior: null },
         { inicio: dia(2026, 8, 17), fin: finDe(2026, 12, 31) })).toBeNull();
     });
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// Días del período (v3.58.0): día récord y días hábiles sin visitas
+// ═══════════════════════════════════════════════════════
+describe('revisarDiasDelPeriodo', () => {
+  const abierto = { cerrado: false, apertura: '07:00', cierre: '20:00' };
+  const cerrado = { cerrado: true, apertura: '07:00', cierre: '20:00' };
+  // L–S abre, domingo cerrado.
+  const horarios = { 0: cerrado, 1: abierto, 2: abierto, 3: abierto, 4: abierto, 5: abierto, 6: abierto };
+  const calendario = { periodos: [], diasInhabiles: [{ id: 'f', desde: '2026-09-16', hasta: '2026-09-16', descripcion: 'Independencia' }] };
+  const v = (iso: string) => ({ fechaHora: new Date(iso) });
+  // Lunes 14 a domingo 20 de septiembre de 2026.
+  const inicio = new Date(2026, 8, 14);
+  const fin = new Date(2026, 8, 20);
+
+  it('día récord, y días que debían abrir sin visitas (sin festivo ni domingo)', () => {
+    const r = revisarDiasDelPeriodo([
+      v('2026-09-14T10:00:00'), v('2026-09-14T11:00:00'),
+      v('2026-09-15T10:00:00'), v('2026-09-15T12:00:00'), v('2026-09-15T13:00:00'),
+      v('2026-09-17T10:00:00'),
+      v('2026-09-19T10:00:00'),
+    ], inicio, fin, horarios, calendario, new Date(2026, 9, 1));
+    expect(r.masVisitas?.cantidad).toBe(3);
+    expect(r.masVisitas?.fecha.getDate()).toBe(15);
+    expect(r.masVisitas?.empates).toBe(0);
+    // Hábiles: 14, 15, 17, 18, 19 (16 festivo, 20 domingo). Sin visitas: 18.
+    expect(r.diasHabiles).toBe(5);
+    expect(r.sinVisitas.map(d => d.getDate())).toEqual([18]);
+  });
+
+  it('hoy y los días por venir no cuentan como "sin visitas"', () => {
+    const r = revisarDiasDelPeriodo([v('2026-09-14T10:00:00')], inicio, fin, horarios, calendario,
+      new Date(2026, 8, 16, 9, 0));   // miércoles 16 por la mañana
+    expect(r.diasHabiles).toBe(2);    // 14 y 15
+    expect(r.sinVisitas.map(d => d.getDate())).toEqual([15]);
+  });
+
+  it('antes del primer registro de la base no hay huecos (el sistema aún no se usaba)', () => {
+    const r = revisarDiasDelPeriodo([v('2026-09-17T10:00:00')], inicio, fin, horarios, calendario,
+      new Date(2026, 9, 1), new Date(2026, 8, 17, 10));
+    expect(r.diasHabiles).toBe(3);                         // 17, 18, 19
+    expect(r.sinVisitas.map(d => d.getDate())).toEqual([18, 19]);   // los anteriores al 17 no cuentan
+  });
+
+  it('empates en el día récord se cuentan; sin visitas no hay récord', () => {
+    const r = revisarDiasDelPeriodo([v('2026-09-14T10:00:00'), v('2026-09-15T10:00:00')],
+      inicio, fin, horarios, calendario, new Date(2026, 9, 1));
+    expect(r.masVisitas?.fecha.getDate()).toBe(14);
+    expect(r.masVisitas?.empates).toBe(1);
+    expect(revisarDiasDelPeriodo([], inicio, fin, horarios, calendario, new Date(2026, 9, 1)).masVisitas).toBeNull();
   });
 });

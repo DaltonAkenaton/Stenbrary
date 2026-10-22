@@ -410,3 +410,38 @@ Reporte del sistema → **Verificar cifras**. Para hoy, los últimos 7 días, es
 - que ninguna visita esté sin actividad.
 
 Todo en verde = las pantallas dicen lo mismo. Algo en rojo = no entregar reportes de ese periodo y mandar el reporte del sistema a soporte (ya incluye qué no cuadró). Recomendado: una vez por semana durante el primer mes.
+
+## Registros: buscar, filtrar y ordenar (v3.58.0)
+
+- **Búsqueda**: al escribir parte del nombre o la matrícula aparecen los
+  alumnos parecidos, sin importar acentos. Elegir uno deja solo sus visitas.
+- **Quién**: solo alumnos o solo visitantes.
+- **Salida**: *real* (la marcó el alumno o el personal), *puesta por el
+  sistema* (cierre automático o cierre al horario; no cuenta en el tiempo
+  promedio) o *sin salida*.
+- **Duración**: de tantos a tantos minutos; una caja vacía = sin límite. Las
+  visitas sin salida no tienen duración y no aparecen con este filtro.
+- **Ordenar**: tocar el encabezado de la columna; otro toque invierte.
+- El Excel y el PDF salen con los filtros que estén puestos.
+
+## Día con más visitas y días sin visitas (v3.58.0)
+
+- Tarjeta en Estadísticas → Resumen. "Días hábiles" = los que la biblioteca
+  debía abrir según el **horario** de Configuración y el **calendario
+  escolar** (sin festivos ni vacaciones). Hoy no cuenta: el día no ha terminado.
+- Un día hábil con **cero** visitas casi siempre es la computadora de la
+  puerta apagada o que nadie registró: revisarlo.
+- Con "Filtrar por hora del día" no se muestran los días sin visitas.
+
+## Promedio por día de la semana (v3.58.0)
+
+Bajo el TOTAL de cada fila del mapa de calor: visitas de ese día ÷ cuántos de
+esos días tuvieron visitas (p. ej. 62 visitas en 9 martes = 6.9/día). Es lo
+que decide la tarjeta "Día más concurrido".
+
+## Comparar un mes contra el anterior
+
+Al elegir un mes completo, "Contra los N días anteriores" compara contra el
+mismo número de días justo antes (septiembre, 30 días → 2 al 31 de agosto), no
+contra el mes anterior completo. Por eso puede no coincidir con la cuenta
+"septiembre contra agosto" hecha a mano.

@@ -109,7 +109,7 @@
               class="matricula-input"
               [(ngModel)]="matriculaManual"
               placeholder="Ingresa tu matrícula"
-              (keyup.enter)="procesarMatriculaManual()"
+              (keydown.enter)="onEnterManual($event)"
               [disabled]="cargando"
               type="text"
               autocomplete="off"

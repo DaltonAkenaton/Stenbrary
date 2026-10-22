@@ -259,3 +259,115 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await expect(resumen).toContainText(/1 nunca han venido/);
   });
 });
+
+// ── Verificación agosto–septiembre (2026-10-22) ─────────────────────
+// e2e/fixtures/verificacion/ lo genera crear-verificacion.cjs SIN código de
+// la app; el usuario contó en Excel lo mismo y cuadró. Este test fija esas
+// cifras y prueba el respaldo de ida y vuelta: descargarlo y reemplazar con
+// él no cambia ni una cifra.
+test.describe('Verificación ago–sep: cifras contadas a mano y respaldo de ida y vuelta', () => {
+  const VERIF = path.join(__dirname, 'fixtures', 'verificacion', 'respaldo-ago-sep-2026.json');
+
+  async function cifrasAgoSep(page: Page): Promise<string> {
+    await page.goto('/estadisticas?p=personalizado&ini=2026-08-01&fin=2026-09-30&tab=resumen');
+    await expect(page.locator('.kpis-hero')).toContainText(/alumnos únicos/i, { timeout: 15000 });
+    return texto(page, '.kpis-hero');
+  }
+
+  test('las cifras de las respuestas, antes y después del respaldo', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.clock.install({ time: new Date('2026-10-22T12:00:00-05:00') });
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+    await page.goto('/configuracion#datos');
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles(VERIF);
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await confirmarConPin(page);
+    await expect(page.locator('.import-result.success')).toContainText('Importación exitosa', { timeout: 20000 });
+
+    const antes = await cifrasAgoSep(page);
+    expect(antes).toMatch(/Total de registros\D*215\b/i);                // 79 + 136
+    expect(antes).toMatch(/4\.1 promedio por día con actividad/);        // 215 / 53
+    expect(antes).toMatch(/\b23 alumnos únicos/);                        // 25 − 2 que nunca vinieron
+    expect(antes).toMatch(/Lunes 13:00 10 visitas/);
+    expect(antes).toMatch(/1h 20m por visita · 195 medidas/);            // 15 517 / 195 = 79.6
+    expect(antes).toMatch(/12 con salida estimada no cuentan/);
+    expect(antes).toMatch(/Estudiar en 106 visitas/);
+    expect(await texto(page, '.insights-quick')).toMatch(/Día más concurrido Martes/i);
+
+    // Ida y vuelta: descargar, reemplazar con lo descargado, mismas cifras.
+    await page.goto('/configuracion#datos');
+    const [descarga] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('.btn-backup').click(),
+    ]);
+    const archivo = await descarga.path();
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles(archivo);
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await confirmarConPin(page);
+    await expect(page.locator('.import-result.success')).toContainText('Importación exitosa', { timeout: 20000 });
+    expect(await cifrasAgoSep(page)).toBe(antes);
+  });
+});
+
+// ── v3.58.0: lo que pidió la verificación ago–sep ───────────────────
+test.describe('Verificación ago–sep: filtros de Registros y días del período (v3.58.0)', () => {
+  const VERIF = path.join(__dirname, 'fixtures', 'verificacion', 'respaldo-ago-sep-2026.json');
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-10-22T12:00:00-05:00') });
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+    await page.goto('/configuracion#datos');
+    await page.locator('input[type="file"][accept=".json"]').setInputFiles(VERIF);
+    await page.getByRole('button', { name: /Reemplazar todo/ }).click();
+    await confirmarConPin(page);
+    await expect(page.locator('.import-result.success')).toContainText('Importación exitosa', { timeout: 20000 });
+  });
+
+  async function elegir(page: Page, select: string, opcion: string) {
+    await page.locator(select).click();
+    await page.getByRole('option', { name: opcion, exact: true }).click();
+  }
+
+  test('Registros: visitantes, tipo de salida, duración, orden y autocompletado', async ({ page }) => {
+    await page.goto('/registros?desde=2026-08-01&hasta=2026-09-30');
+    const total = () => page.getByText(/Rango personalizado: \d+ registros?/);
+    await expect(total()).toContainText('215 registros', { timeout: 15000 });
+
+    await elegir(page, '.filtro-tipo', 'Solo visitantes');
+    await expect(total()).toContainText('13 registros');
+    await elegir(page, '.filtro-tipo', 'Alumnos y visitantes');
+
+    await elegir(page, '.filtro-salida', 'Puesta por el sistema');
+    await expect(total()).toContainText('12 registros');
+    await elegir(page, '.filtro-salida', 'Sin salida');
+    await expect(total()).toContainText('7 registros');
+    await elegir(page, '.filtro-salida', 'Todas');
+
+    await page.locator('.duracion-min').fill('300');
+    await expect(total()).toContainText('13 registros');                // ≥ 5 h, contadas en el JSON
+    await page.locator('.duracion-min').fill('');
+
+    // Orden por duración: la más larga primero (678 min, una salida estimada).
+    await page.getByRole('button', { name: 'Ordenar por duración' }).click();
+    await expect(page.locator('.duracion-chip').first()).toContainText('11h');
+
+    // Autocompletado: "trevino" sin acento encuentra a Valeria Garza Treviño.
+    await page.locator('.busqueda-input').fill('trevino');
+    await page.getByRole('option', { name: /Valeria Garza Treviño/ }).click();
+    await expect(page.locator('.busqueda-input')).toHaveValue('2300100001');
+    await expect(total()).toContainText('24 registros');                // su total en el top 5
+  });
+
+  test('Estadísticas: promedio por día de la semana y días del período', async ({ page }) => {
+    await page.goto('/estadisticas?p=personalizado&ini=2026-08-01&fin=2026-09-30&tab=calor');
+    const martes = page.locator('.heatmap-total-cell[title^="Total de Martes"]');
+    await expect(martes).toContainText('6.9/día', { timeout: 15000 });        // 62 / 9 martes
+    await expect(martes).toHaveAttribute('title', /62 visitas en 9 martes con visitas = 6\.9 por martes/);
+
+    await page.goto('/estadisticas?p=personalizado&ini=2026-08-01&fin=2026-09-30&tab=resumen');
+    const dias = page.locator('.iq-dias-periodo');
+    await expect(dias).toContainText(/8.*sep.*· 10/i, { timeout: 15000 });  // martes 8-sep, 10 visitas
+    // Horario de fábrica (L–V) y calendario UAT (16-sep inhábil): 42 días, todos con visitas.
+    await expect(dias).toContainText('Todos los días hábiles tuvieron visitas (42)');
+  });
+});

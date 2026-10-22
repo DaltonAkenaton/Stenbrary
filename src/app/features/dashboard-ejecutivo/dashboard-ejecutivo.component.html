@@ -416,6 +416,45 @@
             </div>
           </div>
         }
+        @if (kpiDiasPeriodo && (kpiDiasPeriodo.record || kpiDiasPeriodo.sinVisitas.length > 0)) {
+          <!-- v3.58.0: días del período. Clic en un día = sus registros. -->
+          <div class="iq-card iq-dias-periodo"
+               matTooltip="Día con más visitas del período. Abajo, los días que la biblioteca debía abrir (según el horario y el calendario escolar de Configuración) y no tuvieron ninguna visita: casi siempre significa que la computadora de la puerta estuvo apagada o nadie registró."
+               matTooltipPosition="above">
+            <mat-icon>calendar_month</mat-icon>
+            <div class="iq-body">
+              <!-- Sin ninguna visita no hay récord, pero la alerta es justo la más importante. -->
+              @if (kpiDiasPeriodo.record; as rec) {
+                <div class="iq-label">Día con más visitas</div>
+                <button class="iq-value iq-link" (click)="verRegistrosDelDia(rec.iso)">
+                  {{ rec.texto }} · {{ rec.cantidad }}
+                </button>
+                @if (rec.empates > 0) {
+                  <div class="iq-sub">empata con {{ rec.empates }} {{ rec.empates === 1 ? 'día' : 'días' }} más</div>
+                }
+              } @else {
+                <div class="iq-label">Días sin visitas</div>
+              }
+              @if (kpiDiasPeriodo!.revisaHuecos) {
+                @if (kpiDiasPeriodo!.sinVisitas.length === 0) {
+                  <div class="iq-sub dias-ok">Todos los días hábiles tuvieron visitas ({{ kpiDiasPeriodo!.diasHabiles }})</div>
+                } @else {
+                  <div class="iq-sub dias-alerta">
+                    {{ kpiDiasPeriodo!.sinVisitas.length }} de {{ kpiDiasPeriodo!.diasHabiles }} días hábiles sin visitas:
+                  </div>
+                  <div class="dias-sin-visitas">
+                    @for (d of kpiDiasPeriodo!.sinVisitas.slice(0, 12); track d.iso) {
+                      <button class="dia-chip" (click)="verRegistrosDelDia(d.iso)">{{ d.texto }}</button>
+                    }
+                    @if (kpiDiasPeriodo!.sinVisitas.length > 12) {
+                      <span class="iq-sub">y {{ kpiDiasPeriodo!.sinVisitas.length - 12 }} más</span>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
         @if (kpiCarreraTopCrecimiento) {
           <div class="iq-card iq-carrera"
                matTooltip="Carrera con mayor crecimiento vs el período anterior. Requiere mínimo 5 visitas."
@@ -700,6 +739,9 @@
                    (keydown.enter)="fila.totalDia > 0 && drillTotalDia(fila.dia)"
                    [attr.title]="fila.totalDiaTooltip + (fila.totalDia > 0 ? ' (clic para ver registros)' : '')">
                 {{ fila.totalDia }}
+                @if (fila.promedioDia) {
+                  <span class="heatmap-promedio-dia">{{ fila.promedioDia }}/día</span>
+                }
               </div>
             }
 

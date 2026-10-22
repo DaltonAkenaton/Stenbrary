@@ -49,6 +49,42 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.58.0',
+    fecha: '2026-10-22',
+    titulo: 'Registros con más filtros y días del período',
+    resumen: 'Lo que pidió la verificación de agosto y septiembre: encontrar visitas y alumnos sin saberse los nombres, y ver qué días hubo más visitas o ninguna.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto: 'Registros: al escribir en la búsqueda aparecen los alumnos con un nombre parecido, sin importar acentos ("trevino" encuentra a "Treviño"). Elige uno y se muestran solo sus visitas.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Registros: nuevos filtros "Quién" (solo alumnos o solo visitantes), "Salida" (real, puesta por el sistema o sin salida) y "Duración" (de tantos a tantos minutos). El Excel y el PDF salen con los mismos filtros.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Registros: toca el encabezado de Fecha, Matrícula, Alumno, Carrera o Duración para ordenar por esa columna; otro toque invierte el orden.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Estadísticas: nueva tarjeta "Día con más visitas", que además avisa qué días hábiles (según el horario y el calendario escolar) no tuvieron ninguna visita. Casi siempre significa que la computadora de la puerta estuvo apagada.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Mapa de calor: bajo el total de cada día de la semana sale su promedio (por ejemplo "6.9/día" = 62 visitas en 9 martes). Así se puede comprobar el "Día más concurrido".',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Al marcar una salida en el escáner, el contador de aforo baja en ese momento (antes seguía contando a quien salió hasta la siguiente entrada).',
+      },
+      {
+        tipo: 'fix',
+        texto: 'Dar Enter varias veces rápido en la matrícula ya no abre varias ventanas "¿Esta es tu matrícula?" una encima de otra.',
+      },
+    ],
+  },
+  {
     version: '3.57.2',
     fecha: '2026-10-18',
     titulo: 'Revisión de la puerta y de los respaldos',

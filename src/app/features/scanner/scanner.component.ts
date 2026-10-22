@@ -396,6 +396,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
   // callbacks sobre estado huérfano (mediaStream null, scanner inactivo, etc.).
   private startTimer: number | null = null;       // timeout para attach del video
   private confirmTimer: number | null = null;     // timeout post-cancelación de dialog
+  // Un solo "¿Esta es tu matrícula?" a la vez: con Enter rápido se abría un
+  // segundo que sobrevivía a la navegación y quedaba encima de la siguiente
+  // pantalla (v3.57.3).
+  private confirmacionRef: MatDialogRef<ConfirmacionMatriculaDialogComponent> | null = null;
+  private destruido = false;
   private pressTimer: number | null = null;       // long-press del modo quiosco
 
   constructor(
@@ -441,6 +446,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destruido = true;
+    this.confirmacionRef?.close();
     this.detenerScanner();
     this.desregistrarLectorHid();
     if (this.salidaFlashTimer !== null) {
@@ -1357,6 +1364,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   private procesarDeteccion(texto: string, fuente: string): void {
     if (this.enCooldown) return;
+    // Con una confirmación abierta (matrícula a mano), la lectura de la
+    // cámara se ignora SIN consumirla: antes sonaba, apagaba la cámara y se
+    // perdía. La cámara la vuelve a leer al cerrarse (revisión v3.58.0).
+    if (this.confirmacionRef) return;
 
     const desdeLector = fuente === 'usb-hid';
     const ahora = Date.now();
@@ -1464,14 +1475,18 @@ export class ScannerComponent implements OnInit, OnDestroy {
     reiniciarCamara = true,
     origen: 'camara' | 'manual' = 'camara',
   ): void {
+    if (this.confirmacionRef || this.destruido) return;
     const dialogRef = this.dialog.open(ConfirmacionMatriculaDialogComponent, {
       width: '350px',
       data: { matricula },
       disableClose: true
     });
+    this.confirmacionRef = dialogRef;
     this.cerrarConEscape(dialogRef);
 
     dialogRef.afterClosed().subscribe(resultado => {
+      this.confirmacionRef = null;
+      if (this.destruido) return;
       if (resultado === true) {
         this.procesarMatricula(matricula, origen);
       } else {
@@ -1493,7 +1508,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
     });
   }
 
-    async procesarMatriculaManual(): Promise<void> {
+  /**
+   * keydown, no keyup: el Enter que confirma el diálogo devuelve el foco a
+   * esta caja y su keyup caía aquí, abriendo otra confirmación. La tecla
+   * sostenida (repeat) tampoco cuenta.
+   */
+  onEnterManual(e: Event): void {
+    e.preventDefault();
+    if ((e as KeyboardEvent).repeat) return;
+    this.procesarMatriculaManual();
+  }
+
+  async procesarMatriculaManual(): Promise<void> {
+    if (this.cargando || this.confirmacionRef) return;
     const input = this.matriculaManual.trim();
     if (!input) {
       this.toastService.warning('Por favor ingresa una matrícula');
@@ -1700,6 +1727,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
       // Mantener actualizada la lista de visitantes con entrada abierta
       // (el registro cerrado puede haber sido un visitante).
       this.refrescarVisitantesAbiertos();
+      // Sin esto el banner de aforo seguía contando a quien acaba de salir
+      // hasta la siguiente entrada (v3.58.0).
+      if (this.configService.aforoActivo) void this.aforoService.refrescar();
 
       this.resetEstado();
     } catch (err: any) {

@@ -22,6 +22,8 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Alumno, Motivo, Registro } from '../models';
+import type { HorariosSemana } from '../services/config.service';
+import { CalendarioEscolar, diaInhabilEn } from './calendario.utils';
 import { contarHastaMismaHora, desplazarDias, diasCalendarioEntre } from './tiempo.utils';
 
 export const MATRICULA_INVITADO = 'INVITADO';
@@ -199,6 +201,76 @@ export function promedioPorDiaConActividad(registros: Registro[]): { promedio: n
     dias,
     promedio: dias > 0 ? parseFloat((registros.length / dias).toFixed(1)) : 0,
   };
+}
+
+// ═══════════════════════════════════════════════════════
+// DÍAS DEL PERÍODO (v3.58.0)
+// ═══════════════════════════════════════════════════════
+
+export interface DiasDelPeriodo {
+  /** El día con más visitas (el primero, si empatan) y cuántos más empatan. */
+  masVisitas: { fecha: Date; cantidad: number; empates: number } | null;
+  /**
+   * Días que la biblioteca debía abrir (horario + calendario escolar) y no
+   * tuvieron NI UNA visita: casi siempre, la computadora de la puerta estuvo
+   * apagada o nadie registró. Solo días ya terminados (hoy no cuenta).
+   */
+  sinVisitas: Date[];
+  /** Días que debía abrir dentro del período, hasta ayer. */
+  diasHabiles: number;
+}
+
+/**
+ * Un día "debía abrir" si su día de la semana no está cerrado en el horario
+ * y no es inhábil en el calendario escolar.
+ */
+export function revisarDiasDelPeriodo(
+  registros: Pick<Registro, 'fechaHora'>[],
+  inicio: Date,
+  fin: Date,
+  horarios: HorariosSemana,
+  calendario: CalendarioEscolar,
+  ahora: Date = new Date(),
+  /**
+   * Primer registro de TODA la base. Antes de él no se revisan huecos: con
+   * "Este año" en un sistema instalado en noviembre, enero–octubre salían
+   * como "computadora apagada" (revisión v3.58.0).
+   */
+  primerRegistro: Date | null = null,
+): DiasDelPeriodo {
+  const porDia = new Map<string, number>();
+  for (const r of registros) {
+    const d = new Date(r.fechaHora);
+    if (isNaN(d.getTime())) continue;
+    const k = claveDia(d);
+    porDia.set(k, (porDia.get(k) ?? 0) + 1);
+  }
+
+  let masVisitas: DiasDelPeriodo['masVisitas'] = null;
+  const sinVisitas: Date[] = [];
+  let diasHabiles = 0;
+  const hoy = claveDia(ahora);
+  const desde = primerRegistro
+    ? new Date(primerRegistro.getFullYear(), primerRegistro.getMonth(), primerRegistro.getDate())
+    : null;
+  const cursor = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), 12);
+  const ultimo = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate(), 12);
+  while (cursor <= ultimo) {
+    const k = claveDia(cursor);
+    const cantidad = porDia.get(k) ?? 0;
+    if (cantidad > 0) {
+      if (!masVisitas || cantidad > masVisitas.cantidad) masVisitas = { fecha: new Date(cursor), cantidad, empates: 0 };
+      else if (cantidad === masVisitas.cantidad) masVisitas.empates++;
+    }
+    const yaPaso = cursor < ahora && k !== hoy && (!desde || cursor >= desde);
+    const debiaAbrir = horarios[cursor.getDay()]?.cerrado === false && !diaInhabilEn(calendario, cursor);
+    if (yaPaso && debiaAbrir) {
+      diasHabiles++;
+      if (cantidad === 0) sinVisitas.push(new Date(cursor));
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return { masVisitas, sinVisitas, diasHabiles };
 }
 
 /**

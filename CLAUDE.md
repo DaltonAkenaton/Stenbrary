@@ -78,11 +78,11 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **366 specs unitarios en verde**, en 19 archivos —
+Suite activa: **378 specs unitarios en verde**, en 20 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `catalogos.utils`, `cuadre-cifras.service`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
-`backup.service`, `estadisticas-avanzadas.service`, `supabase.client`.
+`backup.service`, `estadisticas-avanzadas.service`, `supabase.client`, `registros-filtros.utils`.
 CI corre los unitarios con `TZ=America/Matamoros` (la zona de Nuevo Laredo,
 que **conserva el horario de verano**) y Playwright con `timezoneId` igual:
 los errores de fecha "un día antes" no existen en UTC, y los de días de 23/25 h
@@ -94,8 +94,8 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**67 tests E2E** con
-Playwright (42 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 17 en `cuadre.spec.ts` — este
+**75 tests E2E** con
+Playwright (47 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 20 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +

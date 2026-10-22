@@ -525,6 +525,22 @@ test.describe('Puerta: el lector fuera del escáner y pantallas abandonadas (v3.
     await expect(page.locator('.student-name')).toContainText('Ana', { timeout: 10000 });
   });
 
+  test('Enter rápido o repetido en la confirmación no deja otra encima (v3.57.3)', async ({ page }) => {
+    // Los Enter que llegaban antes de que el diálogo tomara el foco seguían
+    // cayendo en la caja y abrían una confirmación por cada uno; al confirmar
+    // la de arriba, la de abajo quedaba sobre "¿Para qué vienes?".
+    await page.locator('.matricula-input').fill('2200000001');
+    await page.locator('.matricula-input').press('Enter');
+    await page.locator('.matricula-input').press('Enter');
+    await page.locator('.matricula-input').press('Enter');
+    await expect(page.locator('app-confirmacion-matricula-dialog')).toHaveCount(1, { timeout: 10000 });
+    await page.waitForTimeout(400);
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.student-name')).toContainText('Ana', { timeout: 10000 });
+    await page.waitForTimeout(500);
+    await expect(page.locator('app-confirmacion-matricula-dialog')).toHaveCount(0);
+  });
+
   test('con la confirmación abierta, otra credencial no la confirma (v3.57.0)', async ({ page }) => {
     await page.locator('.matricula-input').fill('2200000001');
     await page.locator('.matricula-input').press('Enter');
@@ -612,7 +628,8 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     const alumno = (id: string, m: string, n: string) => ({ id, matricula: m, nombre: n, apellidoPaterno: 'P', apellidoMaterno: 'M', carrera: 'Ing. TI', grado: 1, grupo: 'A', turno: 'Matutino', activo: true, fechaRegistro: entrada });
     const respaldo = {
       meta: { version: '3.4', fecha: AHORA.toISOString(), app: 'Stenbrary', totalAlumnos: 2, totalRegistros: 1, totalMotivos: 1 },
-      alumnos: [alumno('a1', '2200000001', 'Ana'), alumno('a2', '2200000002', 'Beto')],
+      alumnos: [alumno('a1', '2200000001', 'Ana'), alumno('a2', '2200000002', 'Beto'),
+        { ...alumno('a3', '2200000003', 'Carla'), activo: false }],
       registros: [{ id: 'r1', alumnoId: 'a1', matricula: '2200000001', nombreCompleto: 'Ana P M', carrera: 'Ing. TI', motivoId: 'm1', motivoNombre: 'Estudiar', motivoIds: ['m1'], motivoNombres: ['Estudiar'], fechaHora: entrada, sincronizado: false }],
       motivos: [{ id: 'm1', nombre: 'Estudiar', icono: 'school', orden: 1, activo: true }],
     };
@@ -625,7 +642,9 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
     await page.goto('/scanner');
     // El escáner tiene que estar escuchando: si no, se pierde la primera tecla del lector.
-    await expect(page.locator('.aforo-detalle')).toBeVisible({ timeout: 10000 });
+    // Sin aforo no hay indicador: entonces la caja de matrícula, que se pinta después.
+    await expect(page.locator(config['aforoMaximo'] ? '.aforo-detalle' : '.matricula-input')).toBeVisible({ timeout: 10000 });
+    if (!config['aforoMaximo']) await page.waitForTimeout(500);
   }
   const pasarCredencial = async (page: import('@playwright/test').Page, m: string) => {
     await page.keyboard.type(m, { delay: 5 });
@@ -689,6 +708,7 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     await page.locator('app-registro-duplicado-dialog .btn-salida').click({ timeout: 10000 });
     await expect(page.locator('.toast-message', { hasText: 'Salida registrada' })).toBeVisible({ timeout: 10000 });
     expect((await leerR1(page)).horaSalida).toBeTruthy();
+    await expect(page.locator('.aforo-detalle')).toContainText(/0\s*\/\s*10/, { timeout: 10000 });
 
     await page.clock.fastForward('00:02');
     await pasarCredencial(page, '2200000002');                     // Beto quiere entrar
@@ -710,6 +730,72 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     await pasarCredencial(page, '2200000002');
     await expect(page.locator('.student-name')).toContainText('Beto', { timeout: 10000 });
     expect((await leerR1(page)).horaSalida).toBeFalsy();
+  });
+
+  // ── Flujos de la puerta sin prueba hasta v3.58.0 ────────────
+  const leerRegistros = (page: import('@playwright/test').Page) => page.evaluate(async () => {
+    const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
+    return new Promise<any[]>(ok => { const q = db.transaction('registros').objectStore('registros').getAll(); q.onsuccess = () => ok(q.result); });
+  });
+  const elegirActividadYRegistrar = async (page: import('@playwright/test').Page) => {
+    await expect(page).toHaveURL(/\/seleccion-motivo/, { timeout: 10000 });
+    await expect(page.locator('.motivo-card').first()).toBeVisible();
+    // A quien ya vino se le preselecciona su última actividad: otro clic la quitaría.
+    if (await page.locator('.motivo-card.selected').count() === 0) await page.locator('.motivo-card').first().click();
+    await page.locator('.btn-registrar').click();
+    await expect(page.locator('.toast-message', { hasText: 'Registro exitoso' })).toBeVisible({ timeout: 10000 });
+  };
+
+  test('visitante: entra con su nombre y su salida se marca desde la lista', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: true, aforoMaximo: 10 });
+    await page.getByRole('button', { name: /Continuar como invitado/ }).click();
+    await page.locator('app-invitado-nombre-dialog input').fill('Laura Visitante');
+    await page.getByRole('button', { name: /Continuar/ }).last().click();
+    await elegirActividadYRegistrar(page);
+    await page.clock.fastForward('00:06');                         // la pantalla de éxito regresa sola
+    await expect(page.locator('.aforo-detalle')).toContainText(/2\s*\/\s*10/, { timeout: 10000 });
+
+    await page.getByRole('button', { name: /Marcar salida de visitante/ }).click();
+    await page.locator('.dlg-item', { hasText: 'Laura Visitante' }).click();
+    // Hasta v3.58.0 el banner seguía en 2 hasta la siguiente entrada.
+    await expect(page.locator('.aforo-detalle')).toContainText(/1\s*\/\s*10/, { timeout: 10000 });
+    const laura = (await leerRegistros(page)).find(r => r.matricula === 'INVITADO');
+    expect(laura?.nombreCompleto).toBe('Laura Visitante');
+    expect(laura?.carrera).toBe('Visitante');
+    expect(laura?.horaSalida).toBeTruthy();
+  });
+
+  test('sin registro de salida: la misma credencial dentro del umbral pregunta; Cancelar no cuenta y "Nueva visita" sí', async ({ page }) => {
+    // Es el modo de fábrica. Ana entró hace 60 min; con umbral de 90 es "reciente".
+    await preparar(page, { registroSalidaActivo: false, umbralDuplicadoMin: 90 });
+    await pasarCredencial(page, '2200000001');
+    await expect(page.locator('app-registro-duplicado-dialog')).toBeVisible({ timeout: 10000 });
+    await page.locator('app-registro-duplicado-dialog .btn-cancelar').click();
+    await expect(page).toHaveURL(/\/scanner/);
+    expect(await leerRegistros(page)).toHaveLength(1);
+
+    await page.clock.fastForward('00:03');
+    await pasarCredencial(page, '2200000001');
+    await page.locator('app-registro-duplicado-dialog .btn-nuevo').click({ timeout: 10000 });
+    await elegirActividadYRegistrar(page);
+    expect(await leerRegistros(page)).toHaveLength(2);
+  });
+
+  test('una credencial desactivada no entra', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: true, aforoMaximo: 10 });
+    await pasarCredencial(page, '2200000003');
+    await expect(page.getByText('Esta credencial está inactiva')).toBeVisible({ timeout: 10000 });
+    await expect(page).toHaveURL(/\/scanner/);
+    expect(await leerRegistros(page)).toHaveLength(1);
+  });
+
+  test('"Deshacer" borra la visita recién registrada', async ({ page }) => {
+    await preparar(page, { registroSalidaActivo: false });
+    await pasarCredencial(page, '2200000002');
+    await elegirActividadYRegistrar(page);
+    expect(await leerRegistros(page)).toHaveLength(2);
+    await page.locator('.toast-action', { hasText: 'Deshacer' }).click();
+    await expect.poll(async () => (await leerRegistros(page)).length, { timeout: 10000 }).toBe(1);
   });
 
   test('el código de barras de un libro no abre el registro de alumno', async ({ page }) => {

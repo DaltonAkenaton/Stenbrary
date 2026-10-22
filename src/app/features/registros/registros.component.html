@@ -79,11 +79,23 @@
   <div class="filtros-panel">
     <div class="search-bar">
       <mat-icon class="search-icon">search</mat-icon>
+      <!-- Autocompletado (v3.58.0): quien revisa no se sabe los nombres. -->
       <input
         type="text"
-        placeholder="Buscar por nombre o matrícula..."
+        class="busqueda-input"
+        placeholder="Buscar alumno: escribe parte del nombre o la matrícula…"
         [ngModel]="filtros().busqueda"
-        (ngModelChange)="actualizarFiltro('busqueda', $event)">
+        (ngModelChange)="actualizarFiltro('busqueda', $event)"
+        [matAutocomplete]="autoAlumnos">
+      <mat-autocomplete #autoAlumnos="matAutocomplete"
+                        (optionSelected)="actualizarFiltro('busqueda', $event.option.value)">
+        @for (s of sugerencias(); track s.alumno.matricula) {
+          <mat-option [value]="s.alumno.matricula" class="sugerencia-alumno">
+            <span class="sug-nombre">{{ s.nombre }}</span>
+            <span class="sug-meta mono">{{ s.alumno.matricula }} · {{ s.alumno.carrera }}</span>
+          </mat-option>
+        }
+      </mat-autocomplete>
       @if (filtros().busqueda) {
         <button class="clear-btn" (click)="actualizarFiltro('busqueda', '')">
           <mat-icon>close</mat-icon>
@@ -115,6 +127,43 @@
           }
         </mat-select>
       </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filtro-field">
+        <mat-label>Quién</mat-label>
+        <mat-select class="filtro-tipo"
+          [ngModel]="filtros().tipo"
+          (ngModelChange)="actualizarFiltro('tipo', $event)">
+          <mat-option value="">Alumnos y visitantes</mat-option>
+          <mat-option value="alumno">Solo alumnos</mat-option>
+          <mat-option value="visitante">Solo visitantes</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filtro-field">
+        <mat-label>Salida</mat-label>
+        <mat-select class="filtro-salida"
+          [ngModel]="filtros().salida"
+          (ngModelChange)="actualizarFiltro('salida', $event)">
+          <mat-option value="">Todas</mat-option>
+          <mat-option value="real">Salida real</mat-option>
+          <mat-option value="sistema">Puesta por el sistema</mat-option>
+          <mat-option value="sin">Sin salida</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="duracion-filtro"
+           matTooltip="Minutos que duró la visita. Deja una caja vacía para no poner límite. Las visitas sin salida no tienen duración y no aparecen al usar este filtro.">
+        <mat-icon>timer</mat-icon>
+        <span>Duración</span>
+        <input type="number" min="0" class="duracion-input duracion-min" placeholder="desde"
+               [ngModel]="filtros().duracionMin"
+               (ngModelChange)="setDuracion('duracionMin', $event)">
+        <span>–</span>
+        <input type="number" min="0" class="duracion-input duracion-max" placeholder="hasta"
+               [ngModel]="filtros().duracionMax"
+               (ngModelChange)="setDuracion('duracionMax', $event)">
+        <span>min</span>
+      </div>
 
       @if (hayFiltrosActivos) {
         <button class="btn-clear-filters" (click)="limpiarFiltros()">
@@ -176,7 +225,12 @@
 
         <!-- Fecha y Hora -->
         <ng-container matColumnDef="fechaHora">
-          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <button class="th-orden" [class.activo]="orden().campo === 'fecha'" (click)="ordenarPor('fecha')"
+                    [attr.aria-label]="'Ordenar por fecha'">
+              Fecha<mat-icon>{{ iconoOrden('fecha') }}</mat-icon>
+            </button>
+          </th>
           <td mat-cell *matCellDef="let r">
             <div class="fecha-cell">
               <span class="fecha-date">{{ r._fechaDateStr }}</span>
@@ -187,7 +241,12 @@
 
         <!-- Matrícula -->
         <ng-container matColumnDef="matricula">
-          <th mat-header-cell *matHeaderCellDef>Matrícula</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <button class="th-orden" [class.activo]="orden().campo === 'matricula'" (click)="ordenarPor('matricula')"
+                    [attr.aria-label]="'Ordenar por matrícula'">
+              Matrícula<mat-icon>{{ iconoOrden('matricula') }}</mat-icon>
+            </button>
+          </th>
           <td mat-cell *matCellDef="let r">
             <span class="mono matricula-badge">{{ r.matricula }}</span>
           </td>
@@ -195,7 +254,12 @@
 
         <!-- Nombre -->
         <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef>Alumno</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <button class="th-orden" [class.activo]="orden().campo === 'nombre'" (click)="ordenarPor('nombre')"
+                    [attr.aria-label]="'Ordenar por alumno'">
+              Alumno<mat-icon>{{ iconoOrden('nombre') }}</mat-icon>
+            </button>
+          </th>
           <td mat-cell *matCellDef="let r">
             <span class="nombre-cell">{{ r.nombreCompleto }}</span>
           </td>
@@ -203,7 +267,12 @@
 
         <!-- Carrera -->
         <ng-container matColumnDef="carrera">
-          <th mat-header-cell *matHeaderCellDef>Carrera</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <button class="th-orden" [class.activo]="orden().campo === 'carrera'" (click)="ordenarPor('carrera')"
+                    [attr.aria-label]="'Ordenar por carrera'">
+              Carrera<mat-icon>{{ iconoOrden('carrera') }}</mat-icon>
+            </button>
+          </th>
           <td mat-cell *matCellDef="let r">{{ r.carrera }}</td>
         </ng-container>
 
@@ -229,7 +298,12 @@
 
         <!-- Duración -->
         <ng-container matColumnDef="duracion">
-          <th mat-header-cell *matHeaderCellDef>Duración</th>
+          <th mat-header-cell *matHeaderCellDef>
+            <button class="th-orden" [class.activo]="orden().campo === 'duracion'" (click)="ordenarPor('duracion')"
+                    [attr.aria-label]="'Ordenar por duración'">
+              Duración<mat-icon>{{ iconoOrden('duracion') }}</mat-icon>
+            </button>
+          </th>
           <td mat-cell *matCellDef="let r">
             @if (r._duracionStr) {
               <span class="duracion-chip">{{ r._duracionStr }}</span>

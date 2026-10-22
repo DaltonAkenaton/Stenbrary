@@ -9,6 +9,43 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-22 — v3.58.0: verificación de agosto–septiembre y huecos de cobertura
+
+El usuario pidió (1) datos de dos meses para contarlos él en Excel y (2) revisar
+solo los flujos críticos SIN prueba, no re-auditar.
+
+**Qué se hizo / descubrió**
+- *Datos de verificación.* `e2e/fixtures/crear-verificacion.cjs` genera, sin
+  importar nada de `src/`, un respaldo de 215 visitas (ago–sep, 22 casos en los
+  bordes del horario: 6:59, 20:01, sábado 14:05, domingo, festivo, salida al
+  día siguiente, 0 min, repetidos, 3 actividades) + Excel para contar + archivo
+  de respuestas. Cargado en la app: TODO cuadra, el mapa de calor celda por
+  celda. El usuario contó total, meses, visitantes, alumnos, días, carreras,
+  turnos y actividades: cuadró. Hallazgo de presentación, no de cálculo:
+  septiembre se compara contra 2–31 ago (+74.4 %), no contra agosto (+72.2 %).
+- *Cobertura.* Sin E2E: visitante entrada→salida, diálogo de duplicado con el
+  módulo de salida apagado (el modo de fábrica), credencial desactivada,
+  "Deshacer" y respaldo de ida y vuelta. Escritos; el del visitante destapó
+  que `procesarSalida` no refrescaba el aforo (el banner seguía contando a
+  quien salió hasta la siguiente entrada).
+- *Pedidos del usuario.* Registros: autocompletado de alumnos sin acentos,
+  filtros Quién/Salida/Duración, orden por columna (lógica pura en
+  `registros-filtros.utils.ts`; el orden por defecto no paga un sort). El PDF
+  ya no supone que los datos vienen de más nuevo a más viejo. Estadísticas:
+  promedio por día de la semana bajo el TOTAL del mapa de calor (ya existía
+  `diasConActividad`, no se mostraba) y tarjeta de día récord + días hábiles
+  sin visitas (`revisarDiasDelPeriodo`, horario + calendario, hoy no cuenta).
+- Se acumuló el arreglo sin publicar del Enter rápido (iba a ser v3.57.3).
+
+**Decidido**: no replicar Excel dentro del sistema; filtros que se usan + Excel
+que respeta los filtros.
+
+**Revisión en la nube (/code-review ultra)**: 7 hallazgos. 2 falsos (archivos nuevos aún sin rastrear en git). 5 reales, corregidos: "∞" dejaba ilegible la cabecera del PDF (Helvetica de jsPDF = WinAnsi); los días sin visitas contaban días anteriores al primer registro de la base ("Este año" recién instalado = meses de "computadora apagada"); con cero visitas la alerta no salía; el clic en el día perdía el filtro de hora; una lectura de la cámara con la confirmación manual abierta se consumía y se perdía.
+
+**Verificación**: lint 0 errores, 378 unitarias (+12), 75 E2E (+8, incluido el del Enter rápido), build.
+
+---
+
 ## 2026-10-18 — v3.57.2: revisión a fondo de la puerta y los respaldos
 
 El usuario pidió buscar errores no detectados antes de instalar, sin funciones
