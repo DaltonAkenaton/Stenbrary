@@ -81,6 +81,12 @@
 
           <!-- Aviso de privacidad (v3.48.0): junto al lector, donde el alumno
                mira al registrarse. Editable en Configuración → Escáner. -->
+          @if (horaSinVerificar()) {
+            <p class="aviso-hora">
+              <mat-icon>schedule</mat-icon>
+              <span>La hora de esta computadora no está verificada. Avisa al personal de la biblioteca.</span>
+            </p>
+          }
           @if (configService.avisoPrivacidadActivo) {
             <p class="aviso-privacidad">
               <mat-icon>privacy_tip</mat-icon>

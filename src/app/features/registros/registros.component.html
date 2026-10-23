@@ -19,6 +19,11 @@
       </div>
     </div>
     <div class="header-actions">
+      <button class="btn-outline btn-agregar-visita" (click)="agregarVisitas()"
+              title="Capturar visitas anotadas en papel (se fue la luz, la computadora estuvo apagada)">
+        <mat-icon>edit_note</mat-icon>
+        <span class="btn-text">Agregar visitas</span>
+      </button>
       <button class="btn-outline" (click)="generarPDF()" title="Generar reporte PDF"
               [disabled]="registrosFiltrados.length === 0">
         <mat-icon>picture_as_pdf</mat-icon>
@@ -262,6 +267,9 @@
           </th>
           <td mat-cell *matCellDef="let r">
             <span class="nombre-cell">{{ r.nombreCompleto }}</span>
+            @if (r.capturaManual) {
+              <span class="badge-a-mano" title="Anotada en papel y capturada después">a mano</span>
+            }
           </td>
         </ng-container>
 

@@ -31,17 +31,6 @@
     </div>
   }
 
-  @if (motivosDuplicados > 0) {
-    <div class="alert-duplicates">
-      <mat-icon>warning</mat-icon>
-      <span>
-        Se detectaron <strong>{{ motivosDuplicados }}</strong> actividades duplicadas.
-      </span>
-      <button class="btn-inline" (click)="limpiarDuplicados()" [disabled]="procesando">
-        Limpiar ahora
-      </button>
-    </div>
-  }
 
   <div class="info-meta">
     <button class="meta-chip meta-chip-link"
@@ -77,6 +66,88 @@
       <span>Buscar actualizaciones</span>
     }
   </button>
+</div>
+
+<!-- ── HORA DEL SISTEMA (v3.59.0) ── -->
+<div class="section-card" id="hora-sistema">
+  <div class="section-header">
+    <mat-icon>schedule</mat-icon>
+    <h2>Hora del sistema</h2>
+  </div>
+  <p class="section-desc">
+    Las computadoras suelen tener la hora mal. Cuando hay internet, Stenbrary toma la
+    <strong style="color:#E8F4F8">hora correcta</strong> y la usa para todo (visitas, horario,
+    estadísticas) sin cambiar la hora de Windows. Sin internet, sigue con la última corrección.
+  </p>
+
+  <div class="info-grid reloj-grid">
+    <div class="info-stat">
+      <div class="stat-value cyan reloj-hora">{{ horaSistema }}</div>
+      <div class="stat-label">Hora que usa Stenbrary</div>
+    </div>
+    <div class="info-stat">
+      <div class="stat-value reloj-hora">{{ horaComputadora }}</div>
+      <div class="stat-label">Hora de esta computadora</div>
+    </div>
+  </div>
+
+  @if (reloj.estado(); as estadoReloj) {
+    <p class="section-hint">
+      <mat-icon>{{ estadoReloj.fuente === 'internet' ? 'cloud_done' : 'edit_calendar' }}</mat-icon>
+      {{ estadoReloj.fuente === 'internet' ? 'Verificada por internet' : 'Ajustada a mano' }}.
+      La computadora va {{ describirDesfase(estadoReloj.desfaseMs) }}.
+    </p>
+  } @else {
+    <p class="section-hint reloj-alerta">
+      <mat-icon>warning</mat-icon>
+      Todavía no se ha verificado la hora: se usa la de la computadora. Conéctala a internet o ajústala a mano.
+    </p>
+  }
+  @if (reloj.aviso() === 'cambiaron-hora') {
+    <p class="section-hint reloj-alerta">
+      <mat-icon>error</mat-icon>
+      La hora de la computadora cambió desde el último ajuste: la corrección ya no es confiable. Verifícala o ajústala a mano.
+    </p>
+  } @else if (reloj.aviso() === 'sin-verificar-hace-mucho') {
+    <p class="section-hint reloj-alerta">
+      <mat-icon>schedule</mat-icon>
+      Hace más de dos semanas que no se verifica. Conecta la computadora a internet un momento.
+    </p>
+  }
+
+  <div class="reloj-acciones">
+    <button class="btn-action btn-restore" (click)="verificarHora()" [disabled]="reloj.sincronizando()">
+      <mat-icon>sync</mat-icon>
+      <span>{{ reloj.sincronizando() ? 'Verificando…' : 'Verificar con internet' }}</span>
+    </button>
+    <button class="btn-action btn-restore" (click)="abrirAjusteManual()">
+      <mat-icon>edit_calendar</mat-icon>
+      <span>Ajustar a mano</span>
+    </button>
+    @if (reloj.estado()) {
+      <button class="btn-action btn-restore" (click)="usarHoraDeLaPc()">
+        <mat-icon>computer</mat-icon>
+        <span>Usar la hora de la computadora</span>
+      </button>
+    }
+  </div>
+
+  @if (ajustandoHora) {
+    <div class="reloj-manual">
+      <label>Fecha <input type="date" class="aforo-number-input reloj-fecha" [(ngModel)]="fechaManual"></label>
+      <label>Hora real <input type="time" class="aforo-number-input reloj-hora-input" [(ngModel)]="horaManual"></label>
+      <button class="btn-action btn-restore btn-guardar-hora" (click)="guardarAjusteManual()">
+        <mat-icon>check</mat-icon><span>Guardar</span>
+      </button>
+      <button class="btn-action btn-restore" (click)="ajustandoHora = false">
+        <span>Cancelar</span>
+      </button>
+    </div>
+    <p class="section-hint">
+      <mat-icon>info</mat-icon>
+      Escribe la hora de tu celular. Pide el PIN del coordinador.
+    </p>
+  }
 </div>
 
 <!-- ── IDENTIDAD DE LA INSTITUCIÓN ── -->

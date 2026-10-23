@@ -29,6 +29,8 @@ import { Registro, Alumno, Motivo } from '../../core/models';
 import { ExportService } from '../../core/services/export.service';
 import { RegistroDetalleDialogComponent } from '../detalle-alumno/registro-detalle-dialog/registro-detalle-dialog.component';
 import { RegistroEditarDialogComponent, RegistroEditarSalida } from '../detalle-alumno/registro-editar-dialog/registro-editar-dialog.component';
+import { AgregarVisitaDialogComponent } from './agregar-visita-dialog/agregar-visita-dialog.component';
+import { firstValueFrom } from 'rxjs';
 import { formatearDuracion, parseFechaLocal, rangoUltimosDias } from '../../core/utils/tiempo.utils';
 import { esSalidaEstimada, incluyeMotivo } from '../../core/utils/estadisticas.utils';
 import { logError } from '../../core/utils/logger';
@@ -483,6 +485,22 @@ columnas: string[] = [
       width: '480px',
       data: { registro, enlazarAlumno: true },
     });
+  }
+
+  // ─── AGREGAR A MANO (v3.59.0) ──────────────────────────
+  /** Visitas anotadas en papel: se capturan una tras otra en el diálogo. */
+  async agregarVisitas(): Promise<void> {
+    const ref = this.dialog.open(AgregarVisitaDialogComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: { alumnos: this.alumnosSig(), registros: this.todosRegistros() },
+    });
+    const agregadas = await firstValueFrom(ref.afterClosed());
+    if (agregadas) {
+      this.toastService.success(agregadas === 1 ? 'Se agregó 1 visita' : `Se agregaron ${agregadas} visitas`);
+      await this.cargarDatos();
+    }
   }
 
   // ─── EDITAR ────────────────────────────────────────────

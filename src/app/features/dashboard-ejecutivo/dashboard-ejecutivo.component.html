@@ -351,7 +351,9 @@
             </div>
           </a>
 
-          <div class="kpi-card kpi-info">
+          <!-- v3.59.0: clic = la lista en Alumnos (filtro "1 visita", solo activos: el mismo universo). -->
+          <a class="kpi-card kpi-info kpi-link" routerLink="/alumnos" [queryParams]="{ visitas: 'una', estado: 'activos' }"
+             aria-label="Ver los alumnos que vinieron solo una vez">
             <div class="kpi-icon"><mat-icon>person_add_disabled</mat-icon></div>
             <div class="kpi-body">
               <div class="kpi-label">
@@ -364,8 +366,11 @@
               </div>
               <div class="kpi-value">{{ kpiAlumnosUnaSolaVisita | number }}</div>
               <div class="kpi-sub">solo 1 visita histórica</div>
+              @if (kpiAlumnosUnaSolaVisita > 0) {
+                <div class="kpi-link-hint">Ver lista <mat-icon>arrow_forward</mat-icon></div>
+              }
             </div>
-          </div>
+          </a>
 
           @if (kpiTopMotivo) {
             <div class="kpi-card kpi-secondary">
@@ -419,7 +424,7 @@
         @if (kpiDiasPeriodo && (kpiDiasPeriodo.record || kpiDiasPeriodo.sinVisitas.length > 0)) {
           <!-- v3.58.0: días del período. Clic en un día = sus registros. -->
           <div class="iq-card iq-dias-periodo"
-               matTooltip="Día con más visitas del período. Abajo, los días que la biblioteca debía abrir (según el horario y el calendario escolar de Configuración) y no tuvieron ninguna visita: casi siempre significa que la computadora de la puerta estuvo apagada o nadie registró."
+               matTooltip="Día con más visitas del período. Abajo, cuántos días que la biblioteca debía abrir (según el horario y el calendario escolar de Configuración) no tuvieron ninguna visita (pasa el mouse para ver cuáles): casi siempre significa que la computadora de la puerta estuvo apagada o nadie registró."
                matTooltipPosition="above">
             <mat-icon>calendar_month</mat-icon>
             <div class="iq-body">
@@ -439,16 +444,11 @@
                 @if (kpiDiasPeriodo!.sinVisitas.length === 0) {
                   <div class="iq-sub dias-ok">Todos los días hábiles tuvieron visitas ({{ kpiDiasPeriodo!.diasHabiles }})</div>
                 } @else {
-                  <div class="iq-sub dias-alerta">
-                    {{ kpiDiasPeriodo!.sinVisitas.length }} de {{ kpiDiasPeriodo!.diasHabiles }} días hábiles sin visitas:
-                  </div>
-                  <div class="dias-sin-visitas">
-                    @for (d of kpiDiasPeriodo!.sinVisitas.slice(0, 12); track d.iso) {
-                      <button class="dia-chip" (click)="verRegistrosDelDia(d.iso)">{{ d.texto }}</button>
-                    }
-                    @if (kpiDiasPeriodo!.sinVisitas.length > 12) {
-                      <span class="iq-sub">y {{ kpiDiasPeriodo!.sinVisitas.length - 12 }} más</span>
-                    }
+                  <!-- v3.59.0: los días van en el tooltip; como fichas rompían la tarjeta. -->
+                  <div class="iq-sub dias-alerta"
+                       [matTooltip]="'Sin visitas: ' + textoDiasSinVisitas()"
+                       matTooltipPosition="above">
+                    {{ kpiDiasPeriodo!.sinVisitas.length }} de {{ kpiDiasPeriodo!.diasHabiles }} días hábiles sin visitas
                   </div>
                 }
               }
@@ -469,7 +469,7 @@
         }
         @if (kpiPctInvitados > 0) {
           <div class="iq-card iq-invitados"
-               matTooltip="% de visitas hechas como visitante (sin matrícula) vs alumnos del padrón."
+               matTooltip="% de visitas hechas como visitante (sin matrícula) vs alumnos registrados."
                matTooltipPosition="above">
             <mat-icon>person_pin</mat-icon>
             <div class="iq-body">

@@ -445,3 +445,43 @@ Al elegir un mes completo, "Contra los N días anteriores" compara contra el
 mismo número de días justo antes (septiembre, 30 días → 2 al 31 de agosto), no
 contra el mes anterior completo. Por eso puede no coincidir con la cuenta
 "septiembre contra agosto" hecha a mano.
+
+## Hora del sistema (v3.59.0)
+
+- Stenbrary **no usa la hora de la computadora**. Desfase = hora correcta −
+  hora de la PC; se aplica a todo (visitas, "hoy", horario, cierres,
+  estadísticas). La hora de Windows no se toca.
+- **Con internet** se verifica al abrir, cada 30 minutos y al volver la
+  conexión (hora del servidor; precisión de un segundo). **Sin internet** se
+  sigue con el último desfase guardado.
+- **Ajustar a mano** (Configuración → General, con PIN): para equipos sin
+  internet. La siguiente verificación por internet lo reemplaza.
+- **Avisos**: en el escáner, "La hora de esta computadora no está verificada"
+  si nunca se verificó o si el reloj de la PC quedó antes del último ajuste
+  (alguien la cambió o se reinició la pila). En Configuración, además, si
+  pasaron más de 14 días sin verificar.
+- Las correcciones de más de 5 minutos y los ajustes a mano quedan en la
+  Bitácora ("Corrigió la hora").
+- Las visitas que ya existían no se mueven.
+
+## Alumnos por número de visitas (v3.59.0)
+
+- Alumnos → filtro "Visitas (histórico)": atajos (0, 1, 2–4, 5+) o
+  **Personalizado** con "De" y "A" (vacío = sin límite). Cuenta visitas de
+  toda la historia, no del período; los visitantes no cuentan.
+- Con el filtro activo, junto a cada nombre sale su número de visitas.
+- Estadísticas → "Vinieron solo 1 vez" abre esta lista (1 visita, activos).
+
+## Visitas agregadas a mano (v3.59.0)
+
+- Registros → **Agregar visitas**: para lo anotado en papel (sin luz, PC de la
+  entrada apagada). Alumno (matrícula o nombre, solo activos) o visitante;
+  fecha, entrada y salida opcional; actividades.
+- No acepta horas en el futuro ni una salida antes de la entrada. No revisa el
+  horario: si se anotó, pasó.
+- **Visita parecida**: misma matrícula (o, para visitantes, mismo nombre) a
+  menos del umbral de duplicados (Operación, 30 min por omisión). Avisa; un
+  segundo clic con los mismos datos la guarda igual.
+- Cuentan igual en todas las cifras. Quedan con `capturaManual` (etiqueta
+  "a mano" en Registros, columna "Capturada a mano" en el Excel) y en la
+  Bitácora como "Agregó una visita a mano".

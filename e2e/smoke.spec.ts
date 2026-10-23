@@ -489,6 +489,10 @@ test.describe('Puerta: el lector fuera del escáner y pantallas abandonadas (v3.
     await expect(page.locator('.import-result.success')).toBeVisible({ timeout: 15000 });
     await page.goto('/scanner');
     await expect(page.locator('app-scanner')).toBeVisible();
+    // Que el escáner ya escuche: con la máquina cargada, la primera tecla del
+    // "lector" se perdía y la prueba fallaba de vez en cuando.
+    await expect(page.locator('.matricula-input')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(500);
   });
 
   /** El lector: teclas muy rápidas y Enter, sin foco en ningún campo. */
@@ -796,6 +800,31 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     expect(await leerRegistros(page)).toHaveLength(2);
     await page.locator('.toast-action', { hasText: 'Deshacer' }).click();
     await expect.poll(async () => (await leerRegistros(page)).length, { timeout: 10000 }).toBe(1);
+  });
+
+  test('hora ajustada a mano: la visita se guarda con la hora correcta, no con la de la PC (v3.59.0)', async ({ page }) => {
+    // La PC marca las 12:00; la hora real son las 11:53 (va 7 min adelantada).
+    await preparar(page, { registroSalidaActivo: false });
+    await page.goto('/configuracion#general');
+    await page.getByRole('button', { name: /Ajustar a mano/ }).click();
+    await page.locator('.reloj-hora-input').fill('11:53');
+    await page.locator('.btn-guardar-hora').click();
+    await confirmarConPin(page);
+    await expect(page.getByText(/La computadora va 7 min adelantada/)).toBeVisible({ timeout: 10000 });
+
+    await page.goto('/scanner');
+    await expect(page.locator('.matricula-input')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(500);
+    await pasarCredencial(page, '2200000002');
+    await elegirActividadYRegistrar(page);
+    const beto = (await leerRegistros(page)).find(r => r.matricula === '2200000002');
+    const d = new Date(beto.fechaHora);
+    expect(`${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`).toBe('11:53');
+
+    // Sobrevive a recargar: el desfase se guarda.
+    await page.reload();
+    await page.goto('/configuracion#general');
+    await expect(page.getByText(/Ajustada a mano/)).toBeVisible({ timeout: 10000 });
   });
 
   test('el código de barras de un libro no abre el registro de alumno', async ({ page }) => {

@@ -584,3 +584,14 @@ h1 {
   .sug-nombre { display: block; line-height: 1.3; }
   .sug-meta { display: block; font-size: 0.75rem; opacity: 0.7; line-height: 1.3; }
 }
+
+// v3.59.0 — visita anotada en papel y capturada después.
+.badge-a-mano {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba($amber-color, 0.4);
+  color: $amber-color;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}

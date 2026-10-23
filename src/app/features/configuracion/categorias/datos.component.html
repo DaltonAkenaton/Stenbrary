@@ -297,23 +297,3 @@
   <app-limpieza-registros />
 </div>
 
-<!-- ── MANTENIMIENTO ── -->
-<div class="section-card">
-  <div class="section-header">
-    <mat-icon>build</mat-icon>
-    <h2>Mantenimiento</h2>
-  </div>
-  <p class="section-desc">
-    Si notas que algunas actividades aparecen repetidas al registrar accesos,
-    usa esta herramienta para limpiar duplicados automáticamente.
-  </p>
-  <div class="maintenance-actions">
-    <button class="btn-action btn-maintenance"
-            (click)="limpiarDuplicados()"
-            [disabled]="procesando"
-            matTooltip="Elimina actividades que estén duplicadas en la base de datos">
-      <mat-icon>content_copy</mat-icon>
-      <span>Limpiar actividades duplicadas</span>
-    </button>
-  </div>
-</div>

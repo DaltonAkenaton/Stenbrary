@@ -138,8 +138,24 @@
           <mat-option value="una">Vinieron solo 1 vez</mat-option>
           <mat-option value="pocas">Pocas (2 a 4)</mat-option>
           <mat-option value="muchas">Frecuentes (5+)</mat-option>
+          <mat-option value="rango">Personalizado (de… a…)</mat-option>
         </mat-select>
       </mat-form-field>
+
+      @if (filtros().visitas === 'rango') {
+        <mat-form-field appearance="outline" class="filtro-field filtro-visitas-num">
+          <mat-label>De (visitas)</mat-label>
+          <input matInput type="number" min="0" placeholder="0"
+                 [ngModel]="filtros().visitasMin"
+                 (ngModelChange)="actualizarRangoVisitas('visitasMin', $event)">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="filtro-field filtro-visitas-num">
+          <mat-label>A (visitas)</mat-label>
+          <input matInput type="number" min="0" placeholder="sin límite"
+                 [ngModel]="filtros().visitasMax"
+                 (ngModelChange)="actualizarRangoVisitas('visitasMax', $event)">
+        </mat-form-field>
+      }
 
       @if (hayFiltrosActivos) {
         <button class="btn-clear-filters" (click)="limpiarFiltros()">
@@ -189,6 +205,7 @@
               @case ('una')    { Solo 1 vez }
               @case ('pocas')  { 2-4 visitas }
               @case ('muchas') { 5+ visitas }
+              @case ('rango')  { {{ textoRangoVisitas }} }
             }
             <mat-icon>close</mat-icon>
           </button>
@@ -221,6 +238,9 @@
             <div class="alumno-card-meta">
               <span>{{ a.carrera }}</span>
               <span class="mono">{{ a.grado }}° {{ a.grupo }}</span>
+              @if (filtros().visitas) {
+                <span class="visitas-badge mono">{{ visitasDe(a.matricula) }} {{ visitasDe(a.matricula) === 1 ? 'visita' : 'visitas' }}</span>
+              }
             </div>
           </button>
         }
@@ -268,6 +288,9 @@
               <span class="status-dot" [class.activo]="a.activo" [class.inactivo]="!a.activo"
                     [title]="a.activo ? 'Activo' : 'Inactivo'"></span>
               <span class="nombre-cell">{{ a._nombreCompleto }}</span>
+              @if (filtros().visitas) {
+                <span class="visitas-badge mono">{{ visitasDe(a.matricula) }} {{ visitasDe(a.matricula) === 1 ? 'visita' : 'visitas' }}</span>
+              }
             </div>
           </td>
         </ng-container>

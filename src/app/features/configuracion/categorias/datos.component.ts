@@ -9,7 +9,6 @@
 // ║   - Restore (importar JSON con merge/replace)         ║
 // ║   - Eliminación masiva por rango (sub-comp existente) ║
 // ║   (Datos de prueba pasó a Avanzado, tras PIN: v3.57) ║
-// ║   - Mantenimiento (limpiar motivos duplicados)        ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
@@ -295,27 +294,5 @@ export class DatosCategoriaComponent {
     });
   }
 
-  // ─── Mantenimiento ──────────────────────────────────
-  async limpiarDuplicados(): Promise<void> {
-    try {
-      this.procesando = true;
-      this.cdr.markForCheck();
-      this.loadingService.show('Limpiando actividades duplicadas...');
-      const eliminados = await this.backupService.limpiarMotivosDuplicados();
-      this.loadingService.hide();
-      if (eliminados > 0) {
-        this.toastService.success(`${eliminados} actividades duplicadas eliminadas`);
-        this.datosCambiaron.emit();
-      } else {
-        this.toastService.info('No se encontraron actividades duplicadas');
-      }
-    } catch {
-      this.loadingService.hide();
-      this.toastService.error('Error al limpiar duplicados');
-    } finally {
-      this.procesando = false;
-      this.cdr.markForCheck();
-    }
-  }
 
 }

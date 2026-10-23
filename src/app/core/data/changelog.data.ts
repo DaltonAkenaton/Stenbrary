@@ -49,6 +49,47 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.59.0',
+    fecha: '2026-10-22',
+    titulo: 'La hora correcta, aunque la computadora la tenga mal',
+    resumen: 'Las visitas, el horario y las estadísticas ya no dependen del reloj de la computadora.',
+    destacado: true,
+    cambios: [
+      {
+        tipo: 'feat',
+        texto: 'Cuando hay internet, Stenbrary toma la hora correcta y la usa para todo: entradas, salidas, horario, cierres y estadísticas. No cambia la hora de Windows. Sin internet sigue con la última corrección.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Configuración → General → Hora del sistema: muestra la hora que usa Stenbrary y la de la computadora, cuánto va adelantada o atrasada, y permite verificarla con internet o ajustarla a mano con el PIN (para computadoras sin internet).',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Si la hora no se ha podido verificar nunca, o alguien cambió la hora de la computadora, el escáner lo avisa para que el personal lo revise. Los ajustes de hora quedan en la bitácora.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Registros → "Agregar visitas": para capturar las visitas que se anotaron en papel (se fue la luz, la computadora de la entrada estuvo apagada). Se busca al alumno o se marca como visitante, se escribe la fecha y las horas, y queda lista para la siguiente. Avisa si ya existe una visita parecida. Cuentan igual en las estadísticas, quedan marcadas "a mano" y en la bitácora.',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Alumnos: el filtro de visitas tiene "Personalizado" para buscar por rango (por ejemplo, de 15 a 20 visitas, o 30 o más). Con ese filtro, junto a cada nombre sale cuántas visitas lleva.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Estadísticas: la tarjeta "Vinieron solo 1 vez" lleva a la lista de esos alumnos. En "Día con más visitas", los días sin visitas ya no se enlistan en la tarjeta: se ven al pasar el mouse.',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'Se quitó "Limpiar actividades duplicadas" de Configuración → Datos: era para un problema de versiones antiguas que ya no ocurre (al combinar respaldos, las actividades se emparejan por nombre).',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Donde decía "padrón" ahora dice "lista de alumnos" o "alumnos registrados".',
+      },
+    ],
+  },
+  {
     version: '3.58.0',
     fecha: '2026-10-22',
     titulo: 'Registros con más filtros y días del período',
@@ -143,7 +184,7 @@ export const CHANGELOG: VersionChangelog[] = [
   {
     version: '3.57.0',
     fecha: '2026-10-17',
-    titulo: 'Ronda de pruebas: padrón, PIN, catálogos y cifras verificadas',
+    titulo: 'Ronda de pruebas: lista de alumnos, PIN, catálogos y cifras verificadas',
     resumen: 'Correcciones de la ronda de pruebas: la importación de alumnos, el Enter al confirmar, el cierre al final del horario, el PIN del coordinador para los borrados (con código de recuperación) y pantallas que se explican solas.',
     cambios: [
       {
@@ -248,7 +289,7 @@ export const CHANGELOG: VersionChangelog[] = [
       },
       {
         tipo: 'cambio',
-        texto: 'En el Resumen, "alumnos nuevos hoy" ahora dice "alumnos dados de alta hoy": el día que se importa el padrón son miles y se leía como si hubieran venido.',
+        texto: 'En el Resumen, "alumnos nuevos hoy" ahora dice "alumnos dados de alta hoy": el día que se importa la lista de alumnos son miles y se leía como si hubieran venido.',
       },
       {
         tipo: 'mejora',
@@ -2249,7 +2290,7 @@ export const CHANGELOG: VersionChangelog[] = [
           'Estadísticas: eliminadas las tarjetas duplicadas en la sección de insights ' +
           '(Alumnos Inactivos, Hora Pico y Tendencia ya estaban como KPIs fijos). Los ' +
           'insights ahora solo aparecen para alertas extraordinarias (crecimiento >50%, ' +
-          'caída >50%, padrón con baja actividad >30%).',
+          'caída >50%, más del 30% de los alumnos con baja actividad).',
       },
       {
         tipo: 'mejora',

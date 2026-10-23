@@ -7,9 +7,10 @@
 // ║   - Info del sistema (conteos + almacenamiento +     ║
 // ║     versión + buscar actualizaciones)                 ║
 // ║   - Identidad de la institución (nombre)              ║
+// ║   - Hora del sistema (v3.59.0): de internet o a mano   ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,11 +18,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatabaseService } from '../../../core/services/database.service';
-import { BackupService } from '../../../core/services/backup.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfigService } from '../../../core/services/config.service';
 import { ChangelogService } from '../../../core/services/changelog.service';
 import { PwaUpdateService } from '../../../core/services/pwa-update.service';
+import { MatDialog } from '@angular/material/dialog';
+import { RelojService } from '../../../core/services/reloj.service';
+import { describirDesfase, horaPc } from '../../../core/utils/reloj.utils';
+import { fechaLocalISO, parseFechaLocal } from '../../../core/utils/tiempo.utils';
+import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shared/components/pin/pin-coordinador-dialog.component';
 
 @Component({
   selector: 'app-config-general',
@@ -37,23 +42,30 @@ import { PwaUpdateService } from '../../../core/services/pwa-update.service';
   styleUrls: ['../configuracion.styles.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GeneralCategoriaComponent implements OnInit {
+export class GeneralCategoriaComponent implements OnInit, OnDestroy {
+
+  readonly reloj = inject(RelojService);
+  private readonly dialog = inject(MatDialog);
+  private tic?: ReturnType<typeof setInterval>;
+  readonly describirDesfase = describirDesfase;
+
+  /** Formulario del ajuste a mano. */
+  ajustandoHora = false;
+  fechaManual = '';
+  horaManual = '';
 
   cargandoInfo = true;
-  procesando = false;
 
   conteoAlumnos = 0;
   conteoRegistros = 0;
   conteoMotivos = 0;
   almacenamientoEstimado = '—';
-  motivosDuplicados = 0;
 
   nombreInstitucionBorrador = '';
   buscandoActualizacion = false;
 
   constructor(
     private databaseService: DatabaseService,
-    private backupService: BackupService,
     private toastService: ToastService,
     public configService: ConfigService,
     public changelogService: ChangelogService,
@@ -65,7 +77,67 @@ export class GeneralCategoriaComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    // Las dos horas en pantalla avanzan solas.
+    this.tic = setInterval(() => this.cdr.markForCheck(), 15_000);
     await this.cargarInfo();
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.tic);
+  }
+
+  // ─── Hora del sistema (v3.59.0) ────────────────────
+  private readonly fmtHora = new Intl.DateTimeFormat('es-MX', {
+    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  });
+  get horaSistema(): string { return this.fmtHora.format(new Date()); }
+  get horaComputadora(): string { return this.fmtHora.format(new Date(horaPc())); }
+
+  async verificarHora(): Promise<void> {
+    const ok = await this.reloj.sincronizar();
+    if (ok) this.toastService.success('Hora verificada por internet');
+    else this.toastService.warning('No se pudo verificar: revisa la conexión a internet');
+    this.cdr.markForCheck();
+  }
+
+  abrirAjusteManual(): void {
+    const ahora = new Date();
+    this.fechaManual = fechaLocalISO(ahora);
+    this.horaManual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+    this.ajustandoHora = true;
+  }
+
+  async guardarAjusteManual(): Promise<void> {
+    const dia = parseFechaLocal(this.fechaManual);
+    const [h, m] = (this.horaManual || '').split(':').map(Number);
+    if (!dia || !Number.isFinite(h) || !Number.isFinite(m)) {
+      this.toastService.warning('Escribe la fecha y la hora');
+      return;
+    }
+    dia.setHours(h, m, 0, 0);
+    const ok = await this.pedirPin('¿Cambiar la hora del sistema?',
+      `Desde ahora las visitas se registrarán con la hora ${this.fmtHora.format(dia)}. No cambia la hora de Windows.`);
+    if (!ok) return;
+    this.reloj.ajustarAMano(dia);
+    this.ajustandoHora = false;
+    this.toastService.success('Hora ajustada');
+    this.cdr.markForCheck();
+  }
+
+  async usarHoraDeLaPc(): Promise<void> {
+    const ok = await this.pedirPin('¿Usar la hora de la computadora?',
+      'Stenbrary dejará de corregirla. Si la computadora tiene la hora mal, las visitas quedarán con esa hora.');
+    if (!ok) return;
+    this.reloj.usarHoraDeLaPc();
+    this.cdr.markForCheck();
+  }
+
+  private async pedirPin(titulo: string, mensaje: string): Promise<boolean> {
+    const ref = this.dialog.open(PinCoordinadorDialogComponent, {
+      width: '420px', maxWidth: '94vw',
+      data: { titulo, mensaje, textoConfirmar: 'Cambiar la hora', icono: 'schedule' } as PinCoordinadorData,
+    });
+    return !!(await ref.afterClosed().toPromise());
   }
 
   // ─── Identidad ──────────────────────────────────────
@@ -89,14 +161,10 @@ export class GeneralCategoriaComponent implements OnInit {
   async cargarInfo(): Promise<void> {
     try {
       this.cargandoInfo = true;
-      const [conteo, duplicados] = await Promise.all([
-        this.databaseService.obtenerConteoTotal(),
-        this.backupService.contarMotivosDuplicados(),
-      ]);
+      const conteo = await this.databaseService.obtenerConteoTotal();
       this.conteoAlumnos = conteo.alumnos;
       this.conteoRegistros = conteo.registros;
       this.conteoMotivos = conteo.motivos;
-      this.motivosDuplicados = duplicados;
       await this.estimarAlmacenamiento();
     } catch (error) {
       console.error('Error al cargar info:', error);
@@ -131,23 +199,6 @@ export class GeneralCategoriaComponent implements OnInit {
     }
   }
 
-  async limpiarDuplicados(): Promise<void> {
-    try {
-      this.procesando = true;
-      const eliminados = await this.backupService.limpiarMotivosDuplicados();
-      if (eliminados > 0) {
-        this.toastService.success(`${eliminados} actividades duplicadas eliminadas`);
-      } else {
-        this.toastService.info('No se encontraron actividades duplicadas');
-      }
-      await this.cargarInfo();
-    } catch {
-      this.toastService.error('Error al limpiar duplicados');
-    } finally {
-      this.procesando = false;
-      this.cdr.markForCheck();
-    }
-  }
 
   private async estimarAlmacenamiento(): Promise<void> {
     try {

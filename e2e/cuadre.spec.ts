@@ -258,6 +258,16 @@ test.describe('Cuadre: cada pantalla dice lo que se calculó a mano', () => {
     await expect(resumen).toContainText(/1 alumno dejó de venir/, { timeout: 15000 });
     await expect(resumen).toContainText(/1 nunca han venido/);
   });
+
+  test('"Vinieron solo 1 vez" abre la lista en Alumnos (v3.59.0)', async ({ page }) => {
+    await page.goto('/estadisticas?p=ultimos7&tab=resumen');
+    await page.getByRole('link', { name: 'Ver los alumnos que vinieron solo una vez' }).click({ timeout: 15000 });
+    await expect(page).toHaveURL(/\/alumnos\?visitas=una&estado=activos/);
+    const badges = page.locator('.visitas-badge');
+    await expect(badges).toHaveCount(1, { timeout: 15000 });                 // la misma cifra de la tarjeta
+    await expect(badges.first()).toHaveText('1 visita');
+    await expect(page.locator('.filtro-chip')).toContainText(['Activos', 'Solo 1 vez']);
+  });
 });
 
 // ── Verificación agosto–septiembre (2026-10-22) ─────────────────────
@@ -356,6 +366,66 @@ test.describe('Verificación ago–sep: filtros de Registros y días del períod
     await page.getByRole('option', { name: /Valeria Garza Treviño/ }).click();
     await expect(page.locator('.busqueda-input')).toHaveValue('2300100001');
     await expect(total()).toContainText('24 registros');                // su total en el top 5
+  });
+
+  test('Registros: agregar a mano las visitas del papel (v3.59.0)', async ({ page }) => {
+    await page.goto('/registros');
+    await page.locator('.btn-agregar-visita').click({ timeout: 15000 });
+    const dlg = page.locator('app-agregar-visita-dialog');
+
+    // Valeria (sin acento) el 6-ago a las 11:40: el escáner ya tiene una a las 11:49 → avisa.
+    await dlg.locator('.input-buscar-alumno').fill('trevino');
+    await dlg.locator('.sugerencia').first().click();
+    await dlg.locator('.input-fecha').fill('2026-08-06');
+    await dlg.locator('.input-entrada').fill('11:40');
+    await dlg.locator('.btn-guardar-visita').click();
+    await expect(dlg.locator('.aviso.parecida')).toContainText('11:49');
+    await expect(dlg.locator('.agregada')).toHaveCount(0);
+
+    // Otra hora, con salida: se guarda; la fecha se queda para la siguiente.
+    await dlg.locator('.input-entrada').fill('16:00');
+    await dlg.locator('.input-salida').fill('17:30');
+    await dlg.locator('.btn-guardar-visita').click();
+    await expect(dlg.locator('.agregada')).toHaveCount(1);
+    await expect(dlg.locator('.input-fecha')).toHaveValue('2026-08-06');
+
+    // Un visitante, sin salida.
+    await dlg.getByLabel('Es visitante (no es alumno)').check();
+    await dlg.locator('.input-visitante').fill('Luis Prueba');
+    await dlg.locator('.input-entrada').fill('10:00');
+    await dlg.locator('.btn-guardar-visita').click();
+    await expect(dlg.locator('.agregada')).toHaveCount(2);
+
+    // La salida antes de la entrada no se guarda.
+    await dlg.locator('.input-entrada').fill('12:00');
+    await dlg.locator('.input-salida').fill('11:00');
+    await dlg.locator('.btn-guardar-visita').click();
+    await expect(dlg.locator('.aviso.error')).toContainText('después de la entrada');
+    await dlg.getByRole('button', { name: 'Terminar' }).click();
+
+    // 215 + 2, marcadas "a mano".
+    await page.locator('.rango-tabs').getByText('Todo', { exact: true }).click();
+    await expect(page.locator('.header-subtitle')).toContainText('217 registros');
+    // (las del 6-ago no caben en la primera página: se buscan)
+    await page.locator('.busqueda-input').fill('Luis Prueba');
+    await expect(page.locator('.badge-a-mano')).toHaveCount(1);
+    await page.goto('/registros?fecha=2026-08-06');
+    await expect(page.locator('.badge-a-mano')).toHaveCount(2, { timeout: 15000 });
+  });
+
+  test('Alumnos: rango libre de visitas (v3.59.0)', async ({ page }) => {
+    await page.goto('/alumnos');
+    await page.locator('mat-form-field', { hasText: 'Visitas (histórico)' }).locator('mat-select').click({ timeout: 15000 });
+    await page.getByRole('option', { name: 'Personalizado (de… a…)' }).click();
+    await page.getByLabel('De (visitas)').fill('10');
+    await page.getByLabel('A (visitas)').fill('12');
+    // Fernanda 12, Diego 11, Andrés 11, Iker 11, Gael 10 (contado del respaldo).
+    await expect(page.locator('.visitas-badge')).toHaveCount(5, { timeout: 15000 });
+    await expect(page.locator('.filtro-chip')).toContainText('10 a 12 visitas');
+    await page.getByLabel('A (visitas)').fill('');
+    await page.getByLabel('De (visitas)').fill('16');
+    await expect(page.locator('.visitas-badge')).toHaveCount(3);              // 24, 18, 16
+    await expect(page.locator('.filtro-chip')).toContainText('16+ visitas');
   });
 
   test('Estadísticas: promedio por día de la semana y días del período', async ({ page }) => {

@@ -313,31 +313,6 @@ export class CommandPaletteService {
         },
       },
 
-      // ─── Limpiar actividades duplicadas ───────────────
-      {
-        id: 'accion-limpiar-duplicados',
-        label: 'Limpiar actividades duplicadas',
-        descripcion: 'Elimina actividades con el mismo nombre',
-        icono: 'content_copy',
-        grupo: 'Acciones',
-        tipo: 'accion',
-        keywords: ['limpiar', 'duplicados', 'motivos', 'mantenimiento'],
-        ejecutar: async () => {
-          try {
-            this.loadingService.show('Limpiando duplicados...');
-            const eliminados = await this.backupService.limpiarMotivosDuplicados();
-            this.loadingService.hide();
-            if (eliminados > 0) {
-              this.toastService.success(`${eliminados} actividades duplicadas eliminadas`);
-            } else {
-              this.toastService.info('No se encontraron actividades duplicadas');
-            }
-          } catch {
-            this.loadingService.hide();
-            this.toastService.error('Error al limpiar duplicados');
-          }
-        },
-      },
 
       // ─── Buscar actualización ─────────────────────
       {

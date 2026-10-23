@@ -263,8 +263,8 @@ DÍA OCUPADO:
           </p>
           <p class="nota">
             <mat-icon>info</mat-icon>
-            Los alumnos que <strong>nunca</strong> han venido (por ejemplo, importados del
-            padrón) se cuentan aparte: no "dejaron" de venir.
+            Los alumnos que <strong>nunca</strong> han venido (por ejemplo, importados de
+            Excel) se cuentan aparte: no "dejaron" de venir.
           </p>
         </mat-expansion-panel>
 

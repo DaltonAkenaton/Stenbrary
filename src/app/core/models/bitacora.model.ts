@@ -16,6 +16,7 @@ export type AccionBitacora =
   | 'pin-cambiado'
   | 'pin-recuperado'
   | 'codigo-generado'
+  | 'registro-agregado'
   | 'registro-editado'
   | 'registro-eliminado'
   | 'registros-limpiados'
@@ -28,7 +29,8 @@ export type AccionBitacora =
   | 'catalogo-cambiado'
   | 'respaldo-exportado'
   | 'respaldo-importado'
-  | 'datos-borrados';
+  | 'datos-borrados'
+  | 'reloj-ajustado';
 
 export interface EventoBitacora {
   id: string;

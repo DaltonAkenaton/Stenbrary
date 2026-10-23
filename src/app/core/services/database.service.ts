@@ -566,6 +566,36 @@ export class DatabaseService {
     return nuevoRegistro;
   }
 
+  /**
+   * v3.59.0: visita anotada en papel y capturada después (Registros →
+   * "Agregar visitas a mano"). Como `crearRegistro`, pero con la fecha y la
+   * salida que se escribieron, y marcada `capturaManual`.
+   */
+  async crearRegistroManual(
+    registro: Omit<Registro, 'id' | 'sincronizado' | 'capturaManual' | 'duracionMinutos'>,
+  ): Promise<Registro> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const salida = registro.horaSalida ? new Date(registro.horaSalida) : undefined;
+    const nuevo: Registro = this.markPending({
+      ...registro,
+      id: uuidv4(),
+      fechaHora: new Date(registro.fechaHora),
+      ...(salida ? {
+        horaSalida: salida,
+        duracionMinutos: Math.max(0, Math.round((salida.getTime() - new Date(registro.fechaHora).getTime()) / 60000)),
+        salidaEstimada: false,
+      } : {}),
+      sincronizado: false,
+      capturaManual: true,
+    });
+
+    await this.db.add('registros', nuevo);
+    this.notificarCambioDatos();
+    return nuevo;
+  }
+
   // ═══════════════════════════════════════════════
   // RESTAURACIÓN DESDE BACKUP
   // ═══════════════════════════════════════════════

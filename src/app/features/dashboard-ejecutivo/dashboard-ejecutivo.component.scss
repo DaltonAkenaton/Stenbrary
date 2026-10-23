@@ -3461,21 +3461,6 @@ canvas {
     cursor: pointer;
     text-decoration: underline dotted;
   }
-  .dias-alerta { color: $amber-color; }
+  .dias-alerta { color: $amber-color; cursor: help; }
   .dias-ok { color: $success-color; }
-  .dias-sin-visitas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 4px;
-  }
-  .dia-chip {
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid rgba($amber-color, 0.45);
-    background: rgba($amber-color, 0.08);
-    color: inherit;
-    font-size: 0.72rem;
-    cursor: pointer;
-  }
 }

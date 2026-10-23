@@ -5,8 +5,8 @@
 // ║  FIX v3.4.1:                                         ║
 // ║  - Motivos: verifica duplicados por nombre antes     ║
 // ║    de importar (evita duplicación)                   ║
-// ║  - Nuevo: limpiarMotivosDuplicados() para arreglar   ║
-// ║    datos ya duplicados                               ║
+// ║  (limpiarMotivosDuplicados se quitó en v3.59.0: desde ║
+// ║   v3.50.0 los motivos se emparejan por nombre)       ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable } from '@angular/core';
@@ -396,79 +396,6 @@ export class BackupService {
     }
   }
 
-  // ═══════════════════════════════════════════════
-  // LIMPIAR DUPLICADOS (NUEVO v3.4.1)
-  // ═══════════════════════════════════════════════
-
-  /**
-   * Encuentra y elimina motivos duplicados por nombre.
-   * Conserva el que tiene menor orden (el original).
-   * Reasigna órdenes consecutivos después de limpiar.
-   */
-  async limpiarMotivosDuplicados(): Promise<number> {
-    const todosMotivos = await this.databaseService.obtenerTodosLosMotivos();
-
-    // Agrupar por nombre normalizado
-    const grupos = new Map<string, Motivo[]>();
-    todosMotivos.forEach(m => {
-      const key = m.nombre.toLowerCase().trim();
-      const grupo = grupos.get(key) || [];
-      grupo.push(m);
-      grupos.set(key, grupo);
-    });
-
-    let eliminados = 0;
-
-    for (const [, grupo] of grupos) {
-      if (grupo.length <= 1) continue;
-
-      // Mantener el de menor orden (el original)
-      grupo.sort((a, b) => a.orden - b.orden);
-
-      for (let i = 1; i < grupo.length; i++) {
-        if (grupo[i].id) {
-          await this.databaseService.eliminarMotivo(grupo[i].id!);
-          eliminados++;
-          console.log(`🗑️ Duplicado eliminado: "${grupo[i].nombre}" (orden ${grupo[i].orden})`);
-        }
-      }
-    }
-
-    // Reasignar órdenes consecutivos
-    if (eliminados > 0) {
-      const motivosLimpios = await this.databaseService.obtenerTodosLosMotivos();
-      for (let i = 0; i < motivosLimpios.length; i++) {
-        if (motivosLimpios[i].orden !== i + 1) {
-          await this.databaseService.actualizarMotivo(motivosLimpios[i].id!, {
-            ...motivosLimpios[i],
-            orden: i + 1,
-          });
-        }
-      }
-    }
-
-    return eliminados;
-  }
-
-  /**
-   * Cuenta cuántos motivos duplicados existen actualmente.
-   */
-  async contarMotivosDuplicados(): Promise<number> {
-    const todosMotivos = await this.databaseService.obtenerTodosLosMotivos();
-    const grupos = new Map<string, number>();
-
-    todosMotivos.forEach(m => {
-      const key = m.nombre.toLowerCase().trim();
-      grupos.set(key, (grupos.get(key) || 0) + 1);
-    });
-
-    let duplicados = 0;
-    grupos.forEach(count => {
-      if (count > 1) duplicados += count - 1;
-    });
-
-    return duplicados;
-  }
 }
 
 function fechaRespaldo(iso: string | undefined): string {

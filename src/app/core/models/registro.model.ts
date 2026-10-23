@@ -53,6 +53,11 @@ export interface Registro {
   // este campo, los componentes hacen fallback a Alumno.
   turno?: 'Matutino' | 'Vespertino' | 'Mixto';
 
+  // ── Capturada a mano (v3.59.0) ──
+  // true = se anotó en papel (se fue la luz, la PC estuvo apagada) y se
+  // capturó después en Registros. Cuenta igual en las estadísticas.
+  capturaManual?: boolean;
+
   // ── Sync metadata (Fase 2.2 — opcional, retrocompat) ──
   // `sincronizado: boolean` arriba queda como flag legacy; `_syncStatus`
   // es la fuente nueva (3 estados). Sin _syncStatus se asume `synced`.

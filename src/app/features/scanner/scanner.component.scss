@@ -1123,3 +1123,8 @@
   }
   .salida-flash { opacity: 1; transition: opacity 0.3s ease 1.5s; }
 }
+// v3.59.0 — hora sin verificar (Configuración → General → Hora del sistema).
+.aviso-hora {
+  @extend .aviso-privacidad;
+  color: $amber-color;
+}

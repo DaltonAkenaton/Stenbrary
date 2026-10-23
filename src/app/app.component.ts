@@ -39,6 +39,7 @@ import { registrarDiagnostico } from './core/utils/invariante.utils';
 import { salidaAlCierre } from './core/utils/horarios.utils';
 import { PwaUpdateService } from './core/services/pwa-update.service';
 import { QuioscoAutoService } from './core/services/quiosco-auto.service';
+import { RelojService } from './core/services/reloj.service';
 import { AforoService } from './core/services/aforo.service';
 
 interface NavItem {
@@ -176,6 +177,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private readonly quioscoAuto = inject(QuioscoAutoService);
+  private readonly reloj = inject(RelojService);
   private readonly aforoService = inject(AforoService);
 
   /** Rutas que se muestran a pantalla completa, sin sidebar ni topbar. */
@@ -243,6 +245,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Volver solo al modo quiosco tras N minutos sin uso (0 = apagado).
     this.quioscoAuto.iniciar();
+
+    // La hora correcta de internet (v3.59.0): las PC de la facultad suelen
+    // tener el reloj mal.
+    this.reloj.iniciar();
 
     // Evaluar de entrada: si se llega directo a /bienvenida por URL, el
     // NavigationEnd de abajo puede haber ocurrido ya.

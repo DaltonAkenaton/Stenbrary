@@ -31,7 +31,7 @@
 
 import {
   Component, OnInit, OnDestroy,
-  ViewChild, ElementRef, NgZone, signal
+  ViewChild, ElementRef, NgZone, signal, inject, computed
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -71,6 +71,8 @@ import { MATRICULA_CONFIG, esMatriculaValidaScanner, normalizarMatricula, valida
 
 import { SoundService } from '../../core/services/sound.service';
 import { ConfigService } from '../../core/services/config.service';
+import { RelojService } from '../../core/services/reloj.service';
+import { environment } from '../../../environments/environment';
 import { AforoService } from '../../core/services/aforo.service';
 import { InvitadoNombreDialogComponent } from './invitado-nombre-dialog/invitado-nombre-dialog.component';
 import { QuioscoPinDialogComponent, SalidaPinQuiosco } from './quiosco-pin-dialog/quiosco-pin-dialog.component';
@@ -402,6 +404,15 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private confirmacionRef: MatDialogRef<ConfirmacionMatriculaDialogComponent> | null = null;
   private destruido = false;
   private pressTimer: number | null = null;       // long-press del modo quiosco
+
+  /**
+   * v3.59.0: la hora de las visitas no se puede confiar (nunca se verificó o
+   * cambiaron la hora de la PC). Solo en producción: en desarrollo y en las
+   * pruebas nunca hay verificación y el aviso saldría siempre.
+   */
+  private readonly reloj = inject(RelojService);
+  readonly horaSinVerificar = computed(() =>
+    environment.production && (this.reloj.aviso() === 'nunca' || this.reloj.aviso() === 'cambiaron-hora'));
 
   constructor(
     private databaseService: DatabaseService,

@@ -1,6 +1,6 @@
 {
   "name": "stenbrary",
-  "version": "3.58.0",
+  "version": "3.59.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -12,7 +12,8 @@
     "e2e:ui": "playwright test --ui",
     "check:version": "node scripts/check-version.mjs",
     "prepare": "husky",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "docs:word": "node scripts/generar-word.mjs"
   },
   "private": true,
   "dependencies": {
@@ -52,6 +53,7 @@
     "@types/uuid": "^10.0.0",
     "@types/xlsx": "^0.0.35",
     "angular-eslint": "18.4.3",
+    "docx": "^9.13.0",
     "eslint": "^9.15.0",
     "fake-indexeddb": "^6.2.5",
     "husky": "^9.1.7",

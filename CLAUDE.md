@@ -78,24 +78,31 @@ npx playwright test
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **378 specs unitarios en verde**, en 20 archivos —
+Suite activa: **398 specs unitarios en verde**, en 22 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `catalogos.utils`, `cuadre-cifras.service`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
-`backup.service`, `estadisticas-avanzadas.service`, `supabase.client`, `registros-filtros.utils`.
+`backup.service`, `estadisticas-avanzadas.service`, `supabase.client`, `registros-filtros.utils`, `reloj.utils`, `visita-manual.utils`.
 CI corre los unitarios con `TZ=America/Matamoros` (la zona de Nuevo Laredo,
 que **conserva el horario de verano**) y Playwright con `timezoneId` igual:
 los errores de fecha "un día antes" no existen en UTC, y los de días de 23/25 h
 tampoco en Ciudad de México. Para desplazar fechas por días, `desplazarDias` /
 `diasCalendarioEntre`, nunca restar `N × 86 400 000` ms.
 
+**Hora del sistema (v3.59.0):** `main.ts` llama `instalarReloj()`
+(`core/utils/reloj.utils.ts`), que reemplaza `Date` global por uno que
+suma un desfase (hora de internet o ajuste a mano − hora de la PC). Todo
+`new Date()` / `Date.now()` ya da la hora corregida: no hay que hacer nada
+especial. La hora cruda de la PC es `horaPc()`. `RelojService` sincroniza
+solo en producción (en desarrollo y en Playwright el desfase es 0).
+
 **Fechas de calendario:** nunca `new Date('YYYY-MM-DD')` (es medianoche UTC:
 en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**75 tests E2E** con
-Playwright (47 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 20 en `cuadre.spec.ts` — este
+**79 tests E2E** con
+Playwright (48 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 23 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +

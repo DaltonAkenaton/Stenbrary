@@ -110,6 +110,7 @@ export const ACCIONES_BITACORA: Record<AccionBitacora, { etiqueta: string; icono
   'pin-cambiado':        { etiqueta: 'Cambió el PIN',                icono: 'key',            grupo: 'quiosco' },
   'pin-recuperado':      { etiqueta: 'Usó el código de recuperación', icono: 'lock_reset',   grupo: 'quiosco', alerta: true },
   'codigo-generado':     { etiqueta: 'Generó un código de recuperación', icono: 'vpn_key',   grupo: 'quiosco' },
+  'registro-agregado':   { etiqueta: 'Agregó una visita a mano',     icono: 'edit_note',      grupo: 'cambios' },
   'registro-editado':    { etiqueta: 'Editó una visita',             icono: 'edit',           grupo: 'cambios' },
   'registro-eliminado':  { etiqueta: 'Borró una visita',             icono: 'delete',         grupo: 'cambios', alerta: true },
   'registros-limpiados': { etiqueta: 'Limpió visitas por fechas',    icono: 'delete_sweep',   grupo: 'cambios', alerta: true },
@@ -123,4 +124,5 @@ export const ACCIONES_BITACORA: Record<AccionBitacora, { etiqueta: string; icono
   'respaldo-exportado':  { etiqueta: 'Descargó un respaldo',         icono: 'download',       grupo: 'respaldos' },
   'respaldo-importado':  { etiqueta: 'Importó un respaldo',          icono: 'upload',         grupo: 'respaldos' },
   'datos-borrados':      { etiqueta: 'Borró todos los datos',        icono: 'delete_forever', grupo: 'respaldos', alerta: true },
+  'reloj-ajustado':      { etiqueta: 'Corrigió la hora',             icono: 'schedule',       grupo: 'cambios' },
 };

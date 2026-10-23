@@ -92,7 +92,10 @@ export class AlumnosComponent implements OnInit {
     grupo: '',
     turno: '',
     estado: '' as '' | 'activos' | 'inactivos',
-    visitas: '' as '' | 'cero' | 'una' | 'pocas' | 'muchas',
+    visitas: '' as '' | 'cero' | 'una' | 'pocas' | 'muchas' | 'rango',
+    // v3.59.0: "Personalizado" — de N a M visitas; vacío = sin límite de ese lado.
+    visitasMin: '',
+    visitasMax: '',
   });
 
   /** Mapa matrícula → cantidad de visitas históricas (lazy: se rellena solo si se filtra por visitas). */
@@ -129,6 +132,20 @@ export class AlumnosComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.cargarAlumnos();
+    await this.aplicarFiltrosDeLaUrl();
+  }
+
+  /**
+   * v3.59.0: Estadísticas → "Vinieron solo 1 vez" abre esta lista ya filtrada
+   * (`?visitas=una&estado=activos`).
+   */
+  private async aplicarFiltrosDeLaUrl(): Promise<void> {
+    const qp = this.router.parseUrl(this.router.url).queryParams;
+    const visitas = ['cero', 'una', 'pocas', 'muchas'].includes(qp['visitas']) ? qp['visitas'] : '';
+    const estado = ['activos', 'inactivos'].includes(qp['estado']) ? qp['estado'] : '';
+    if (!visitas && !estado) return;
+    if (visitas) await this.asegurarVisitasCargadas();
+    this.filtros.update(f => ({ ...f, visitas, estado }));
   }
 
   // ─── CARGA DE DATOS ────────────────────────────────────
@@ -212,6 +229,10 @@ export class AlumnosComponent implements OnInit {
         if (filtroVisitas === 'una' && v !== 1) continue;
         if (filtroVisitas === 'pocas' && (v < 2 || v > 4)) continue;
         if (filtroVisitas === 'muchas' && v < 5) continue;
+        if (filtroVisitas === 'rango') {
+          if (f.visitasMin !== '' && v < Number(f.visitasMin)) continue;
+          if (f.visitasMax !== '' && v > Number(f.visitasMax)) continue;
+        }
       }
       if (termino) {
         // Usa los _Lower precomputados en buildAlumnoRender — sin toLowerCase() por fila
@@ -258,13 +279,14 @@ export class AlumnosComponent implements OnInit {
 
   /** Limpia un filtro individual sin tocar los demás. */
   limpiarFiltro(campo: 'busqueda' | 'carrera' | 'grado' | 'grupo' | 'turno' | 'estado' | 'visitas'): void {
-    this.filtros.update(f => ({ ...f, [campo]: '' }));
+    this.filtros.update(f => ({ ...f, [campo]: '', ...(campo === 'visitas' ? { visitasMin: '', visitasMax: '' } : {}) }));
     this.paginaActual.set(0);
   }
 
   limpiarFiltros(): void {
     this.filtros.set({
       busqueda: '', carrera: '', grado: '', grupo: '', turno: '', estado: '', visitas: '',
+      visitasMin: '', visitasMax: '',
     });
     this.paginaActual.set(0);
   }
@@ -273,6 +295,22 @@ export class AlumnosComponent implements OnInit {
   async onFiltroVisitasChange(valor: string): Promise<void> {
     if (valor) await this.asegurarVisitasCargadas();
     this.actualizarFiltro('visitas', valor);
+  }
+
+  /** Límite del rango de visitas: solo enteros ≥ 0; lo demás = sin límite. */
+  actualizarRangoVisitas(campo: 'visitasMin' | 'visitasMax', valor: string | number | null): void {
+    const n = Number(valor);
+    const limpio = valor === null || valor === '' || !Number.isFinite(n) || n < 0 ? '' : String(Math.floor(n));
+    this.actualizarFiltro(campo, limpio);
+  }
+
+  /** Texto de la ficha del rango: "15 a 20 visitas", "30+ visitas", "hasta 3 visitas". */
+  get textoRangoVisitas(): string {
+    const { visitasMin: min, visitasMax: max } = this.filtros();
+    if (min !== '' && max !== '') return min === max ? `${min} visitas` : `${min} a ${max} visitas`;
+    if (min !== '') return `${min}+ visitas`;
+    if (max !== '') return `hasta ${max} visitas`;
+    return 'Visitas: escribe un rango';
   }
 
   // ─── PAGINACIÓN ────────────────────────────────────────

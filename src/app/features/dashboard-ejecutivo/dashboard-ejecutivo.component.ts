@@ -1907,6 +1907,11 @@ this.sparkRegistros = counts;
   }
 
   /** Con el filtro de hora puesto, la lista lo lleva también: si no, las cifras no coinciden. */
+  /** "jue 1 de oct, vie 2 de oct, …" para el tooltip de la tarjeta. */
+  textoDiasSinVisitas(): string {
+    return (this.kpiDiasPeriodo?.sinVisitas ?? []).map(d => d.texto).join(', ');
+  }
+
   verRegistrosDelDia(iso: string): void {
     const hora = this.horaFiltro;
     this.router.navigate(['/registros'], {

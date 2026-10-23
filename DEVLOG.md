@@ -9,7 +9,47 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
-## 2026-10-22 — v3.58.0: verificación de agosto–septiembre y huecos de cobertura
+## 2026-10-22 — v3.59.0: la hora no depende del reloj de la computadora
+
+El usuario avisó que las PC de la facultad tienen la hora mal (adelantadas,
+atrasadas). Toda visita, "hoy", horario y cierre sale de `new Date()`.
+
+**Qué se hizo**
+- `reloj.utils.ts`: un desfase (hora correcta − PC) aplicado en UN lugar:
+  `instalarReloj()` en main.ts reemplaza `Date` por uno que suma el desfase
+  sin argumentos y en `now()` (con argumentos, igual que el original). Se
+  descartó pasar una función `ahora()` por las 38 partes que leen la hora:
+  si se escapaba una, la visita y el filtro de "hoy" podían caer en días
+  distintos cerca de medianoche.
+- `RelojService`: HEAD a /index.html sin caché y sin service worker; la
+  cabecera Date de Cloudflare da la hora (± 1 s, corregido por la ida y
+  vuelta, descartado si tarda > 5 s). Al abrir, cada 30 min y al volver la
+  red. **Solo en producción**: el servidor de desarrollo y el reloj congelado
+  de Playwright darían un desfase falso.
+- Ajuste a mano con PIN (equipos sin internet), aviso en el escáner si nunca
+  se verificó o si el reloj de la PC quedó antes del último ajuste, y
+  "Corrigió la hora" en la bitácora.
+- Se quitó "Limpiar actividades duplicadas" (Configuración → Datos, aviso en
+  General y Ctrl+K): arreglaba un bug de v3.4.1 que v3.50.0 eliminó de raíz
+  (motivos emparejados por nombre), y al borrar la copia no movía sus visitas
+  a la actividad que quedaba.
+- Registros → "Agregar visitas" (`AgregarVisitaDialogComponent`,
+  `visita-manual.utils`, `DatabaseService.crearRegistroManual`): lo anotado
+  en papel cuando no hay luz. `Registro.capturaManual`, bitácora
+  `registro-agregado`, columna en el Excel. Aviso de visita parecida con el
+  umbral de duplicados.
+- Alumnos: filtro de visitas "Personalizado" (de N a M; vacío = sin límite) y
+  el conteo junto al nombre. Lee `?visitas=` y `?estado=` de la URL: la tarjeta
+  "Vinieron solo 1 vez" de Estadísticas lleva ahí (mismo universo: activos).
+- Estadísticas: los días sin visitas pasaron de fichas a tooltip (rompían la
+  tarjeta "Día con más visitas").
+- "Padrón" → "lista de alumnos" en los textos visibles y en las guías.
+- Guías: el paso de la hora ya no es "igualar la de Windows al celular" sino
+  internet o ajuste a mano.
+
+**Verificación**: lint 0 errores, 398 unitarias (+20: reloj 13, visita a mano 7), 79 E2E (+4: ajuste de hora a mano → la visita se guarda con la hora corregida; tarjeta "Vinieron solo 1 vez" → Alumnos; rango de visitas; agregar visitas a mano con aviso de parecida), build. Una E2E de la puerta fallaba intermitente con la máquina cargada (tecleaba antes de que el escáner escuchara): ahora espera.
+
+: verificación de agosto–septiembre y huecos de cobertura
 
 El usuario pidió (1) datos de dos meses para contarlos él en Excel y (2) revisar
 solo los flujos críticos SIN prueba, no re-auditar.
