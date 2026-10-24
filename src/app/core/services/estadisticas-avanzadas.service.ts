@@ -548,10 +548,6 @@ export class EstadisticasAvanzadasService {
     return distribucionDe(this.filtrarPorRango(todosRegistros, rango, horaFiltro), motivos);
   }
 
-  // ═══════════════════════════════════════════════
-  // MÉTODOS EXISTENTES (sin cambios)
-  // ═══════════════════════════════════════════════
-
   /**
    * Compara el rango actual contra el rango inmediatamente previo de la
    * misma longitud (auto-calculado).

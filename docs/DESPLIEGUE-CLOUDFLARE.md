@@ -49,8 +49,8 @@
 
 ## Qué comprobar en `https://stenbrary.pages.dev`
 
-Hecho el 2026-10-12. La cuenta usa un alias `+stenbrary` del Gmail personal, de forma temporal: ese
-día Google y Microsoft bloquearon crear el correo dedicado. Se cambia en My Profile cuando exista.
+Hecho el 2026-10-12. La cuenta de Cloudflare usa, de forma temporal, un correo personal del autor;
+se cambia en My Profile cuando exista el correo dedicado del proyecto.
 
 - [x] Abre y llega al asistente de bienvenida (instalación nueva = navegador sin datos).
 - [x] Recargar estando en `/estadisticas` no da error 404 (el *fallback* de rutas es automático).

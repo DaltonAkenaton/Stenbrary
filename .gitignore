@@ -52,3 +52,9 @@ Thumbs.db
 # Temporales de herramientas de despliegue (no se versionan)
 .wrangler/
 supabase/.temp/
+
+# Material personal de estudio: se conserva en disco, fuera del repositorio
+/docs/guias/
+
+# Configuración local de Claude Code (permisos y rutas de esta máquina)
+.claude/settings.local.json

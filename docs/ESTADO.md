@@ -5,7 +5,9 @@ Se actualiza al cerrar cada tanda relevante. No reemplaza a
 `CHANGELOG` (cambios por versión) ni a `DEVLOG.md` (bitácora técnica)
 ni a `docs/ROADMAP.md` (visión a largo plazo y fases del producto).
 
-**Versión actual:** `3.25.0` · Última actualización: `2026-05-18`.
+**Versión del proyecto:** `3.59.0` (ver `package.json`) · Último cambio a
+este documento: `2026-10-18` (v3.57.0). Lo agregado en v3.58.0 y v3.59.0
+puede no estar reflejado aquí; el detalle por versión está en el CHANGELOG.
 
 **Cierre de Fase 1 (v4.0)**: ver §2.0 abajo. Después de v4.0 arranca
 **Fase 2** (backend + auth + sync) — detalle en `docs/ROADMAP.md`.
