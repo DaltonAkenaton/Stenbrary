@@ -49,6 +49,26 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.60.0',
+    fecha: '2026-10-24',
+    titulo: 'Comparar dos períodos, sin malentendidos',
+    resumen: 'La comparación dice en palabras qué período se evalúa y contra cuál se mide.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto: 'Estadísticas → Comparar: el período A es el que se evalúa y el B la referencia, y ahora cada uno lo indica. Debajo del número aparece la diferencia en palabras, por ejemplo "A tuvo 57 visitas más que B".',
+      },
+      {
+        tipo: 'feat',
+        texto: 'Botón "Intercambiar" para invertir A y B con un clic. Útil si pusiste el mes anterior en A: antes la tarjeta mostraba una caída cuando las visitas en realidad habían subido.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'La ayuda de fórmulas decía que la referencia era A; la referencia es B, como siempre se calculó.',
+      },
+    ],
+  },
+  {
     version: '3.59.0',
     fecha: '2026-10-22',
     titulo: 'La hora correcta, aunque la computadora la tenga mal',

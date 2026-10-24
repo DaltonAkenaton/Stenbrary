@@ -2081,7 +2081,8 @@ this.sparkRegistros = counts;
         horaPicoA: this.comparativa.a.horaPico ? `${this.comparativa.a.horaPico.dia} ${this.formatHora(this.comparativa.a.horaPico.hora)}` : '',
         horaPicoB: this.comparativa.b.horaPico ? `${this.comparativa.b.horaPico.dia} ${this.formatHora(this.comparativa.b.horaPico.hora)}` : '',
         iconoDif: this.iconoComparativa(this.comparativa.diferencia.direccion),
-        colorDif: this.colorComparativa(this.comparativa.diferencia.direccion)
+        colorDif: this.colorComparativa(this.comparativa.diferencia.direccion),
+        fraseDif: this.fraseComparativa(this.comparativa.diferencia),
       };
 
       setTimeout(() => this.renderizarGraficasComparador(), 50);
@@ -2092,6 +2093,26 @@ this.sparkRegistros = counts;
       this.cargandoComparativa = false;
       this.cdr.markForCheck(); // Es buena práctica avisar a Angular que terminaste
     }
+  }
+
+  /**
+   * Invierte A y B. La diferencia se mide siempre de A contra B (B es la
+   * referencia), así que con agosto en A y septiembre en B el panel decía
+   * "−57" aunque las visitas subieron: intercambiar da la lectura cronológica.
+   */
+  intercambiarComparador(): void {
+    [this.presetA, this.presetB] = [this.presetB, this.presetA];
+    [this.fechaInicioA, this.fechaInicioB] = [this.fechaInicioB, this.fechaInicioA];
+    [this.fechaFinA, this.fechaFinB] = [this.fechaFinB, this.fechaFinA];
+    this.compararAhora();
+  }
+
+  /** La diferencia en palabras, para que el signo no dependa de adivinar el orden. */
+  private fraseComparativa(dif: ComparativaDosRangos['diferencia']): string {
+    if (dif.sinReferencia) return 'B no tuvo visitas: no hay base para comparar';
+    if (dif.direccion === 'igual') return 'A y B tuvieron las mismas visitas';
+    const n = Math.abs(dif.cambio);
+    return `A tuvo ${n} ${n === 1 ? 'visita' : 'visitas'} ${dif.cambio > 0 ? 'más' : 'menos'} que B`;
   }
 
   labelRangoComparado(slot: 'a' | 'b'): string {

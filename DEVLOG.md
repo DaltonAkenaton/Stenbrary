@@ -9,6 +9,41 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-24 — v3.60.0: repositorio para portafolio y Comparar sin ambigüedad
+
+**Qué se hizo**
+- Preparación para portafolio (commit `0bcbafb`): `LICENSE` de todos los
+  derechos reservados, README reescrito y verificado contra el código,
+  matrículas reales sustituidas por la serie sintética `229999000N`,
+  `docs/guias/` y `.claude/settings.local.json` fuera del repo (siguen en
+  disco), cabecera de ESTADO al día.
+- Comparar (Estadísticas): rótulos "Período a evaluar" (A) y "Referencia"
+  (B), la diferencia en palabras ("A tuvo 57 visitas más que B") y botón
+  Intercambiar. El cálculo no cambia: sigue siendo (A − B) / B.
+
+**Qué se descubrió**
+- Con agosto en A y septiembre en B, la tarjeta decía −57 / −41.9 % con
+  flecha roja: se leía como caída, y las visitas habían subido (+72.2 % de
+  agosto a septiembre). Las cifras de cada panel cuadraban con
+  `respuestas-ago-sep-2026.xlsx`; el problema era solo de lectura.
+- La ayuda de fórmulas decía "tomando A como referencia", y los pasos dividían
+  entre B. Corregida.
+- Los colores de dirección se aplicaban a todo `mat-icon` de la tarjeta;
+  ahora solo al ícono principal (`> mat-icon`), para no pintar el del botón.
+
+**Qué se decidió**
+- No pasar al orden cronológico automático: cambiaría la definición y el
+  fixture de cuadre. Explicitar los roles y dar el intercambio basta.
+
+**Qué sigue**
+- Limpiar el historial de Git (las matrículas reales siguen en commits y tags
+  anteriores), con respaldo verificable y autorización aparte.
+- Borrar los despliegues antiguos de Cloudflare Pages (el chunk viejo sigue
+  respondiendo en el dominio).
+- Pendientes menores: `xlsx` 0.20.x, keepalive manual, `console.log` → logger.
+
+---
+
 ## 2026-10-22 — v3.59.0: la hora no depende del reloj de la computadora
 
 El usuario avisó que las PC de la facultad tienen la hora mal (adelantadas,

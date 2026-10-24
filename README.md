@@ -14,7 +14,7 @@ sin conexión a internet.
 **Público objetivo:** coordinación y personal de bibliotecas que hoy registran
 las visitas en papel o en hojas de cálculo y necesitan cifras confiables de uso.
 
-**Estado:** desarrollado y probado (versión 3.59.0). Su implementación
+**Estado:** desarrollado y probado (versión 3.60.0). Su implementación
 institucional en una biblioteca universitaria está pendiente de acordarse; por
 ahora no está en operación ni tiene usuarios reales.
 

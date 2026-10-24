@@ -44,6 +44,16 @@ que no hay con qué comparar.
 *Por qué:* comparar medio día contra un día completo hacía que el sistema
 anunciara caídas del 75 % todas las mañanas.
 
+### Comparar dos períodos (A y B)
+**A** es el período que se evalúa y **B** la referencia. La diferencia es
+A − B y el porcentaje es esa diferencia entre las visitas de B. Debajo del
+número, la pantalla lo dice en palabras ("A tuvo 57 visitas menos que B"), y el
+botón **Intercambiar** invierte los dos períodos.
+
+*Por qué:* con agosto en A y septiembre en B, la tarjeta mostraba "−57 / −41.9 %" con
+flecha roja y se leía como una caída, cuando las visitas habían subido. Para
+leerlo como "de un mes al siguiente", el más reciente va en A.
+
 ### Motivos de visita
 Una visita con varios motivos **suma un punto a cada uno**. El porcentaje se
 lee "de las visitas del período, cuántas incluyeron este motivo", y la suma

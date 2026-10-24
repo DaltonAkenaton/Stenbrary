@@ -342,7 +342,8 @@ DÍA OCUPADO:
             <mat-panel-title><mat-icon>compare_arrows</mat-icon> Comparador A vs B</mat-panel-title>
           </mat-expansion-panel-header>
           <p>
-            Calcula la diferencia tomando A como referencia (no al revés):
+            A es el período que evalúas y B la referencia: la diferencia se mide de A contra B.
+            Si los pusiste al revés, el botón «Intercambiar» los invierte.
           </p>
           <pre class="formula">
 1) Tomamos las visitas del rango A.

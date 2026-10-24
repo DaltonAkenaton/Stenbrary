@@ -1189,7 +1189,8 @@
             Comparar dos períodos
           </h2>
           <p class="comparador-hint">
-            Útil para "esta semana vs semana pasada" o "febrero vs abril" — cualquier dos rangos arbitrarios.
+            A es el período que quieres evaluar y B la referencia contra la que se mide
+            (por ejemplo, A = esta semana y B = la semana pasada). Usa «Intercambiar» para invertirlos.
           </p>
         </div>
 
@@ -1204,6 +1205,7 @@
                 }
               </select>
             </div>
+            <div class="slot-rol">Período a evaluar</div>
             @if (presetA === 'personalizado') {
               <div class="slot-fechas">
                 <input type="date" [(ngModel)]="fechaInicioA" [max]="fechaMaxima" class="date-input small">
@@ -1265,7 +1267,13 @@
                   Sin cambio
                 }
               </div>
-              <div class="dif-label">A vs B</div>
+              <div class="dif-frase">{{ comparativaUI.fraseDif }}</div>
+              <button type="button" class="btn-intercambiar" (click)="intercambiarComparador()"
+                      [disabled]="cargandoComparativa"
+                      matTooltip="Pasa A a la referencia y B al período a evaluar">
+                <mat-icon>swap_horiz</mat-icon>
+                Intercambiar
+              </button>
             </div>
           }
 
@@ -1279,6 +1287,7 @@
                 }
               </select>
             </div>
+            <div class="slot-rol">Referencia</div>
             @if (presetB === 'personalizado') {
               <div class="slot-fechas">
                 <input type="date" [(ngModel)]="fechaInicioB" [max]="fechaMaxima" class="date-input small">
