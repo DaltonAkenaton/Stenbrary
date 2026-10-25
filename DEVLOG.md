@@ -32,7 +32,7 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 ## 2026-10-24 — v3.60.0: repositorio para portafolio y Comparar sin ambigüedad
 
 **Qué se hizo**
-- Preparación para portafolio (commit `0bcbafb`): `LICENSE` de todos los
+- Preparación para portafolio (commit `d0881e7`): `LICENSE` de todos los
   derechos reservados, README reescrito y verificado contra el código,
   matrículas reales sustituidas por la serie sintética `229999000N`,
   `docs/guias/` y `.claude/settings.local.json` fuera del repo (siguen en
@@ -56,8 +56,8 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
   fixture de cuadre. Explicitar los roles y dar el intercambio basta.
 
 **Qué sigue**
-- Limpiar el historial de Git (las matrículas reales siguen en commits y tags
-  anteriores), con respaldo verificable y autorización aparte.
+- ~~Limpiar el historial de Git~~ hecho (historial reescrito). Quedan los
+  commits viejos accesibles por SHA en GitHub: pedir a Soporte que los purgue.
 - Borrar los despliegues antiguos de Cloudflare Pages (el chunk viejo sigue
   respondiendo en el dominio).
 - Pendientes menores: `xlsx` 0.20.x, keepalive manual, `console.log` → logger.
