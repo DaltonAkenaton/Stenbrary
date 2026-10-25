@@ -9,7 +9,7 @@ on:
 jobs:
   verify:
     name: Lint, Type-check, Test, Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     steps:
@@ -62,7 +62,7 @@ jobs:
 
   e2e:
     name: Smoke E2E (Playwright)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:

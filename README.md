@@ -7,18 +7,24 @@ motivo de su visita y el sistema guarda el registro. Con esos datos genera
 estadísticas, reportes en PDF y Excel, y constancias de asistencia. Funciona
 sin conexión a internet.
 
-**Demo en vivo:** <https://stenbrary.pages.dev>
+**Demo en vivo:** <https://stenbrary.pages.dev> — en la primera pantalla,
+"Explorar con datos de ejemplo" carga alumnos y visitas ficticios para ver
+estadísticas y reportes sin configurar nada.
+
+![Flujo de registro: de la lectura de la credencial al registro de la visita](docs/img/Flujo.gif)
 
 ## Para quién es y en qué estado está
 
 **Público objetivo:** coordinación y personal de bibliotecas que hoy registran
 las visitas en papel o en hojas de cálculo y necesitan cifras confiables de uso.
 
-**Estado:** desarrollado y probado (versión 3.60.0). Su implementación
+**Estado:** desarrollado y probado (versión 3.61.0). Su implementación
 institucional en una biblioteca universitaria está pendiente de acordarse; por
 ahora no está en operación ni tiene usuarios reales.
 
 **Autoría:** proyecto individual. Diseño, desarrollo, pruebas, documentación y despliegue.
+Desarrollado con apoyo de Claude Code como asistente de programación; las
+decisiones de diseño y su verificación son propias.
 
 **Sobre la demo:** es una aplicación web estática; cada navegador
 guarda sus propios datos y la primera visita abre un asistente de
@@ -27,19 +33,25 @@ y tiene Supabase desactivado.
 
 ## Capturas
 
-<!--
-  Pendiente: capturas tomadas solo con datos ficticios (generador de datos de
-  prueba o el fixture "Prueba Cuadre"). Ninguna matrícula, nombre ni foto real.
+**Escáner** — punto de entrada: lectura de la credencial con lector USB o cámara.
 
-  1. docs/img/01-escaner.png        Escáner en espera (campo de matrícula, aforo)
-  2. docs/img/02-confirmacion.png   Confirmación de la matrícula leída
-  3. docs/img/03-motivo.png         Selección del motivo de visita
-  4. docs/img/04-registrado.png     Regreso al escáner con el aviso de registro
-  5. docs/img/05-estadisticas.png   Estadísticas: mapa de calor y barras
-  6. docs/img/flujo.gif             Recorrido 1 → 3 → 4 (10–15 s)
--->
+![Escáner](docs/img/Escaner.png)
 
-_Próximamente._
+**Resumen** — actividad del día.
+
+![Resumen](docs/img/Resumen.png)
+
+**Registros** — historial de visitas con filtros.
+
+![Registros](docs/img/Registros.png)
+
+**Estadísticas** — tendencias, motivos y carreras por período.
+
+![Estadísticas](docs/img/Estadisticas.png)
+
+**Mapa de calor** — afluencia por día y hora.
+
+![Mapa de calor](docs/img/Mapa-de-calor.png)
 
 ## Decisiones técnicas
 
@@ -123,8 +135,6 @@ _Próximamente._
 
 - Node.js 22 (ver `.nvmrc`) y npm
 - Google Chrome (las pruebas unitarias corren en Chrome headless)
-
-El repositorio es privado. Para revisarlo, solicita acceso al autor.
 
 ```bash
 npm ci

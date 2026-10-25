@@ -215,6 +215,14 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
     return this.motivosSeleccionados.length > 0;
   }
 
+  /** Selección en el orden de las tarjetas, solo para mostrarla. El
+   *  registro conserva el orden en que se tocaron (el primero es el
+   *  motivo principal). */
+  get seleccionEnOrden(): Motivo[] {
+    const pos = (m: Motivo) => this.motivos.findIndex(x => x.id === m.id);
+    return [...this.motivosSeleccionados].sort((a, b) => pos(a) - pos(b));
+  }
+
   get resumenMotivos(): string {
     return this.motivosSeleccionados.map(m => m.nombre).join(', ');
   }

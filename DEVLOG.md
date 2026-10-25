@@ -9,6 +9,26 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-25 — v3.61.0: demo con datos de ejemplo y panel de selección
+
+**Qué se hizo**
+- Bienvenida: "Explorar con datos de ejemplo" (300 alumnos, 180 días, ~1 400 visitas en ~4 s)
+  y directo a Estadísticas. Pensado para la demo pública: abría vacía.
+- Selección de actividad: el sheet inferior se desalineaba 64 px en quiosco
+  (reservaba el sidebar oculto); en 768–992 px pasa a barra centrada de
+  640 px. Chips en orden de tarjetas (`seleccionEnOrden`, solo para mostrar:
+  el registro conserva el orden de selección y el primero sigue siendo el
+  principal). "Cancelar" → "Limpiar" (solo vaciaba la selección).
+- README: GIF del flujo arriba, repositorio público, nota de desarrollo con
+  asistencia de IA.
+
+**Qué se descubrió**
+- CI en rojo desde el 2026-10-22: `ubuntu-latest` migró a Ubuntu 26 y
+  `playwright install --with-deps` falla ahí. Runner fijado a `ubuntu-24.04`
+  hasta que Playwright lo soporte.
+
+---
+
 ## 2026-10-24 — v3.60.0: repositorio para portafolio y Comparar sin ambigüedad
 
 **Qué se hizo**

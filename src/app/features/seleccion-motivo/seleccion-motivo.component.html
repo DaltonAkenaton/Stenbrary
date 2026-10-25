@@ -147,7 +147,7 @@
 
             <!-- Chips compactos de motivos seleccionados -->
             <div class="confirm-chips">
-              @for (m of motivosSeleccionados; track m.id) {
+              @for (m of seleccionEnOrden; track m.id) {
                 <span class="confirm-chip" [style.--chip-color]="m.color || '#00C8D7'">
                   <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
                   {{ m.nombre }}
@@ -297,7 +297,7 @@
 
         <div class="sheet-scroll">
           <div class="sheet-chips">
-            @for (m of motivosSeleccionados; track m.id) {
+            @for (m of seleccionEnOrden; track m.id) {
               <span class="sheet-chip" [style.--chip-color]="m.color || '#00C8D7'">
                 <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
                 <span class="sheet-chip-name">{{ m.nombre }}</span>
@@ -322,9 +322,11 @@
         </div>
 
         <div class="sheet-actions">
+          <!-- Solo vacía la selección (no cancela el registro): de ahí "Limpiar",
+               igual que "Limpiar selección" en escritorio. -->
           <button class="sheet-btn-cancel" (click)="deseleccionarMotivo()" [disabled]="registrando">
-            <mat-icon>close</mat-icon>
-            Cancelar
+            <mat-icon>clear_all</mat-icon>
+            Limpiar
           </button>
           <button class="sheet-btn-confirm" (click)="confirmarRegistro()" [disabled]="registrando">
             @if (!registrando) {
@@ -336,12 +338,7 @@
             }
           </button>
         </div>
-
-        @if (!esInvitado) {
-          <button class="sheet-link" (click)="volverAEscanear()" [disabled]="registrando">
-            ¿Matrícula incorrecta? Volver a escanear
-          </button>
-        }
+        <!-- "¿Matrícula incorrecta?" ya está arriba, bajo el título. -->
       </div>
     }
   }

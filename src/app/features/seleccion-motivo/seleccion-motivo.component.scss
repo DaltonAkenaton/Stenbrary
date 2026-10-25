@@ -840,6 +840,21 @@
     max-height: calc(100vh - #{$topbar-height} - 24px);
     max-height: calc(100dvh - #{$topbar-height} - 24px);
   }
+
+  // De tablet para arriba, barra flotante centrada en vez de hoja de lado
+  // a lado: con 768–992px la hoja completa se veía pesada y vacía.
+  @media (min-width: $breakpoint-sm) and (max-width: $breakpoint-md) {
+    max-width: 640px;
+    margin: 0 auto;
+    border: 1px solid $border-glow;
+    border-bottom: none;
+  }
+
+  // En quiosco el shell oculta el sidebar: sin esto el sheet quedaba
+  // corrido 64px a la derecha, desalineado de las tarjetas.
+  :host-context(.kiosk-mode) & {
+    left: 0;
+  }
   background: $navy-800;
   border-top: 1px solid $border-glow;
   border-radius: 24px 24px 0 0;
@@ -1032,8 +1047,8 @@
 
   .sheet-btn-cancel {
     background: $navy-700;
-    color: $text-secondary;
-    border: 1px solid $border-subtle;
+    color: $text-primary;
+    border: 1px solid $border-glow;
 
     &:hover:not(:disabled) {
       background: $navy-600;
@@ -1055,22 +1070,6 @@
     }
   }
 
-  .sheet-link {
-    display: block;
-    width: 100%;
-    background: none;
-    border: none;
-    padding: 8px;
-    font-family: $font-body;
-    font-size: 0.72rem;
-    color: $text-muted;
-    cursor: pointer;
-    text-align: center;
-    transition: color 200ms;
-
-    &:hover:not(:disabled) { color: $amber-color; }
-    &:disabled { opacity: 0.4; }
-  }
 }
 
 @keyframes sheetSlideUp {

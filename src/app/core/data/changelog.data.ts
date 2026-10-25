@@ -49,6 +49,26 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.61.0',
+    fecha: '2026-10-25',
+    titulo: 'Conocer el sistema con datos de ejemplo',
+    resumen: 'Desde la primera pantalla se puede explorar Stenbrary con visitas ficticias, y el panel para confirmar la actividad se ve mejor.',
+    cambios: [
+      {
+        tipo: 'feat',
+        texto: 'En la bienvenida, "Explorar con datos de ejemplo" crea alumnos y visitas ficticios de los últimos 6 meses y abre Estadísticas. Se borran desde Configuración → Avanzado → Herramientas de prueba.',
+      },
+      {
+        tipo: 'fix',
+        texto: 'En modo quiosco, el panel para confirmar la actividad ya no aparece corrido a la derecha.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Al elegir la actividad, el panel de confirmación muestra las actividades en el mismo orden que las tarjetas y, en tabletas, es una barra centrada. El botón que vacía la selección ahora dice "Limpiar" y el aviso "¿Matrícula incorrecta?" ya no sale dos veces.',
+      },
+    ],
+  },
+  {
     version: '3.60.0',
     fecha: '2026-10-24',
     titulo: 'Comparar dos períodos, sin malentendidos',

@@ -72,6 +72,25 @@
             se puede cambiar después</strong>, así que no te preocupes por
             acertar a la primera.
           </p>
+
+          <!-- Atajo para quien solo quiere conocer el sistema (demo pública):
+               sin datos, Estadísticas y Resumen se ven vacíos. -->
+          <div class="wiz-demo">
+            <p class="wiz-ayuda">¿Solo quieres conocer el sistema?</p>
+            <button class="wiz-btn secundario" (click)="explorarConEjemplo()"
+                    [disabled]="generandoEjemplo()">
+              <mat-icon>auto_awesome</mat-icon>
+              @if (generandoEjemplo()) {
+                Generando datos… {{ progresoEjemplo() }}%
+              } @else {
+                Explorar con datos de ejemplo
+              }
+            </button>
+            <p class="wiz-ayuda">
+              Crea alumnos y visitas ficticios de los últimos 6 meses. Se borran
+              desde Configuración → Avanzado → Herramientas de prueba.
+            </p>
+          </div>
         }
 
         <!-- ════════ INSTITUCIÓN ════════ -->

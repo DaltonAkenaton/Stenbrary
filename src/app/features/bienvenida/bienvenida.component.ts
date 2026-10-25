@@ -31,6 +31,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConfigService } from '../../core/services/config.service';
 import { SoundService } from '../../core/services/sound.service';
 import { RestablecerService } from '../../core/services/restablecer.service';
+import { DatosPruebaService } from '../../core/services/datos-prueba.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
 import { PIN_MAX_DIGITOS, esPinValido, generarCodigoRecuperacion } from '../../core/utils/quiosco.utils';
@@ -79,6 +80,7 @@ export class BienvenidaComponent implements OnDestroy {
   protected readonly config = inject(ConfigService);
   private readonly sound = inject(SoundService);
   private readonly dialog = inject(MatDialog);
+  private readonly datosPrueba = inject(DatosPruebaService);
 
   protected readonly pasos = PASOS;
   protected readonly indice = signal(0);
@@ -458,6 +460,37 @@ export class BienvenidaComponent implements OnDestroy {
     this.config.setModoQuiosco(this.modoQuiosco);
     this.toast.success(this.mensajeEntrada);
     void this.router.navigate(['/scanner']);
+  }
+
+  protected readonly generandoEjemplo = signal(false);
+  protected readonly progresoEjemplo = signal(0);
+
+  /**
+   * Atajo de la demo pública: valores por defecto + datos ficticios, y
+   * directo a Estadísticas. Quien evalúa el sistema le dedica un par de
+   * minutos; con la base vacía no vería nada de lo que hace.
+   *
+   * Volumen chico a propósito (~1 400 visitas, unos 4 s): suficiente para
+   * llenar gráficas y mapa de calor sin hacer esperar. Los datos llevan las
+   * marcas de prueba, así que la limpieza selectiva los quita igual.
+   */
+  protected async explorarConEjemplo(): Promise<void> {
+    if (this.generandoEjemplo()) return;
+    this.generandoEjemplo.set(true);
+    try {
+      await this.datosPrueba.generarDatos(
+        { cantidadAlumnos: 300, ventanaDias: 180, registrosPorAlumnoPorMes: 2 },
+        p => this.progresoEjemplo.set(
+          p.fase === 'alumnos' ? 0 : Math.round((p.actual / Math.max(p.total, 1)) * 100),
+        ),
+      );
+      this.restablecer.marcarSetupCompletado();
+      this.toast.success('Datos de ejemplo listos. Los puedes borrar desde Configuración.');
+      void this.router.navigate(['/estadisticas']);
+    } catch (e) {
+      this.toast.error(e instanceof Error ? e.message : 'No se pudieron generar los datos de ejemplo.');
+      this.generandoEjemplo.set(false);
+    }
   }
 
   /** Permite saltarse el arranque con un clic o una tecla. */
