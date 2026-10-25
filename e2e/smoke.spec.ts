@@ -818,8 +818,13 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     await pasarCredencial(page, '2200000002');
     await elegirActividadYRegistrar(page);
     const beto = (await leerRegistros(page)).find(r => r.matricula === '2200000002');
-    const d = new Date(beto.fechaHora);
-    expect(`${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`).toBe('11:53');
+    // La hora se lee en el navegador (zona de Nuevo Laredo), no en Node: en CI
+    // Node corre en UTC y daba 16:53.
+    const hora = await page.evaluate(iso => {
+      const d = new Date(iso);
+      return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }, beto.fechaHora);
+    expect(hora).toBe('11:53');
 
     // Sobrevive a recargar: el desfase se guarda.
     await page.reload();
