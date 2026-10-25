@@ -20,7 +20,9 @@ export default defineConfig({
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
   workers: 1,
-  reporter: process.env['CI'] ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // `github` publica cada fallo como anotación del job: legible sin sesión,
+  // a diferencia del log completo.
+  reporter: process.env['CI'] ? [['list'], ['github'], ['html', { open: 'never' }]] : 'list',
 
   use: {
     baseURL: BASE_URL,
