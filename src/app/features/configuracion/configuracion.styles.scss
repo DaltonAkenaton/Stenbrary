@@ -773,3 +773,18 @@
   label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; }
   input { min-width: 140px; }
 }
+
+// v3.62.0: motivos por los que un respaldo no se puede importar.
+.errores-respaldo {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(240, 82, 82, 0.10);
+  border: 1px solid rgba(240, 82, 82, 0.35);
+  color: #F05252;
+  font-size: 0.85rem;
+
+  p { margin: 0 0 6px; }
+  ul { margin: 0; padding-left: 18px; }
+  li { margin: 2px 0; word-break: break-word; }
+}

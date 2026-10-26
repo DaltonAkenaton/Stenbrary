@@ -16,6 +16,8 @@ import { BitacoraService, idsBorrados, renombresCarrera, traducirCarrera } from 
 import { CatalogoEscolar, aplicarRenombre, combinarCatalogos, normalizarCatalogo } from '../utils/catalogos.utils';
 import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
+import { MAX_BYTES_RESPALDO, validarRespaldo } from '../utils/validacion-respaldo.utils';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface BackupData {
   meta: {
@@ -105,7 +107,11 @@ export class BackupService {
     };
   }
 
-  async descargarBackup(): Promise<{ exito: boolean; nombreArchivo: string }> {
+  /**
+   * `etiqueta` va en el nombre del archivo (v3.62.0: "antes-de-reemplazar"
+   * para la copia automática previa a "Reemplazar todo").
+   */
+  async descargarBackup(etiqueta?: string): Promise<{ exito: boolean; nombreArchivo: string }> {
     try {
       const backup = await this.exportarBackup();
       const fecha = fechaLocalISO();
@@ -113,7 +119,7 @@ export class BackupService {
       // archivo salía como "..._0937 p.m..json" (espacio y doble punto).
       const ahora = new Date();
       const hora = String(ahora.getHours()).padStart(2, '0') + String(ahora.getMinutes()).padStart(2, '0');
-      const nombreArchivo = `stenbrary_backup_${fecha}_${hora}.json`;
+      const nombreArchivo = `stenbrary_backup_${etiqueta ? etiqueta + '_' : ''}${fecha}_${hora}.json`;
 
       const json = JSON.stringify(backup, null, 2);
       const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
@@ -146,41 +152,22 @@ export class BackupService {
   // VALIDAR
   // ═══════════════════════════════════════════════
 
+  /**
+   * v3.62.0: valida el archivo COMPLETO (cada alumno, visita, actividad y
+   * evento) con `validarRespaldo`. Antes solo se revisaba el primer alumno.
+   */
   validarArchivo(contenido: string): ValidacionBackup {
-    const errores: string[] = [];
-    let datos: any;
-
+    if (contenido.length > MAX_BYTES_RESPALDO) {
+      return { valido: false, errores: ['El archivo es demasiado grande para ser un respaldo de Stenbrary.'] };
+    }
+    let datos: unknown;
     try {
       datos = JSON.parse(contenido);
     } catch {
       return { valido: false, errores: ['El archivo no es un JSON válido'] };
     }
-
-    if (!datos.meta) {
-      errores.push('Falta el campo "meta" — no parece ser un respaldo de Stenbrary');
-    } else if (datos.meta.app !== 'Stenbrary') {
-      errores.push(`Programa desconocido: "${datos.meta.app}" (se esperaba "Stenbrary")`);
-    }
-
-    if (!Array.isArray(datos.alumnos)) errores.push('Falta el array "alumnos"');
-    if (!Array.isArray(datos.registros)) errores.push('Falta el array "registros"');
-    if (!Array.isArray(datos.motivos)) errores.push('Falta el array "motivos"');
-    if (datos.bitacora !== undefined && !Array.isArray(datos.bitacora)) {
-      errores.push('El campo "bitacora" no es una lista');
-    }
-
-    if (errores.length > 0) return { valido: false, errores };
-
-    if (datos.alumnos.length > 0) {
-      const sample = datos.alumnos[0];
-      if (!sample.matricula || !sample.nombre) {
-        errores.push('Los datos de alumnos no tienen la estructura esperada');
-      }
-    }
-
-    if (errores.length > 0) return { valido: false, errores };
-
-    return { valido: true, errores: [], datos: datos as BackupData };
+    const r = validarRespaldo(datos);
+    return r.valido ? { valido: true, errores: [], datos: r.datos } : { valido: false, errores: r.errores };
   }
 
   // ═══════════════════════════════════════════════
@@ -190,8 +177,6 @@ export class BackupService {
   async importarBackup(
     datos: BackupData,
     modo: 'merge' | 'replace' = 'merge',
-    /** Uso interno: regresando a la copia previa tras un fallo. */
-    deshaciendo = false,
   ): Promise<ResultadoImportacion> {
     const resultado: ResultadoImportacion = {
       exitoso: false,
@@ -209,25 +194,16 @@ export class BackupService {
       errores: [],
     };
 
-    // v3.57.2: "Reemplazar" borra primero y luego escribe. Si algo fallaba a
-    // la mitad, la base quedaba vacía o a medias. Copia en memoria de lo que
-    // había, para regresar a ella si falla.
-    let copiaPrevia: BackupData | null = null;
+    // v3.62.0: se valida aquí también (no solo al elegir el archivo): un
+    // respaldo inválido no toca la base, lo llame quien lo llame.
+    const validacion = validarRespaldo(datos);
+    if (!validacion.valido) {
+      resultado.errores.push(...validacion.errores);
+      return resultado;
+    }
 
     try {
-      if (modo === 'replace') {
-        if (!deshaciendo) copiaPrevia = await this.exportarBackup();
-        await this.databaseService.limpiarTodosDatos();
-        // limpiarTodosDatos() recrea los motivos default con ids nuevos. Si el
-        // respaldo trae su catálogo, ese manda: se restaura tal cual (ids,
-        // colores, orden, activos) en vez de mezclarse con los default.
-        if (datos.motivos.length > 0) {
-          for (const m of await this.databaseService.obtenerTodosLosMotivos()) {
-            if (m.id) await this.databaseService.eliminarMotivo(m.id);
-          }
-        }
-        console.log('🗑️ Datos anteriores eliminados (modo replace)');
-      }
+      if (modo === 'replace') return await this.reemplazar(datos, resultado);
 
       // ── Importar Motivos (deduplicar por nombre, v3.4.1) ──
       // Cada instalación crea sus motivos default con ids propios, así que
@@ -348,50 +324,90 @@ export class BackupService {
       resultado.errores.push(...resRegistros.errores);
 
       // ── Bitácora (v3.52.0) ──
-      // Se combina siempre, también en 'replace': la bitácora no se borra
-      // nunca, y la del equipo de origen es lo que la oficina quiere ver.
+      // La del equipo de origen es lo que la oficina quiere ver.
       resultado.eventosBitacora = await this.databaseService.restaurarBitacoraLote(eventosEntrantes);
 
       // ── Catálogo (v3.57.0) ──
-      // Reemplazar = el del archivo tal cual. Combinar = el de aquí manda y
-      // solo se suman las carreras y grupos que falten.
+      // Combinar: el de aquí manda y solo se suman las carreras y grupos que falten.
       if (datos.catalogoEscolar) {
         const leido = normalizarCatalogo(datos.catalogoEscolar);
         const remoto = { ...leido, carreras: leido.carreras.map(c => ({ ...c, nombre: traducir(c.nombre) })) };
-        if (modo === 'replace') {
-          this.configService.setCatalogoEscolar(remoto);
-        } else {
-          const { catalogo, nuevos } = combinarCatalogos(this.configService.catalogoEscolar, remoto);
-          if (nuevos > 0) this.configService.setCatalogoEscolar(catalogo);
-          resultado.catalogoNuevos = nuevos;
-        }
+        const { catalogo, nuevos } = combinarCatalogos(this.configService.catalogoEscolar, remoto);
+        if (nuevos > 0) this.configService.setCatalogoEscolar(catalogo);
+        resultado.catalogoNuevos = nuevos;
       }
 
       resultado.exitoso = true;
-      if (deshaciendo) return resultado;   // lo anota quien deshace
-      const origen = datos.meta?.equipo ? ` de "${datos.meta.equipo}"` : '';
-      const borrados = resultado.borradosAplicados ? `, ${resultado.borradosAplicados} borradas allá` : '';
-      this.bitacora.registrar(
-        'respaldo-importado',
-        `Respaldo${origen} del ${fechaRespaldo(datos.meta?.fecha)} ` +
-        `(${modo === 'replace' ? 'reemplazar' : 'combinar'}): ` +
-        `${resultado.registrosNuevos} visitas nuevas, ${resultado.alumnosNuevos} alumnos nuevos${borrados}`,
-      );
-      console.log('✅ Importación completada:', resultado);
+      this.anotarImportacion(datos, modo, resultado);
       return resultado;
-    } catch (error: any) {
-      resultado.errores.push(`Error general: ${error.message}`);
-      console.error('❌ Error durante importación:', error);
-      if (copiaPrevia) {
-        const vuelta = await this.importarBackup(copiaPrevia, 'replace', true);
-        resultado.errores.push(vuelta.exitoso
-          ? 'No se cambió nada: se regresó a los datos que había antes.'
-          : 'No se pudieron regresar los datos anteriores: restaura tu último respaldo.');
-        this.bitacora.registrar('respaldo-importado',
-          `Falló "reemplazar" (${error.message}); ${vuelta.exitoso ? 'se regresó a los datos anteriores' : 'NO se pudieron regresar los datos anteriores'}`);
+    } catch (error: unknown) {
+      const mensaje = error instanceof Error ? error.message : String(error);
+      resultado.errores.push(`Error general: ${mensaje}`);
+      if (modo === 'replace') {
+        // La transacción de `reemplazarTodo` se deshizo completa.
+        resultado.errores.push('No se cambió nada: los datos de este equipo quedaron como estaban.');
+        this.bitacora.registrar('respaldo-importado', `Falló "reemplazar" (${mensaje}); los datos quedaron como estaban`);
       }
+      console.error('❌ Error durante importación:', error);
       return resultado;
     }
+  }
+
+  /**
+   * "Reemplazar todo" (v3.62.0): una sola transacción en `reemplazarTodo`.
+   * Si falla, la base queda exactamente como estaba; ya no hace falta la
+   * copia en memoria para volver atrás.
+   *
+   * El catálogo de actividades del respaldo manda tal cual (ids, colores,
+   * orden, activos). Dos actividades con el mismo nombre se funden en la
+   * primera y sus visitas apuntan a ella, como al combinar.
+   */
+  private async reemplazar(datos: BackupData, resultado: ResultadoImportacion): Promise<ResultadoImportacion> {
+    const mapaMotivos = new Map<string, string>();
+    const idPorNombre = new Map<string, string>();
+    const motivos: Motivo[] = [];
+    for (const motivo of datos.motivos) {
+      const nombre = normalizarNombre(motivo.nombre);
+      const primero = idPorNombre.get(nombre);
+      if (primero) {
+        if (motivo.id) mapaMotivos.set(motivo.id, primero);
+        resultado.motivosOmitidos++;
+        continue;
+      }
+      const id = motivo.id || uuidv4();
+      idPorNombre.set(nombre, id);
+      motivos.push({ ...motivo, id });
+    }
+
+    const res = await this.databaseService.reemplazarTodo({
+      motivos,
+      alumnos: datos.alumnos,
+      registros: datos.registros.map(r => remapearMotivos(r, mapaMotivos)),
+      bitacora: datos.bitacora ?? [],
+    });
+    resultado.motivosImportados = motivos.length;
+    resultado.alumnosImportados = resultado.alumnosNuevos = res.alumnos;
+    resultado.registrosImportados = resultado.registrosNuevos = res.registros;
+    resultado.eventosBitacora = res.eventosNuevos;
+
+    // Catálogo de carreras: el del archivo tal cual.
+    if (datos.catalogoEscolar) this.configService.setCatalogoEscolar(normalizarCatalogo(datos.catalogoEscolar));
+
+    resultado.exitoso = true;
+    this.anotarImportacion(datos, 'replace', resultado);
+    return resultado;
+  }
+
+  private anotarImportacion(datos: BackupData, modo: 'merge' | 'replace', resultado: ResultadoImportacion): void {
+    const origen = datos.meta?.equipo ? ` de "${datos.meta.equipo}"` : '';
+    const borrados = resultado.borradosAplicados ? `, ${resultado.borradosAplicados} borradas allá` : '';
+    this.bitacora.registrar(
+      'respaldo-importado',
+      `Respaldo${origen} del ${fechaRespaldo(datos.meta?.fecha)} ` +
+      `(${modo === 'replace' ? 'reemplazar' : 'combinar'}): ` +
+      `${resultado.registrosNuevos} visitas nuevas, ${resultado.alumnosNuevos} alumnos nuevos${borrados}`,
+    );
+    console.log('✅ Importación completada:', resultado);
   }
 
 }

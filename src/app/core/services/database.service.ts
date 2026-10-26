@@ -246,17 +246,20 @@ export class DatabaseService {
       return;
     }
 
-    const motivosDefault: Motivo[] = [
+    await Promise.all(this.motivosDeFabrica().map(m => store.add(m)));
+    await tx.done;
+    log('✅ Motivos por defecto creados');
+  }
+
+  /** Los 5 motivos con los que arranca una instalación nueva (ids propios). */
+  private motivosDeFabrica(): Motivo[] {
+    return [
       { id: uuidv4(), nombre: 'Estudiar',        icono: 'menu_book',  orden: 1, activo: true, fechaCreacion: new Date() },
       { id: uuidv4(), nombre: 'Pedir libro',     icono: 'book',       orden: 2, activo: true, fechaCreacion: new Date() },
       { id: uuidv4(), nombre: 'Trabajo escolar', icono: 'assignment', orden: 3, activo: true, fechaCreacion: new Date() },
       { id: uuidv4(), nombre: 'Investigación',   icono: 'search',     orden: 4, activo: true, fechaCreacion: new Date() },
       { id: uuidv4(), nombre: 'Otro',            icono: 'more_horiz', orden: 5, activo: true, fechaCreacion: new Date() },
     ];
-
-    await Promise.all(motivosDefault.map(m => store.add(m)));
-    await tx.done;
-    log('✅ Motivos por defecto creados');
   }
 
   // ==================== ALUMNOS ====================
@@ -906,6 +909,78 @@ export class DatabaseService {
     await this.crearMotivosDefault();
 
     log('✅ Todos los datos han sido limpiados');
+  }
+
+  /**
+   * "Reemplazar todo" con un respaldo, en UNA transacción (v3.62.0).
+   *
+   * Vacía alumnos, visitas y motivos y escribe los del respaldo; la bitácora
+   * no se vacía, se le suman los eventos. Si cualquier escritura falla, o se
+   * cierra la pestaña a la mitad, IndexedDB deshace la transacción completa:
+   * la base queda exactamente como estaba. Antes se borraba primero y se
+   * escribía después en varias transacciones, con una copia en memoria para
+   * volver atrás que no sobrevivía a cerrar la pestaña.
+   *
+   * Sin motivos en el respaldo se dejan los de fábrica. Quien llama ya validó
+   * el archivo (validacion-respaldo.utils) y tradujo los ids de motivo.
+   */
+  async reemplazarTodo(datos: {
+    motivos: Motivo[];
+    alumnos: Alumno[];
+    registros: Registro[];
+    bitacora: EventoBitacora[];
+  }): Promise<{ motivos: number; alumnos: number; registros: number; eventosNuevos: number }> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const pendiente = { _syncStatus: 'pending' as const, _lastSyncedAt: undefined };
+    const motivos = datos.motivos.length > 0
+      ? datos.motivos.map(m => ({ ...m, fechaCreacion: this.aFecha(m.fechaCreacion) ?? new Date(), ...pendiente }))
+      : this.motivosDeFabrica();
+    const alumnos = datos.alumnos.map(a => {
+      const editadoEn = this.aFecha(a.editadoEn);
+      return { ...a, fechaRegistro: this.aFecha(a.fechaRegistro) ?? new Date(), ...(editadoEn ? { editadoEn } : {}), ...pendiente };
+    });
+    const registros = datos.registros.map(r => {
+      const fechaHora = this.aFecha(r.fechaHora);
+      if (!fechaHora) throw new Error(`Visita ${r.id} sin fecha de entrada válida`);
+      const horaSalida = this.aFecha(r.horaSalida);
+      const editadoEn = this.aFecha(r.editadoEn);
+      return { ...r, fechaHora, ...(horaSalida ? { horaSalida } : {}), ...(editadoEn ? { editadoEn } : {}), ...pendiente };
+    });
+
+    const tx = this.db.transaction(['alumnos', 'registros', 'motivos', 'bitacora'], 'readwrite');
+    let eventosNuevos = 0;
+    try {
+      await Promise.all([
+        tx.objectStore('alumnos').clear(),
+        tx.objectStore('registros').clear(),
+        tx.objectStore('motivos').clear(),
+      ]);
+      const bitacora = tx.objectStore('bitacora');
+      const idsEventos = new Set(await bitacora.getAllKeys());
+      const escrituras: Promise<unknown>[] = [
+        ...motivos.map(m => tx.objectStore('motivos').put(m)),
+        ...alumnos.map(a => tx.objectStore('alumnos').put(a)),
+        ...registros.map(r => tx.objectStore('registros').put(r)),
+      ];
+      for (const e of datos.bitacora) {
+        if (!idsEventos.has(e.id)) eventosNuevos++;
+        idsEventos.add(e.id);
+        escrituras.push(bitacora.put(e));
+      }
+      await Promise.all(escrituras);
+      await tx.done;
+    } catch (error) {
+      try { tx.abort(); } catch { /* la transacción ya había terminado */ }
+      await tx.done.catch(() => undefined);
+      throw error;
+    }
+
+    this.notificarCambioSync();
+    this.notificarCambioDatos();
+    await this.recortarBitacora();
+    return { motivos: motivos.length, alumnos: alumnos.length, registros: registros.length, eventosNuevos };
   }
 
   // ==================== BITÁCORA (v3.52.0) ====================

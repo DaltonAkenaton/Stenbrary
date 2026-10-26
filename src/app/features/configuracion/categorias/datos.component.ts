@@ -53,6 +53,8 @@ export class DatosCategoriaComponent {
   ultimoBackup = '';
   backupPreview: BackupData | null = null;
   nombreArchivoSeleccionado = '';
+  /** Motivos por los que el último respaldo elegido no es válido (v3.62.0). */
+  erroresArchivo: string[] = [];
   resultadoImportacion: ResultadoImportacion | null = null;
 
   readonly recordatorioRespaldoOpciones = [
@@ -204,6 +206,7 @@ export class DatosCategoriaComponent {
     this.backupPreview = null;
     this.resultadoImportacion = null;
     this.nombreArchivoSeleccionado = file.name;
+    this.erroresArchivo = [];
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -211,7 +214,10 @@ export class DatosCategoriaComponent {
       const validacion = this.backupService.validarArchivo(contenido);
 
       if (!validacion.valido) {
+        // v3.62.0: todos los motivos (hasta 10) junto al selector, no solo el primero en un aviso.
+        this.erroresArchivo = validacion.errores;
         this.toastService.error(validacion.errores[0]);
+        this.cdr.markForCheck();
         return;
       }
 
@@ -238,7 +244,9 @@ export class DatosCategoriaComponent {
         maxWidth: '94vw',
         data: {
           titulo: '¿Reemplazar TODOS los datos?',
-          mensaje: 'Se borrarán todos los datos actuales y se reemplazarán con los del archivo. No se puede deshacer.',
+          mensaje: 'Se borrarán todos los datos actuales y se reemplazarán con los del archivo. ' +
+            'Antes se descargará automáticamente una copia de los datos actuales ("antes-de-reemplazar"): ' +
+            'con ella puedes volver atrás.',
           textoConfirmar: 'Reemplazar todo',
           icono: 'swap_horiz',
           peligro: true,
@@ -248,6 +256,16 @@ export class DatosCategoriaComponent {
 
       const confirmado = await dialogRef.afterClosed().toPromise();
       if (!confirmado) return;
+
+      // v3.62.0: la copia de lo actual ya no es opcional. Reemplazar es atómico
+      // (si falla, nada cambia), pero un reemplazo que SÍ sale bien con el
+      // archivo equivocado solo se deshace con esta copia.
+      const copia = await this.backupService.descargarBackup('antes-de-reemplazar').catch(() => null);
+      if (!copia?.exito) {
+        this.toastService.error('No se pudo descargar la copia de los datos actuales: no se reemplazó nada.');
+        return;
+      }
+      this.toastService.info(`Copia de los datos actuales descargada: ${copia.nombreArchivo}`);
     }
 
     try {
@@ -275,6 +293,7 @@ export class DatosCategoriaComponent {
 
   cancelarImportacion(): void {
     this.backupPreview = null;
+    this.erroresArchivo = [];
     this.resultadoImportacion = null;
     this.nombreArchivoSeleccionado = '';
     this.cdr.markForCheck();

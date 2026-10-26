@@ -296,7 +296,9 @@ describe('BackupService — round-trip', () => {
     });
   });
 
-  it('un registro con fechaHora inválida se reporta, no se guarda con la fecha de hoy', async () => {
+  // v3.62.0: antes la visita mala se omitía y el resto entraba; ahora el
+  // archivo completo se rechaza antes de tocar la base.
+  it('un registro con fechaHora inválida rechaza el respaldo: no se guarda con la fecha de hoy ni se importa nada', async () => {
     const corrupto: BackupData = {
       meta: { version: '3.4', fecha: new Date().toISOString(), app: 'Stenbrary',
               totalAlumnos: 0, totalRegistros: 1, totalMotivos: 0 },
@@ -315,10 +317,48 @@ describe('BackupService — round-trip', () => {
       } as Registro],
     };
 
-    const res = await backup.importarBackup(corrupto, 'merge');
-    expect(res.registrosImportados).toBe(0);
-    expect(res.errores.length).toBe(1);
-    expect((await db.obtenerTodosLosRegistros()).length).toBe(0);
+    for (const modo of ['merge', 'replace'] as const) {
+      const res = await backup.importarBackup(corrupto, modo);
+      expect(res.exitoso).toBeFalse();
+      expect(res.registrosImportados).toBe(0);
+      expect(res.errores).toEqual(['Visita 1: la fecha de entrada falta o no es válida.']);
+      expect((await db.obtenerTodosLosRegistros()).length).toBe(0);
+    }
+  });
+
+  it('un respaldo inválido no cambia nada, ni al combinar ni al reemplazar (v3.62.0)', async () => {
+    const { alumno, registro } = await sembrar();
+    const antes = porJSON(await backup.exportarBackup());
+    const roto = porJSON(antes);
+    roto.alumnos = [...roto.alumnos, { ...roto.alumnos[0], id: 'otro-id' }];   // misma matrícula, otro alumno
+
+    for (const modo of ['merge', 'replace'] as const) {
+      const res = await backup.importarBackup(roto, modo);
+      expect(res.exitoso).toBeFalse();
+      expect(res.errores[0]).toContain('pertenece a otro alumno del archivo');
+    }
+    expect((await db.obtenerTodosLosAlumnos()).map(a => a.id)).toEqual([alumno.id!]);
+    expect((await db.obtenerTodosLosRegistros()).map(r => r.id)).toEqual([registro.id]);
+    expect((await db.obtenerTodosLosMotivos()).length).toBe(antes.motivos.length);
+  });
+
+  it('validarArchivo rechaza un JSON que no es respaldo y lista los motivos', () => {
+    expect(backup.validarArchivo('{nope').errores).toEqual(['El archivo no es un JSON válido']);
+    const v = backup.validarArchivo(JSON.stringify({ meta: { app: 'Stenbrary', version: '3.4', fecha: 'x' } }));
+    expect(v.valido).toBeFalse();
+    expect(v.errores[0]).toContain('fecha del respaldo');
+  });
+
+  it('combinar un respaldo vacío (instalación nueva) no borra ni cambia nada', async () => {
+    const { registro } = await sembrar();
+    const vacio: BackupData = {
+      meta: { version: '3.4', fecha: new Date().toISOString(), app: 'Stenbrary', totalAlumnos: 0, totalRegistros: 0, totalMotivos: 0 },
+      alumnos: [], registros: [], motivos: [],
+    };
+    const res = await backup.importarBackup(vacio, 'merge');
+    expect(res.exitoso).toBeTrue();
+    expect((await db.obtenerTodosLosRegistros()).map(r => r.id)).toEqual([registro.id]);
+    expect((await db.obtenerTodosLosAlumnos()).length).toBe(1);
   });
 
   // ═══════════════════════════════════════════════════════
@@ -586,19 +626,64 @@ describe('BackupService — round-trip', () => {
     });
   });
 
-  it('si "Reemplazar" falla a la mitad, regresa a los datos que había (v3.57.2)', async () => {
-    const { registro } = await sembrar();
-    const archivo = porJSON(await backup.exportarBackup());
-    archivo.registros = [{ ...archivo.registros[0], id: 'otro' }];
-    const original = db.restaurarRegistrosLote.bind(db);
-    let llamadas = 0;
-    spyOn(db, 'restaurarRegistrosLote').and.callFake((...args: Parameters<DatabaseService['restaurarRegistrosLote']>) =>
-      ++llamadas === 1 ? Promise.reject(new Error('disco lleno')) : original(...args));
+  // v3.62.0: "Reemplazar" es UNA transacción. Antes borraba primero, escribía
+  // después y volvía atrás con una copia en memoria (que no sobrevivía a
+  // cerrar la pestaña). Aquí la escritura falla de verdad dentro de la
+  // transacción, después de haber vaciado los stores y escrito parte.
+  describe('"Reemplazar" atómico (v3.62.0)', () => {
+    /** Visita que IndexedDB no puede guardar (DataCloneError), al final del lote. */
+    function conVisitaImposible(archivo: BackupData): BackupData {
+      const ok = Array.from({ length: 30 }, (_, i) => ({ ...archivo.registros[0], id: `nuevo-${i}` }));
+      const imposible = { ...archivo.registros[0], id: 'imposible', extra: () => 1 } as unknown as Registro;
+      return { ...archivo, alumnos: [{ ...archivo.alumnos[0], nombre: 'Cambiado' }], registros: [...ok, imposible] };
+    }
 
-    const res = await backup.importarBackup(archivo, 'replace');
-    expect(res.exitoso).toBeFalse();
-    expect(res.errores.join(' ')).toContain('se regresó a los datos que había antes');
-    expect((await db.obtenerTodosLosRegistros()).map(r => r.id)).toEqual([registro.id]);
-    expect((await db.obtenerTodosLosAlumnos()).length).toBe(1);
+    it('si una escritura falla a la mitad, alumnos, visitas, actividades y bitácora quedan exactamente como estaban', async () => {
+      await sembrar();
+      const antes = porJSON(await backup.exportarBackup());
+      const bitacoraAntes = await db.obtenerBitacora();
+
+      const res = await backup.importarBackup(conVisitaImposible(porJSON(antes)), 'replace');
+
+      expect(res.exitoso).toBeFalse();
+      expect(res.errores.join(' ')).toContain('No se cambió nada');
+      const despues = porJSON(await backup.exportarBackup());
+      expect(despues.alumnos).toEqual(antes.alumnos);
+      expect(despues.registros).toEqual(antes.registros);
+      expect(despues.motivos).toEqual(antes.motivos);
+      expect(await db.obtenerBitacora()).toEqual(bitacoraAntes);
+    });
+
+    it('lo que estaba sigue intacto aunque la base tenga muchas visitas', async () => {
+      const { alumno } = await sembrar();
+      for (let i = 0; i < 200; i++) {
+        await db.restaurarRegistro({ id: `previo-${i}`, alumnoId: alumno.id!, matricula: alumno.matricula, nombreCompleto: 'Ana',
+          carrera: 'ISC', motivoId: 'm', motivoNombre: 'Estudiar', fechaHora: FECHA_VIEJA, sincronizado: false } as Registro);
+      }
+      const archivo = conVisitaImposible(porJSON(await backup.exportarBackup()));
+      await backup.importarBackup(archivo, 'replace');
+      expect((await db.obtenerTodosLosRegistros()).length).toBe(201);
+      expect((await db.obtenerTodosLosAlumnos())[0].nombre).toBe('Ana');
+    });
+
+    it('sin actividades en el respaldo deja las de fábrica; con actividades repetidas por nombre, las funde', async () => {
+      await sembrar();
+      const archivo = porJSON(await backup.exportarBackup());
+      archivo.motivos = [];
+      expect((await backup.importarBackup(archivo, 'replace')).exitoso).toBeTrue();
+      expect((await db.obtenerTodosLosMotivos()).map(m => m.nombre).sort())
+        .toEqual(['Estudiar', 'Investigación', 'Otro', 'Pedir libro', 'Trabajo escolar']);
+
+      archivo.motivos = [
+        { id: 'm-a', nombre: 'Estudiar', icono: 'x', orden: 1, activo: true },
+        { id: 'm-b', nombre: 'estudiar ', icono: 'x', orden: 2, activo: true },
+      ];
+      archivo.registros = [{ ...archivo.registros[0], motivoId: 'm-b', motivoIds: ['m-b'] }];
+      const res = await backup.importarBackup(archivo, 'replace');
+      expect(res.motivosImportados).toBe(1);
+      expect(res.motivosOmitidos).toBe(1);
+      expect((await db.obtenerTodosLosMotivos()).map(m => m.id)).toEqual(['m-a']);
+      expect((await db.obtenerTodosLosRegistros())[0].motivoIds).toEqual(['m-a']);
+    });
   });
 });

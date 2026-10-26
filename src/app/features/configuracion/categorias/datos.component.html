@@ -202,6 +202,17 @@
     </button>
   </div>
 
+  @if (erroresArchivo.length > 0) {
+    <div class="errores-respaldo" role="alert">
+      <p><strong>{{ nombreArchivoSeleccionado }}</strong> no se puede importar. No se cambió nada:</p>
+      <ul>
+        @for (e of erroresArchivo; track $index) {
+          <li>{{ e }}</li>
+        }
+      </ul>
+    </div>
+  }
+
   @if (backupPreview) {
     <div class="restore-preview">
       <div class="preview-header">
