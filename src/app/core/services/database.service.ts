@@ -352,6 +352,47 @@ export class DatabaseService {
     return nuevoAlumno;
   }
 
+  /**
+   * Alta de un padrón completo en UNA transacción (v3.62.0): o se guardan
+   * todos los alumnos nuevos o ninguno. Antes era un alumno por transacción
+   * y un fallo a la mitad dejaba la importación partida.
+   *
+   * Las matrículas que ya existen se omiten y se cuentan (`duplicados`), así
+   * que volver a cargar el mismo archivo sigue siendo seguro. Cualquier otro
+   * error aborta la transacción completa y se propaga.
+   */
+  async crearAlumnosLote(
+    lista: Omit<Alumno, 'id' | 'fechaRegistro'>[],
+  ): Promise<{ creados: number; duplicados: number }> {
+    await this.inicializar();
+    if (!this.db) throw new Error('Base de datos no inicializada');
+
+    const tx = this.db.transaction('alumnos', 'readwrite');
+    const porMatricula = tx.store.index('by-matricula');
+    const vistas = new Set<string>();
+    let creados = 0, duplicados = 0;
+    try {
+      for (const alumno of lista) {
+        if (vistas.has(alumno.matricula) || await porMatricula.getKey(alumno.matricula)) {
+          duplicados++;
+          continue;
+        }
+        vistas.add(alumno.matricula);
+        await tx.store.add(this.markPending({ ...alumno, id: uuidv4(), activo: true, fechaRegistro: new Date() }));
+        creados++;
+      }
+      await tx.done;
+    } catch (error) {
+      // Deshace lo escrito en esta transacción; si ya se abortó sola, no pasa nada.
+      try { tx.abort(); } catch { /* la transacción ya había terminado */ }
+      await tx.done.catch(() => undefined);
+      throw error;
+    }
+    if (creados > 0) this.notificarCambioDatos();
+    log('✅ Padrón importado:', creados, 'nuevos,', duplicados, 'ya existían');
+    return { creados, duplicados };
+  }
+
   async obtenerAlumnoPorId(id: string): Promise<Alumno | undefined> {
     await this.inicializar();
     if (!this.db) throw new Error('Base de datos no inicializada');

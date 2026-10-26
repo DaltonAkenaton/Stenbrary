@@ -13,6 +13,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 import { confirmarConPin } from './helpers';
 
@@ -612,6 +613,29 @@ test.describe('Importar el padrón (v3.57.0)', () => {
       .toEqual(['Rosa Elena', 'Valdez', 'Contador Público', 4, 'A', 'Matutino']);
     expect([ivan?.apellidoPaterno, ivan?.apellidoMaterno]).toEqual(['De la Garza', '']);
     expect(guardados.length).toBe(2);
+  });
+
+  test('un archivo que no es hoja de cálculo se rechaza con el motivo y no guarda nada (v3.62.0)', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('stenbrary-setup-completado', '1'));
+    await page.goto('/importar-alumnos');
+    const input = page.locator('input[type="file"][accept=".xlsx,.xls,.csv"]');
+
+    // Texto con extensión .xlsx: la firma no es ZIP.
+    await input.setInputFiles({ name: 'padron.xlsx', mimeType: 'application/octet-stream', buffer: Buffer.from('Matricula,Nombre\n1,x\n') });
+    await expect(page.getByRole('alert')).toContainText('no corresponde a un archivo .xlsx');
+
+    // Un .xlsx que sí es ZIP pero está truncado: lo detecta la lectura en el Worker.
+    const real = fs.readFileSync(path.join(__dirname, 'fixtures', 'padron-casos.xlsx'));
+    await input.setInputFiles({ name: 'danado.xlsx', mimeType: 'application/octet-stream', buffer: real.subarray(0, 300) });
+    await expect(page.getByRole('alert')).toContainText('dañado');
+
+    // Sigue en el primer paso y la base no cambió.
+    await expect(page.locator('.mapeo-item')).toHaveCount(0);
+    const total = await page.evaluate(async () => {
+      const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
+      return new Promise<number>(ok => { const r = db.transaction('alumnos').objectStore('alumnos').count(); r.onsuccess = () => ok(r.result); });
+    });
+    expect(total).toBe(0);
   });
 });
 

@@ -22,6 +22,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as XLSX from 'xlsx';
+import { LIMITES_PADRON, LecturaPadron, leerPadron, validarArchivoPadron } from '../../core/utils/lectura-padron.utils';
 import { DatabaseService } from '../../core/services/database.service';
 import { ToastService } from '../../core/services/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
@@ -131,11 +132,20 @@ interface ResultadoImportacion {
             <mat-icon>table_chart</mat-icon>
             <span>Descargar plantilla</span>
           </button>
-          <button class="btn-action btn-upload" (click)="fileInput.click()">
-            <mat-icon>cloud_upload</mat-icon>
-            <span>Seleccionar archivo</span>
+          <button class="btn-action btn-upload" (click)="fileInput.click()" [disabled]="leyendo">
+            <mat-icon>{{ leyendo ? 'hourglass_empty' : 'cloud_upload' }}</mat-icon>
+            <span>{{ leyendo ? 'Leyendo archivo…' : 'Seleccionar archivo' }}</span>
           </button>
         </div>
+        @if (errorArchivo) {
+          <p class="error-archivo" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            <span><strong>{{ nombreArchivo }}:</strong> {{ errorArchivo }}</span>
+          </p>
+        }
+        <p class="limites-archivo">
+          Hasta {{ limites.maxFilas.toLocaleString('es-MX') }} alumnos y {{ limites.maxBytes / 1048576 }} MB por archivo.
+        </p>
 
 
         
@@ -496,6 +506,28 @@ interface ResultadoImportacion {
       flex-wrap: wrap;
     }
 
+    .error-archivo {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 14px 0 0;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(240, 82, 82, 0.10);
+      border: 1px solid rgba(240, 82, 82, 0.35);
+      color: #F05252;
+      font-size: 0.85rem;
+      line-height: 1.4;
+
+      mat-icon { flex-shrink: 0; font-size: 18px; width: 18px; height: 18px; }
+    }
+
+    .limites-archivo {
+      margin: 10px 0 0;
+      font-size: 0.75rem;
+      opacity: 0.6;
+    }
+
     .btn-template {
       background: rgba(99, 102, 241, 0.10);
       color: #6366F1;
@@ -840,50 +872,72 @@ export class ImportarAlumnosComponent {
   // PASO 1: SELECCIONAR ARCHIVO
   // ═══════════════════════════════════════════════
 
-  onArchivoSeleccionado(event: Event): void {
+  readonly limites = LIMITES_PADRON;
+
+  /** Motivo por el que el último archivo no se pudo leer (se muestra junto al botón). */
+  errorArchivo = '';
+  /** Leyendo el archivo (en el Worker): el botón se deshabilita. */
+  leyendo = false;
+
+  async onArchivoSeleccionado(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
-
-    this.nombreArchivo = file.name;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        // Pre-cargar matrículas existentes en BD para validar duplicados
-        const alumnosExistentes = await this.databaseService.obtenerTodosLosAlumnos();
-        this.matriculasExistentes = new Set(alumnosExistentes.map(a => a.matricula));
-
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        // Tomar la primera hoja
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-
-        // Convertir a JSON (filas como objetos)
-        const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-        if (jsonData.length === 0) {
-          this.toastService.error('El archivo está vacío o no tiene datos');
-          return;
-        }
-
-        this.procesarDatos(jsonData);
-        this.paso = 'preview';
-        this.toastService.info(`${jsonData.length} filas encontradas en "${sheetName}"`);
-      } catch (error) {
-        console.error('Error al parsear archivo:', error);
-        this.toastService.error('Error al leer el archivo. Verifica que sea un Excel o CSV válido.');
-      }
-    };
-    reader.onerror = () => {
-      this.toastService.error('Error al leer el archivo');
-    };
-    reader.readAsArrayBuffer(file);
-
     // Reset para poder seleccionar el mismo archivo
     input.value = '';
+    if (!file || this.leyendo) return;
+
+    this.nombreArchivo = file.name;
+    this.errorArchivo = '';
+    this.leyendo = true;
+    try {
+      // v3.62.0: formato, firma y tamaño ANTES de leerlo (lectura-padron.utils).
+      const cabecera = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+      const valido = validarArchivoPadron(file.name, file.size, cabecera);
+      if (!valido.ok) { this.rechazarArchivo(valido.error); return; }
+
+      const lectura = await this.leerEnWorker(await file.arrayBuffer());
+      if (!lectura.ok) { this.rechazarArchivo(lectura.error); return; }
+
+      // Pre-cargar matrículas existentes en BD para validar duplicados
+      const alumnosExistentes = await this.databaseService.obtenerTodosLosAlumnos();
+      this.matriculasExistentes = new Set(alumnosExistentes.map(a => a.matricula));
+
+      this.procesarDatos(lectura.filas);
+      this.paso = 'preview';
+      this.toastService.info(`${lectura.filas.length} filas encontradas en "${lectura.hoja}"`);
+    } catch (error) {
+      console.error('Error al leer el archivo de alumnos:', error);
+      this.rechazarArchivo('Error al leer el archivo. Verifica que sea un Excel o CSV válido.');
+    } finally {
+      this.leyendo = false;
+    }
+  }
+
+  private rechazarArchivo(motivo: string): void {
+    this.errorArchivo = motivo;
+    this.toastService.error(motivo);
+  }
+
+  /**
+   * Lee el padrón en un Web Worker con tiempo máximo: un archivo anómalo no
+   * congela la pantalla, y si tarda de más se termina el Worker. Sin soporte
+   * de Workers (navegadores muy viejos) se lee aquí mismo, con los mismos
+   * límites de tamaño y filas.
+   */
+  private leerEnWorker(datos: ArrayBuffer): Promise<LecturaPadron> {
+    if (typeof Worker === 'undefined') return Promise.resolve(leerPadron(datos));
+    return new Promise(resolve => {
+      const worker = new Worker(new URL('./lectura-padron.worker', import.meta.url), { type: 'module' });
+      const fin = (r: LecturaPadron) => { clearTimeout(reloj); worker.terminate(); resolve(r); };
+      const reloj = setTimeout(() => fin({
+        ok: false,
+        error: `El archivo tardó más de ${LIMITES_PADRON.tiempoMaxMs / 1000} s en leerse y se canceló. ` +
+          'Revisa que sea el padrón de alumnos y que no tenga hojas o imágenes de más.',
+      }), LIMITES_PADRON.tiempoMaxMs);
+      worker.onmessage = ({ data }: MessageEvent<LecturaPadron>) => fin(data);
+      worker.onerror = () => fin({ ok: false, error: 'No se pudo leer el archivo: está dañado o no es una hoja de cálculo.' });
+      worker.postMessage(datos, [datos]);
+    });
   }
 
   // ═══════════════════════════════════════════════
@@ -952,56 +1006,35 @@ export class ImportarAlumnosComponent {
         errores: [],
       };
 
-      // Progreso real. Antes era un spinner con texto fijo: con 500+ alumnos
-      // la pantalla se veía congelada varios segundos y no había forma de
-      // distinguirla de una app colgada.
+      // Aviso visible mientras se escribe: con 500+ alumnos tarda unos
+      // segundos y sin él la pantalla parecía colgada.
       //
-      // Sobre interrumpir a media importación (cerrar pestaña, navegar, que
-      // se apague el equipo): cada alumno se escribe en su propia transacción
-      // de IndexedDB, así que NO hay corrupción — quedan los ya escritos y
-      // faltan los demás. Y volver a correr el mismo archivo es seguro: el
-      // índice `by-matricula` es único, los ya existentes caen en el catch y
-      // se cuentan como duplicados. La importación es reanudable por diseño.
+      // v3.62.0: todo el padrón va en UNA transacción (crearAlumnosLote).
+      // Si algo falla o se cierra la pestaña a la mitad, no queda nada a
+      // medias: se guardan todos o ninguno. Volver a cargar el mismo archivo
+      // sigue siendo seguro: las matrículas que ya existen se omiten.
       this.loadingService.progress(
         0, validas.length,
-        'Importando alumnos...',
-        'Si se interrumpe, puedes volver a cargar el mismo archivo sin duplicar.',
+        `Guardando ${validas.length} alumnos...`,
+        'Se guardan todos juntos: si se interrumpe, no queda nada a medias.',
       );
+      // Ceder el hilo para que el navegador pinte el aviso antes de escribir.
+      await new Promise(r => setTimeout(r, 0));
 
-      let procesados = 0;
-      for (const fila of validas) {
-        try {
-          await this.databaseService.crearAlumno({
-            matricula: fila.matricula,
-            nombre: fila.nombre,
-            apellidoPaterno: fila.apellidoPaterno,
-            apellidoMaterno: fila.apellidoMaterno,
-            carrera: fila.carrera,
-            grado: fila.grado,
-            grupo: fila.grupo,
-            turno: fila.turno as 'Matutino' | 'Vespertino' | 'Mixto',
-            activo: true,
-          });
-          resultado.importados++;
-        } catch {
-          // Matrícula duplicada en la base de datos
-          resultado.duplicados++;
-        }
-
-        procesados++;
-        // Refrescar cada 10 filas (y siempre en la última): pintar 500 veces
-        // cuesta más que la propia escritura y hace la barra más lenta que
-        // el trabajo que reporta.
-        if (procesados % 10 === 0 || procesados === validas.length) {
-          this.loadingService.progress(
-            procesados, validas.length,
-            'Importando alumnos...',
-            'Si se interrumpe, puedes volver a cargar el mismo archivo sin duplicar.',
-          );
-          // Ceder el hilo para que el navegador pinte el avance.
-          await new Promise(r => setTimeout(r, 0));
-        }
-      }
+      const { creados, duplicados } = await this.databaseService.crearAlumnosLote(validas.map(fila => ({
+        matricula: fila.matricula,
+        nombre: fila.nombre,
+        apellidoPaterno: fila.apellidoPaterno,
+        apellidoMaterno: fila.apellidoMaterno,
+        carrera: fila.carrera,
+        grado: fila.grado,
+        grupo: fila.grupo,
+        turno: fila.turno as 'Matutino' | 'Vespertino' | 'Mixto',
+        activo: true,
+      })));
+      resultado.importados = creados;
+      resultado.duplicados = duplicados;
+      this.loadingService.progress(validas.length, validas.length, 'Alumnos guardados');
 
       if (resultado.importados > 0) {
         void this.bitacora.registrar('alumnos-importados',
@@ -1020,10 +1053,11 @@ export class ImportarAlumnosComponent {
       }
 
       console.log('✅ Importación completada:', resultado);
-    } catch {
+    } catch (error) {
+      console.error('Error al importar el padrón:', error);
       this.loadingService.hide();
       this.importando = false;
-      this.toastService.error('Error durante la importación');
+      this.toastService.error('Error durante la importación: no se guardó ningún alumno. Intenta de nuevo.');
     }
   }
 

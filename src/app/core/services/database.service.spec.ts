@@ -506,4 +506,32 @@ describe('DatabaseService', () => {
       expect(a!.matricula).toBe('1000017');
     });
   });
+  describe('crearAlumnosLote: el padrón en una sola transacción (v3.62.0)', () => {
+    it('guarda todos y omite las matrículas que ya existen o se repiten en el archivo', async () => {
+      await db.crearAlumno(nuevoAlumno('2299990001'));
+      const r = await db.crearAlumnosLote([
+        nuevoAlumno('2299990001'), nuevoAlumno('2299990002'), nuevoAlumno('2299990003'), nuevoAlumno('2299990002'),
+      ]);
+      expect(r).toEqual({ creados: 2, duplicados: 2 });
+      expect((await db.obtenerTodosLosAlumnos()).map(a => a.matricula).sort())
+        .toEqual(['2299990001', '2299990002', '2299990003']);
+    });
+
+    it('si una fila falla, no se guarda ninguna (no queda la importación a medias)', async () => {
+      // Una función no se puede guardar en IndexedDB (DataCloneError):
+      // falla la tercera escritura, después de dos que ya se habían hecho.
+      const rota = { ...nuevoAlumno('2299990013'), datosExtra: { x: (() => 1) as unknown as string } };
+      await expectAsync(db.crearAlumnosLote([
+        nuevoAlumno('2299990011'), nuevoAlumno('2299990012'), rota, nuevoAlumno('2299990014'),
+      ])).toBeRejected();
+      expect(await db.obtenerTodosLosAlumnos()).toEqual([]);
+    });
+
+    it('volver a cargar el mismo archivo no duplica nada', async () => {
+      const lote = [nuevoAlumno('2299990021'), nuevoAlumno('2299990022')];
+      await db.crearAlumnosLote(lote);
+      expect(await db.crearAlumnosLote(lote)).toEqual({ creados: 0, duplicados: 2 });
+      expect((await db.obtenerTodosLosAlumnos()).length).toBe(2);
+    });
+  });
 });
