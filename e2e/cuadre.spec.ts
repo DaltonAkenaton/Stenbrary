@@ -281,7 +281,17 @@ test.describe('Verificación ago–sep: cifras contadas a mano y respaldo de ida
   async function cifrasAgoSep(page: Page): Promise<string> {
     await page.goto('/estadisticas?p=personalizado&ini=2026-08-01&fin=2026-09-30&tab=resumen');
     await expect(page.locator('.kpis-hero')).toContainText(/alumnos únicos/i, { timeout: 15000 });
-    return texto(page, '.kpis-hero');
+    // Algunos rótulos ("Último registro hace…") se pintan después de los
+    // totales: se lee cuando el texto deja de cambiar. Antes, en CI, "antes"
+    // se leía sin ese rótulo y "después" con él (falso rojo).
+    let previo = '';
+    await expect.poll(async () => {
+      const actual = await texto(page, '.kpis-hero');
+      const igual = actual === previo;
+      previo = actual;
+      return igual;
+    }, { intervals: [300], timeout: 15000 }).toBe(true);
+    return previo;
   }
 
   test('las cifras de las respuestas, antes y después del respaldo', async ({ page }) => {
@@ -333,9 +343,19 @@ test.describe('Verificación ago–sep: filtros de Registros y días del períod
     await expect(page.locator('.import-result.success')).toContainText('Importación exitosa', { timeout: 20000 });
   });
 
+  /**
+   * Elige en un mat-select. Espera a que el panel anterior termine de cerrarse
+   * antes de abrir otro: en CI (Linux, más lento) la opción se desprendía del
+   * DOM a media animación y el clic se perdía.
+   */
   async function elegir(page: Page, select: string, opcion: string) {
+    const panel = page.locator('.mat-mdc-select-panel');
+    await expect(panel).toHaveCount(0);
     await page.locator(select).click();
-    await page.getByRole('option', { name: opcion, exact: true }).click();
+    const op = page.getByRole('option', { name: opcion, exact: true });
+    await expect(op).toBeVisible();
+    await op.click();
+    await expect(panel).toHaveCount(0);
   }
 
   test('Registros: visitantes, tipo de salida, duración, orden y autocompletado', async ({ page }) => {
