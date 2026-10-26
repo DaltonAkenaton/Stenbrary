@@ -38,21 +38,20 @@ import { BitacoraService } from '../../core/services/bitacora.service';
 type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6meses' | 'todo';
 
 @Component({
-  selector: 'app-limpieza-registros',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatDialogModule,
-    MatTooltipModule,
-  ],
-  template: `
+    selector: 'app-limpieza-registros',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatDialogModule,
+        MatTooltipModule,
+    ],
+    template: `
     <div class="limpieza-container">
 
       <!-- Header -->
@@ -147,7 +146,7 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
 
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
       --navy-700: #142033;
       --navy-600: #1C2E47;

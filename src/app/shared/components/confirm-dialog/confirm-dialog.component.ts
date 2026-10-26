@@ -40,15 +40,14 @@ export interface ConfirmDialogData {
 }
 
 @Component({
-  selector: 'app-confirm-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatIconModule,
-  ],
-  template: `
+    selector: 'app-confirm-dialog',
+    imports: [
+        CommonModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatIconModule,
+    ],
+    template: `
     <div class="dialog-container">
 
       <!-- Ícono -->
@@ -82,7 +81,7 @@ export interface ConfirmDialogData {
 
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
       --navy-800:   #0D1626;
       --navy-700:   #142033;

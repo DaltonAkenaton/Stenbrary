@@ -29,21 +29,20 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
 import { BitacoraService } from '../../core/services/bitacora.service';
 
 @Component({
-  selector: 'app-gestion-motivos',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatTooltipModule,
-    MatDialogModule,
-    MatTableModule,
-  ],
-  templateUrl: './gestion-motivos.component.html',
-  styleUrl: './gestion-motivos.component.scss',
+    selector: 'app-gestion-motivos',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatChipsModule,
+        MatTooltipModule,
+        MatDialogModule,
+        MatTableModule,
+    ],
+    templateUrl: './gestion-motivos.component.html',
+    styleUrl: './gestion-motivos.component.scss'
 })
 export class GestionMotivosComponent implements OnInit {
   motivos: Motivo[] = [];

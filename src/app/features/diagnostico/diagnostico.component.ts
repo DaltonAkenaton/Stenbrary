@@ -35,11 +35,10 @@ import { fechaLocalISO } from '../../core/utils/tiempo.utils';
 import { ConfigService } from '../../core/services/config.service';
 
 @Component({
-  selector: 'app-diagnostico',
-  standalone: true,
-  imports: [CommonModule, MatIconModule, MatDialogModule],
-  templateUrl: './diagnostico.component.html',
-  styleUrl: './diagnostico.component.scss',
+    selector: 'app-diagnostico',
+    imports: [CommonModule, MatIconModule, MatDialogModule],
+    templateUrl: './diagnostico.component.html',
+    styleUrl: './diagnostico.component.scss'
 })
 export class DiagnosticoComponent {
   private readonly diagnostico = inject(DiagnosticoService);

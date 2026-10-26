@@ -87,22 +87,21 @@ const MS_POR_REGISTRO = 10;
 const MS_POR_ALUMNO = 5;
 
 @Component({
-  selector: 'app-datos-prueba',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatDialogModule,
-    MatProgressBarModule,
-    MatTooltipModule,
-  ],
-  template: `
+    selector: 'app-datos-prueba',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatDialogModule,
+        MatProgressBarModule,
+        MatTooltipModule,
+    ],
+    template: `
     <div class="seed-container">
 
       <!-- Header -->
@@ -266,7 +265,7 @@ const MS_POR_ALUMNO = 5;
 
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
       --navy-700: #142033;
       --navy-600: #1C2E47;
@@ -563,7 +562,7 @@ const MS_POR_ALUMNO = 5;
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-  `],
+  `]
 })
 export class DatosPruebaComponent implements OnInit {
   presets = PRESETS;

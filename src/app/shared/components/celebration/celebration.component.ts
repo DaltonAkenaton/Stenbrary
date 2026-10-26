@@ -35,10 +35,9 @@ const FRASES = [
 ];
 
 @Component({
-  selector: 'app-celebration',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-celebration',
+    imports: [CommonModule],
+    template: `
     @if (visible) {
       <div class="celebration-overlay" (click)="cerrar.emit()">
         <div class="celebration-frase">{{ fraseElegida }}</div>
@@ -58,7 +57,7 @@ const FRASES = [
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .celebration-overlay {
       position: fixed;
       inset: 0;
@@ -130,7 +129,7 @@ const FRASES = [
         opacity: 0;
       }
     }
-  `],
+  `]
 })
 export class CelebrationComponent implements OnChanges {
   /** Cuando cambia a true, se dispara la animación. */

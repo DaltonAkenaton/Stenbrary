@@ -44,10 +44,9 @@ export interface PinCoordinadorData {
 type Paso = 'pin' | 'codigo' | 'nuevo';
 
 @Component({
-  selector: 'app-pin-coordinador-dialog',
-  standalone: true,
-  imports: [FormsModule, MatDialogModule, MatIconModule, NuevoPinComponent],
-  template: `
+    selector: 'app-pin-coordinador-dialog',
+    imports: [FormsModule, MatDialogModule, MatIconModule, NuevoPinComponent],
+    template: `
     <div class="pin-dialog">
       <div class="pin-header">
         <mat-icon>{{ paso() === 'pin' ? (data.icono || 'lock') : 'lock_reset' }}</mat-icon>
@@ -158,7 +157,7 @@ type Paso = 'pin' | 'codigo' | 'nuevo';
       }
     </div>
   `,
-  styleUrls: ['./pin-dialog.scss'],
+    styleUrls: ['./pin-dialog.scss']
 })
 export class PinCoordinadorDialogComponent implements OnInit, OnDestroy {
   readonly data = inject<PinCoordinadorData>(MAT_DIALOG_DATA);

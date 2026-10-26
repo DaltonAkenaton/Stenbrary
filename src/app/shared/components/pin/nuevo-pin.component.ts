@@ -18,10 +18,9 @@ import { PinService } from '../../../core/services/pin.service';
 import { PIN_MAX_DIGITOS, PIN_MIN_DIGITOS, esPinValido } from '../../../core/utils/quiosco.utils';
 
 @Component({
-  selector: 'app-nuevo-pin',
-  standalone: true,
-  imports: [FormsModule, MatIconModule],
-  template: `
+    selector: 'app-nuevo-pin',
+    imports: [FormsModule, MatIconModule],
+    template: `
     @if (!codigo()) {
       <p class="pin-desc">{{ PIN_MIN }} a {{ PIN_MAX }} dígitos. Evita fechas y números fáciles como 1234.</p>
       <input class="pin-input nuevo-pin-1" type="password" inputmode="numeric" autocomplete="off"
@@ -53,8 +52,8 @@ import { PIN_MAX_DIGITOS, PIN_MIN_DIGITOS, esPinValido } from '../../../core/uti
       </div>
     }
   `,
-  styleUrls: ['./pin-dialog.scss'],
-  styles: [`
+    styleUrls: ['./pin-dialog.scss'],
+    styles: [`
     .codigo-recuperacion {
       margin: 4px 0 14px; padding: 14px;
       background: #142033;
@@ -65,7 +64,7 @@ import { PIN_MAX_DIGITOS, PIN_MIN_DIGITOS, esPinValido } from '../../../core/uti
       font-size: 1.3rem; letter-spacing: 0.12em;
       text-align: center; user-select: all;
     }
-  `],
+  `]
 })
 export class NuevoPinComponent implements OnInit {
   /** Solo generar un código nuevo, sin cambiar el PIN. */

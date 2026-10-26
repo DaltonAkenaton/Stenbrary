@@ -12,15 +12,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-confirmacion-matricula-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatIconModule
-  ],
-  template: `
+    selector: 'app-confirmacion-matricula-dialog',
+    imports: [
+        CommonModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatIconModule
+    ],
+    template: `
     <div class="dialog-container">
 
       <!-- Ícono -->
@@ -62,7 +61,7 @@ import { MatIconModule } from '@angular/material/icon';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     /* Tokens del design system — definidos inline para que el dialog
        funcione correctamente dentro del CDK overlay sin depender
        del SCSS externo */

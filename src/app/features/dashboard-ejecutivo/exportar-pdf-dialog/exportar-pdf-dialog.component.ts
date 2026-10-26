@@ -39,13 +39,12 @@ interface OpcionSeccion {
 }
 
 @Component({
-  selector: 'app-exportar-pdf-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, FormsModule, MatDialogModule, MatCheckboxModule,
-    MatIconModule, MatButtonModule, MatTooltipModule,
-  ],
-  template: `
+    selector: 'app-exportar-pdf-dialog',
+    imports: [
+        CommonModule, FormsModule, MatDialogModule, MatCheckboxModule,
+        MatIconModule, MatButtonModule, MatTooltipModule,
+    ],
+    template: `
     <div class="dlg-header">
       <div class="dlg-icon"><mat-icon>picture_as_pdf</mat-icon></div>
       <div>
@@ -99,7 +98,7 @@ interface OpcionSeccion {
       </button>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
       display: block;
       min-width: 460px;
@@ -248,7 +247,7 @@ interface OpcionSeccion {
       .seccion-icon { display: none; }
       .dlg-actions { padding: 12px 14px; }
     }
-  `],
+  `]
 })
 export class ExportarPdfDialogComponent {
 

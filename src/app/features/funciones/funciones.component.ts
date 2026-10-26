@@ -81,11 +81,10 @@ const MS_POR_DIAPOSITIVA = 7000;
 const UMBRAL_GESTO_PX = 48;
 
 @Component({
-  selector: 'app-funciones',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, FuncionIlustracionComponent],
-  templateUrl: './funciones.component.html',
-  styleUrl: './funciones.component.scss',
+    selector: 'app-funciones',
+    imports: [CommonModule, FormsModule, MatIconModule, FuncionIlustracionComponent],
+    templateUrl: './funciones.component.html',
+    styleUrl: './funciones.component.scss'
 })
 export class FuncionesComponent implements OnDestroy {
   private readonly router = inject(Router);

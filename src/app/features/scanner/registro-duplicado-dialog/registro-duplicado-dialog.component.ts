@@ -40,15 +40,14 @@ export interface RegistroDuplicadoData {
 export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
 
 @Component({
-  selector: 'app-registro-duplicado-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatIconModule,
-  ],
-  template: `
+    selector: 'app-registro-duplicado-dialog',
+    imports: [
+        CommonModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatIconModule,
+    ],
+    template: `
     <div class="dialog-container" [class.quiosco]="data.modoQuiosco" (pointerdown)="tocado()">
 
       <div class="dialog-icon">
@@ -147,7 +146,7 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
       --navy-800:   #0D1626;
       --navy-700:   #142033;

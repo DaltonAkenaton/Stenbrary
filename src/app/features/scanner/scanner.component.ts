@@ -290,15 +290,14 @@ declare class BarcodeDetector {
 }
 
 @Component({
-  selector: 'app-scanner',
-  standalone: true,
-  imports: [
-    CommonModule, FormsModule,
-    MatButtonModule, MatFormFieldModule, MatInputModule,
-    MatIconModule, MatCardModule, MatDialogModule,
-  ],
-  templateUrl: './scanner.component.html',
-  styleUrl: './scanner.component.scss'
+    selector: 'app-scanner',
+    imports: [
+        CommonModule, FormsModule,
+        MatButtonModule, MatFormFieldModule, MatInputModule,
+        MatIconModule, MatCardModule, MatDialogModule,
+    ],
+    templateUrl: './scanner.component.html',
+    styleUrl: './scanner.component.scss'
 })
 export class ScannerComponent implements OnInit, OnDestroy {
 

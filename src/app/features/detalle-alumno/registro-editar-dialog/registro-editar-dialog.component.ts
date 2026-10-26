@@ -37,10 +37,9 @@ export interface RegistroEditarResultado {
 export type RegistroEditarSalida = RegistroEditarResultado | 'eliminado';
 
 @Component({
-  selector: 'app-registro-editar-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
-  template: `
+    selector: 'app-registro-editar-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
+    template: `
     <h2 mat-dialog-title>
       <mat-icon>edit_calendar</mat-icon>
       Editar Registro
@@ -127,7 +126,7 @@ export type RegistroEditarSalida = RegistroEditarResultado | 'eliminado';
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     h2[mat-dialog-title] {
       display: flex; align-items: center; gap: 8px;
       margin: 0; padding: 20px 24px 12px;
@@ -243,7 +242,7 @@ export type RegistroEditarSalida = RegistroEditarResultado | 'eliminado';
     @media (max-width: 480px) {
       .dialog-content { min-width: 0; }
     }
-  `],
+  `]
 })
 export class RegistroEditarDialogComponent implements OnInit {
   fechaEntradaInput = '';

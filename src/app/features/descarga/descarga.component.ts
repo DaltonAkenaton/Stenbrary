@@ -30,11 +30,10 @@ import { DescargaStore, FilaDescarga } from '../../core/utils/descarga.utils';
 const TOPE_LISTA = 40;
 
 @Component({
-  selector: 'app-descarga',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatDialogModule],
-  templateUrl: './descarga.component.html',
-  styleUrl: './descarga.component.scss',
+    selector: 'app-descarga',
+    imports: [CommonModule, FormsModule, MatIconModule, MatDialogModule],
+    templateUrl: './descarga.component.html',
+    styleUrl: './descarga.component.scss'
 })
 export class DescargaComponent {
   private readonly descarga = inject(DescargaService);

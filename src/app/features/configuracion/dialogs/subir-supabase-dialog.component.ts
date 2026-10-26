@@ -30,19 +30,18 @@ import {
 type Estado = 'cargando-preview' | 'preview' | 'running' | 'done' | 'error';
 
 @Component({
-  selector: 'app-subir-supabase-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatProgressSpinnerModule,
-  ],
-  templateUrl: './subir-supabase-dialog.component.html',
-  styleUrl: './subir-supabase-dialog.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-subir-supabase-dialog',
+    imports: [
+        CommonModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressBarModule,
+        MatProgressSpinnerModule,
+    ],
+    templateUrl: './subir-supabase-dialog.component.html',
+    styleUrl: './subir-supabase-dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SubirSupabaseDialogComponent {
   private readonly importer = inject(ImportSupabaseService);

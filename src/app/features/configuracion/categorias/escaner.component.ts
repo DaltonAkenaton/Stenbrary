@@ -19,17 +19,16 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ConfigService, CamaraPreferida } from '../../../core/services/config.service';
 
 @Component({
-  selector: 'app-config-escaner',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    MatTooltipModule,
-  ],
-  templateUrl: './escaner.component.html',
-  styleUrls: ['../configuracion.styles.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-escaner',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        MatTooltipModule,
+    ],
+    templateUrl: './escaner.component.html',
+    styleUrls: ['../configuracion.styles.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EscanerCategoriaComponent {
 

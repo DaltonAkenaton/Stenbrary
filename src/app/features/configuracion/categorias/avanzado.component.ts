@@ -28,18 +28,17 @@ import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shar
 import { DatosPruebaComponent } from '../datos-prueba.component';
 
 @Component({
-  selector: 'app-config-avanzado',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatDialogModule,
-    DatosPruebaComponent,
-  ],
-  templateUrl: './avanzado.component.html',
-  styleUrls: ['../configuracion.styles.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-avanzado',
+    imports: [
+        CommonModule,
+        MatIconModule,
+        MatTooltipModule,
+        MatDialogModule,
+        DatosPruebaComponent,
+    ],
+    templateUrl: './avanzado.component.html',
+    styleUrls: ['../configuracion.styles.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AvanzadoCategoriaComponent {
 

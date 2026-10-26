@@ -31,21 +31,20 @@ import { LectorRafagaService } from '../../core/services/lector-rafaga.service';
 import { ABANDONO_MOTIVO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/flujo-puerta.utils';
 
 @Component({
-  selector: 'app-seleccion-motivo',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatRippleModule,
-    MatTooltipModule,
-    CelebrationComponent,
-    SuccessAnimationComponent,
-  ],
-  templateUrl: './seleccion-motivo.component.html',
-  styleUrl: './seleccion-motivo.component.scss'
+    selector: 'app-seleccion-motivo',
+    imports: [
+        CommonModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatRippleModule,
+        MatTooltipModule,
+        CelebrationComponent,
+        SuccessAnimationComponent,
+    ],
+    templateUrl: './seleccion-motivo.component.html',
+    styleUrl: './seleccion-motivo.component.scss'
 })
 export class SeleccionMotivoComponent implements OnInit, OnDestroy {
   alumno: Alumno | null = null;

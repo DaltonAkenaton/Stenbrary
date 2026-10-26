@@ -14,10 +14,9 @@ import { Subscription } from 'rxjs';
 import { ToastService, Toast } from '../../core/services/toast.service';
 
 @Component({
-  selector: 'app-toast-container',
-  standalone: true,
-  imports: [CommonModule, MatIconModule],
-  template: `
+    selector: 'app-toast-container',
+    imports: [CommonModule, MatIconModule],
+    template: `
     <div class="toast-container">
       @for (toast of toasts; track toast.id) {
         <div [class]="'toast toast-' + toast.type">
@@ -45,7 +44,7 @@ import { ToastService, Toast } from '../../core/services/toast.service';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .toast-container {
       position: fixed;
       top: 20px;
@@ -202,7 +201,7 @@ import { ToastService, Toast } from '../../core/services/toast.service';
         max-width: none;
       }
     }
-  `],
+  `]
 })
 export class ToastContainerComponent implements OnInit, OnDestroy {
   toasts: Toast[] = [];

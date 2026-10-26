@@ -45,12 +45,11 @@ function copiar(c: CalendarioEscolar): CalendarioEscolar {
 const FMT_CORTA = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 
 @Component({
-  selector: 'app-config-calendario',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatTooltipModule],
-  templateUrl: './calendario.component.html',
-  styleUrls: ['../configuracion.styles.scss', './calendario.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-calendario',
+    imports: [CommonModule, FormsModule, MatIconModule, MatTooltipModule],
+    templateUrl: './calendario.component.html',
+    styleUrls: ['../configuracion.styles.scss', './calendario.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CalendarioCategoriaComponent {
   readonly configService = inject(ConfigService);

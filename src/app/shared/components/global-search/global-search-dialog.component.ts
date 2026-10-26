@@ -47,10 +47,9 @@ interface ItemRegistro {
 type Item = ItemComando | ItemAlumno | ItemRegistro;
 
 @Component({
-  selector: 'app-global-search-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule],
-  template: `
+    selector: 'app-global-search-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule],
+    template: `
     <div class="palette">
       <div class="search-bar">
         <mat-icon class="search-icon">search</mat-icon>
@@ -111,7 +110,7 @@ type Item = ItemComando | ItemAlumno | ItemRegistro;
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .palette {
@@ -240,7 +239,7 @@ type Item = ItemComando | ItemAlumno | ItemRegistro;
       .footer-hint { display: none; }
       .item-tag { display: none; }
     }
-  `],
+  `]
 })
 export class GlobalSearchDialogComponent implements OnInit {
   @ViewChild('searchInput', { static: true }) searchInput!: ElementRef<HTMLInputElement>;

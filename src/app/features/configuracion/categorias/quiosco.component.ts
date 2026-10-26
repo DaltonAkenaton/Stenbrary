@@ -27,17 +27,16 @@ import { ConfigService } from '../../../core/services/config.service';
 import { BitacoraService } from '../../../core/services/bitacora.service';
 
 @Component({
-  selector: 'app-config-quiosco',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    MatTooltipModule,
-  ],
-  templateUrl: './quiosco.component.html',
-  styleUrls: ['../configuracion.styles.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-quiosco',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        MatTooltipModule,
+    ],
+    templateUrl: './quiosco.component.html',
+    styleUrls: ['../configuracion.styles.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class QuioscoCategoriaComponent {
 

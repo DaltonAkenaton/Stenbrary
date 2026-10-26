@@ -88,26 +88,25 @@ function decorarParaTabla(r: RegistroRender): RegistroRender {
 }
 
 @Component({
-  selector: 'app-registros',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatTableModule,
-    MatTooltipModule,
-    MatProgressSpinnerModule,
-    MatDialogModule,
-    MatAutocompleteModule,
-  ],
-  templateUrl: './registros.component.html',
-  styleUrl: './registros.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-registros',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatTableModule,
+        MatTooltipModule,
+        MatProgressSpinnerModule,
+        MatDialogModule,
+        MatAutocompleteModule,
+    ],
+    templateUrl: './registros.component.html',
+    styleUrl: './registros.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RegistrosComponent implements OnInit {
 

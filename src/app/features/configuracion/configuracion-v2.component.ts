@@ -40,26 +40,25 @@ const STORAGE_KEY = 'stenbrary-config-categoria-activa';
 const DEFAULT_CATEGORIA: CategoriaConfigId = 'general';
 
 @Component({
-  selector: 'app-configuracion-v2',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    GeneralCategoriaComponent,
-    EscanerCategoriaComponent,
-    OperacionCategoriaComponent,
-    QuioscoCategoriaComponent,
-    ExperienciaCategoriaComponent,
-    DatosCategoriaComponent,
-    CalendarioCategoriaComponent,
-    CatalogosCategoriaComponent,
-    AvanzadoCategoriaComponent,
-    BitacoraCategoriaComponent,
-  ],
-  templateUrl: './configuracion-v2.component.html',
-  styleUrls: ['./configuracion.styles.scss', './configuracion-v2.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-configuracion-v2',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        GeneralCategoriaComponent,
+        EscanerCategoriaComponent,
+        OperacionCategoriaComponent,
+        QuioscoCategoriaComponent,
+        ExperienciaCategoriaComponent,
+        DatosCategoriaComponent,
+        CalendarioCategoriaComponent,
+        CatalogosCategoriaComponent,
+        AvanzadoCategoriaComponent,
+        BitacoraCategoriaComponent,
+    ],
+    templateUrl: './configuracion-v2.component.html',
+    styleUrls: ['./configuracion.styles.scss', './configuracion-v2.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfiguracionV2Component implements OnInit, OnDestroy {
 

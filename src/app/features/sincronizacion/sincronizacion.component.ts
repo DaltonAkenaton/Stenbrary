@@ -44,23 +44,22 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 type SelMap = Record<SyncStore, Set<string>>;
 
 @Component({
-  selector: 'app-sincronizacion',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-    MatProgressBarModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
-  ],
-  templateUrl: './sincronizacion.component.html',
-  styleUrl: './sincronizacion.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-sincronizacion',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatButtonModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatInputModule,
+        MatProgressBarModule,
+        MatProgressSpinnerModule,
+        MatTooltipModule,
+    ],
+    templateUrl: './sincronizacion.component.html',
+    styleUrl: './sincronizacion.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SincronizacionComponent implements OnInit {
   protected readonly sync = inject(SyncService);

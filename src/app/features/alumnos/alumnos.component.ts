@@ -53,25 +53,24 @@ function buildAlumnoRender(a: Alumno): AlumnoRender {
 }
 
 @Component({
-  selector: 'app-alumnos',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatTableModule,
-    MatTooltipModule,
-    MatProgressSpinnerModule,
-    MatMenuModule,
-  ],
-  templateUrl: './alumnos.component.html',
-  styleUrl: './alumnos.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-alumnos',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatTableModule,
+        MatTooltipModule,
+        MatProgressSpinnerModule,
+        MatMenuModule,
+    ],
+    templateUrl: './alumnos.component.html',
+    styleUrl: './alumnos.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AlumnosComponent implements OnInit {
 

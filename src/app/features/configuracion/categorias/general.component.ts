@@ -29,18 +29,17 @@ import { fechaLocalISO, parseFechaLocal } from '../../../core/utils/tiempo.utils
 import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shared/components/pin/pin-coordinador-dialog.component';
 
 @Component({
-  selector: 'app-config-general',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
-  ],
-  templateUrl: './general.component.html',
-  styleUrls: ['../configuracion.styles.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-general',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatTooltipModule,
+    ],
+    templateUrl: './general.component.html',
+    styleUrls: ['../configuracion.styles.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GeneralCategoriaComponent implements OnInit, OnDestroy {
 

@@ -26,10 +26,9 @@ import { ToastService } from '../../core/services/toast.service';
 import { mensajeParaUsuario } from '../../core/utils/mensaje-error.utils';
 
 @Component({
-  selector: 'app-restablecer-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule],
-  template: `
+    selector: 'app-restablecer-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule],
+    template: `
     <div class="rd">
       <div class="rd-head">
         <mat-icon>warning</mat-icon>
@@ -92,7 +91,7 @@ import { mensajeParaUsuario } from '../../core/utils/mensaje-error.utils';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .rd {
       display: flex; flex-direction: column; gap: 14px;
       padding: 4px; font-family: 'DM Sans', sans-serif;
@@ -164,7 +163,7 @@ import { mensajeParaUsuario } from '../../core/utils/mensaje-error.utils';
     .rd-btn.peligro { flex: 1; background: #F05252; color: #04090F; }
     .rd-btn.peligro:hover:not(:disabled) { filter: brightness(1.08); }
     .rd-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  `],
+  `]
 })
 export class RestablecerDialogComponent {
   private readonly ref = inject(MatDialogRef<RestablecerDialogComponent>);

@@ -27,10 +27,9 @@ const dosDigitos = (n: number) => String(n).padStart(2, '0');
 const hhmm = (d: Date) => `${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes())}`;
 
 @Component({
-  selector: 'app-corregir-hora-dialog',
-  standalone: true,
-  imports: [FormsModule, MatDialogModule, MatIconModule],
-  template: `
+    selector: 'app-corregir-hora-dialog',
+    imports: [FormsModule, MatDialogModule, MatIconModule],
+    template: `
     <div class="ch-dialog">
       <div class="ch-header">
         <mat-icon>edit_calendar</mat-icon>
@@ -51,7 +50,7 @@ const hhmm = (d: Date) => `${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .ch-dialog { padding: 24px; background: #0d1626; border: 1px solid rgba(0,200,215,.15); border-radius: 16px; }
     .ch-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
       mat-icon { color: #00C8D7; } h2 { margin: 0; color: #E8F4F8; font-size: 1.05rem; } }
@@ -64,7 +63,7 @@ const hhmm = (d: Date) => `${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes
     .ch-cancel { background: rgba(200,230,240,.06); color: rgba(200,230,240,.6); }
     .ch-ok { background: linear-gradient(135deg, #00C8D7, #0BC4B7); color: #04090F; }
     .ch-ok:disabled { opacity: .4; cursor: not-allowed; }
-  `],
+  `]
 })
 export class CorregirHoraDialogComponent {
   readonly data = inject<CorregirHoraData>(MAT_DIALOG_DATA);

@@ -67,11 +67,10 @@ interface DiaHorario {
 }
 
 @Component({
-  selector: 'app-bienvenida',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatDialogModule],
-  templateUrl: './bienvenida.component.html',
-  styleUrl: './bienvenida.component.scss',
+    selector: 'app-bienvenida',
+    imports: [CommonModule, FormsModule, MatIconModule, MatDialogModule],
+    templateUrl: './bienvenida.component.html',
+    styleUrl: './bienvenida.component.scss'
 })
 export class BienvenidaComponent implements OnDestroy {
   private readonly router = inject(Router);

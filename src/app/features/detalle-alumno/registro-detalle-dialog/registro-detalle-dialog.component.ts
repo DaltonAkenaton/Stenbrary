@@ -22,10 +22,9 @@ export interface RegistroDetalleDialogData {
 }
 
 @Component({
-  selector: 'app-registro-detalle-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
-  template: `
+    selector: 'app-registro-detalle-dialog',
+    imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+    template: `
     <h2 mat-dialog-title>
       <mat-icon>receipt_long</mat-icon>
       Detalle del Registro
@@ -120,7 +119,7 @@ export interface RegistroDetalleDialogData {
       <button mat-button (click)="cerrar()">Cerrar</button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     h2[mat-dialog-title] {
       display: flex;
       align-items: center;
@@ -285,7 +284,7 @@ export interface RegistroDetalleDialogData {
       .value { font-size: 0.82rem; }
       mat-dialog-actions { padding: 6px 12px 12px; }
     }
-  `],
+  `]
 })
 export class RegistroDetalleDialogComponent {
   /** Los invitados no tienen perfil. */

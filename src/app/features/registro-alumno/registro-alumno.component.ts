@@ -35,22 +35,21 @@ import { ABANDONO_REGISTRO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/
 import { esNombreValido, limpiarNombre } from '../../core/utils/nombres.utils';
 
 @Component({
-  selector: 'app-registro-alumno',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatDialogModule,
-  ],
-  templateUrl: './registro-alumno.component.html',
-  styleUrl: './registro-alumno.component.scss',
+    selector: 'app-registro-alumno',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatDialogModule,
+    ],
+    templateUrl: './registro-alumno.component.html',
+    styleUrl: './registro-alumno.component.scss'
 })
 export class RegistroAlumnoComponent implements OnInit, OnDestroy {
   private readonly lector = inject(LectorRafagaService);

@@ -17,13 +17,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
-  selector: 'app-formulas-info-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, MatDialogModule, MatIconModule,
-    MatButtonModule, MatExpansionModule,
-  ],
-  template: `
+    selector: 'app-formulas-info-dialog',
+    imports: [
+        CommonModule, MatDialogModule, MatIconModule,
+        MatButtonModule, MatExpansionModule,
+    ],
+    template: `
     <div class="dlg-header">
       <div class="dlg-icon"><mat-icon>functions</mat-icon></div>
       <div>
@@ -422,7 +421,7 @@ DÍA OCUPADO:
       </button>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; color: #E8F4F8; }
 
     .dlg-header {
@@ -529,7 +528,7 @@ DÍA OCUPADO:
       border-top: 1px solid rgba(200, 230, 240, 0.08);
       justify-content: flex-end;
     }
-  `],
+  `]
 })
 export class FormulasInfoDialogComponent {
   constructor(private dialogRef: MatDialogRef<FormulasInfoDialogComponent>) {}

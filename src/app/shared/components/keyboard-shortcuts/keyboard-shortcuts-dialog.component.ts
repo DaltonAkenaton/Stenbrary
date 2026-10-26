@@ -22,10 +22,9 @@ interface GrupoAtajos {
 }
 
 @Component({
-  selector: 'app-keyboard-shortcuts-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatIconModule],
-  template: `
+    selector: 'app-keyboard-shortcuts-dialog',
+    imports: [CommonModule, MatDialogModule, MatIconModule],
+    template: `
     <div class="ks-container">
       <div class="ks-header">
         <div class="ks-title">
@@ -64,7 +63,7 @@ interface GrupoAtajos {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
       display: block;
       width: min(540px, 92vw);
@@ -205,7 +204,7 @@ interface GrupoAtajos {
         gap: 6px;
       }
     }
-  `],
+  `]
 })
 export class KeyboardShortcutsDialogComponent {
   grupos: GrupoAtajos[] = [

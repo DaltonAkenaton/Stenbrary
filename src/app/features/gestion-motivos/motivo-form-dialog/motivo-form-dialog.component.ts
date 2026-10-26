@@ -36,21 +36,20 @@ interface ColorOpcion {
 }
 
 @Component({
-  selector: 'app-motivo-form-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    MatSelectModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule
-  ],
-  template: `
+    selector: 'app-motivo-form-dialog',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatIconModule,
+        MatSelectModule,
+        MatProgressSpinnerModule,
+        MatTooltipModule
+    ],
+    template: `
     <div class="dialog-wrapper">
 
       <!-- Header con icono decorativo -->
@@ -190,7 +189,7 @@ interface ColorOpcion {
       </mat-dialog-actions>
     </div>
   `,
-  styles: [`
+    styles: [`
     .dialog-wrapper {
       min-width: 460px;
       max-width: 520px;

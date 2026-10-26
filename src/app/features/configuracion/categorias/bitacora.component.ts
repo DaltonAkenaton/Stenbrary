@@ -33,12 +33,11 @@ type Filtro = 'todo' | GrupoBitacora | 'alertas';
 const POR_PAGINA = 50;
 
 @Component({
-  selector: 'app-config-bitacora',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule],
-  templateUrl: './bitacora.component.html',
-  styleUrls: ['../configuracion.styles.scss', './bitacora.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-bitacora',
+    imports: [CommonModule, FormsModule, MatIconModule],
+    templateUrl: './bitacora.component.html',
+    styleUrls: ['../configuracion.styles.scss', './bitacora.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BitacoraCategoriaComponent implements OnInit {
   protected readonly config = inject(ConfigService);

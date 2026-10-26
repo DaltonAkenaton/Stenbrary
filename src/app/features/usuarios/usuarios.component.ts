@@ -38,19 +38,18 @@ const ROLES_ASIGNABLES: { valor: UserRole; etiqueta: string }[] = [
 ];
 
 @Component({
-  selector: 'app-usuarios',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
-  ],
-  templateUrl: './usuarios.component.html',
-  styleUrl: './usuarios.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-usuarios',
+    imports: [
+        CommonModule,
+        MatButtonModule,
+        MatDialogModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+        MatTooltipModule,
+    ],
+    templateUrl: './usuarios.component.html',
+    styleUrl: './usuarios.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UsuariosComponent implements OnInit {
   private readonly remote = inject(RemoteDatabaseService);

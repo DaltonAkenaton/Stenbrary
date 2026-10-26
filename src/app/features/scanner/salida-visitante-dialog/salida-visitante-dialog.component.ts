@@ -27,10 +27,9 @@ export interface SalidaVisitanteResultado {
 }
 
 @Component({
-  selector: 'app-salida-visitante-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule, MatButtonModule],
-  template: `
+    selector: 'app-salida-visitante-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule, MatButtonModule],
+    template: `
     <div class="dlg-root">
       <div class="dlg-header">
         <mat-icon>logout</mat-icon>
@@ -86,7 +85,7 @@ export interface SalidaVisitanteResultado {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
     .dlg-root {
       display: flex; flex-direction: column;
@@ -176,7 +175,7 @@ export interface SalidaVisitanteResultado {
       display: flex; justify-content: flex-end;
       border-top: 1px solid rgba(255,255,255,0.06);
     }
-  `],
+  `]
 })
 export class SalidaVisitanteDialogComponent {
   filtro = '';

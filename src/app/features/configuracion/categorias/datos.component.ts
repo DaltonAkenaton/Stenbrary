@@ -25,19 +25,18 @@ import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shar
 import { LimpiezaRegistrosComponent } from '../limpieza-registros.component';
 
 @Component({
-  selector: 'app-config-datos',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatDialogModule,
-    LimpiezaRegistrosComponent,
-  ],
-  templateUrl: './datos.component.html',
-  styleUrls: ['../configuracion.styles.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-datos',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        MatTooltipModule,
+        MatDialogModule,
+        LimpiezaRegistrosComponent,
+    ],
+    templateUrl: './datos.component.html',
+    styleUrls: ['../configuracion.styles.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DatosCategoriaComponent {
 

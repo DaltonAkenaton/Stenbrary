@@ -44,10 +44,9 @@ export type SalidaPinQuiosco = 'salir' | undefined;
 type Paso = 'pin' | 'codigo' | 'nuevo' | 'menu';
 
 @Component({
-  selector: 'app-quiosco-pin-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule, NuevoPinComponent],
-  template: `
+    selector: 'app-quiosco-pin-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule, NuevoPinComponent],
+    template: `
     <div class="pin-dialog">
       @switch (paso()) {
         @case ('pin') {
@@ -174,7 +173,7 @@ type Paso = 'pin' | 'codigo' | 'nuevo' | 'menu';
       }
     </div>
   `,
-  styleUrls: ['../../../shared/components/pin/pin-dialog.scss'],
+    styleUrls: ['../../../shared/components/pin/pin-dialog.scss']
 })
 export class QuioscoPinDialogComponent implements OnInit, OnDestroy {
   pin = '';

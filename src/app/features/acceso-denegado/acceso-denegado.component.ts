@@ -24,12 +24,11 @@ import { PermissionsService } from '../../core/auth/permissions.service';
 import { UserRole } from '../../core/auth/auth.types';
 
 @Component({
-  selector: 'app-acceso-denegado',
-  standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule],
-  templateUrl: './acceso-denegado.component.html',
-  styleUrl: './acceso-denegado.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-acceso-denegado',
+    imports: [CommonModule, MatButtonModule, MatIconModule],
+    templateUrl: './acceso-denegado.component.html',
+    styleUrl: './acceso-denegado.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AccesoDenegadoComponent {
   protected readonly auth = inject(AuthService);

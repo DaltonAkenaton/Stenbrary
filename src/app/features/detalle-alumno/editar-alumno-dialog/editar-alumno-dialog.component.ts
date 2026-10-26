@@ -29,20 +29,19 @@ import { limpiarNombre } from '../../../core/utils/nombres.utils';
 import { BitacoraService, describirAlumno } from '../../../core/services/bitacora.service';
 
 @Component({
-  selector: 'app-editar-alumno-dialog',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-  ],
-  template: `
+    selector: 'app-editar-alumno-dialog',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule,
+    ],
+    template: `
     <h2 mat-dialog-title>
       <mat-icon>edit</mat-icon>
       Editar Alumno
@@ -155,7 +154,7 @@ import { BitacoraService, describirAlumno } from '../../../core/services/bitacor
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     .form-container {
       display: flex;
       flex-direction: column;
@@ -221,7 +220,7 @@ import { BitacoraService, describirAlumno } from '../../../core/services/bitacor
         grid-template-columns: 1fr;
       }
     }
-  `],
+  `]
 })
 export class EditarAlumnoDialogComponent implements OnInit {
   editarForm!: FormGroup;

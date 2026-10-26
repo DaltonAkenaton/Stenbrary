@@ -31,10 +31,9 @@ export interface AgregarVisitaDialogData {
 }
 
 @Component({
-  selector: 'app-agregar-visita-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
-  template: `
+    selector: 'app-agregar-visita-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
+    template: `
     <h2 mat-dialog-title>
       <mat-icon>edit_note</mat-icon>
       Agregar visitas a mano
@@ -151,7 +150,7 @@ export interface AgregarVisitaDialogData {
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     h2[mat-dialog-title] {
       display: flex; align-items: center; gap: 8px;
       margin: 0; padding: 20px 24px 12px;
@@ -227,7 +226,7 @@ export interface AgregarVisitaDialogData {
       .fila-horas { grid-template-columns: 1fr 1fr; }
       .fila-horas > label:first-child { grid-column: 1 / -1; }
     }
-  `],
+  `]
 })
 export class AgregarVisitaDialogComponent implements OnInit {
   @ViewChild('buscador') private buscador?: ElementRef<HTMLInputElement>;

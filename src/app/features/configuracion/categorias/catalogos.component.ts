@@ -32,12 +32,11 @@ import {
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
-  selector: 'app-config-catalogos',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule],
-  templateUrl: './catalogos.component.html',
-  styleUrls: ['../configuracion.styles.scss', './catalogos.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-catalogos',
+    imports: [CommonModule, FormsModule, MatIconModule],
+    templateUrl: './catalogos.component.html',
+    styleUrls: ['../configuracion.styles.scss', './catalogos.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CatalogosCategoriaComponent implements OnInit {
   protected readonly config = inject(ConfigService);

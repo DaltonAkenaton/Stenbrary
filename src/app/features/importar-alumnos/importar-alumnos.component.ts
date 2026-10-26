@@ -43,20 +43,19 @@ interface ResultadoImportacion {
 }
 
 @Component({
-  selector: 'app-importar-alumnos',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatTooltipModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
-  ],
-  template: `
+    selector: 'app-importar-alumnos',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        MatTableModule,
+        MatTooltipModule,
+        MatChipsModule,
+        MatProgressSpinnerModule,
+    ],
+    template: `
     <div class="importar-container">
 
       <!-- Header -->
@@ -365,7 +364,7 @@ interface ResultadoImportacion {
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .importar-container {
       display: flex;
       flex-direction: column;
@@ -789,7 +788,7 @@ interface ResultadoImportacion {
         flex-direction: column;
       }
     }
-  `],
+  `]
 })
 export class ImportarAlumnosComponent {
 

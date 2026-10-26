@@ -23,18 +23,17 @@ import { ConfigService, AforoModo, HorarioModo } from '../../../core/services/co
 import { DIAS_SEMANA } from '../../../core/utils/horarios.utils';
 
 @Component({
-  selector: 'app-config-operacion',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterLink,
-    MatIconModule,
-    MatTooltipModule,
-  ],
-  templateUrl: './operacion.component.html',
-  styleUrls: ['../configuracion.styles.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-operacion',
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterLink,
+        MatIconModule,
+        MatTooltipModule,
+    ],
+    templateUrl: './operacion.component.html',
+    styleUrls: ['../configuracion.styles.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OperacionCategoriaComponent {
 

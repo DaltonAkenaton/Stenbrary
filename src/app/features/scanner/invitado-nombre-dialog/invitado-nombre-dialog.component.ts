@@ -17,14 +17,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
 @Component({
-  selector: 'app-invitado-nombre-dialog',
-  standalone: true,
-  imports: [
-    CommonModule, FormsModule,
-    MatDialogModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule,
-  ],
-  template: `
+    selector: 'app-invitado-nombre-dialog',
+    imports: [
+        CommonModule, FormsModule,
+        MatDialogModule, MatButtonModule, MatIconModule,
+        MatFormFieldModule, MatInputModule,
+    ],
+    template: `
     <h2 mat-dialog-title>
       <mat-icon>person_outline</mat-icon>
       Acceso de Visitante
@@ -70,7 +69,7 @@ import { MatInputModule } from '@angular/material/input';
       </button>
     </mat-dialog-actions>
   `,
-  styles: [`
+    styles: [`
     h2[mat-dialog-title] {
       display: flex;
       align-items: center;
@@ -102,7 +101,7 @@ import { MatInputModule } from '@angular/material/input';
       padding: 8px 16px 16px;
       gap: 8px;
     }
-  `],
+  `]
 })
 export class InvitadoNombreDialogComponent {
   nombre = '';

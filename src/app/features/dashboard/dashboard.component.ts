@@ -118,17 +118,16 @@ interface Alerta {
 }
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatProgressSpinnerModule,
-  ],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-dashboard',
+    imports: [
+        CommonModule,
+        MatIconModule,
+        MatTooltipModule,
+        MatProgressSpinnerModule,
+    ],
+    templateUrl: './dashboard.component.html',
+    styleUrl: './dashboard.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit, OnDestroy {
 

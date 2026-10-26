@@ -19,14 +19,13 @@ import { ChangelogService } from '../../core/services/changelog.service';
 import { TipoCambio } from '../../core/data/changelog.data';
 
 @Component({
-  selector: 'app-novedades',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatIconModule,
-    MatTooltipModule,
-  ],
-  template: `
+    selector: 'app-novedades',
+    imports: [
+        CommonModule,
+        MatIconModule,
+        MatTooltipModule,
+    ],
+    template: `
     <div class="novedades-container">
 
       <!-- HEADER -->
@@ -113,7 +112,7 @@ import { TipoCambio } from '../../core/data/changelog.data';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     .novedades-container {
       max-width: 920px;
       margin: 0 auto;
@@ -429,7 +428,7 @@ import { TipoCambio } from '../../core/data/changelog.data';
       .cambio-item { flex-direction: column; gap: 8px; }
       .chip-tipo { align-self: flex-start; }
     }
-  `],
+  `]
 })
 export class NovedadesComponent implements OnInit {
 

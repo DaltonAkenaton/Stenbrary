@@ -116,26 +116,25 @@ interface OpcionPreset {
 }
 
 @Component({
-  selector: 'app-dashboard-ejecutivo',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatCardModule,
-    MatIconModule,
-    MatButtonModule,
-    MatChipsModule,
-    MatTooltipModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatExpansionModule,
-    MatDialogModule,
-    RouterLink,
-  ],
-  templateUrl: './dashboard-ejecutivo.component.html',
-  styleUrl: './dashboard-ejecutivo.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-dashboard-ejecutivo',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatCardModule,
+        MatIconModule,
+        MatButtonModule,
+        MatChipsModule,
+        MatTooltipModule,
+        MatSelectModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatExpansionModule,
+        MatDialogModule,
+        RouterLink,
+    ],
+    templateUrl: './dashboard-ejecutivo.component.html',
+    styleUrl: './dashboard-ejecutivo.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDestroy {
   // ─── Sistema de tabs (v3.18.0) ───────────────────

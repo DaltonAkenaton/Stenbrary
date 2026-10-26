@@ -20,18 +20,17 @@ import { ConfigService } from '../../../core/services/config.service';
 import { SuccessAnimationComponent } from '../../../shared/components/success-animation/success-animation.component';
 
 @Component({
-  selector: 'app-config-experiencia',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    MatTooltipModule,
-    SuccessAnimationComponent,
-  ],
-  templateUrl: './experiencia.component.html',
-  styleUrls: ['../configuracion.styles.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-config-experiencia',
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        MatTooltipModule,
+        SuccessAnimationComponent,
+    ],
+    templateUrl: './experiencia.component.html',
+    styleUrls: ['../configuracion.styles.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ExperienciaCategoriaComponent {
 

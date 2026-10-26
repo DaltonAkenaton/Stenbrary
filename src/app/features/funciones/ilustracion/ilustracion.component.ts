@@ -21,12 +21,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { DemoVisual } from '../../../core/data/funciones.data';
 
 @Component({
-  selector: 'app-funcion-ilustracion',
-  standalone: true,
-  imports: [MatIconModule],
-  templateUrl: './ilustracion.component.html',
-  styleUrl: './ilustracion.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-funcion-ilustracion',
+    imports: [MatIconModule],
+    templateUrl: './ilustracion.component.html',
+    styleUrl: './ilustracion.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FuncionIlustracionComponent {
   /** Motivo a dibujar. Sin valor, cae al icono de la función. */

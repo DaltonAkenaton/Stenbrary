@@ -65,20 +65,19 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
 }
 
 @Component({
-  selector: 'app-presencia',
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatIconModule,
-    MatButtonModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule,
-    MatDialogModule,
-    MatRippleModule,
-  ],
-  template: `
+    selector: 'app-presencia',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatIconModule,
+        MatButtonModule,
+        MatProgressSpinnerModule,
+        MatTooltipModule,
+        MatDialogModule,
+        MatRippleModule,
+    ],
+    template: `
     <div class="presencia-container">
 
       <!-- HEADER -->
@@ -313,7 +312,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       <span class="hint-short">Toca para registrar salida</span>
     </div>
   `,
-  styles: [`
+    styles: [`
     .presencia-container {
       display: flex; flex-direction: column; gap: 20px;
       max-width: 1000px; margin: 0 auto; padding: 16px 16px 56px;
@@ -686,7 +685,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
         flex-wrap: wrap;
       }
     }
-  `],
+  `]
 })
 export class PresenciaComponent implements OnInit, OnDestroy {
   // Signals: el template los lee como funciones (registros(), cargando(), …).

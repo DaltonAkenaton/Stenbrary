@@ -58,24 +58,23 @@ type VistaMode = 'lista' | 'cards';
 type OrdenMode = 'dias-desc' | 'dias-asc' | 'nombre' | 'carrera';
 
 @Component({
-  selector: 'app-inactivos',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterLink,
-    MatIconModule,
-    MatButtonModule,
-    MatTooltipModule,
-    MatChipsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatDialogModule,
-  ],
-  templateUrl: './inactivos.component.html',
-  styleUrl: './inactivos.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-inactivos',
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterLink,
+        MatIconModule,
+        MatButtonModule,
+        MatTooltipModule,
+        MatChipsModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatInputModule,
+        MatDialogModule,
+    ],
+    templateUrl: './inactivos.component.html',
+    styleUrl: './inactivos.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InactivosComponent implements OnInit {
 

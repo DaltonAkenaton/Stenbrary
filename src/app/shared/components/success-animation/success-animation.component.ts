@@ -106,11 +106,10 @@ const TEMAS: Tema[] = [
 const PARTICLE_COUNT = 14;
 
 @Component({
-  selector: 'app-success-animation',
-  standalone: true,
-  imports: [CommonModule, LottieComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-success-animation',
+    imports: [CommonModule, LottieComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div class="success-anim" [class]="'theme-' + tema().id">
 
       <!-- Aura del color del tema (radial gradient) -->
@@ -152,7 +151,7 @@ const PARTICLE_COUNT = 14;
       }
     </div>
   `,
-  styleUrl: './success-animation.component.scss',
+    styleUrl: './success-animation.component.scss'
 })
 export class SuccessAnimationComponent implements OnInit {
   /** Forzar un tema específico para testing. */
