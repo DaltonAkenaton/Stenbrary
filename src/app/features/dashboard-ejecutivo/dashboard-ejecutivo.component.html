@@ -1216,7 +1216,7 @@
                 <button class="btn-aplicar small" (click)="compararAhora()">Aplicar</button>
               </div>
             }
-            @if (comparativa) {
+            @if (comparativa && comparativaUI) {
               <div class="slot-rango-real">{{ comparativaUI.labelA }}</div>
               @if (comparativa.a.totalRegistros === 0) {
                 <div class="slot-vacio">
@@ -1254,7 +1254,7 @@
           </div>
 
           <!-- DIFERENCIA -->
-          @if (comparativa) {
+          @if (comparativa && comparativaUI) {
             <div class="comparador-diferencia" [class]="'dif-' + comparativaUI.colorDif">
               <mat-icon>{{ comparativaUI.iconoDif }}</mat-icon>
               <div class="dif-numero">
@@ -1298,7 +1298,7 @@
                 <button class="btn-aplicar small" (click)="compararAhora()">Aplicar</button>
               </div>
             }
-            @if (comparativa) {
+            @if (comparativa && comparativaUI) {
               <div class="slot-rango-real">{{ comparativaUI.labelB }}</div>
               @if (comparativa.b.totalRegistros === 0) {
                 <div class="slot-vacio">
