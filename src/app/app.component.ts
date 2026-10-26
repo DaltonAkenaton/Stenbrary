@@ -38,6 +38,7 @@ import { RestablecerService } from './core/services/restablecer.service';
 import { registrarDiagnostico } from './core/utils/invariante.utils';
 import { salidaAlCierre } from './core/utils/horarios.utils';
 import { PwaUpdateService } from './core/services/pwa-update.service';
+import { PinService } from './core/services/pin.service';
 import { QuioscoAutoService } from './core/services/quiosco-auto.service';
 import { RelojService } from './core/services/reloj.service';
 import { AforoService } from './core/services/aforo.service';
@@ -89,6 +90,7 @@ export class AppComponent implements OnInit, OnDestroy {
   authService = inject(AuthService);
   permisos = inject(PermissionsService);
   private pwaUpdateService = inject(PwaUpdateService);
+  private pinService = inject(PinService);
 
 
   // ─── ESTADO DEL SIDEBAR ──────────────────────────────────
@@ -237,6 +239,10 @@ export class AppComponent implements OnInit, OnDestroy {
     // `invariante.utils`. Se hace aquí, en el arranque, porque esos helpers
     // se llaman desde código sin contexto de inyección de Angular.
     registrarDiagnostico(this.diagnosticoService);
+
+    // v3.62.0: un PIN guardado en texto plano (instalación de antes) pasa a
+    // guardarse con hash. Una sola vez; si falla, la verificación lo reintenta.
+    this.pinService.migrar().catch(e => console.warn('No se pudo migrar el PIN a hash:', e?.name ?? e));
 
     // Revisión periódica de versiones nuevas (el aviso lo pinta el listener
     // de `versionUpdates` de más abajo). Antes no se arrancaba nunca.

@@ -69,7 +69,7 @@ export class QuioscoCategoriaComponent {
 
   async cambiarPin(): Promise<void> {
     if (await this.abrirPin({
-      titulo: this.configService.quioscoPin ? 'Cambiar el PIN' : 'Poner PIN',
+      titulo: this.configService.hayPin ? 'Cambiar el PIN' : 'Poner PIN',
       mensaje: 'Primero el PIN actual. Después escribirás el nuevo dos veces y verás su código de recuperación.',
       icono: 'key',
       cambiarPin: true,
@@ -82,7 +82,7 @@ export class QuioscoCategoriaComponent {
   async generarCodigo(): Promise<void> {
     if (await this.abrirPin({
       titulo: 'Código de recuperación',
-      mensaje: this.configService.quioscoCodigoRecuperacion
+      mensaje: this.configService.hayCodigoRecuperacion
         ? 'Se genera uno nuevo y el anterior deja de servir.'
         : 'Con él podrás poner un PIN nuevo si olvidas el actual.',
       icono: 'vpn_key',

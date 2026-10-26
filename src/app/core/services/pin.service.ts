@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  pin.service.ts                                      ║
-// ║  Stenbrary v3.57.0 — PIN del coordinador             ║
+// ║  Stenbrary v3.62.0 — PIN del coordinador             ║
 // ║                                                      ║
 // ║  El mismo PIN del quiosco autoriza ahora los borrados ║
 // ║  (decisión del usuario, 2026-10-17). Por eso el       ║
@@ -19,8 +19,9 @@ import { BitacoraService } from './bitacora.service';
 import {
   IntentosPin, PIN_BLOQUEO_MS, PIN_MAX_FALLOS,
   codigoRecuperacionCoincide, esPinValido, generarCodigoRecuperacion,
-  leerIntentosPin, msBloqueoPin, normalizarIntentosPin, registrarFalloPin,
+  leerIntentosPin, msBloqueoPin, normalizarCodigoRecuperacion, normalizarIntentosPin, registrarFalloPin,
 } from '../utils/quiosco.utils';
+import { esHashPin, hashSecreto, secretoCoincide } from '../utils/pin-hash.utils';
 
 const CLAVE_INTENTOS = 'stenbrary-pin-intentos';
 
@@ -38,13 +39,51 @@ export class PinService {
 
   private intentos: IntentosPin = this.leer();
 
+  /**
+   * v3.62.0: guardar un PIN (hash) tarda unos cientos de milisegundos. Los
+   * cambios y las verificaciones se encadenan aquí para que una
+   * verificación nunca compare contra un PIN a medio guardar.
+   */
+  private cola: Promise<unknown> = Promise.resolve();
+
+  private enCola<T>(tarea: () => Promise<T>): Promise<T> {
+    const r = this.cola.then(tarea, tarea);
+    this.cola = r.catch(() => undefined);
+    return r;
+  }
+
   /** Sin PIN configurado cualquiera pasa: los diálogos lo avisan. */
   get hayPin(): boolean {
-    return !!this.config.quioscoPin;
+    return this.config.hayPin;
   }
 
   get hayCodigo(): boolean {
-    return !!this.config.quioscoCodigoRecuperacion;
+    return this.config.hayCodigoRecuperacion;
+  }
+
+  /**
+   * Instalaciones de antes de v3.62.0 guardaban el PIN y el código en texto
+   * plano. Se convierten en hash una sola vez, al arrancar (AppComponent);
+   * mientras tanto la verificación acepta el valor viejo y lo convierte.
+   */
+  migrar(): Promise<void> {
+    return this.enCola(() => this.migrarSinCola());
+  }
+
+  /** Ya dentro de la cola (la usa también `verificar`). */
+  private async migrarSinCola(): Promise<void> {
+    const { pin, codigo } = this.config.pinGuardado;
+    const pinViejo = !!pin && !esHashPin(pin);
+    const codigoViejo = !!codigo && !esHashPin(codigo);
+    if (!pinViejo && !codigoViejo) return;
+    // Los dos hashes primero y después se guardan juntos: nunca queda uno
+    // migrado y el otro en texto plano.
+    const [hashPin, hashCodigo] = await Promise.all([
+      pinViejo ? hashSecreto(pin) : null,
+      codigoViejo ? hashSecreto(normalizarCodigoRecuperacion(codigo)) : null,
+    ]);
+    if (hashCodigo) this.config.guardarCodigoHash(hashCodigo);
+    if (hashPin) this.config.guardarPinHash(hashPin, pin.length, pin === '0000');
   }
 
   /**
@@ -61,38 +100,62 @@ export class PinService {
     this.restantes.set(PIN_MAX_FALLOS - this.intentos.fallos);
   }
 
-  verificarPin(pin: string): ResultadoPin {
-    return this.verificar(this.config.validarQuioscoPin(pin), 'PIN');
+  /** Sin PIN configurado, cualquiera pasa (los diálogos lo avisan). */
+  verificarPin(pin: string): Promise<ResultadoPin> {
+    return this.enCola(async () => {
+      if (!this.hayPin) return 'ok';
+      return this.verificar(() => secretoCoincide(pin, this.config.pinGuardado.pin), 'PIN');
+    });
   }
 
   /** El código cuenta contra los mismos intentos que el PIN. */
-  verificarCodigo(codigo: string): ResultadoPin {
-    const r = this.verificar(codigoRecuperacionCoincide(codigo, this.config.quioscoCodigoRecuperacion), 'Código de recuperación');
-    if (r === 'ok') this.bitacora.registrar('pin-recuperado', 'Se pidió un PIN nuevo');
-    return r;
+  verificarCodigo(codigo: string): Promise<ResultadoPin> {
+    return this.enCola(async () => {
+      const guardado = this.config.pinGuardado.codigo;
+      const normalizado = normalizarCodigoRecuperacion(codigo);
+      // El código viejo en texto plano conserva su comparación de siempre.
+      const coincide = () => esHashPin(guardado)
+        ? secretoCoincide(normalizado, guardado)
+        : Promise.resolve(codigoRecuperacionCoincide(codigo, guardado));
+      const r = await this.verificar(coincide, 'Código de recuperación');
+      if (r === 'ok') this.bitacora.registrar('pin-recuperado', 'Se pidió un PIN nuevo');
+      return r;
+    });
   }
 
-  /** Guarda un PIN nuevo y devuelve su código de recuperación (también nuevo). */
-  establecerPin(pin: string): string {
-    if (!esPinValido(pin)) throw new Error('PIN inválido');
-    this.config.setQuioscoPin(pin);
-    const codigo = generarCodigoRecuperacion();
-    this.config.setQuioscoCodigoRecuperacion(codigo);
-    this.bitacora.registrar('pin-cambiado', `${pin.length} dígitos; código de recuperación nuevo`);
-    return codigo;
+  /**
+   * Guarda un PIN nuevo (su hash) y devuelve su código de recuperación,
+   * también nuevo. `codigo` lo pasa el asistente inicial, que ya lo mostró.
+   */
+  establecerPin(pin: string, codigo = generarCodigoRecuperacion()): Promise<string> {
+    if (!esPinValido(pin)) return Promise.reject(new Error('PIN inválido'));
+    return this.enCola(async () => {
+      const [hashPin, hashCodigo] = await Promise.all([
+        hashSecreto(pin), hashSecreto(normalizarCodigoRecuperacion(codigo)),
+      ]);
+      this.config.guardarPinHash(hashPin, pin.length, false);
+      this.config.guardarCodigoHash(hashCodigo);
+      this.bitacora.registrar('pin-cambiado', `${pin.length} dígitos; código de recuperación nuevo`);
+      return codigo;
+    });
   }
 
   /** Código nuevo sin tocar el PIN: el anterior deja de servir. */
-  generarCodigoNuevo(): string {
-    const codigo = generarCodigoRecuperacion();
-    this.config.setQuioscoCodigoRecuperacion(codigo);
-    this.bitacora.registrar('codigo-generado', 'El código anterior deja de servir');
-    return codigo;
+  generarCodigoNuevo(): Promise<string> {
+    return this.enCola(async () => {
+      const codigo = generarCodigoRecuperacion();
+      this.config.guardarCodigoHash(await hashSecreto(normalizarCodigoRecuperacion(codigo)));
+      this.bitacora.registrar('codigo-generado', 'El código anterior deja de servir');
+      return codigo;
+    });
   }
 
-  private verificar(correcto: boolean, que: string): ResultadoPin {
+  private async verificar(coincide: () => Promise<boolean>, que: string): Promise<ResultadoPin> {
     this.actualizar();
     if (this.msBloqueo() > 0) return 'bloqueado';
+    const correcto = await coincide();
+    // Un PIN viejo en texto plano que acaba de coincidir se guarda ya con hash.
+    if (correcto) await this.migrarSinCola();
     if (correcto) {
       this.intentos = { fallos: 0, bloqueadoHasta: 0 };
       this.guardar();

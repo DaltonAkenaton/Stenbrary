@@ -33,6 +33,7 @@ import { SoundService } from '../../core/services/sound.service';
 import { RestablecerService } from '../../core/services/restablecer.service';
 import { DatosPruebaService } from '../../core/services/datos-prueba.service';
 import { ToastService } from '../../core/services/toast.service';
+import { PinService } from '../../core/services/pin.service';
 import { DIAS_SEMANA } from '../../core/utils/horarios.utils';
 import { PIN_MAX_DIGITOS, esPinValido, generarCodigoRecuperacion } from '../../core/utils/quiosco.utils';
 import {
@@ -77,6 +78,7 @@ export class BienvenidaComponent implements OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly restablecer = inject(RestablecerService);
   protected readonly config = inject(ConfigService);
+  private readonly pinService = inject(PinService);
   private readonly sound = inject(SoundService);
   private readonly dialog = inject(MatDialog);
   private readonly datosPrueba = inject(DatosPruebaService);
@@ -128,7 +130,8 @@ export class BienvenidaComponent implements OnDestroy {
   protected volumenPct = Math.round(this.config.volumenBeep * 100);
 
   protected modoQuiosco = false;
-  protected quioscoPin = this.config.quioscoPin;
+  // v3.62.0: el PIN guardado es un hash; solo se sugiere el de fábrica.
+  protected quioscoPin = this.config.quioscoPinDeFabrica ? '0000' : '';
   /** Se muestra junto al PIN para anotarlos juntos; se guarda con él (v3.57.0). */
   protected readonly codigoRecuperacion = generarCodigoRecuperacion();
   protected readonly PIN_MAX = PIN_MAX_DIGITOS;
@@ -395,8 +398,10 @@ export class BienvenidaComponent implements OnDestroy {
         // v3.57.0: 4–6 dígitos como en todo el sistema. Aquí se aceptaban 8 y
         // el guardado los cortaba a 6: ese PIN ya no abría el quiosco.
         if (esPinValido(this.quioscoPin)) {
-          this.config.setQuioscoPin(this.quioscoPin);
-          this.config.setQuioscoCodigoRecuperacion(this.codigoRecuperacion);
+          // v3.62.0: se guarda su hash (PinService encola el guardado: una
+          // verificación inmediata espera a que termine).
+          this.pinService.establecerPin(this.quioscoPin, this.codigoRecuperacion)
+            .catch(() => this.toast.error('No se pudo guardar el PIN: ponlo en Configuración → Quiosco.'));
         }
         // El modo quiosco NO se aplica aquí, solo se recuerda la elección.
         //

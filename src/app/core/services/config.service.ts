@@ -18,7 +18,10 @@
 
 import { Injectable, signal } from '@angular/core';
 import { CalendarioEscolar, calendarioInicial } from '../utils/calendario.utils';
-import { PIN_MAX_DIGITOS } from '../utils/quiosco.utils';
+import { esHashPin } from '../utils/pin-hash.utils';
+
+/** PBKDF2 de "0000" (600 000 iteraciones, sal aleatoria fija para el valor de fábrica). */
+const PIN_FABRICA_HASH = 'pbkdf2-sha256$600000$VPmxMf9tIzImMOBepPDn8g==$SgjdGIcMpwNrPLU9ejdduEAITtBVPPcUObhWAXsLlaQ=';
 import { CatalogoEscolar, catalogoInicial, copiarCatalogo, normalizarCatalogo } from '../utils/catalogos.utils';
 
 /**
@@ -89,9 +92,18 @@ interface AppConfig {
 
   // ── Modo quiosco (v3.9.0) ──
   modoQuiosco: boolean;
-  /** PIN de 4–6 dígitos: sale del quiosco y autoriza borrados (v3.57.0). Vacío = sin PIN (peligroso). */
+  /**
+   * PIN de 4–6 dígitos: sale del quiosco y autoriza borrados (v3.57.0).
+   * Vacío = sin PIN (peligroso). Desde v3.62.0 se guarda su hash
+   * (pin-hash.utils); un valor en texto plano es de una instalación vieja
+   * y `PinService.migrar` lo convierte al arrancar.
+   */
   quioscoPin: string;
-  /** Código para reponer el PIN olvidado (v3.57.0). Vacío = no se ha generado. */
+  /** Dígitos del PIN, para mostrarlo sin guardarlo ("PIN de 4 dígitos", v3.62.0). */
+  quioscoPinLargo: number;
+  /** Sigue el PIN de fábrica (0000): Configuración pide cambiarlo (v3.62.0). */
+  quioscoPinDeFabrica: boolean;
+  /** Hash del código para reponer el PIN olvidado (v3.57.0). Vacío = no se ha generado. */
   quioscoCodigoRecuperacion: string;
   /** Minutos sin uso para volver solo al modo quiosco. 0 = apagado (v3.49.0). */
   quioscoAutoMinutos: number;
@@ -194,7 +206,10 @@ const DEFAULT_CONFIG: AppConfig = {
   aforoMaximo: 0,
   aforoModo: 'permitir',
   modoQuiosco: false,
-  quioscoPin: '0000',
+  // Hash de "0000" (v3.62.0): ni el PIN de fábrica se guarda en texto plano.
+  quioscoPin: PIN_FABRICA_HASH,
+  quioscoPinLargo: 4,
+  quioscoPinDeFabrica: true,
   quioscoCodigoRecuperacion: '',
   quioscoAutoMinutos: 0,
   horarioActivo: false,
@@ -388,29 +403,46 @@ export class ConfigService {
     this.guardar();
   }
 
-  get quioscoPin(): string {
-    return this.config.quioscoPin;
+  // ── PIN (v3.62.0: con hash) ──
+  // Lo guardado es el hash del PIN y del código; solo PinService lo compara
+  // y lo cambia. Las pantallas preguntan si hay PIN, cuántos dígitos tiene
+  // y si sigue el de fábrica.
+
+  get hayPin(): boolean {
+    return !!this.config.quioscoPin;
   }
 
-  setQuioscoPin(pin: string): void {
-    const limpio = (pin || '').replace(/\D/g, '').slice(0, PIN_MAX_DIGITOS);
-    this.config.quioscoPin = limpio;
+  get hayCodigoRecuperacion(): boolean {
+    return !!this.config.quioscoCodigoRecuperacion;
+  }
+
+  get quioscoPinLargo(): number {
+    return this.config.quioscoPinLargo ?? 0;
+  }
+
+  get quioscoPinDeFabrica(): boolean {
+    return !!this.config.quioscoPinDeFabrica;
+  }
+
+  /** Para PinService: el valor guardado (hash, o texto plano de una instalación vieja). */
+  get pinGuardado(): { pin: string; codigo: string } {
+    return { pin: this.config.quioscoPin ?? '', codigo: this.config.quioscoCodigoRecuperacion ?? '' };
+  }
+
+  /** Para PinService: solo acepta hashes, nunca un PIN en texto plano. */
+  guardarPinHash(hash: string, largo: number, deFabrica = false): void {
+    if (!esHashPin(hash)) throw new Error('El PIN solo se guarda con hash');
+    this.config.quioscoPin = hash;
+    this.config.quioscoPinLargo = largo;
+    this.config.quioscoPinDeFabrica = deFabrica;
     this.guardar();
   }
 
-  get quioscoCodigoRecuperacion(): string {
-    return this.config.quioscoCodigoRecuperacion ?? '';
-  }
-
-  setQuioscoCodigoRecuperacion(codigo: string): void {
-    this.config.quioscoCodigoRecuperacion = codigo;
+  /** Para PinService: hash del código de recuperación. */
+  guardarCodigoHash(hash: string): void {
+    if (!esHashPin(hash)) throw new Error('El código solo se guarda con hash');
+    this.config.quioscoCodigoRecuperacion = hash;
     this.guardar();
-  }
-
-  /** Verifica un PIN contra el almacenado. Si no hay PIN configurado, acepta cualquiera. */
-  validarQuioscoPin(intento: string): boolean {
-    if (!this.config.quioscoPin) return true;
-    return intento === this.config.quioscoPin;
   }
 
   /** Minutos sin uso para reactivar el quiosco solo. 0 = apagado. */
@@ -794,7 +826,13 @@ export class ConfigService {
         );
         // Instalaciones previas a v3.57.0: el catálogo que estaba fijo en el código.
         const catalogoEscolar = normalizarCatalogo(parsed.catalogoEscolar);
-        return { ...DEFAULT_CONFIG, ...parsed, horarios, calendarioEscolar, catalogoEscolar };
+        // Instalaciones previas a v3.62.0: PIN en texto plano y sin largo ni
+        // marca de fábrica. Se deducen aquí; PinService.migrar() lo convierte
+        // en hash al arrancar.
+        const pinViejo = typeof parsed.quioscoPin === 'string' && !esHashPin(parsed.quioscoPin)
+          ? { quioscoPinLargo: parsed.quioscoPin.length, quioscoPinDeFabrica: parsed.quioscoPin === '0000' }
+          : {};
+        return { ...DEFAULT_CONFIG, ...parsed, ...pinViejo, horarios, calendarioEscolar, catalogoEscolar };
       }
     } catch { /* silenciar */ }
     return { ...DEFAULT_CONFIG, horarios: { ...DEFAULT_HORARIOS }, calendarioEscolar: copiarCalendario(calendarioInicial()), catalogoEscolar: catalogoInicial() };

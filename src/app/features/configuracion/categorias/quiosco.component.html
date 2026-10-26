@@ -73,18 +73,18 @@
       registros por fechas, reemplazar con un respaldo, restablecer y las herramientas de prueba.
     </p>
     <div class="sound-toggle">
-      <span class="sound-status">{{ configService.quioscoPin ? 'PIN de ' + configService.quioscoPin.length + ' dígitos' : 'Sin PIN' }}</span>
+      <span class="sound-status">{{ configService.hayPin ? 'PIN de ' + configService.quioscoPinLargo + ' dígitos' : 'Sin PIN' }}</span>
       <button class="btn-inline btn-cambiar-pin" (click)="cambiarPin()">
         <mat-icon>key</mat-icon>
-        {{ configService.quioscoPin ? 'Cambiar PIN' : 'Poner PIN' }}
+        {{ configService.hayPin ? 'Cambiar PIN' : 'Poner PIN' }}
       </button>
     </div>
-    @if (!configService.quioscoPin) {
+    @if (!configService.hayPin) {
       <p class="section-hint" style="color:#F5A623;">
         <mat-icon>warning</mat-icon>
         Sin PIN configurado — cualquiera podrá salir del modo quiosco.
       </p>
-    } @else if (configService.quioscoPin === '0000') {
+    } @else if (configService.quioscoPinDeFabrica) {
       <p class="section-hint" style="color:#F5A623;">
         <mat-icon>warning</mat-icon>
         Es el PIN de fábrica: cámbialo antes de dejar el equipo a la vista de los alumnos.
@@ -103,14 +103,14 @@
     <!-- Código de recuperación (v3.57.0) -->
     <div class="sound-toggle" style="margin-top: 14px;">
       <span class="sound-status">
-        {{ configService.quioscoCodigoRecuperacion ? 'Código de recuperación: generado' : 'Sin código de recuperación' }}
+        {{ configService.hayCodigoRecuperacion ? 'Código de recuperación: generado' : 'Sin código de recuperación' }}
       </span>
       <button class="btn-inline btn-generar-codigo" (click)="generarCodigo()">
         <mat-icon>vpn_key</mat-icon>
-        {{ configService.quioscoCodigoRecuperacion ? 'Generar uno nuevo' : 'Generar código' }}
+        {{ configService.hayCodigoRecuperacion ? 'Generar uno nuevo' : 'Generar código' }}
       </button>
     </div>
-    @if (!configService.quioscoCodigoRecuperacion) {
+    @if (!configService.hayCodigoRecuperacion) {
       <p class="section-hint" style="color:#F5A623;">
         <mat-icon>warning</mat-icon>
         Si olvidas el PIN no habrá forma de salir del modo quiosco ni de autorizar borrados.

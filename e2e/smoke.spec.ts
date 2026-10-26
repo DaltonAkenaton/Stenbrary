@@ -316,6 +316,9 @@ test.describe('Quiosco: PIN con límite, respaldo sin salir y bitácora (v3.52.0
     for (let i = 0; i < 4; i++) {
       await input.fill('1111');
       await input.press('Enter');
+      // v3.62.0: comprobar el hash tarda; el diálogo ignora un reenvío
+      // mientras tanto. Tras un fallo el campo se vacía.
+      await expect(input).toHaveValue('');
     }
     await expect(page.locator('.pin-error')).toContainText('Te queda 1 intento');
     await input.fill('1111');
@@ -391,9 +394,13 @@ test.describe('Quiosco: PIN con límite, respaldo sin salir y bitácora (v3.52.0
     await page.getByRole('button', { name: /Salir del modo quiosco/ }).click();
     await expect(page.locator('.kiosk-mode')).toHaveCount(0);
 
-    const guardado = await page.evaluate(() => JSON.parse(localStorage.getItem('stenbrary-config')!));
-    expect(guardado.quioscoPin).toBe('1357');
-    expect(guardado.quioscoCodigoRecuperacion).toBe(nuevo);
+    // v3.62.0: se guardan sus hashes, nunca el PIN ni el código.
+    const guardado = await page.evaluate(() => localStorage.getItem('stenbrary-config')!);
+    expect(JSON.parse(guardado).quioscoPin).toMatch(/^pbkdf2-sha256\$600000\$/);
+    expect(JSON.parse(guardado).quioscoCodigoRecuperacion).toMatch(/^pbkdf2-sha256\$/);
+    expect(guardado).not.toContain('1357');
+    expect(guardado).not.toContain(nuevo);
+    expect(guardado).not.toContain('ABCD');
     await page.goto('/configuracion#bitacora');
     await expect(page.locator('.bitacora-lista')).toContainText('Usó el código de recuperación');
   });
@@ -435,8 +442,31 @@ test.describe('PIN del coordinador para lo que no se deshace (v3.57.0)', () => {
     await page.getByRole('button', { name: 'Ya lo anoté' }).click();
     await expect(page.getByText('PIN de 6 dígitos')).toBeVisible();
     await expect(page.getByText('Código de recuperación: generado')).toBeVisible();
-    const guardado = await page.evaluate(() => JSON.parse(localStorage.getItem('stenbrary-config')!));
-    expect(guardado.quioscoPin).toBe('482916');
+    const guardado = await page.evaluate(() => localStorage.getItem('stenbrary-config')!);
+    expect(JSON.parse(guardado).quioscoPin).toMatch(/^pbkdf2-sha256\$/);
+    expect(guardado).not.toContain('482916');
+    // El PIN nuevo es el que autoriza ahora.
+    await page.getByRole('button', { name: /Cambiar PIN/ }).click();
+    await confirmarConPin(page, '482916');
+    await expect(page.locator('.nuevo-pin-1')).toBeVisible();
+  });
+
+  test('una instalación de antes con el PIN en texto plano lo migra a hash y el PIN sigue sirviendo (v3.62.0)', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem('e2e-pin-viejo')) {
+        localStorage.setItem('stenbrary-config', JSON.stringify({ quioscoPin: '2580', quioscoCodigoRecuperacion: 'WXYZ-2345-6789' }));
+        sessionStorage.setItem('e2e-pin-viejo', '1');
+      }
+    });
+    await page.goto('/configuracion#quiosco');
+    await expect(page.getByText('PIN de 4 dígitos')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('stenbrary-config')!))
+      .not.toContain('2580');
+    const guardado = await page.evaluate(() => localStorage.getItem('stenbrary-config')!);
+    expect(guardado).not.toContain('WXYZ');
+    await page.getByRole('button', { name: /Cambiar PIN/ }).click();
+    await confirmarConPin(page, '2580');
+    await expect(page.locator('.nuevo-pin-1')).toBeVisible();
   });
 });
 

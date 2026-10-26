@@ -112,7 +112,7 @@ type Paso = 'pin' | 'codigo' | 'nuevo';
             <button class="btn-cancel" (click)="ref.close(false)">Cancelar</button>
             <button class="btn-confirm pin-confirmar" [class.btn-peligro]="data.peligro"
                     (click)="confirmarPin()"
-                    [disabled]="pinService.hayPin && (!pin || pinService.msBloqueo() > 0)">
+                    [disabled]="verificando() || (pinService.hayPin && (!pin || pinService.msBloqueo() > 0))">
               {{ data.textoConfirmar || 'Continuar' }}
             </button>
           </div>
@@ -146,7 +146,7 @@ type Paso = 'pin' | 'codigo' | 'nuevo';
           <div class="pin-actions">
             <button class="btn-cancel" (click)="paso.set('pin'); error.set(false)">Volver</button>
             <button class="btn-confirm" (click)="confirmarCodigo()"
-                    [disabled]="!pinService.hayCodigo || !codigo || pinService.msBloqueo() > 0">Continuar</button>
+                    [disabled]="!pinService.hayCodigo || !codigo || pinService.msBloqueo() > 0 || verificando()">Continuar</button>
           </div>
         }
 
@@ -203,10 +203,15 @@ export class PinCoordinadorDialogComponent implements OnInit, OnDestroy {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  confirmarPin(): void {
+  /** v3.62.0: comprobar el hash tarda unos cientos de ms; no se envía dos veces. */
+  readonly verificando = signal(false);
+
+  async confirmarPin(): Promise<void> {
+    if (this.verificando()) return;
     if (this.pinService.hayPin) {
       if (!this.pin) return;
-      const r = this.pinService.verificarPin(this.pin);
+      this.verificando.set(true);
+      const r = await this.pinService.verificarPin(this.pin).finally(() => this.verificando.set(false));
       if (r !== 'ok') {
         this.pin = '';
         this.error.set(r === 'fallo');
@@ -225,9 +230,10 @@ export class PinCoordinadorDialogComponent implements OnInit, OnDestroy {
     this.paso.set('codigo');
   }
 
-  confirmarCodigo(): void {
-    if (!this.codigo) return;
-    const r = this.pinService.verificarCodigo(this.codigo);
+  async confirmarCodigo(): Promise<void> {
+    if (!this.codigo || this.verificando()) return;
+    this.verificando.set(true);
+    const r = await this.pinService.verificarCodigo(this.codigo).finally(() => this.verificando.set(false));
     if (r !== 'ok') {
       this.codigo = '';
       this.error.set(r === 'fallo');

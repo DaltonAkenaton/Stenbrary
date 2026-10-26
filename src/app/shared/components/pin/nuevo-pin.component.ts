@@ -34,7 +34,7 @@ import { PIN_MAX_DIGITOS, PIN_MIN_DIGITOS, esPinValido } from '../../../core/uti
       }
       <div class="pin-actions">
         <button class="btn-cancel" (click)="cancelar.emit()">Cancelar</button>
-        <button class="btn-confirm" (click)="guardar()" [disabled]="!pin1 || !pin2">Guardar PIN</button>
+        <button class="btn-confirm" (click)="guardar()" [disabled]="!pin1 || !pin2 || guardando()">Guardar PIN</button>
       </div>
     } @else {
       <p class="pin-desc">
@@ -81,11 +81,15 @@ export class NuevoPinComponent implements OnInit {
   readonly error = signal('');
   readonly codigo = signal('');
 
-  ngOnInit(): void {
-    if (this.soloCodigo) this.codigo.set(this.pinService.generarCodigoNuevo());
+  /** Guardando el hash (v3.62.0): unos cientos de ms. */
+  readonly guardando = signal(false);
+
+  async ngOnInit(): Promise<void> {
+    if (this.soloCodigo) this.codigo.set(await this.pinService.generarCodigoNuevo());
   }
 
-  guardar(): void {
+  async guardar(): Promise<void> {
+    if (this.guardando()) return;
     if (!esPinValido(this.pin1)) {
       this.error.set(`Deben ser de ${PIN_MIN_DIGITOS} a ${PIN_MAX_DIGITOS} dígitos, solo números.`);
       return;
@@ -95,6 +99,13 @@ export class NuevoPinComponent implements OnInit {
       this.pin2 = '';
       return;
     }
-    this.codigo.set(this.pinService.establecerPin(this.pin1));
+    this.guardando.set(true);
+    try {
+      this.codigo.set(await this.pinService.establecerPin(this.pin1));
+    } catch {
+      this.error.set('No se pudo guardar el PIN. Intenta de nuevo.');
+    } finally {
+      this.guardando.set(false);
+    }
   }
 }
