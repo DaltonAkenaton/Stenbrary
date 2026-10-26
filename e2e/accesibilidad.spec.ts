@@ -18,9 +18,19 @@ const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 async function revisar(page: Page, donde: string): Promise<void> {
   // Las animaciones de entrada (opacidad 0 → 1) falsean el contraste si axe
   // mide a la mitad. Se esperan las finitas; las infinitas (cargas) no.
-  await page.waitForFunction(() => document.getAnimations()
-    .filter(a => a.effect?.getComputedTiming().iterations !== Infinity)
-    .every(a => a.playState !== 'running'), undefined, { timeout: 5_000 }).catch(() => undefined);
+  // Hacen falta 500 ms SEGUIDOS sin ninguna: comprobarlo una sola vez fallaba
+  // en CI (Linux, más lento) si se miraba antes de que la animación empezara
+  // (lista vacía → axe medía el h1 de Registro a media opacidad).
+  await page.evaluate(async () => {
+    const limite = performance.now() + 5_000;
+    let quietas = 0;
+    while (performance.now() < limite && quietas < 5) {
+      const corriendo = document.getAnimations().some(a =>
+        a.effect?.getComputedTiming().iterations !== Infinity && a.playState === 'running');
+      quietas = corriendo ? 0 : quietas + 1;
+      await new Promise(r => setTimeout(r, 100));
+    }
+  });
   const r = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   const resumen = r.violations.map(v =>
     `${donde} · ${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map(n => n.target.join(' ')).join(' | ')}`);
