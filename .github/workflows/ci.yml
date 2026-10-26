@@ -2,7 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # TEMPORAL (2026-10-26): `hardening/stenbrary-completo` tiene el historial
+    # reescrito y no comparte ancestro con `main`, así que no puede abrir un PR.
+    # Este trigger valida la rama en Linux antes de publicarla. Al publicar el
+    # historial (main = esta rama), dejar solo `[main]`.
+    branches: [main, hardening/stenbrary-completo]
   pull_request:
     branches: [main]
 
