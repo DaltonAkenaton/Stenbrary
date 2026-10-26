@@ -127,12 +127,15 @@ Commit y push: Cloudflare Pages reconstruye solo.
 
 ## 7. Keep-alive del proyecto de PROD
 
-`.github/workflows/supabase-keepalive.yml` hace un ping diario **solo al
-proyecto de dev**. El free tier pausa un proyecto tras ~7 días sin peticiones,
-y un proyecto de producción pausado es una caída silenciosa.
+`.github/workflows/supabase-keepalive.yml` hace un ping **solo al proyecto de
+dev** y, desde v3.62.0, **solo a mano** (Actions → "Supabase Keep-Alive" →
+Run): con la Fase 2 en pausa no había razón para mantener despierto un
+proyecto sin datos reales. El free tier pausa un proyecto tras ~7 días sin
+peticiones, y un proyecto de producción pausado es una caída silenciosa.
 
-Duplicar el paso `Ping Supabase REST` con la URL y la key de PROD, o
-parametrizarlo con una matriz. Mientras el coordinador use la app a diario el
+Al desplegar producción: volver a ponerle `schedule` (diario) y duplicar el
+paso `Ping Supabase REST` con la URL y la key de PROD, o parametrizarlo con
+una matriz. Mientras el coordinador use la app a diario el
 tráfico real basta, pero durante vacaciones no hay tráfico — que es justo
 cuando no quieres descubrir que el proyecto se pausó.
 
