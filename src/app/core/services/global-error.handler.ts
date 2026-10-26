@@ -15,6 +15,7 @@ import { ErrorHandler, Injectable, inject, NgZone } from '@angular/core';
 import { ToastService } from './toast.service';
 import { ErrorReporterService } from './error-reporter.service';
 import { DiagnosticoService } from './diagnostico.service';
+import { leerError } from '../utils/errores.utils';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
@@ -37,7 +38,7 @@ export class GlobalErrorHandler implements ErrorHandler {
     return location.pathname.split('/').filter(Boolean)[0] ?? 'inicio';
   }
 
-  handleError(error: any): void {
+  handleError(error: unknown): void {
     // Extraer mensaje legible
     const mensaje = this.extraerMensaje(error);
 
@@ -51,8 +52,8 @@ export class GlobalErrorHandler implements ErrorHandler {
     this.diagnostico.error(
       this.areaDesdeUrl(),
       mensaje,
-      { tipo: error?.name ?? typeof error },
-      error?.stack,
+      { tipo: leerError(error).name || typeof error },
+      leerError(error).stack,
     );
 
     // Reporte remoto (no-op si no hay endpoint configurado).
@@ -79,14 +80,11 @@ export class GlobalErrorHandler implements ErrorHandler {
     });
   }
 
-  private extraerMensaje(error: any): string {
-    if (typeof error === 'string') return error;
-    if (error?.message) return error.message;
-    if (error?.rejection?.message) return error.rejection.message;
-    return 'Error desconocido';
+  private extraerMensaje(error: unknown): string {
+    return leerError(error).message || 'Error desconocido';
   }
 
-  private esErrorDeRed(error: any): boolean {
+  private esErrorDeRed(error: unknown): boolean {
     const msg = this.extraerMensaje(error).toLowerCase();
     return (
       error instanceof TypeError && msg.includes('fetch') ||
@@ -97,7 +95,7 @@ export class GlobalErrorHandler implements ErrorHandler {
     );
   }
 
-  private esErrorDeChunk(error: any): boolean {
+  private esErrorDeChunk(error: unknown): boolean {
     const msg = this.extraerMensaje(error).toLowerCase();
     return (
       msg.includes('loading chunk') ||

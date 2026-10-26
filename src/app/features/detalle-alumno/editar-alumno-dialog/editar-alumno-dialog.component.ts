@@ -287,7 +287,7 @@ export class EditarAlumnoDialogComponent implements OnInit {
       this.bitacora.registrar('alumno-editado', describirAlumno(alumnoActualizado));
 
       this.dialogRef.close(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError('❌ Error al actualizar alumno:', error);
       this.error = 'Error al guardar los cambios. Intenta de nuevo.';
       this.guardando = false;

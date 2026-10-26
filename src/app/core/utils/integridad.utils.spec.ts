@@ -158,7 +158,7 @@ describe('revisarIntegridad', () => {
 
   it('detecta fechas inválidas sin reventar el resto de la revisión', () => {
     const registros = [
-      registro('r1', { fechaHora: 'no-es-fecha' as any }),
+      registro('r1', { fechaHora: 'no-es-fecha' as never }),
       registro('r2', { duracionMinutos: -5 }),
     ];
     const t = tipos(revisarIntegridad(ALUMNOS, registros, AHORA));

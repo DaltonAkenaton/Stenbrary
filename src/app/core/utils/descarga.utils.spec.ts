@@ -101,8 +101,8 @@ describe('descarga.utils — camposQueDifieren', () => {
   it('ignora los metadatos de sync', () => {
     // `sincronizado` es true en TODO lo que viene de la nube por
     // construcción. Marcarlo haría que cada fila pareciera un conflicto.
-    const local = registro('r1', { sincronizado: false, _syncStatus: 'pending' } as any);
-    const remoto = registro('r1', { sincronizado: true, _syncStatus: 'synced' } as any);
+    const local = registro('r1', { sincronizado: false, _syncStatus: 'pending' } as never);
+    const remoto = registro('r1', { sincronizado: true, _syncStatus: 'synced' } as never);
     expect(camposQueDifieren(local, remoto)).toEqual([]);
   });
 
@@ -163,7 +163,7 @@ describe('descarga.utils — compararStore', () => {
     // Sin clave estable no hay forma de saber si ya existen: traerlas
     // duplicaría en cada descarga.
     const diff = compararStore<Motivo>(
-      [], [motivo(undefined as any), motivo('m2')], m => m.id, m => m.nombre,
+      [], [motivo(undefined as never), motivo('m2')], m => m.id, m => m.nombre,
     );
     expect(diff.nuevas.length).toBe(1);
     expect(diff.nuevas[0].id).toBe('m2');
@@ -329,7 +329,7 @@ describe('descarga.utils — normalización del round-trip', () => {
     };
     const remoto = {
       ...vacio,
-      registros: [registro('r1', { alumnoId: null as any, matricula: 'INVITADO' })],
+      registros: [registro('r1', { alumnoId: null as never, matricula: 'INVITADO' })],
     };
     expect(construirDiff(local, remoto).totalConflictos).toBe(0);
   });
@@ -378,7 +378,7 @@ describe('descarga.utils — etiquetas', () => {
   });
 
   it('el registro no truena con una fecha inválida', () => {
-    const roto = registro('r1', { fechaHora: 'no-es-fecha' as any });
+    const roto = registro('r1', { fechaHora: 'no-es-fecha' as never });
     expect(labelRegistro(roto)).toContain('fecha inválida');
   });
 });

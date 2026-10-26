@@ -14,6 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { leerError } from '../utils/errores.utils';
 
 interface ErrorPayload {
   timestamp: string;
@@ -105,16 +106,12 @@ export class ErrorReporterService {
   }
 
   private construirPayload(error: unknown): ErrorPayload {
-    const err = error as any;
+    const { message, stack } = leerError(error);
     return {
       timestamp: new Date().toISOString(),
       version: environment.production ? 'prod' : 'dev',
-      message:
-        (typeof err === 'string' && err) ||
-        err?.message ||
-        err?.rejection?.message ||
-        'Error desconocido',
-      stack: err?.stack || err?.rejection?.stack,
+      message: message || 'Error desconocido',
+      stack,
       url: typeof location !== 'undefined' ? location.href : '',
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
     };

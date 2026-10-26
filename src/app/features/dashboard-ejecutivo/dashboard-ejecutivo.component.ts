@@ -34,7 +34,7 @@ import {
   ExportarPdfDialogResult,
 } from './exportar-pdf-dialog/exportar-pdf-dialog.component';
 import { FormulasInfoDialogComponent } from './formulas-info-dialog/formulas-info-dialog.component';
-import { SeccionesReporte } from '../../core/services/report.service';
+import { SeccionesReporte, TopAlumnoReporte } from '../../core/services/report.service';
 import { Chart, registerables } from 'chart.js';
 import {
   EstadisticasAvanzadasService,
@@ -787,7 +787,11 @@ formatHora(h: number): string {
   kpiHoraPicoStr = '';
   /** Franjas con la misma cantidad que la pico (1 = pico único). */
   kpiHoraPicoEmpates = 0;
-  comparativaUI: any = null;
+  /** Textos de la pestaña Comparar, calculados una vez por comparación. */
+  comparativaUI: {
+    labelA: string; labelB: string; horaPicoA: string; horaPicoB: string;
+    iconoDif: string; colorDif: string; fraseDif: string;
+  } | null = null;
 
 
   etiquetaDia(dia: string): string {
@@ -993,7 +997,8 @@ formatHora(h: number): string {
 
   /** Tier D25: persiste el estado en query params (permalinks). */
   private actualizarUrl(): void {
-    const params: any = { p: this.presetSeleccionado, tab: this.tabActiva };
+    const params: { p: string; tab: string; ini?: string; fin?: string; hd?: number; hh?: number } =
+      { p: this.presetSeleccionado, tab: this.tabActiva };
     if (this.presetSeleccionado === 'personalizado') {
       if (this.fechaInicio) params.ini = this.fechaInicio;
       if (this.fechaFin) params.fin = this.fechaFin;
@@ -1377,7 +1382,7 @@ formatHora(h: number): string {
    * que se serializaban en IndexedDB acumulando latencia (>2s). Ahora solo
    * la última gana y se ejecuta tras 80ms de inactividad.
    */
-  private _debounceTimer: any = null;
+  private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private _cargaSeq = 0;
 
   cargarDatos(): Promise<void> {
@@ -1596,7 +1601,7 @@ formatHora(h: number): string {
   private turnoPorMatricula = new Map<string, string>();
 
   /** Tier B: tiempo estancia, retención, distribución turnos, top motivo, una sola visita, crecimiento 12m. */
-  private calcularMetricasAvanzadas(registros: any[], rango: RangoFechas): void {
+  private calcularMetricasAvanzadas(registros: Registro[], rango: RangoFechas): void {
     // Tiempo de estancia: solo salidas reales. Las que estimó el sistema
     // (cierre por tiempo u horario) son una suposición y no cuentan (P3).
     const estancia = resumirEstancia(registros);
@@ -1815,7 +1820,7 @@ private precalcularFilasHeatmap(): void {
 
 
   /** Tier A: sparklines — últimos N puntos para mostrar mini-trazos junto a KPIs. */
-  private calcularSparklines(registros: any[], rango: RangoFechas): void {
+  private calcularSparklines(registros: Registro[], rango: RangoFechas): void {
     // Spark de registros: dividir el rango en buckets (máx 30)
     const dias = this.estadisticasService.diasEnRango(rango);
     const buckets = Math.min(30, Math.max(7, dias));
@@ -1847,13 +1852,13 @@ this.sparkRegistros = counts;
   // ─── v3.17.0 — Métricas Tier B ────────────────────────────────
 
   /** Tier B11: distribución por grado (1°, 2°, 3°, etc.). */
-  private calcularDistribucionGrado(registros: any[]): void {
+  private calcularDistribucionGrado(registros: Registro[]): void {
     this.kpiDistribucionGrado = distribucionPorGrado(registros, m => this.gradoPorMatricula.get(m))
       .map(g => ({ grado: g.clave, cantidad: g.cantidad, porcentaje: g.porcentaje }));
   }
 
   /** Tier B14: combinaciones de motivos más frecuentes (cuando hay multi-motivo). */
-  private calcularCombinacionesMotivos(registros: any[]): void {
+  private calcularCombinacionesMotivos(registros: Registro[]): void {
     this.kpiCombinacionesMotivos = combinacionesDeMotivos(registros, 5).map(c => ({
       combo: c.clave,
       cantidad: c.cantidad,
@@ -1872,7 +1877,7 @@ this.sparkRegistros = counts;
    * Día de la semana más concurrido EN PROMEDIO por día con actividad, no
    * por suma: en 30 días algunos días de la semana caen 5 veces y otros 4 (O3).
    */
-  private calcularDiaSemanaTop(registros: any[]): void {
+  private calcularDiaSemanaTop(registros: Registro[]): void {
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const idx = diaSemanaMasConcurrido(registros);
     this.kpiDiaSemanaTop = idx === null ? '' : dias[idx];
@@ -1909,7 +1914,7 @@ this.sparkRegistros = counts;
   }
 
   /** Tier B12: % invitados vs alumnos del período. */
-  private calcularPctInvitados(registros: any[]): void {
+  private calcularPctInvitados(registros: Registro[]): void {
     if (registros.length === 0) { this.kpiPctInvitados = 0; this.kpiVisitasInvitados = 0; return; }
     const invitados = registros.filter(r => r.matricula === 'INVITADO').length;
     this.kpiVisitasInvitados = invitados;
@@ -2213,14 +2218,14 @@ this.sparkRegistros = counts;
     return this.generandoReporte ? 'Generando...' : `Reporte ${t.toLowerCase()}`;
   }
 
-  private calcularTopDelMes(registrosMes: any[], limite: number, catalogo: Motivo[] = []) {
-    const porMat = new Map<string, any[]>();
+  private calcularTopDelMes(registrosMes: Registro[], limite: number, catalogo: Motivo[] = []): TopAlumnoReporte[] {
+    const porMat = new Map<string, Registro[]>();
     for (const r of registrosMes) {
       const arr = porMat.get(r.matricula) || [];
       arr.push(r);
       porMat.set(r.matricula, arr);
     }
-    const top: any[] = [];
+    const top: TopAlumnoReporte[] = [];
     porMat.forEach((regs, mat) => {
       if (mat === 'INVITADO') return;
       const motivoFrecuente = motivoMasFrecuente(regs, catalogo)?.nombre ?? 'N/A';

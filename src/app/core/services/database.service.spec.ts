@@ -23,7 +23,7 @@ import { parseFechaLocal } from '../utils/tiempo.utils';
  * para garantizar aislamiento total (la DB se recrea por test).
  */
 function resetIndexedDB() {
-  (globalThis as any).indexedDB = new IDBFactory();
+  (globalThis as { indexedDB: IDBFactory }).indexedDB = new IDBFactory();
 }
 
 function nuevoAlumno(matricula: string): Omit<Alumno, 'id' | 'fechaRegistro'> {
@@ -75,7 +75,7 @@ describe('DatabaseService', () => {
       const a = await db.crearAlumno({
         matricula, nombre: 'Ana', apellidoPaterno: 'P', apellidoMaterno: 'M',
         carrera: 'ISC', grado: 1, grupo: 'A', turno: 'Matutino', activo: true,
-      } as any);
+      } as Parameters<DatabaseService['crearAlumno']>[0]);
       for (let i = 0; i < visitas; i++) {
         const r = await db.crearRegistro({
           alumnoId: a.id!, matricula, nombreCompleto: 'Ana P M', carrera: 'ISC', motivoId: 'm1', motivoNombre: 'Estudiar',
@@ -105,8 +105,8 @@ describe('DatabaseService', () => {
 
   describe('catálogos: contar y corregir el nombre de una carrera (v3.57.0)', () => {
     it('cuenta por carrera y el renombre cambia alumnos y visitas, nada más', async () => {
-      const a = await db.crearAlumno({ ...nuevoAlumno('2200000001'), carrera: 'Lic. en TI' } as any);
-      await db.crearAlumno({ ...nuevoAlumno('2200000002'), carrera: 'Derecho' } as any);
+      const a = await db.crearAlumno({ ...nuevoAlumno('2200000001'), carrera: 'Lic. en TI' } as Parameters<DatabaseService['crearAlumno']>[0]);
+      await db.crearAlumno({ ...nuevoAlumno('2200000002'), carrera: 'Derecho' } as Parameters<DatabaseService['crearAlumno']>[0]);
       await db.crearRegistro({ alumnoId: a.id!, matricula: '2200000001', nombreCompleto: 'X', carrera: 'Lic. en TI', motivoId: 'm1', motivoNombre: 'Estudiar' });
       await db.crearRegistro({ alumnoId: a.id!, matricula: '2200000001', nombreCompleto: 'X', carrera: 'Lic. en TI', motivoId: 'm1', motivoNombre: 'Estudiar' });
       await db.crearRegistro({ alumnoId: 'inv', matricula: 'INVITADO', nombreCompleto: 'Y', carrera: 'Visitante', motivoId: 'm1', motivoNombre: 'Estudiar' });

@@ -208,7 +208,7 @@ export class ToastContainerComponent implements OnInit, OnDestroy {
 
   toasts: Toast[] = [];
   private subscription?: Subscription;
-  private timers = new Map<string, any>();
+  private timers = new Map<string, ReturnType<typeof setTimeout>>();
 
   ngOnInit(): void {
     this.subscription = this.toastService.toasts$.subscribe(toast => {

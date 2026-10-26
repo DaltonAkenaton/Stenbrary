@@ -33,6 +33,7 @@ import { log, logError } from '../../core/utils/logger';
 import { LectorRafagaService } from '../../core/services/lector-rafaga.service';
 import { ABANDONO_REGISTRO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/flujo-puerta.utils';
 import { esNombreValido, limpiarNombre } from '../../core/utils/nombres.utils';
+import { leerError } from '../../core/utils/errores.utils';
 
 @Component({
     selector: 'app-registro-alumno',
@@ -196,12 +197,13 @@ export class RegistroAlumnoComponent implements OnInit, OnDestroy {
           }
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError('❌ Error al registrar alumno:', error);
       this.loadingService.hide();
 
-      const esDuplicado = error.name === 'ConstraintError'
-        || (error.message && (error.message.includes('already exists') || error.message.includes('constraint')));
+      const { name, message } = leerError(error);
+      const esDuplicado = name === 'ConstraintError'
+        || message.includes('already exists') || message.includes('constraint');
 
       if (esDuplicado) {
         this.error = 'Esta matrícula ya está registrada en el sistema';

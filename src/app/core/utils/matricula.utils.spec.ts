@@ -19,8 +19,8 @@ describe('matricula.utils', () => {
     });
 
     it('rechaza null/undefined como cadena vacía', () => {
-      expect(validarMatricula(null as any).valida).toBeFalse();
-      expect(validarMatricula(undefined as any).valida).toBeFalse();
+      expect(validarMatricula(null as never).valida).toBeFalse();
+      expect(validarMatricula(undefined as never).valida).toBeFalse();
     });
 
     it('acepta INVITADO en mayúsculas', () => {

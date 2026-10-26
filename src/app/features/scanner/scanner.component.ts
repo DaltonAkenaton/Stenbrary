@@ -83,6 +83,7 @@ import {
 } from './salida-visitante-dialog/salida-visitante-dialog.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { verificarHorario } from '../../core/utils/horarios.utils';
+import { RestriccionCamara, RestriccionesVideo, aplicar, capacidades, datosError } from './camara.types';
 
 
 
@@ -636,7 +637,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         });
       } else {
         const zx = await this.cargarZxing();
-        const hints = new Map<number, any>();
+        const hints = new Map<number, unknown>();
         // Restringir a Code 128 + Code 39 reduce el trabajo de ZXing 5–8×
         // frente a intentar los 10 formatos originales.
         hints.set(zx.DecodeHintType.POSSIBLE_FORMATS, [
@@ -674,7 +675,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         video.addEventListener('loadeddata', onReady);
       }, 150);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.error = this.interpretarErrorCamara(err);
       this.cargando = false;
       this.escaneando = false;
@@ -697,7 +698,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       pref === 'user' ? 'user' :
       null; // 'auto' → no especificamos facingMode
 
-    const withFacing = (v: any): any =>
+    const withFacing = (v: RestriccionesVideo): RestriccionesVideo =>
       facing ? { ...v, facingMode: { ideal: facing } } : v;
 
     const intentos: MediaStreamConstraints[] = [
@@ -707,7 +708,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
           height:      { ideal: 1080, min: 240 },
           frameRate:   { ideal: 30,  min: 10  },
           // Foco y exposición continuos mejoran la nitidez en webcams de escritorio
-          advanced: [{ focusMode: 'continuous' as any, exposureMode: 'continuous' as any }] as any,
+          advanced: [{ focusMode: 'continuous', exposureMode: 'continuous' }],
         }),
       },
       {
@@ -734,8 +735,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
         const stream = await navigator.mediaDevices.getUserMedia(intentos[i]);
         if (i > 0) console.warn(`📷 Cámara: usando fallback #${i + 1}`);
         return stream;
-      } catch (err: any) {
-        if (erroresNoRecuperables.includes(err?.name)) throw err; // falla rápido
+      } catch (err: unknown) {
+        if (erroresNoRecuperables.includes(datosError(err).name)) throw err; // falla rápido
         if (i < intentos.length - 1) continue;
         throw err;
       }
@@ -805,7 +806,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     try {
       const track = this.mediaStream?.getVideoTracks()[0];
       if (track) {
-        const caps = track.getCapabilities?.() as any;
+        const caps = capacidades(track);
         if (caps?.zoom) {
           this.zoomMin  = caps.zoom.min ?? 1;
           this.zoomMax  = caps.zoom.max ?? 1;
@@ -815,7 +816,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
             this.zoomHardware = true;
             // Clamp del default al rango real de la cámara
             const autoZoom = Math.min(this.zoomMax, Math.max(this.zoomMin, zoomDefault));
-            await track.applyConstraints({ advanced: [{ zoom: autoZoom } as any] });
+            await aplicar(track, { zoom: autoZoom });
             this.zoomActual = autoZoom;
             console.log(`📷 Zoom HARDWARE [${this.zoomMin}×–${this.zoomMax}×] — zoom inicial ${autoZoom}×`);
             return;
@@ -868,7 +869,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       try {
         const track = this.mediaStream?.getVideoTracks()[0];
         if (!track) return;
-        await track.applyConstraints({ advanced: [{ zoom: valor } as any] });
+        await aplicar(track, { zoom: valor });
       } catch (err) {
         console.warn('Error al aplicar zoom hardware:', err);
       }
@@ -891,10 +892,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
     try {
       const track = this.mediaStream?.getVideoTracks()[0];
       if (!track) return;
-      const caps = track.getCapabilities?.() as any;
+      const caps = capacidades(track);
       if (!caps) return;
 
-      const advanced: any[] = [];
+      const advanced: RestriccionCamara[] = [];
 
       // Foco continuo — esencial para webcams que lo soportan
       if (caps.focusMode?.includes('continuous')) {
@@ -921,7 +922,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       }
 
       if (advanced.length > 0) {
-        await track.applyConstraints({ advanced });
+        await aplicar(track, ...advanced);
         console.log('📷 Exposición optimizada:', advanced.map(a => Object.keys(a).join(',')).join(' + '));
       }
     } catch {
@@ -937,8 +938,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     try {
       const track = this.mediaStream?.getVideoTracks()[0];
       if (!track) return;
-      const caps = track.getCapabilities?.() as any;
-      this.linternaDisponible = caps?.torch === true;
+      this.linternaDisponible = capacidades(track)?.torch === true;
     } catch { this.linternaDisponible = false; }
   }
 
@@ -947,7 +947,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       const track = this.mediaStream?.getVideoTracks()[0];
       if (!track) return;
       this.linternaActiva = !this.linternaActiva;
-      await track.applyConstraints({ advanced: [{ torch: this.linternaActiva } as any] });
+      await aplicar(track, { torch: this.linternaActiva });
     } catch { this.linternaActiva = false; }
   }
 
@@ -1055,8 +1055,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
           }
         }
       }
-    } catch (err: any) {
-      if (err.name !== 'InvalidStateError') console.warn('BarcodeDetector error:', err.message);
+    } catch (err: unknown) {
+      const { name, message } = datosError(err);
+      if (name !== 'InvalidStateError') console.warn('BarcodeDetector error:', message);
     } finally {
       this.isDetecting = false;
     }
@@ -1332,11 +1333,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
         const texto = result.getText().trim();
         if (this.esMatriculaValida(texto)) return texto;
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const NFE = this.zxingLib?.NotFoundException;
-      if ((!NFE || !(e instanceof NFE)) && e?.name !== 'NotFoundException') {
-        if (e?.message && !e.message.includes('No MultiFormat Readers')) {
-          console.warn('ZXing decode error:', e.message);
+      const { name, message } = datosError(e);
+      if ((!NFE || !(e instanceof NFE)) && name !== 'NotFoundException') {
+        if (message && !message.includes('No MultiFormat Readers')) {
+          console.warn('ZXing decode error:', message);
         }
       }
     }
@@ -1355,11 +1357,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
         const texto = result.getText().trim();
         if (this.esMatriculaValida(texto)) return texto;
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const NFE = this.zxingLib?.NotFoundException;
-      if ((!NFE || !(e instanceof NFE)) && e?.name !== 'NotFoundException') {
-        if (e?.message && !e.message.includes('No MultiFormat Readers')) {
-          console.warn('ZXing decode error:', e.message);
+      const { name, message } = datosError(e);
+      if ((!NFE || !(e instanceof NFE)) && name !== 'NotFoundException') {
+        if (message && !message.includes('No MultiFormat Readers')) {
+          console.warn('ZXing decode error:', message);
         }
       }
     }
@@ -1453,7 +1456,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (this.loopFrameId !== null) { cancelAnimationFrame(this.loopFrameId); this.loopFrameId = null; }
     if (this.linternaActiva) {
       const track = this.mediaStream?.getVideoTracks()[0];
-      track?.applyConstraints({ advanced: [{ torch: false } as any] }).catch(() => {
+      (track ? aplicar(track, { torch: false }) : Promise.resolve()).catch(() => {
         /* Apagar la linterna es best-effort: la cámara puede no soportarlo. */
       });
       this.linternaActiva = false;
@@ -1744,7 +1747,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       if (this.configService.aforoActivo) void this.aforoService.refrescar();
 
       this.resetEstado();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al registrar salida:', err);
       this.loadingService.hide();
       this.toastService.error('Error al registrar la salida. Intenta de nuevo.');
@@ -2063,8 +2066,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
     });
   }
 
-  private interpretarErrorCamara(err: any): string {
-    switch (err?.name || '') {
+  private interpretarErrorCamara(err: unknown): string {
+    const { name, message } = datosError(err);
+    switch (name) {
       case 'NotAllowedError':
       case 'PermissionDeniedError':
         return 'Permiso de cámara denegado. Revisa la configuración del navegador.';
@@ -2079,7 +2083,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       case 'SecurityError':
         return 'Cámara bloqueada. Asegúrate de usar HTTPS.';
       default:
-        return err?.message || 'No se pudo acceder a la cámara.';
+        return message || 'No se pudo acceder a la cámara.';
     }
   }
 }

@@ -28,13 +28,13 @@ import { Alumno, Registro } from '../models';
 import { CatalogoEscolar, agregarCarrera, catalogoInicial } from '../utils/catalogos.utils';
 
 function resetIndexedDB() {
-  (globalThis as any).indexedDB = new IDBFactory();
+  (globalThis as { indexedDB: IDBFactory }).indexedDB = new IDBFactory();
 }
 
 /** ConfigService no participa en el round-trip; basta un doble inerte. */
-const configStub = {} as any;
+const configStub = {} as unknown as ConfigService;
 /** Lo que el servicio anota en la bitácora no es lo que se prueba aquí. */
-const bitacoraStub = { registrar: () => undefined } as any;
+const bitacoraStub = { registrar: () => undefined } as unknown as BitacoraService;
 
 /** BackupService usa inject(): se crea en un injector con sus dobles. */
 function crearBackup(db: DatabaseService, config: unknown): BackupService {
@@ -84,7 +84,7 @@ describe('BackupService — round-trip', () => {
       turno: 'Matutino',
       activo: true,
       datosExtra: {},
-    } as any);
+    } as Parameters<DatabaseService['crearAlumno']>[0]);
 
     // Registro histórico con TODOS los campos opcionales poblados: es
     // justamente lo que la importación anterior tiraba a la basura.
@@ -221,7 +221,7 @@ describe('BackupService — round-trip', () => {
       turno: 'Vespertino',
       activo: true,
       datosExtra: {},
-    } as any);
+    } as Parameters<DatabaseService['crearAlumno']>[0]);
 
     const res = await backup.importarBackup(exportado, 'merge');
     expect(res.alumnosOmitidos).toBe(1);
@@ -312,7 +312,7 @@ describe('BackupService — round-trip', () => {
         carrera: 'ISC',
         motivoId: 'm',
         motivoNombre: 'Estudiar',
-        fechaHora: 'no-es-una-fecha' as any,
+        fechaHora: 'no-es-una-fecha' as never,
         sincronizado: false,
       } as Registro],
     };

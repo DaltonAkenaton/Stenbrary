@@ -53,8 +53,8 @@ describe('invariante.utils', () => {
     it('NUNCA lanza, ni con contexto imposible de serializar', () => {
       // Un objeto circular reventaría un JSON.stringify ingenuo. Anotar no
       // puede tumbar la operación que se estaba haciendo.
-      const circular: any = { nombre: 'x' };
-      circular.self = circular;
+      const circular: Record<string, unknown> = { nombre: 'x' };
+      circular['self'] = circular;
       expect(() => invariante(false, 'scanner', 'raro', circular)).not.toThrow();
       expect(servicio.incidencias().length).toBe(1);
     });

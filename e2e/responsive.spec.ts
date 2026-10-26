@@ -66,8 +66,8 @@ async function sembrarDatos(page: Page): Promise<number> {
       req.onerror = () => reject(req.error);
     });
 
-    const alumnos: any[] = [];
-    const registros: any[] = [];
+    const alumnos: Record<string, unknown>[] = [];
+    const registros: Record<string, unknown>[] = [];
 
     for (let i = 0; i < 40; i++) {
       const matricula = String(2000000001 + i);
@@ -116,7 +116,7 @@ async function sembrarDatos(page: Page): Promise<number> {
       });
     }
 
-    const escribir = (store: string, items: any[]) =>
+    const escribir = (store: string, items: Record<string, unknown>[]) =>
       new Promise<void>((resolve, reject) => {
         const tx = db.transaction(store, 'readwrite');
         const os = tx.objectStore(store);

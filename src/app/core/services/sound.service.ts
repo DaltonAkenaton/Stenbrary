@@ -92,7 +92,9 @@ export class SoundService {
     try {
       // Crear AudioContext lazily (requiere interacción del usuario)
       if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Safari viejo solo trae el prefijo webkit.
+        const Ctor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        this.audioContext = new Ctor!();
       }
 
       // Si el contexto está suspendido (política del navegador), intentar reanudar

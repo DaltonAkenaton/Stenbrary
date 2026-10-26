@@ -16,6 +16,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { confirmarConPin } from './helpers';
+import type { Alumno, Registro } from '../src/app/core/models';
 
 test.describe('Smoke: shell y componentes globales', () => {
   // Un navegador limpio + base vacía = instalación nueva, y desde v3.30 eso
@@ -635,7 +636,7 @@ test.describe('Importar el padrón (v3.57.0)', () => {
 
     const guardados = await page.evaluate(async () => {
       const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
-      return new Promise<any[]>(ok => { const r = db.transaction('alumnos').objectStore('alumnos').getAll(); r.onsuccess = () => ok(r.result); });
+      return new Promise<Alumno[]>(ok => { const r = db.transaction('alumnos').objectStore('alumnos').getAll(); r.onsuccess = () => ok(r.result); });
     });
     const rosa = guardados.find(a => a.matricula === '2300200001');
     const ivan = guardados.find(a => a.matricula === '2300200002');   // sin la "a"
@@ -743,7 +744,7 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
     await expect(page.locator('.aforo-detalle')).toContainText(/0\s*\/\s*10/, { timeout: 10000 });
     const salida = await page.evaluate(async () => {
       const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
-      const r: any = await new Promise(ok => { const q = db.transaction('registros').objectStore('registros').get('r1'); q.onsuccess = () => ok(q.result); });
+      const r = await new Promise<Registro>(ok => { const q = db.transaction('registros').objectStore('registros').get('r1'); q.onsuccess = () => ok(q.result); });
       const d = new Date(r.horaSalida);
       return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
     });
@@ -753,7 +754,7 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
   // ── Revisión de la puerta (v3.57.2) ─────────────────────────
   const leerR1 = (page: import('@playwright/test').Page) => page.evaluate(async () => {
     const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
-    return new Promise<any>(ok => { const q = db.transaction('registros').objectStore('registros').get('r1'); q.onsuccess = () => ok(q.result); });
+    return new Promise<Registro>(ok => { const q = db.transaction('registros').objectStore('registros').get('r1'); q.onsuccess = () => ok(q.result); });
   });
 
   test('horario en "bloquear": ya cerrado, la salida SÍ se registra y la entrada no', async ({ page }) => {
@@ -793,7 +794,7 @@ test.describe('Aforo y cierre al final del horario (v3.57.0)', () => {
   // ── Flujos de la puerta sin prueba hasta v3.58.0 ────────────
   const leerRegistros = (page: import('@playwright/test').Page) => page.evaluate(async () => {
     const db: IDBDatabase = await new Promise(ok => { const r = indexedDB.open('stenbrary-db'); r.onsuccess = () => ok(r.result); });
-    return new Promise<any[]>(ok => { const q = db.transaction('registros').objectStore('registros').getAll(); q.onsuccess = () => ok(q.result); });
+    return new Promise<Registro[]>(ok => { const q = db.transaction('registros').objectStore('registros').getAll(); q.onsuccess = () => ok(q.result); });
   });
   const elegirActividadYRegistrar = async (page: import('@playwright/test').Page) => {
     await expect(page).toHaveURL(/\/seleccion-motivo/, { timeout: 10000 });

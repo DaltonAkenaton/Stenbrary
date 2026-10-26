@@ -66,12 +66,12 @@ module.exports = tseslint.config(
       // "NO `confirm()` nativo → usar ConfirmDialogComponent".
       'no-alert': 'error',
 
-      // ─── Deuda reconocida, con fecha ───────────────────
-      // 82 apariciones al instalar el linter. Convertirlas a tipos reales de
-      // una tacada es un refactor transversal con riesgo de cambiar
-      // comportamiento, no una limpieza: se arreglan al tocar cada archivo.
-      // Pasa a `error` cuando el conteo llegue a cero.
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // ─── Sin `any` (v3.62.0: en cero, ahora bloquea) ────
+      // Hubo 85. Se reemplazaron por tipos reales: las APIs de cámara que
+      // lib.dom aún no declara (scanner/camara.types.ts), `unknown` en los
+      // catch (utils/errores.utils.ts) y, en las pruebas, dobles con su tipo
+      // y `as never` para los valores inválidos a propósito.
+      '@typescript-eslint/no-explicit-any': 'error',
 
       // Un `catch` vacío es legítimo cuando el fallo de verdad da igual (una
       // pantalla completa que no se concede, un wake lock denegado). Lo que

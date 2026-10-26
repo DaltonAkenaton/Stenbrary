@@ -76,6 +76,11 @@ export interface OpcionesReporte {
   tituloTabla?: string;
 }
 
+/** Dónde terminó la última tabla de jspdf-autotable (la propiedad no viene en los tipos de jsPDF). */
+function finTabla(doc: jsPDF): number {
+  return (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+}
+
 const SECCIONES_DEFAULT: Required<SeccionesReporte> = {
   resumen: true,
   topAlumnos: true,
@@ -229,7 +234,7 @@ export class ReportService {
     const deAlumnos = registros.filter(r => !esInvitado(r));
     const conteo = new Map<string, number>();
     for (const r of deAlumnos) {
-      const t = (r as any).turno
+      const t = r.turno
         || this.turnoPorMatricula.get(r.matricula)
         || 'Sin turno';
       conteo.set(t, (conteo.get(t) || 0) + 1);
@@ -260,7 +265,7 @@ export class ReportService {
       alternateRowStyles: { fillColor: [245, 250, 252] },
     });
 
-    return (doc as any).lastAutoTable.finalY + 8;
+    return finTabla(doc) + 8;
   }
 
   // ═══════════════════════════════════════════════
@@ -501,7 +506,7 @@ export class ReportService {
       },
     });
 
-    return (doc as any).lastAutoTable.finalY + 10;
+    return finTabla(doc) + 10;
   }
 
   // ═══════════════════════════════════════════════
@@ -565,7 +570,7 @@ export class ReportService {
       },
     });
 
-    return (doc as any).lastAutoTable.finalY + 10;
+    return finTabla(doc) + 10;
   }
 
   // ═══════════════════════════════════════════════
@@ -621,7 +626,7 @@ export class ReportService {
       },
     });
 
-    return (doc as any).lastAutoTable.finalY + 10;
+    return finTabla(doc) + 10;
   }
 
   // ═══════════════════════════════════════════════
@@ -667,7 +672,7 @@ export class ReportService {
     });
 
     // v3.57.0: la tabla se explica sola (suma > 100 % y actividades borradas).
-    let y = (doc as any).lastAutoTable.finalY + 5;
+    let y = finTabla(doc) + 5;
     const notas = [
       notaSumaActividades(conteo, total),
       conteo.some(c => c.eliminada)

@@ -146,7 +146,7 @@ function crearServicio(db: unknown): EstadisticasAvanzadasService {
 function crearMockDb(registros: Registro[] = REGISTROS) {
   return {
     llamadasRegistros: 0,
-    obtenerTodosLosRegistros(this: any) {
+    obtenerTodosLosRegistros(this: { llamadasRegistros: number }) {
       this.llamadasRegistros++;
       return Promise.resolve(registros.slice());
     },
@@ -166,7 +166,7 @@ describe('EstadisticasAvanzadasService', () => {
 
   beforeEach(() => {
     mockDb = crearMockDb();
-    service = crearServicio(mockDb as any);
+    service = crearServicio(mockDb);
     semana = service.normalizarRango(ANCLA_LUNES, new Date(2026, 2, 8));
   });
 
@@ -252,7 +252,7 @@ describe('EstadisticasAvanzadasService', () => {
         reg('b3', '2000000001', 'ISC', 'Estudiar', new Date(2026, 2, 1, 23, 59, 59, 999)),
         reg('b4', '2000000001', 'ISC', 'Estudiar', new Date(2026, 2, 9, 0, 0, 0, 0)),
       ];
-      const svc = crearServicio(crearMockDb(bordes) as any);
+      const svc = crearServicio(crearMockDb(bordes));
       expect(await svc.contarRegistrosEnRango(semana)).toBe(2);
     });
 
@@ -272,7 +272,7 @@ describe('EstadisticasAvanzadasService', () => {
         reg('s2', '2000000001', 'ISC', 'Estudiar',
             new Date(2026, 0, 3, 10, 0).toISOString() as unknown as Date),
       ];
-      const svc = crearServicio(crearMockDb(conStrings) as any);
+      const svc = crearServicio(crearMockDb(conStrings));
       expect(await svc.contarRegistrosEnRango(semana)).toBe(1);
     });
 
@@ -288,7 +288,7 @@ describe('EstadisticasAvanzadasService', () => {
       }
       regs.push(reg('nan1', '2000000001', 'ISC', 'Estudiar', new Date('basura')));
       regs.push(reg('nan2', '2000000001', 'ISC', 'Estudiar', 'tampoco' as unknown as Date));
-      const svc = crearServicio(crearMockDb(regs) as any);
+      const svc = crearServicio(crearMockDb(regs));
 
       const lineal = (r: RangoFechas, h?: { desde: number; hasta: number }) => regs.filter(x => {
         const d = new Date(x.fechaHora);
@@ -458,7 +458,7 @@ describe('EstadisticasAvanzadasService', () => {
           motivoNombres: ['Estudiar', 'Investigación'],
         }),
       ];
-      const svc = crearServicio(crearMockDb(multi) as any);
+      const svc = crearServicio(crearMockDb(multi));
       const d = await svc.obtenerDistribucionMotivos(semana);
       expect(d.etiquetas).toEqual(['Estudiar', 'Investigación']);
       expect(d.cantidades).toEqual([1, 1]);
@@ -547,7 +547,7 @@ describe('EstadisticasAvanzadasService', () => {
         reg('n1', '2000000001', 'ISC', 'Estudiar', fecha(3, 23, 0)),
         reg('n2', '2000000001', 'ISC', 'Estudiar', fecha(3, 5, 0)),
       ];
-      const svc = crearServicio(crearMockDb(nocturno) as any);
+      const svc = crearServicio(crearMockDb(nocturno));
       const h = await svc.generarHeatmap(30, semana);
       expect(h.horas[0]).toBe(5);
       expect(h.horas[h.horas.length - 1]).toBe(23);
@@ -582,7 +582,7 @@ describe('EstadisticasAvanzadasService', () => {
     });
 
     it('predecirDiaOcupadoDesde devuelve cadena vacía si no hay datos', async () => {
-      const svc = crearServicio(crearMockDb([]) as any);
+      const svc = crearServicio(crearMockDb([]));
       const h = await svc.generarHeatmap(30, semana);
       expect(svc.predecirDiaOcupadoDesde(h)).toBe('');
     });
@@ -620,7 +620,7 @@ describe('EstadisticasAvanzadasService', () => {
       // datos viejos porque nadie invalidaba (auditoría 2026-10, R3).
       let version = 0;
       const db = { ...crearMockDb(), llamadasRegistros: 0, versionDatos: () => version };
-      const svc = crearServicio(db as any);
+      const svc = crearServicio(db);
 
       await svc.contarRegistrosEnRango(semana);
       await svc.contarRegistrosEnRango(semana);
@@ -641,7 +641,7 @@ describe('EstadisticasAvanzadasService', () => {
         ...REGISTROS,
         reg('bad', '2000000001', 'ISC', 'Estudiar', new Date('no-es-fecha')),
       ];
-      const svc = crearServicio(crearMockDb(conBasura) as any);
+      const svc = crearServicio(crearMockDb(conBasura));
       const rango = await svc.crearRangoHistorico();
       expect(Number.isFinite(rango.inicio.getTime())).toBe(true);
       // El registro más viejo válido es x01, del 5 de enero.
@@ -657,7 +657,7 @@ describe('EstadisticasAvanzadasService', () => {
     let vacio: EstadisticasAvanzadasService;
 
     beforeEach(() => {
-      vacio = crearServicio(crearMockDb([]) as any);
+      vacio = crearServicio(crearMockDb([]));
     });
 
     it('ninguna métrica truena ni devuelve NaN', async () => {
