@@ -68,21 +68,26 @@ npx tsc --noEmit -p tsconfig.spec.json
 # Guardrail de versión (package.json ↔ CHANGELOG)
 node scripts/check-version.mjs
 
-# E2E (Playwright). Levanta el dev server solo, pero fuera de CI REUTILIZA el
-# que ya esté en el 4200 (`reuseExistingServer`). Si hay uno colgado con un
-# error de compilación, los tests fallan por un overlay de Vite que intercepta
-# los clics y el mensaje no dice nada del error real: mata el 4200 y repite.
+# E2E (Playwright). Levanta SU PROPIO dev server en el 4300 (v3.62.0; antes
+# reutilizaba lo que hubiera en el 4200 y llegó a probar otro proyecto). Puerto
+# ocupado → se detiene con "is already used": usa otro con E2E_PORT=4310.
+# e2e/global-setup.ts confirma que responde Stenbrary antes de empezar.
+# E2E_REUSE_SERVER=1 reutiliza uno ya levantado (solo local, para iterar).
 npx playwright test
+
+# Build de producción + sus cabeceras (CSP): sin violaciones y sin conexión.
+npx ng build --configuration production && npm run e2e:produccion
 
 # Un solo test E2E, por nombre
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **398 specs unitarios en verde**, en 22 archivos —
+Suite activa: **460 specs unitarios en verde**, en 27 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `catalogos.utils`, `cuadre-cifras.service`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
-`backup.service`, `estadisticas-avanzadas.service`, `supabase.client`, `registros-filtros.utils`, `reloj.utils`, `visita-manual.utils`.
+`backup.service`, `estadisticas-avanzadas.service`, `supabase.client`, `registros-filtros.utils`, `reloj.utils`, `visita-manual.utils`,
+`lectura-padron.utils`, `validacion-respaldo.utils`, `pin-hash.utils`, `pin.service`, `report.service`.
 CI corre los unitarios con `TZ=America/Matamoros` (la zona de Nuevo Laredo,
 que **conserva el horario de verano**) y Playwright con `timezoneId` igual:
 los errores de fecha "un día antes" no existen en UTC, y los de días de 23/25 h
@@ -101,15 +106,20 @@ en México, el día anterior) ni `toISOString().split('T')[0]` (después de las
 18:00 da mañana). Usar `parseFechaLocal` / `fechaLocalISO` de
 `core/utils/tiempo.utils.ts`. Ver `docs/AUDITORIA-2026-10.md`.
 
-**79 tests E2E** con
-Playwright (48 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 23 en `cuadre.spec.ts` — este
+**85 tests E2E** con
+Playwright (50 en `smoke.spec.ts`, 8 en `responsive.spec.ts`, 4 de axe en `accesibilidad.spec.ts`
+— WCAG 2.1 AA sin una violación, con datos de ejemplo, escritorio y móvil —, 23 en `cuadre.spec.ts` — este
 restaura `e2e/fixtures/cuadre.json` y compara cada pantalla contra valores calculados a mano;
 si cambias una definición de métrica, actualiza el fixture y los comentarios del spec). CI GitHub Actions
 (`.github/workflows/ci.yml`). Husky v9 pre-commit (guardrail de versión +
-type-check app/spec).
+type-check app/spec). Aparte, **5 tests contra el build de producción**
+(`e2e/produccion/`, `playwright.produccion.config.ts`): `scripts/servir-produccion.mjs`
+aplica `public/_headers` como Cloudflare y la prueba falla con una sola
+violación de la CSP. Si agregas un recurso externo, un script inline o `eval`,
+fallará: ajusta la CSP en `_headers` y documenta la excepción en `docs/SEGURIDAD.md`.
 
 Al cerrar una tanda, la verificación completa es: lint → type-check → tests
-unitarios → E2E → build de producción.
+unitarios → E2E → build de producción → `e2e:produccion` → `npm audit`.
 
 **Linter (`eslint.config.js`).** Añadido en septiembre de 2026; antes `ng lint`
 estaba documentado pero no existía. Dos niveles con significados distintos:
@@ -118,19 +128,21 @@ estaba documentado pero no existía. Dos niveles con significados distintos:
   exigía por escrito: `no-alert` (nada de `confirm()` nativo) y
   `prefer-control-flow` (`@if`/`@for`, nunca `*ngIf`/`*ngFor`). Ambas estaban
   en verde al instalarlo, así que ahora quedan blindadas.
-- **`warn` no bloquea, pero cuenta** — 84 `no-explicit-any` y 41 avisos de
-  accesibilidad. Es deuda reconocida con fecha, no ruido: los `any` se
-  arreglan al tocar cada archivo, y la accesibilidad es Fase 3 del ROADMAP.
+- **v3.62.0: todo en `error`, 0 avisos.** Los 85 `no-explicit-any` y los 40
+  avisos de accesibilidad se resolvieron (no se apagaron reglas): APIs de
+  cámara tipadas en `scanner/camara.types.ts`, `unknown` + `leerError()`
+  (`utils/errores.utils.ts`) en los `catch`, y rol/foco/teclado/nombre en
+  cada `<div (click)>`. Un `<div (click)>` nuevo necesita rol, `tabindex`,
+  Enter/Espacio y nombre accesible; mejor un `<button>`.
 
 Un `catch` vacío solo pasa el lint si lleva un comentario dentro diciendo por
 qué se ignora el fallo. Es intencionado: la regla obliga a justificarlo.
 
-El pre-commit corre `eslint . --quiet` (solo errores) para no acostumbrar a
-ignorar la salida; CI corre el lint completo, con avisos.
+El pre-commit corre `eslint . --quiet` (solo errores); CI corre el lint completo.
 
 ## Arquitectura
 
-**Stenbrary** es una PWA Angular 18 offline-first para control de acceso a biblioteca (UAT). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: la de `package.json` (no se repite aquí porque se desactualiza; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
+**Stenbrary** es una PWA Angular 21 (LTS hasta 2027-06; builder `@angular/build`, `inject()` en vez de parámetros del constructor, Sass con `@use`) offline-first para control de acceso a biblioteca (UAT). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: la de `package.json` (no se repite aquí porque se desactualiza; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
 
 ### Documentación del proyecto (capas)
 
@@ -176,7 +188,7 @@ Todas las rutas usan `loadComponent()` (lazy). Redirige `''` → `/scanner`, wil
 | `/estadisticas` | `DashboardEjecutivoComponent` | Analítica avanzada |
 | `/gestion-motivos` | `GestionMotivosComponent` | CRUD de motivos |
 | `/configuracion` | `ConfiguracionComponent` | Incluye `limpieza-registros.component` y `datos-prueba.component` |
-| `/importar-alumnos` | `ImportarAlumnosComponent` | Bulk import (xlsx) |
+| `/importar-alumnos` | `ImportarAlumnosComponent` | Bulk import (xlsx). v3.62.0: `lectura-padron.utils` valida formato/firma/tamaño y lee en un Web Worker (`lectura-padron.worker.ts`, 30 s máx.); `crearAlumnosLote` guarda todo o nada |
 | `/presencia` | `PresenciaComponent` | Solo visible si `registroSalidaActivo` |
 | `/novedades` | `NovedadesComponent` | Muestra CHANGELOG |
 | `/inactivos` | `InactivosComponent` | Alumnos sin venir ≥ `umbralInactividadDias` (v3.10.0) |
@@ -236,6 +248,8 @@ Métodos clave adicionales:
 - `registrarSalida(id)` — calcula `horaSalida` y `duracionMinutos`
 - `eliminarRegistrosPorRango(inicio, fin)` + `contarRegistrosPorRango` — para limpieza masiva
 - `eliminarAlumno(id, { porMatricula })` — borra al alumno **y sus visitas** en una transacción (hasta v3.52.0 dejaba las visitas huérfanas). `porMatricula: false` para borrados que llegan de otro equipo: no tocar visitas de un alumno que volvió a registrarse con id nuevo.
+- `crearAlumnosLote(lista)` (v3.62.0) — el padrón en una transacción: omite matrículas existentes, cualquier otro error aborta todo.
+- `reemplazarTodo({ motivos, alumnos, registros, bitacora })` (v3.62.0) — "Reemplazar" del respaldo en una transacción.
 
 ### Modelos (`core/models/`)
 
@@ -250,14 +264,14 @@ Métodos clave adicionales:
 Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los principales; algunos (`ConfigService`, `AforoService`, `SoundService`, `ChangelogService`, `PwaUpdateService`) se importan por ruta.
 
 - `DatabaseService` — ver sección anterior.
-- `ConfigService` — persiste en `localStorage` bajo `stenbrary-config`. Claves: `registroSalidaActivo`, `horasAutoSalida` (0 = off), `nombreInstitucion`, `nombreEquipo` (v3.52.0: "Puerta", "Oficina"; va en cada evento de la bitácora y en `meta.equipo` del respaldo), `umbralDuplicadoMin` (default 30), `aforoMaximo` (0 = off), `aforoModo` (`'permitir' | 'confirmar' | 'bloquear'`), `modoQuiosco` + `quioscoPin` (v3.9.0) + `quioscoAutoMinutos` (v3.49.0: minutos sin uso para reactivar el quiosco solo, 0 = off; lo vigila `QuioscoAutoService`), `horarioActivo` + `horarios` (por día, 0=domingo … 6=sábado) + `horarioModo` (`'advertir' | 'bloquear'`, v3.9.0), `celebracionActiva` + `celebracionProbabilidad` (0–1, v3.9.0), `mostrarBotonCamara` (v3.45.0, default true: el lector físico es el camino principal y la cámara un respaldo ocultable), `calendarioEscolar` (periodos + días inhábiles, v3.43.0; funciones puras en `core/utils/calendario.utils.ts`, precarga UAT 2026, signal `calendarioSignal`). Getter derivado: `aforoActivo = aforoMaximo > 0 && registroSalidaActivo`. Signals: `hayAutoClose` (cierres pendientes) y `modoQuioscoSignal` (reactivo para `AppComponent`).
+- `ConfigService` — persiste en `localStorage` bajo `stenbrary-config`. Claves: `registroSalidaActivo`, `horasAutoSalida` (0 = off), `nombreInstitucion`, `nombreEquipo` (v3.52.0: "Puerta", "Oficina"; va en cada evento de la bitácora y en `meta.equipo` del respaldo), `umbralDuplicadoMin` (default 30), `aforoMaximo` (0 = off), `aforoModo` (`'permitir' | 'confirmar' | 'bloquear'`), `modoQuiosco` + `quioscoPin` (v3.9.0; **desde v3.62.0 es un hash**: no se lee para mostrarlo, se usan `hayPin`, `quioscoPinLargo` y `quioscoPinDeFabrica`; solo `PinService` lo compara y lo cambia) + `quioscoAutoMinutos` (v3.49.0: minutos sin uso para reactivar el quiosco solo, 0 = off; lo vigila `QuioscoAutoService`), `horarioActivo` + `horarios` (por día, 0=domingo … 6=sábado) + `horarioModo` (`'advertir' | 'bloquear'`, v3.9.0), `celebracionActiva` + `celebracionProbabilidad` (0–1, v3.9.0), `mostrarBotonCamara` (v3.45.0, default true: el lector físico es el camino principal y la cámara un respaldo ocultable), `calendarioEscolar` (periodos + días inhábiles, v3.43.0; funciones puras en `core/utils/calendario.utils.ts`, precarga UAT 2026, signal `calendarioSignal`). Getter derivado: `aforoActivo = aforoMaximo > 0 && registroSalidaActivo`. Signals: `hayAutoClose` (cierres pendientes) y `modoQuioscoSignal` (reactivo para `AppComponent`).
 - `AforoService` — usa `signal`/`computed` sobre la ocupación actual. Estados: `inactivo`, `libre` (<50%), `normal` (50–79%), `alto` (80–99%), `lleno` (100%), `sobreaforo` (>100%). `refrescar()` relee de la BD; `setOcupacion()` para evitar doble lectura cuando ya tenemos el conteo (p.ej. en `/presencia`).
 - `ChangelogService` — compara `versionActual().version` con `stenbrary-changelog-vista` (localStorage). Signal `hayNovedades` alimenta el badge del sidebar. En primera instalación NO muestra badge (marca la versión como vista).
 - `SoundService` — beeps vía Web Audio API (sin archivos). Flag en `stenbrary-sonido-activo`. Métodos: `beepScan`, `beepSalida`, `beepError`.
 - `ToastService`, `LoadingService` — UI transversal (componentes en `shared/`).
-- `BackupService` — export/import JSON completo. Los motivos se emparejan **por nombre** con los locales y los `motivoIds` de los registros se traducen a los ids locales (`remapearMotivos`, v3.50.0): cada instalación crea sus motivos default con ids propios, y sin el mapa un respaldo de otro equipo dejaba registros apuntando a motivos inexistentes (estadísticas partidas, editor roto). En modo `replace` se restaura el catálogo del respaldo con sus ids. Combinar el mismo respaldo dos veces no duplica nada (`put` por id). Desde v3.52.0 incluye `bitacora?` (opcional: los respaldos viejos se importan igual). Desde v3.53.0 alumnos y registros se restauran **por lote** (`restaurarAlumnosLote` / `restaurarRegistrosLote`, una transacción) y **solo se escribe lo que cambió** (comparación por `huella()`, sin metadatos de sync): escribir cuesta ~1 000 filas/s con 4 índices, y el import diario de un año pasó de ~120 s a ~3 s. **Borrados entre equipos**: los eventos `registro-eliminado`/`alumno-eliminado` llevan `refId`; al **combinar**, los que llegan nuevos se aplican aquí y todos los conocidos evitan revivir lo borrado (`idsBorrados`). **Reemplazar** no los aplica: es restaurar y devuelve exactamente el archivo. La limpieza por rango no se propaga a propósito (la oficina es el archivo). **Desde v3.57.2**: (1) al **combinar** gana la edición más reciente — `editadoEn` en `Alumno`/`Registro` lo estampan `markPending`/`marcarPendienteEnSitio` (cambios de una persona); los cierres automáticos, restaurar y `renombrarCarreraEnDatos` pasan `editado = false`, para que una salida estimada en la oficina no le gane a la real de la puerta. Un cambio nuevo hecho por el sistema debe pasar `false`. (2) Las **correcciones de nombre de carrera** viajan como los borrados: evento `catalogo-cambiado` con `renombre {de, a}`; al combinar, las nuevas se repiten (`aplicarRenombre` en el catálogo) y todas traducen lo que llega (`renombresCarrera`/`traducirCarrera`). (3) Si **reemplazar** falla a la mitad, regresa a una copia en memoria de lo que había.
+- `BackupService` — export/import JSON completo. Los motivos se emparejan **por nombre** con los locales y los `motivoIds` de los registros se traducen a los ids locales (`remapearMotivos`, v3.50.0): cada instalación crea sus motivos default con ids propios, y sin el mapa un respaldo de otro equipo dejaba registros apuntando a motivos inexistentes (estadísticas partidas, editor roto). En modo `replace` se restaura el catálogo del respaldo con sus ids. Combinar el mismo respaldo dos veces no duplica nada (`put` por id). Desde v3.52.0 incluye `bitacora?` (opcional: los respaldos viejos se importan igual). Desde v3.53.0 alumnos y registros se restauran **por lote** (`restaurarAlumnosLote` / `restaurarRegistrosLote`, una transacción) y **solo se escribe lo que cambió** (comparación por `huella()`, sin metadatos de sync): escribir cuesta ~1 000 filas/s con 4 índices, y el import diario de un año pasó de ~120 s a ~3 s. **Borrados entre equipos**: los eventos `registro-eliminado`/`alumno-eliminado` llevan `refId`; al **combinar**, los que llegan nuevos se aplican aquí y todos los conocidos evitan revivir lo borrado (`idsBorrados`). **Reemplazar** no los aplica: es restaurar y devuelve exactamente el archivo. La limpieza por rango no se propaga a propósito (la oficina es el archivo). **Desde v3.57.2**: (1) al **combinar** gana la edición más reciente — `editadoEn` en `Alumno`/`Registro` lo estampan `markPending`/`marcarPendienteEnSitio` (cambios de una persona); los cierres automáticos, restaurar y `renombrarCarreraEnDatos` pasan `editado = false`, para que una salida estimada en la oficina no le gane a la real de la puerta. Un cambio nuevo hecho por el sistema debe pasar `false`. (2) Las **correcciones de nombre de carrera** viajan como los borrados: evento `catalogo-cambiado` con `renombre {de, a}`; al combinar, las nuevas se repiten (`aplicarRenombre` en el catálogo) y todas traducen lo que llega (`renombresCarrera`/`traducirCarrera`). (3) **Desde v3.62.0, reemplazar es UNA transacción** (`DatabaseService.reemplazarTodo`, alumnos + visitas + motivos + bitácora): si falla, IndexedDB la deshace completa (se quitó la copia en memoria), y antes la pantalla descarga siempre `stenbrary_backup_antes-de-reemplazar_…`. (4) **Validación completa** (`validacion-respaldo.utils.ts`): cada alumno, visita, actividad y evento se revisa antes de tocar la base, también dentro de `importarBackup`; un respaldo inválido no cambia nada. Acepta todos los formatos 3.x; si agregas un campo al modelo, agrégalo como opcional ahí.
 - `BitacoraService` (v3.52.0) — `registrar(accion, detalle)` anota qué, cuándo y en qué equipo; **nunca lanza** (la bitácora no puede romper la acción que anota). Se llama en el punto de la acción, no dentro de `DatabaseService`: el "Deshacer" del escáner y el generador de datos de prueba también borran registros y no deben ensuciarla. Al agregar una acción administrativa nueva que mute datos, anotarla aquí (tipo `AccionBitacora` en `core/models/bitacora.model.ts`, etiqueta en `ACCIONES_BITACORA`). Nunca escribir el PIN en el detalle. En la Fase 2 el modelo gana `usuarioId`.
-- `ExportService`, `ReportService` — PDF (`jspdf`/`jspdf-autotable`) y Excel (`xlsx`).
+- `ExportService`, `ReportService` — PDF (`jspdf`/`jspdf-autotable`) y Excel (`xlsx`). **SheetJS 0.20.3 viene de `vendor/xlsx-0.20.3.tgz`** (el registro de npm se quedó en 0.18.5, vulnerable): para actualizarlo, ver `vendor/README.md`.
 - `EstadisticasAvanzadasService` — tendencias, heatmap, top alumnos, insights, distribución por motivo/carrera.
 - `PwaUpdateService` — `AppComponent.ngOnInit` llama `iniciar()`: revisión por **reloj** (`timer`, 60 s y luego cada 15 min), nunca por `appRef.isStable` (con intervalos vivos la app no se estabiliza y la revisión no arrancaba; v3.46.0). El aviso lo pinta `AppComponent` con `SwUpdate.versionUpdates`. `stenbrary-sw-revision-ms` en localStorage acorta el intervalo solo para pruebas.
   **Ojo al probar el SW con Playwright:** el Chrome que lanza Playwright (`channel: 'chrome'` o su Chromium con perfil persistente) arranca el SW de Angular en `SAFE_MODE` ("Entry already exists"); el Chrome real del usuario y Edge no. Para pruebas de SW/offline usar `channel: 'msedge'`.
@@ -363,7 +377,7 @@ Sidebar (64px colapsado / 220px expandido) + topbar + bottom nav (≤768px). Sec
 
 `bottomNavItems` swapea "Registros" por "Biblioteca" cuando el módulo de salida está activo. El sidebar se auto-cierra en móvil al navegar (suscripción a `NavigationEnd`, `window.innerWidth < 768`).
 
-En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la clase `kiosk-mode` que oculta sidebar, topbar y bottom nav; además `AppComponent` intercepta `NavigationEnd` y redirige a `/scanner` cualquier ruta que no sea parte del flujo operativo (`/scanner`, `/seleccion-motivo`, `/registro-alumno`). Se sale con pulsación larga (3 s) o 5 toques en el scanner + PIN configurado en `ConfigService`. Desde v3.52.0 el PIN se bloquea 5 min tras 5 fallos (`stenbrary-pin-intentos` en localStorage, funciones puras en `quiosco.utils.ts`) y, con el PIN correcto, el diálogo ofrece "Descargar respaldo" sin salir del quiosco además de "Salir". **Desde v3.57.0 el mismo PIN autoriza lo que no se deshace** (eliminar registros por fechas, reemplazar con un respaldo, restablecer, herramientas de prueba) con `PinCoordinadorDialogComponent` (`shared/components/pin/`), y el límite de intentos vive en `PinService`, compartido por todos los diálogos. PIN de 4–6 dígitos (`esPinValido`); código de recuperación (`quioscoCodigoRecuperacion`, se muestra una sola vez) para reponerlo. Una acción destructiva nueva debe pedir este diálogo; en la Fase 2 lo reemplaza `roleGuard`.
+En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la clase `kiosk-mode` que oculta sidebar, topbar y bottom nav; además `AppComponent` intercepta `NavigationEnd` y redirige a `/scanner` cualquier ruta que no sea parte del flujo operativo (`/scanner`, `/seleccion-motivo`, `/registro-alumno`). Se sale con pulsación larga (3 s) o 5 toques en el scanner + PIN configurado en `ConfigService`. Desde v3.52.0 el PIN se bloquea 5 min tras 5 fallos (`stenbrary-pin-intentos` en localStorage, funciones puras en `quiosco.utils.ts`) y, con el PIN correcto, el diálogo ofrece "Descargar respaldo" sin salir del quiosco además de "Salir". **Desde v3.57.0 el mismo PIN autoriza lo que no se deshace** (eliminar registros por fechas, reemplazar con un respaldo, restablecer, herramientas de prueba) con `PinCoordinadorDialogComponent` (`shared/components/pin/`), y el límite de intentos vive en `PinService`, compartido por todos los diálogos. PIN de 4–6 dígitos (`esPinValido`); código de recuperación (`quioscoCodigoRecuperacion`, se muestra una sola vez) para reponerlo. **v3.62.0:** ambos se guardan con PBKDF2-SHA256 (`pin-hash.utils.ts`, 600 000 iteraciones); `PinService.verificarPin/establecerPin` son asíncronos y van en cola; `PinService.migrar()` (en `AppComponent`) convierte un PIN viejo en texto plano. Nunca escribir el PIN en logs ni en la bitácora. Límites del modelo: `docs/SEGURIDAD.md`. Una acción destructiva nueva debe pedir este diálogo; en la Fase 2 lo reemplaza `roleGuard`.
 
 ### Horarios de operación (`core/utils/horarios.utils.ts`)
 
@@ -403,4 +417,4 @@ En **modo quiosco** (`configService.modoQuioscoSignal()`): el shell aplica la cl
 
 ## Deployment
 
-**Producción en Cloudflare Pages: `https://stenbrary.pages.dev`** desde el 2026-10-12; cada push a `main` despliega solo (guía: `docs/DESPLIEGUE-CLOUDFLARE.md`). Netlify se apagó ese mismo día (cobraba créditos por despliegue) y `public/_redirects` se borró: Cloudflare hace el fallback SPA solo, siempre que no exista un `404.html`. `public/_headers` (sin caché para `index.html`/`ngsw.json`/workers, un año para lo que lleva hash; no añadir un `/*.js` genérico: Cloudflare combina cabeceras). `.nvmrc` fija Node 22 (Node 20 llegó a fin de vida en abril de 2026; CI usa la misma). El build output es `dist/stenbrary/browser/`. Service Worker con `registrationStrategy: 'registerWhenStable:30000'` (`app.config.ts`). Configuración PWA en `ngsw-config.json` y manifiesto en `public/manifest.webmanifest`.
+**Producción en Cloudflare Pages: `https://stenbrary.pages.dev`** desde el 2026-10-12; cada push a `main` despliega solo (guía: `docs/DESPLIEGUE-CLOUDFLARE.md`). Netlify se apagó ese mismo día (cobraba créditos por despliegue) y `public/_redirects` se borró: Cloudflare hace el fallback SPA solo, siempre que no exista un `404.html`. `public/_headers` (v3.62.0: **Content-Security-Policy** con `script-src 'self'` — nada inline ni `eval`; por eso el build tiene `inlineCritical: false` y Lottie usa `lottie_light` —, `frame-ancestors 'none'`, `X-Frame-Options`; detalle en `docs/SEGURIDAD.md`; sin caché para `index.html`/`ngsw.json`/workers, un año para lo que lleva hash; no añadir un `/*.js` genérico: Cloudflare combina cabeceras). `.nvmrc` fija Node 22 (Node 20 llegó a fin de vida en abril de 2026; CI usa la misma). El build output es `dist/stenbrary/browser/`. Service Worker con `registrationStrategy: 'registerWhenStable:30000'` (`app.config.ts`). Configuración PWA en `ngsw-config.json` y manifiesto en `public/manifest.webmanifest`.

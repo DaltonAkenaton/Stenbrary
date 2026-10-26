@@ -18,7 +18,7 @@ estadísticas y reportes sin configurar nada.
 **Público objetivo:** coordinación y personal de bibliotecas que hoy registran
 las visitas en papel o en hojas de cálculo y necesitan cifras confiables de uso.
 
-**Estado:** desarrollado y probado (versión 3.61.0). Su implementación
+**Estado:** desarrollado y probado (versión 3.62.0). Su implementación
 institucional en una biblioteca universitaria está pendiente de acordarse; por
 ahora no está en operación ni tiene usuarios reales.
 
@@ -120,13 +120,13 @@ y tiene Supabase desactivado.
 
 ## Stack tecnológico
 
-- **Angular 18.2** (componentes standalone, signals, control flow `@if`/`@for`) y **TypeScript 5.5**
+- **Angular 21** (LTS hasta junio de 2027; componentes standalone, signals, `inject()`, control flow `@if`/`@for`) y **TypeScript 5.9**
 - **Angular Material** para la interfaz
 - **IndexedDB** con `idb` para la persistencia local
 - **`@angular/service-worker`** para la PWA instalable y el funcionamiento sin conexión
-- **Chart.js** (gráficas), **jsPDF + jspdf-autotable** (PDF), **SheetJS / xlsx** (Excel)
+- **Chart.js** (gráficas), **jsPDF + jspdf-autotable** (PDF), **SheetJS 0.20.3** (Excel; desde el CDN oficial, en `vendor/`)
 - **BarcodeDetector** nativo y **ZXing** como alternativa para la cámara
-- **Jasmine + Karma** (unitarias), **Playwright** (E2E), **fake-indexeddb**
+- **Jasmine + Karma** (unitarias), **Playwright** (E2E), **axe-core** (accesibilidad), **fake-indexeddb**
 - **ESLint** (angular-eslint), **Husky** (pre-commit) y **GitHub Actions** (CI)
 - **Cloudflare Pages** para la demo
 - **Supabase** (Auth + Postgres con RLS): preparado en el código y desactivado en la versión actual
@@ -147,11 +147,12 @@ npm start        # http://localhost:4200
 |---|---|
 | `npm start` | Servidor de desarrollo con recarga automática |
 | `npm run build` | Build de producción en `dist/stenbrary/browser/` |
-| `npm run lint` | ESLint; debe terminar sin errores (los avisos son deuda registrada) |
+| `npm run lint` | ESLint (incluye accesibilidad de plantillas); termina sin errores ni avisos |
 | `npx tsc --noEmit -p tsconfig.app.json` | Verificación de tipos sin compilar |
 | `npm run test:ci` | Pruebas unitarias en Chrome headless, con cobertura |
 | `npx playwright install chromium` | Navegador para las pruebas E2E (una sola vez) |
-| `npm run e2e` | Pruebas E2E; levanta el servidor de desarrollo si no está corriendo |
+| `npm run e2e` | Pruebas E2E: levantan su propio servidor en el puerto 4300 (`E2E_PORT` para cambiarlo) y comprueban que responde Stenbrary antes de empezar |
+| `npm run e2e:produccion` | Tras `npm run build`: el build servido con las cabeceras de `public/_headers`; busca violaciones de la CSP y prueba el modo sin conexión |
 | `npm run check:version` | Verifica que `package.json` y el historial de versiones coincidan |
 
 ## Estructura del repositorio
@@ -171,7 +172,8 @@ src/app/
 e2e/             pruebas Playwright y fixtures generados por script
 supabase/        migraciones SQL (Fase 2)
 scripts/         guardrail de versión y utilidades
-docs/            auditoría de métricas, roadmap, despliegue y pruebas manuales
+docs/            seguridad, auditoría de métricas, roadmap, despliegue, pruebas manuales y piloto
+vendor/          SheetJS 0.20.3 (ver vendor/README.md)
 ```
 
 ## Arquitectura y persistencia
@@ -190,14 +192,27 @@ docs/            auditoría de métricas, roadmap, despliegue y pruebas manuales
 
 ## Pruebas
 
-- **398 pruebas unitarias** en 22 archivos, centradas en la lógica pura
-  (fechas, métricas, matrícula, calendario, importación) y en los servicios de
-  datos y respaldos. Los componentes se cubren con E2E.
-- **79 pruebas E2E** con Playwright: 48 del flujo y las pantallas principales,
-  8 de diseño responsive y 23 de cuadre de cifras contra valores calculados a mano.
+- **460 pruebas unitarias** en 27 archivos (cobertura de sentencias 80 %),
+  centradas en la lógica pura (fechas, métricas, matrícula, calendario,
+  importación, respaldos, hash del PIN) y en los servicios de datos. Incluyen
+  fallos reales a media transacción y PDF generados con texto hostil.
+- **85 pruebas E2E** con Playwright: 50 del flujo y las pantallas principales,
+  8 de diseño responsive, 23 de cuadre de cifras contra valores calculados a
+  mano y 4 de accesibilidad con axe (WCAG 2.1 AA, escritorio y móvil).
+- **5 pruebas contra el build de producción** con sus cabeceras de seguridad:
+  CSP sin violaciones en todo el recorrido y service worker sin conexión.
 - **CI** (GitHub Actions) ejecuta lint, verificación de tipos, pruebas
-  unitarias con la zona horaria `America/Matamoros`, build de producción y E2E.
+  unitarias con la zona horaria `America/Matamoros`, build de producción, E2E
+  y las pruebas del build con cabeceras.
 - El pre-commit verifica la versión, los tipos y los errores de lint.
+
+## Seguridad
+
+Cabeceras con Content-Security-Policy estricta (`script-src 'self'`, sin
+`eval`), PIN guardado con PBKDF2, validación completa de respaldos y del
+padrón antes de tocar los datos, "Reemplazar" atómico y 0 vulnerabilidades
+conocidas en `npm audit`. Detalle, verificación y límites de una app local
+sin servidor: [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md).
 
 ## Limitaciones conocidas
 
@@ -208,8 +223,12 @@ docs/            auditoría de métricas, roadmap, despliegue y pruebas manuales
 - Las tipografías se cargan desde Google Fonts y el Service Worker no las
   incluye en su caché; sin conexión, el navegador podría mostrar fuentes del
   sistema en su lugar.
-- Deuda registrada: avisos de lint (`any` explícitos y accesibilidad) y algunos
-  componentes grandes, como el escáner y las estadísticas.
+- El PIN del coordinador protege el modo quiosco del uso casual; no es un
+  control de acceso frente a quien controla el equipo (ver `docs/SEGURIDAD.md`).
+- No se ha probado todavía en una biblioteca real: el piloto está definido en
+  `docs/PRUEBA-PILOTO-BIBLIOTECA.md`.
+- Deuda registrada: algunos componentes grandes, como el escáner y las
+  estadísticas.
 
 ## Estado y próximos pasos
 

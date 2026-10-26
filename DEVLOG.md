@@ -9,6 +9,54 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-26 — v3.62.0: hardening integral
+
+**Qué se hizo** (evidencia completa en `docs/HARDENING-2026-10.md`)
+- Angular 18 → 21 LTS paso a paso (`ng update`), builder `@angular/build`,
+  `inject()`, Sass `@use`. `npm audit` y `npm audit --omit=dev` en 0:
+  SheetJS 0.20.3 desde `vendor/`, jsPDF 4.2.1, uuid 14, `overrides` de undici.
+- Importación del padrón: firma, tamaño y límites; Web Worker con 30 s;
+  `crearAlumnosLote` (todo o nada). Respaldos: `validacion-respaldo.utils`,
+  `reemplazarTodo` en una transacción y copia `antes-de-reemplazar`.
+- PIN y código con PBKDF2 (`pin-hash.utils`) y migración del texto plano.
+- CSP y cabeceras en `_headers`, verificadas contra el build
+  (`npm run e2e:produccion`, `scripts/servir-produccion.mjs`).
+- Accesibilidad: lint en `error` (40 → 0), axe en E2E (WCAG 2.1 AA, 0).
+  `any`: 85 → 0. Logs de producción sin matrículas ni nombres.
+- E2E con servidor propio (4300 / `E2E_PORT`) y `global-setup` de identidad.
+- Keep-alive de Supabase solo manual. `docs/SEGURIDAD.md`,
+  `docs/PRUEBA-PILOTO-BIBLIOTECA.md`.
+- Historial reescrito en copia aparte (sin guías, ajustes locales ni el
+  correo personal); se publica con aprobación explícita del autor.
+
+**Qué se descubrió**
+- Una corrida E2E local "fallaba" contra otro proyecto que ocupaba el 4200:
+  `reuseExistingServer` lo aceptaba sin preguntar.
+- El compilador de Angular 21 encontró `@if (!cargando)` sin invocar la signal:
+  el contador de "En biblioteca" nunca se mostraba.
+- `tsc -p tsconfig.app.json` no revisa plantillas: tipar `comparativaUI`
+  rompió el build y solo lo vio `ng build`. Tras cambiar tipos que use una
+  plantilla, compilar con `ng build`.
+- `cf-cache-status: HIT` de un chunk de la v3.59.0 en `stenbrary.pages.dev`:
+  la caché del borde, no un despliegue viejo (esos ya dan 404).
+- Un `perl -0` sobre un archivo CRLF dejó un `\r` suelto: 605 líneas
+  "cambiadas" en el diff. Editar respetando el fin de línea del archivo.
+
+**Qué se decidió**
+- Angular 21 (LTS) y no 22: 22 exige Node ≥ 24.15 y TypeScript 6.
+- `style-src 'unsafe-inline'` como única excepción de la CSP (estilos de
+  componentes de Angular en hosting estático).
+- El PIN sigue siendo una barrera contra el uso casual, no un control de
+  acceso: dicho explícitamente en `docs/SEGURIDAD.md`.
+
+**Qué sigue**
+- Publicar el historial reescrito y v3.62.0 (force push aprobado por el autor),
+  CI en verde, tag `v3.62.0`.
+- Pedir a GitHub que purgue los commits viejos y a Cloudflare la caché.
+- Prueba piloto en la biblioteca.
+
+---
+
 ## 2026-10-25 — v3.61.0: demo con datos de ejemplo y panel de selección
 
 **Qué se hizo**
@@ -32,7 +80,7 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 ## 2026-10-24 — v3.60.0: repositorio para portafolio y Comparar sin ambigüedad
 
 **Qué se hizo**
-- Preparación para portafolio (commit `d0881e7`): `LICENSE` de todos los
+- Preparación para portafolio (commit `440ca6b` tras la reescritura del 2026-10-26; antes `d0881e7`): `LICENSE` de todos los
   derechos reservados, README reescrito y verificado contra el código,
   matrículas reales sustituidas por la serie sintética `229999000N`,
   `docs/guias/` y `.claude/settings.local.json` fuera del repo (siguen en

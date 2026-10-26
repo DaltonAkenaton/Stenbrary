@@ -5,9 +5,21 @@ Se actualiza al cerrar cada tanda relevante. No reemplaza a
 `CHANGELOG` (cambios por versión) ni a `DEVLOG.md` (bitácora técnica)
 ni a `docs/ROADMAP.md` (visión a largo plazo y fases del producto).
 
-**Versión del proyecto:** `3.60.0` (ver `package.json`) · Último cambio a
-este documento: `2026-10-18` (v3.57.0). Lo agregado de v3.58.0 a v3.60.0
-puede no estar reflejado aquí; el detalle por versión está en el CHANGELOG.
+**Versión del proyecto:** `3.62.0` (ver `package.json`) · Último cambio a
+este documento: `2026-10-26` (v3.62.0). El detalle por versión está en el
+CHANGELOG; la evidencia del hardening, en `docs/HARDENING-2026-10.md`.
+
+**De v3.58.0 a v3.62.0 (resumen):**
+- v3.58.0 — Registros con más filtros y días del período.
+- v3.59.0 — Hora del sistema corregida aunque la PC la tenga mal; visitas a mano.
+- v3.60.0 — Comparar dos períodos sin ambigüedad (A evalúa, B referencia).
+- v3.61.0 — Datos de ejemplo desde la bienvenida (demo pública).
+- v3.62.0 — Hardening: Angular 21 LTS, 0 vulnerabilidades, CSP, PIN con hash,
+  importación y respaldos validados y atómicos, accesibilidad WCAG 2.1 AA
+  verificada con axe, 0 `any`, E2E con servidor propio.
+
+**No está validado en una biblioteca real.** El piloto pendiente está en
+`docs/PRUEBA-PILOTO-BIBLIOTECA.md`.
 
 **Cierre de Fase 1 (v4.0)**: ver §2.0 abajo. Después de v4.0 arranca
 **Fase 2** (backend + auth + sync) — detalle en `docs/ROADMAP.md`.
@@ -351,8 +363,13 @@ automático ciego.
 ### 2.6 Hardening pre-producción 🟡
 
 - [x] ~~**Migración completa `*ngIf` → `@if`**~~ — **completada** (verificado 2026-08-31): 0 ocurrencias en `.html` y 0 en templates inline. El único hit de grep es una línea de comentario en `toast-container.component.ts`. Este item llevaba tiempo desactualizado declarando "~97 ocurrencias pendientes".
-- [ ] **Lighthouse audit completo** (performance, a11y, best practices, SEO). Objetivo: 90+ en todas.
-- [ ] **E2E expansion**: flujo completo (escaneo → motivo → salida → export), modo quiosco con PIN, aforo bloqueado.
+- [x] **Accesibilidad automatizada** (v3.62.0): axe-core en E2E sobre el flujo de la puerta y 16 pantallas con datos, escritorio y móvil: 0 violaciones WCAG 2.1 A/AA. Lint de plantillas en `error`.
+- [x] **Seguridad web** (v3.62.0): CSP estricta y cabeceras, verificadas contra el build (`npm run e2e:produccion`, también en CI). Ver `docs/SEGURIDAD.md`.
+- [x] **Dependencias** (v3.62.0): Angular 21 LTS, SheetJS 0.20.3, jsPDF 4.2.1; `npm audit` en 0.
+- [x] **Datos** (v3.62.0): validación completa de respaldos y del padrón; "Reemplazar" y la importación del padrón en una sola transacción; PIN con hash.
+- [ ] **Lighthouse audit completo** (performance, best practices, SEO). Objetivo: 90+ en todas.
+- [x] **E2E expansion**: flujo completo (escaneo → motivo → salida → export), modo quiosco con PIN, aforo bloqueado — cubiertos en `smoke.spec.ts` y `cuadre.spec.ts`.
+- [ ] **Prueba piloto en la biblioteca** — requisito institucional, no de código: `docs/PRUEBA-PILOTO-BIBLIOTECA.md`.
 - [ ] **ADRs** (`docs/adr/`): documentar decisiones arquitectónicas clave (por qué IndexedDB directo, por qué no NgRx, por qué sessionStorage entre rutas, etc.).
 - [ ] **Test de generador de datos**: verificar distribuciones (0% registros en domingos, ~15% en verano, etc.) con dataset chico.
 

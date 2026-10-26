@@ -1,0 +1,122 @@
+# Seguridad de Stenbrary
+
+Modelo de amenazas, controles que existen y su verificación, y límites que
+una aplicación local sin servidor **no puede** superar. Estado a v3.62.0
+(2026-10-26).
+
+## 1. Qué hay que proteger y de quién
+
+| Activo | Dónde vive | Amenaza principal |
+|---|---|---|
+| Datos de alumnos (matrícula, nombre, carrera) y visitas | IndexedDB del navegador del equipo | Alguien con acceso al equipo; un archivo importado malicioso; un respaldo que circula |
+| PIN del coordinador | `localStorage` (hash) | Un alumno frente al equipo en modo quiosco |
+| Integridad de las cifras | IndexedDB + respaldos | Importar un respaldo dañado o equivocado |
+| La aplicación | Cloudflare Pages (estática) | Inyección de scripts, framing, dependencias vulnerables |
+
+**Fuera de alcance por diseño:** no hay servidor ni cuentas en la versión
+actual (la nube está apagada, ver `docs/ROADMAP.md`, Fase 2). Quien controla
+el equipo y su navegador, con las herramientas de desarrollador, puede leer
+IndexedDB, borrar `localStorage` o modificar la aplicación en memoria.
+Ningún control de esta página lo impide; los de abajo **reducen** riesgos,
+no los eliminan. La protección real de los datos en un equipo compartido es
+física y de cuentas del sistema operativo (ver `docs/PRUEBA-PILOTO-BIBLIOTECA.md`).
+
+## 2. Controles y cómo se verifican
+
+### 2.1 Cabeceras HTTP (`public/_headers`)
+
+- **Content-Security-Policy**: `script-src 'self'` (sin scripts inline, sin
+  `eval`, sin terceros), `object-src 'none'`, `base-uri 'self'`,
+  `form-action 'self'`, `connect-src 'self'`, `font-src` solo
+  `fonts.gstatic.com`, `frame-ancestors 'none'`.
+- **Excepción única:** `style-src 'unsafe-inline'`. Angular inyecta los
+  estilos de cada componente como `<style>` en tiempo de ejecución y las
+  plantillas usan atributos `style`; en hosting estático no hay un *nonce*
+  por respuesta. El riesgo residual es inyección de CSS (no de scripts).
+- `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy` (cámara solo en el propio sitio; micrófono,
+  geolocalización, pago y USB apagados), `Cross-Origin-Opener-Policy`.
+- Para cumplir `script-src 'self'`: el build no incrusta el CSS crítico
+  (Angular lo activaba con un `onload` inline) y Lottie usa el reproductor
+  *light*, sin `eval`.
+
+**Verificación:** `npm run e2e:produccion` (también en CI) sirve el build de
+producción con esas cabeceras (`scripts/servir-produccion.mjs` replica la
+semántica de Cloudflare) y recorre la app: datos de ejemplo, gráficas, PDF,
+Excel, importación en el Worker, respaldo, cámara y el service worker sin
+conexión. La prueba falla con **una sola** violación de la CSP. Control
+negativo hecho a mano: un `<script>` inline se bloquea y se reporta.
+
+### 2.2 PIN del coordinador
+
+- Se guarda **PBKDF2-HMAC-SHA256**, 600 000 iteraciones (recomendación
+  OWASP), sal aleatoria de 16 bytes, comparación en tiempo constante
+  (`core/utils/pin-hash.utils.ts`). El código de recuperación también.
+- 5 intentos fallidos bloquean 5 minutos; cada intento queda en la bitácora.
+  El PIN nunca se escribe en la bitácora ni en la consola (hay prueba).
+- Migración: un PIN de una instalación anterior (texto plano) se convierte
+  en hash al arrancar; nadie se queda fuera.
+
+**Límite, dicho sin rodeos:** un PIN de 4 a 6 dígitos tiene como mucho un
+millón de valores. Quien copie el hash de `localStorage` puede probarlos todos
+fuera del navegador; el hash lo encarece y evita que el PIN se lea a simple
+vista o se recupere de un respaldo del navegador, pero **no** protege frente
+a alguien con control del equipo. Además, ese alguien puede simplemente borrar
+`localStorage` (el PIN vuelve al de fábrica) o editar la app en memoria. El
+PIN es una barrera contra el uso casual del quiosco, no un control de acceso.
+En la Fase 2 lo reemplazan cuentas con roles verificados por el servidor.
+
+### 2.3 Archivos que importa el coordinador
+
+- **Padrón (Excel/CSV)** — `core/utils/lectura-padron.utils.ts`: extensión,
+  firma real del archivo (ZIP para `.xlsx`, OLE o texto para `.xls`, texto
+  para `.csv`), 10 MB, 20 000 filas, 60 columnas, 300 caracteres por celda;
+  sin fórmulas, estilos ni macros; encabezados `__proto__`/`constructor`/
+  `prototype` rechazados. Se lee en un Web Worker con 30 s de tiempo máximo.
+  Se guarda en una sola transacción: todo o nada.
+- **SheetJS 0.20.3** desde el CDN oficial, incluido en `vendor/` (corrige
+  CVE-2023-30533 y CVE-2024-22363). Ver `vendor/README.md`.
+- **Respaldos (JSON)** — `core/utils/validacion-respaldo.utils.ts`: se valida
+  cada alumno, visita, actividad y evento antes de tocar la base; un archivo
+  inválido no cambia nada. "Reemplazar" es una sola transacción de IndexedDB
+  y antes descarga una copia de lo actual.
+
+**Verificación:** pruebas unitarias con archivos válidos, dañados, vacíos,
+disfrazados y excesivos; fallo real a media transacción (los datos quedan
+idénticos); E2E con archivos rechazados en el navegador real.
+
+### 2.4 PDF generados
+
+jsPDF 4.2.1. Stenbrary solo usa `text`, tablas y `save()`: no usa las APIs
+con avisos recientes (`output()` a ventana nueva, anotaciones FreeText,
+`addJS`, AcroForm, imágenes GIF/BMP). Una prueba genera la constancia y el
+reporte con textos que intentan cerrar la cadena e inyectar objetos PDF, lee
+el archivo y verifica que el texto sale escapado y que no hay acciones activas.
+
+### 2.5 Dependencias
+
+`npm audit --omit=dev` y `npm audit`: **0 vulnerabilidades** (2026-10-26).
+`undici` se fija a 7.30.1 dentro de `@angular/build` (que la fija exacta en
+7.29.1) con `overrides`: es un parche de la misma línea; el build no cambia.
+Angular 21 tiene soporte LTS hasta junio de 2027.
+
+### 2.6 Privacidad
+
+- La consola del navegador no muestra matrículas ni nombres en producción
+  (`core/utils/logger.ts`).
+- Las matrículas del repositorio, pruebas y demo son sintéticas (serie
+  `229999000N`, `9000001+`).
+- La nube (Supabase) está apagada en el build de producción, que no incluye
+  credenciales. La clave del proyecto de **desarrollo** que aparece en
+  `environment.ts` y en el workflow manual es la *publishable*: pública por
+  diseño y limitada por RLS (`supabase/migrations`).
+
+## 3. Riesgos residuales conocidos
+
+| Riesgo | Por qué queda | Mitigación |
+|---|---|---|
+| Acceso físico al equipo | App local sin servidor | Cuenta de Windows propia, bloqueo de pantalla, perfil de navegador dedicado (piloto) |
+| Pérdida del navegador o del perfil = pérdida de datos | IndexedDB es la única copia | Respaldo diario (recordatorio integrado) y procedimiento del piloto |
+| `style-src 'unsafe-inline'` | Arquitectura de estilos de Angular en hosting estático | `script-src` estricto: el CSS inyectado no ejecuta código |
+| Copias viejas en caché de terceros | Caché del borde de Cloudflare e índices de GitHub fuera de nuestro control | Solicitudes de purga documentadas para el mantenedor |

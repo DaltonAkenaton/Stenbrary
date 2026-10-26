@@ -49,6 +49,42 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.62.0',
+    fecha: '2026-10-26',
+    titulo: 'Más seguro y más fácil de usar para todos',
+    resumen: 'El PIN se guarda protegido, los respaldos y el padrón se revisan completos antes de tocar los datos, y las pantallas se leen y se usan mejor con teclado y lector de pantalla.',
+    cambios: [
+      {
+        tipo: 'mejora',
+        texto: 'El PIN del coordinador y su código de recuperación ya no se guardan tal cual en el equipo: se guarda una versión cifrada de un solo sentido. El PIN que ya tenías sigue funcionando; se convierte solo al abrir el sistema.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Respaldos: antes de importar se revisa el archivo completo (cada alumno y cada visita). Si algo está mal, el sistema dice qué y en qué lugar, y no cambia nada.',
+      },
+      {
+        tipo: 'mejora',
+        texto: '"Reemplazar todo" descarga primero, sin preguntar, una copia de los datos actuales ("antes-de-reemplazar"): con ella se puede volver atrás. Y si el reemplazo falla a la mitad, los datos quedan exactamente como estaban.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Importar alumnos: se revisa que el archivo sea de verdad un Excel o CSV y su tamaño (hasta 20 000 alumnos y 10 MB). Un archivo dañado o equivocado se rechaza con el motivo, la pantalla no se congela mientras se lee, y se guardan todos los alumnos o ninguno.',
+      },
+      {
+        tipo: 'mejora',
+        texto: 'Accesibilidad: los textos tenues tienen más contraste, todos los botones de solo ícono dicen qué hacen al lector de pantalla y las tarjetas (actividades, "En biblioteca", el top de alumnos) se usan también con el teclado.',
+      },
+      {
+        tipo: 'fix',
+        texto: '"En biblioteca ahora": el contador "N personas presentes" del encabezado no aparecía nunca.',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'Por privacidad, la consola del navegador ya no muestra la matrícula leída ni el nombre del alumno.',
+      },
+    ],
+  },
+  {
     version: '3.61.0',
     fecha: '2026-10-25',
     titulo: 'Conocer el sistema con datos de ejemplo',
