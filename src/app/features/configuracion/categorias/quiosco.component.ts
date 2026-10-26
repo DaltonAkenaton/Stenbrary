@@ -39,18 +39,16 @@ import { BitacoraService } from '../../../core/services/bitacora.service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class QuioscoCategoriaComponent {
+  configService = inject(ConfigService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
 
   // Debounce de toast para inputs continuos.
   private toastDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private readonly bitacora = inject(BitacoraService);
   private readonly dialog = inject(MatDialog);
-
-  constructor(
-    public configService: ConfigService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   // ─── Modo quiosco ───────────────────────────────────
   toggleModoQuiosco(): void {

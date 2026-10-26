@@ -79,6 +79,16 @@ interface EstadisticasAlumno {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DetalleAlumnoComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private databaseService = inject(DatabaseService);
+  dialog = inject(MatDialog);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  configService = inject(ConfigService);
+  private reportService = inject(ReportService);
+  private cdr = inject(ChangeDetectorRef);
+
   alumno: Alumno | null = null;
   registros: RegistroDetalle[] = [];
   estadisticas: EstadisticasAlumno | null = null;
@@ -116,18 +126,6 @@ export class DetalleAlumnoComponent implements OnInit {
 
   private readonly bitacora = inject(BitacoraService);
   private readonly aforoService = inject(AforoService);
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private databaseService: DatabaseService,
-    public dialog: MatDialog,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    public configService: ConfigService,
-    private reportService: ReportService,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   // ═══════════════════════════════════════════════
   // LIFECYCLE

@@ -77,6 +77,14 @@ type OrdenMode = 'dias-desc' | 'dias-asc' | 'nombre' | 'carrera';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InactivosComponent implements OnInit {
+  private db = inject(DatabaseService);
+  configService = inject(ConfigService);
+  private router = inject(Router);
+  private toast = inject(ToastService);
+  private loading = inject(LoadingService);
+  private exportService = inject(ExportService);
+  private dialog = inject(MatDialog);
+
 
   readonly presets = [7, 15, 30, 60, 90, 180];
   readonly opcionesOrden: { valor: OrdenMode; etiqueta: string; icono: string }[] = [
@@ -201,15 +209,7 @@ export class InactivosComponent implements OnInit {
 
   private readonly bitacora = inject(BitacoraService);
 
-  constructor(
-    private db: DatabaseService,
-    public configService: ConfigService,
-    private router: Router,
-    private toast: ToastService,
-    private loading: LoadingService,
-    private exportService: ExportService,
-    private dialog: MatDialog,
-  ) {
+  constructor() {
     this.umbralDias.set(this.configService.umbralInactividadDias || 30);
   }
 

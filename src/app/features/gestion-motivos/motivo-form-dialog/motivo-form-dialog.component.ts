@@ -9,7 +9,7 @@
 // ║  - Preview con glow del color seleccionado           ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -436,6 +436,15 @@ interface ColorOpcion {
   `]
 })
 export class MotivoFormDialogComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private dialogRef = inject<MatDialogRef<MotivoFormDialogComponent>>(MatDialogRef);
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  data = inject<{
+    motivo: Motivo | null;
+    esNuevo: boolean;
+}>(MAT_DIALOG_DATA);
+
   motivoForm!: FormGroup;
   guardando = false;
   esNuevo = true;
@@ -481,13 +490,9 @@ export class MotivoFormDialogComponent implements OnInit {
     { nombre: 'Celeste', valor: '#5DE4EC' },
   ];
 
-  constructor(
-    private fb: FormBuilder,
-    private dialogRef: MatDialogRef<MotivoFormDialogComponent>,
-    private databaseService: DatabaseService,
-    private toastService: ToastService,
-    @Inject(MAT_DIALOG_DATA) public data: { motivo: Motivo | null; esNuevo: boolean }
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.esNuevo = data.esNuevo;
   }
 

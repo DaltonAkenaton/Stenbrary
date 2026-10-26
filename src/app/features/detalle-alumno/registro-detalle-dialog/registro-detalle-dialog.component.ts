@@ -7,7 +7,7 @@
 // ║  v3.51.0: el alumno enlaza a su perfil (si se pide)  ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -287,6 +287,10 @@ export interface RegistroDetalleDialogData {
   `]
 })
 export class RegistroDetalleDialogComponent {
+  data = inject<RegistroDetalleDialogData>(MAT_DIALOG_DATA);
+  private dialogRef = inject<MatDialogRef<RegistroDetalleDialogComponent>>(MatDialogRef);
+  private router = inject(Router);
+
   /** Los invitados no tienen perfil. */
   get puedeEnlazar(): boolean {
     return !!this.data.enlazarAlumno && this.data.registro.matricula !== 'INVITADO';
@@ -297,12 +301,6 @@ export class RegistroDetalleDialogComponent {
     const r = this.data.registro;
     return (r.motivoNombres?.length ? r.motivoNombres : [r.motivoNombre]).join(', ');
   }
-
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public data: RegistroDetalleDialogData,
-    private dialogRef: MatDialogRef<RegistroDetalleDialogComponent>,
-    private router: Router,
-  ) {}
 
   irAlAlumno(): void {
     this.dialogRef.close();

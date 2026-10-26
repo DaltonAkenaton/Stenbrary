@@ -10,7 +10,7 @@
 // ║   (Alertas de inactividad pasó a Operación, v3.57.0) ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -33,6 +33,10 @@ import { SuccessAnimationComponent } from '../../../shared/components/success-an
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ExperienciaCategoriaComponent {
+  configService = inject(ConfigService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
 
   readonly opcionesCelebracion = [
     { valor: 0.03, etiqueta: 'Rara (3%)' },
@@ -65,12 +69,6 @@ export class ExperienciaCategoriaComponent {
   temaPreview: string | undefined = undefined;
 
   private toastDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-  constructor(
-    public configService: ConfigService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   get porcentajeCelebracion(): number {
     return Math.round(this.configService.celebracionProbabilidad * 100);

@@ -9,7 +9,7 @@
 // ║     saltar confirmación, cámara preferida, zoom)     ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -31,6 +31,11 @@ import { ConfigService, CamaraPreferida } from '../../../core/services/config.se
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EscanerCategoriaComponent {
+  soundService = inject(SoundService);
+  configService = inject(ConfigService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
 
   readonly opcionesEscanerCooldown = [
     { valor: 0,    etiqueta: 'Sin espera' },
@@ -55,13 +60,6 @@ export class EscanerCategoriaComponent {
 
   // Debounce de toast para inputs continuos (slider, stepper).
   private toastDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-  constructor(
-    public soundService: SoundService,
-    public configService: ConfigService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   get zoomDefaultPct(): number {
     return Math.round(this.configService.zoomScannerDefault * 100);

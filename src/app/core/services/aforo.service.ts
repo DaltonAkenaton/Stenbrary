@@ -16,7 +16,7 @@
 // ║  para funcionar (ver ConfigService.aforoActivo).     ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal, inject } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
 
@@ -24,6 +24,9 @@ export type EstadoAforo = 'inactivo' | 'libre' | 'normal' | 'alto' | 'lleno' | '
 
 @Injectable({ providedIn: 'root' })
 export class AforoService {
+  private databaseService = inject(DatabaseService);
+  private configService = inject(ConfigService);
+
 
   /** Ocupación actual (personas con entrada abierta hoy) */
   private _ocupacion = signal(0);
@@ -62,11 +65,6 @@ export class AforoService {
     if (p >= 50) return 'normal';
     return 'libre';
   });
-
-  constructor(
-    private databaseService: DatabaseService,
-    private configService: ConfigService,
-  ) {}
 
   /**
    * Recalcula la ocupación leyendo de la base de datos.

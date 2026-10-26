@@ -15,7 +15,7 @@
 // ║  inputs libres con rangos naturales.                  ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, signal, computed, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, signal, computed, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -565,6 +565,10 @@ const MS_POR_ALUMNO = 5;
   `]
 })
 export class DatosPruebaComponent implements OnInit {
+  private datosPruebaService = inject(DatosPruebaService);
+  private toast = inject(ToastService);
+  private dialog = inject(MatDialog);
+
   presets = PRESETS;
   presetsKeys = Object.keys(PRESETS) as Exclude<PresetVolumen, 'personalizado'>[];
 
@@ -620,12 +624,6 @@ export class DatosPruebaComponent implements OnInit {
       c.registrosPorAlumnoPorMes >= 0.1 && c.registrosPorAlumnoPorMes <= 50
     );
   });
-
-  constructor(
-    private datosPruebaService: DatosPruebaService,
-    private toast: ToastService,
-    private dialog: MatDialog,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.refrescarConteo();

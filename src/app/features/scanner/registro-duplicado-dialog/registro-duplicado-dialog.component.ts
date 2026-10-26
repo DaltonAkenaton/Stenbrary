@@ -15,7 +15,7 @@
 // ║  UBICACIÓN: features/scanner/registro-duplicado-dialog║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import { CLAVE_LECTURA_PENDIENTE, decidirLecturaEnFlujo } from '../../../core/utils/flujo-puerta.utils';
 import { CommonModule } from '@angular/common';
@@ -364,14 +364,16 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
   `]
 })
 export class RegistroDuplicadoDialogComponent {
+  dialogRef = inject<MatDialogRef<RegistroDuplicadoDialogComponent>>(MatDialogRef);
+  data = inject<RegistroDuplicadoData>(MAT_DIALOG_DATA);
+
   /** Se pasó otra credencial mientras alguien usaba el diálogo: se descartó. */
   readonly lecturaIgnorada = signal(false);
   private ultimoToque = Date.now();
 
-  constructor(
-    public dialogRef: MatDialogRef<RegistroDuplicadoDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: RegistroDuplicadoData,
-  ) {
+  constructor() {
+    const dialogRef = this.dialogRef;
+
     // El servicio se come el Enter del lector. Misma regla que "elegir
     // actividad": si nadie toca el diálogo en 20 s, la credencial de otro
     // alumno lo cierra y el escáner la atiende.

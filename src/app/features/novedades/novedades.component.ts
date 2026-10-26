@@ -11,7 +11,7 @@
 // ║  - Marca automáticamente como "vista" al entrar      ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -431,11 +431,11 @@ import { TipoCambio } from '../../core/data/changelog.data';
   `]
 })
 export class NovedadesComponent implements OnInit {
+  changelogService = inject(ChangelogService);
+
 
   /** Set de versiones expandidas (por defecto solo la más reciente). */
   private _expandidas = signal(new Set<string>());
-
-  constructor(public changelogService: ChangelogService) {}
 
   ngOnInit(): void {
     // Expandir la versión más reciente por default

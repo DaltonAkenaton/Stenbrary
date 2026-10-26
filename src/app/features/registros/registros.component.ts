@@ -109,6 +109,14 @@ function decorarParaTabla(r: RegistroRender): RegistroRender {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RegistrosComponent implements OnInit {
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  private exportService = inject(ExportService);
+  private reportService = inject(ReportService);
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
+  private dialog = inject(MatDialog);
+
 
   // ─── DATA ──────────────────────────────────────────────
   // Signals para que `computed()` se invalide automáticamente en filtros.
@@ -178,16 +186,6 @@ columnas: string[] = [
     ];
   private readonly bitacora = inject(BitacoraService);
   private readonly loading = inject(LoadingService);
-
-  constructor(
-  private databaseService: DatabaseService,
-  private toastService: ToastService,
-  private exportService: ExportService,
-  private reportService: ReportService,
-  private router: Router,
-  private activatedRoute: ActivatedRoute,
-  private dialog: MatDialog,
-) {}
 
   async ngOnInit(): Promise<void> {
     await this.cargarDatos();

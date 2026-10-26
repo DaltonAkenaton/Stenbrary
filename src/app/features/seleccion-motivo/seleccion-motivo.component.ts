@@ -47,6 +47,14 @@ import { ABANDONO_MOTIVO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/fl
     styleUrl: './seleccion-motivo.component.scss'
 })
 export class SeleccionMotivoComponent implements OnInit, OnDestroy {
+  private databaseService = inject(DatabaseService);
+  private router = inject(Router);
+  private toastService = inject(ToastService);
+  private soundService = inject(SoundService);
+  private loadingService = inject(LoadingService);
+  private configService = inject(ConfigService);
+  private aforoService = inject(AforoService);
+
   alumno: Alumno | null = null;
   motivos: Motivo[] = [];
 
@@ -82,16 +90,6 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
 
   private readonly lector = inject(LectorRafagaService);
   private dejarDeVigilar: (() => void) | null = null;
-
-  constructor(
-    private databaseService: DatabaseService,
-    private router: Router,
-    private toastService: ToastService,
-    private soundService: SoundService,
-    private loadingService: LoadingService,
-    private configService: ConfigService,
-    private aforoService: AforoService,
-  ) {}
 
   // ═══════════════════════════════════════════════
   // LIFECYCLE

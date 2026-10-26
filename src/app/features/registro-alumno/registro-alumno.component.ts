@@ -52,6 +52,13 @@ import { esNombreValido, limpiarNombre } from '../../core/utils/nombres.utils';
     styleUrl: './registro-alumno.component.scss'
 })
 export class RegistroAlumnoComponent implements OnInit, OnDestroy {
+  private fb = inject(FormBuilder);
+  private databaseService = inject(DatabaseService);
+  private router = inject(Router);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private dialog = inject(MatDialog);
+
   private readonly lector = inject(LectorRafagaService);
   private dejarDeVigilar: (() => void) | null = null;
 
@@ -69,15 +76,6 @@ export class RegistroAlumnoComponent implements OnInit, OnDestroy {
   grados = gradosDe(this.catalogo);
   grupos = this.catalogo.grupos;
   turnos = TURNOS;
-
-  constructor(
-    private fb: FormBuilder,
-    private databaseService: DatabaseService,
-    private router: Router,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private dialog: MatDialog,
-  ) {}
 
   ngOnInit(): void {
     const matriculaTemp = sessionStorage.getItem('matriculaTemp');

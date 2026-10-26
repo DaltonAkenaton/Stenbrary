@@ -8,7 +8,7 @@
 // ║  desmarca lo que no quiere.                           ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -250,6 +250,9 @@ interface OpcionSeccion {
   `]
 })
 export class ExportarPdfDialogComponent {
+  private dialogRef = inject<MatDialogRef<ExportarPdfDialogComponent, ExportarPdfDialogResult>>(MatDialogRef);
+  data = inject<ExportarPdfDialogData>(MAT_DIALOG_DATA);
+
 
   readonly opciones: OpcionSeccion[] = [
     { key: 'resumen',        label: 'Resumen ejecutivo', descripcion: 'Total de visitas, alumnos únicos y rango de fechas.', icono: 'fact_check' },
@@ -265,10 +268,9 @@ export class ExportarPdfDialogComponent {
     carreras: true, motivos: true, turnos: true,
   };
 
-  constructor(
-    private dialogRef: MatDialogRef<ExportarPdfDialogComponent, ExportarPdfDialogResult>,
-    @Inject(MAT_DIALOG_DATA) public data: ExportarPdfDialogData,
-  ) {
+  constructor() {
+    const data = this.data;
+
     if (!data.hayTopAlumnos) {
       this.seleccion.topAlumnos = false;
     }

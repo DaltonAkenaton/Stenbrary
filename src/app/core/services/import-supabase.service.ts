@@ -12,7 +12,7 @@
 // ║  el coordinador llegan con el sync engine (2.2).     ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { DatabaseService } from './database.service';
 import { RemoteDatabaseService } from './remote-database.service';
@@ -41,10 +41,9 @@ export interface ImportReport {
 
 @Injectable({ providedIn: 'root' })
 export class ImportSupabaseService {
-  constructor(
-    private local: DatabaseService,
-    private remote: RemoteDatabaseService,
-  ) {}
+  private local = inject(DatabaseService);
+  private remote = inject(RemoteDatabaseService);
+
 
   /**
    * Preview previo a la corrida. Muestra el estado local vs remoto para

@@ -341,6 +341,12 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
   `]
 })
 export class LimpiezaRegistrosComponent {
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private aforoService = inject(AforoService);
+  private dialog = inject(MatDialog);
+
 
   rangoSeleccionado: RangoPreset = 'mes';
   fechaDesde = '';
@@ -360,14 +366,6 @@ export class LimpiezaRegistrosComponent {
   readonly totalEnBase = signal(0);
 
   private readonly bitacora = inject(BitacoraService);
-
-  constructor(
-    private databaseService: DatabaseService,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private aforoService: AforoService,
-    private dialog: MatDialog,
-  ) {}
 
   /**
    * El rango por defecto ("Últimos 30 días") nunca se contaba: el conteo solo

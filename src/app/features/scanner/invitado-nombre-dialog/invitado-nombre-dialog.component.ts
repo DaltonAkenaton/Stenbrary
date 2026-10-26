@@ -104,12 +104,16 @@ import { MatInputModule } from '@angular/material/input';
   `]
 })
 export class InvitadoNombreDialogComponent {
+  private dialogRef = inject<MatDialogRef<InvitadoNombreDialogComponent>>(MatDialogRef);
+
   nombre = '';
   mostrarError = false;
   /** v3.57.2: se pasó una credencial con el diálogo abierto. */
   lecturaIgnorada = false;
 
-  constructor(private dialogRef: MatDialogRef<InvitadoNombreDialogComponent>) {
+  constructor() {
+    const dialogRef = this.dialogRef;
+
     // Sin esto, los dígitos de la credencial de un alumno quedaban escritos
     // como nombre del visitante. El servicio se come el Enter; aquí se
     // borran los dígitos que alcanzaron a caer en el campo.

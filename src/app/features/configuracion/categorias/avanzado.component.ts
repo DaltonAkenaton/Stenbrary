@@ -41,6 +41,10 @@ import { DatosPruebaComponent } from '../datos-prueba.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AvanzadoCategoriaComponent {
+  private toastService = inject(ToastService);
+  private dialog = inject(MatDialog);
+  private router = inject(Router);
+
 
   procesando = false;
 
@@ -72,12 +76,6 @@ export class AvanzadoCategoriaComponent {
    */
   readonly mostrarSeccionNube =
     this.hayCredenciales && (environment.mostrarConexionNube || this.nubeActiva);
-
-  constructor(
-    private toastService: ToastService,
-    private dialog: MatDialog,
-    private router: Router,
-  ) {}
 
   navegar(ruta: string): void {
     void this.router.navigate([ruta]);

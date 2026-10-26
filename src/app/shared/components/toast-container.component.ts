@@ -7,7 +7,7 @@
 // ║  Toast dark theme + acciones (undo) + auto-close.    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
@@ -204,11 +204,11 @@ import { ToastService, Toast } from '../../core/services/toast.service';
   `]
 })
 export class ToastContainerComponent implements OnInit, OnDestroy {
+  private toastService = inject(ToastService);
+
   toasts: Toast[] = [];
   private subscription?: Subscription;
   private timers = new Map<string, any>();
-
-  constructor(private toastService: ToastService) {}
 
   ngOnInit(): void {
     this.subscription = this.toastService.toasts$.subscribe(toast => {

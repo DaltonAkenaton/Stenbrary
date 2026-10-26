@@ -120,9 +120,9 @@ const APELLIDOS = [
 
 @Injectable({ providedIn: 'root' })
 export class DatosPruebaService {
-  private readonly config = inject(ConfigService);
+  private db = inject(DatabaseService);
 
-  constructor(private db: DatabaseService) {}
+  private readonly config = inject(ConfigService);
 
   /**
    * Cuenta alumnos y registros marcados como de prueba.

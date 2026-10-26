@@ -14,17 +14,7 @@
 // ║  - Umbral de inactividad usa el configurado          ║
 // ╚══════════════════════════════════════════════════════╝
 
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  AfterViewInit,
-  ViewChild,
-  ElementRef,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  NgZone,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, Injector, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -137,6 +127,20 @@ interface OpcionPreset {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardEjecutivoComponent implements OnInit, AfterViewInit, OnDestroy {
+  private estadisticasService = inject(EstadisticasAvanzadasService);
+  private exportService = inject(ExportService);
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  private configService = inject(ConfigService);
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
+  private dialog = inject(MatDialog);
+  private ngZone = inject(NgZone);
+  private loading = inject(LoadingService);
+  // ReportService se importa bajo demanda (jsPDF pesa); el injector lo crea.
+  private injector = inject(Injector);
+
   // ─── Sistema de tabs (v3.18.0) ───────────────────
   // Solo se renderiza la pestaña activa → ~75% menos elementos pintados a la vez,
   // 1 chart canvas a la vez en lugar de 5+. Cambio entre tabs es instantáneo.
@@ -464,20 +468,6 @@ formatHora(h: number): string {
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
-
-  constructor(
-    private estadisticasService: EstadisticasAvanzadasService,
-    private exportService: ExportService,
-    private databaseService: DatabaseService,
-    private toastService: ToastService,
-    private configService: ConfigService,
-    private router: Router,
-    private activatedRoute: ActivatedRoute,
-    private cdr: ChangeDetectorRef,
-    private dialog: MatDialog,
-    private ngZone: NgZone,
-    private loading: LoadingService,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     try {
@@ -2271,7 +2261,7 @@ this.sparkRegistros = counts;
       const topParaReporte = this.calcularTopDelMes(
         delRango, 10, await this.databaseService.obtenerTodosLosMotivos());
       const { ReportService } = await import('../../core/services/report.service');
-      const reportService = new ReportService(this.databaseService);
+      const reportService = this.injector.get(ReportService);
       const titulosPorTipo: Record<string, string> = {
         diario: `Reporte Diario — ${rango.etiqueta}`,
         semanal: `Reporte Semanal — ${rango.etiqueta}`,
@@ -2359,7 +2349,7 @@ this.sparkRegistros = counts;
       const topParaReporte = this.calcularTopDelMes(
         delRango, 10, await this.databaseService.obtenerTodosLosMotivos());
       const { ReportService } = await import('../../core/services/report.service');
-      const reportService = new ReportService(this.databaseService);
+      const reportService = this.injector.get(ReportService);
       const sufijo = horaFiltro ? ` (${this.formatHora(horaFiltro.desde)}–${this.formatHoraFin(horaFiltro.hasta)})` : '';
       await reportService.generarReporteAccesos(delRango, {
         tipo: 'personalizado',
@@ -2410,7 +2400,7 @@ this.sparkRegistros = counts;
   async exportarTopPDF(): Promise<void> {
     if (this.topAlumnos.length === 0) return;
     const { ReportService } = await import('../../core/services/report.service');
-    const reportService = new ReportService(this.databaseService);
+    const reportService = this.injector.get(ReportService);
     const registros = await this.obtenerRegistrosTopAlumnos();
     const rango = this.rangoDelTop();
     const fechas = registros.map(r => new Date(r.fechaHora).getTime());

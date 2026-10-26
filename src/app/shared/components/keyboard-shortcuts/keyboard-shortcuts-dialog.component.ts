@@ -6,7 +6,7 @@
 // ║  Se abre con `?` o clic en el icono de ayuda.         ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -207,6 +207,8 @@ interface GrupoAtajos {
   `]
 })
 export class KeyboardShortcutsDialogComponent {
+  private dialogRef = inject<MatDialogRef<KeyboardShortcutsDialogComponent>>(MatDialogRef);
+
   grupos: GrupoAtajos[] = [
     {
       titulo: 'Búsqueda y ayuda',
@@ -229,8 +231,6 @@ export class KeyboardShortcutsDialogComponent {
       ],
     },
   ];
-
-  constructor(private dialogRef: MatDialogRef<KeyboardShortcutsDialogComponent>) {}
 
   cerrar(): void {
     this.dialogRef.close();

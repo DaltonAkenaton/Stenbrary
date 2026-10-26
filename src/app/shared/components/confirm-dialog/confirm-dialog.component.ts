@@ -18,7 +18,7 @@
 // ║  UBICACIÓN: shared/components/confirm-dialog/        ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -261,13 +261,15 @@ export interface ConfirmDialogData {
   `]
 })
 export class ConfirmDialogComponent {
+  dialogRef = inject<MatDialogRef<ConfirmDialogComponent>>(MatDialogRef);
+  data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
+
 
   variante: 'danger' | 'warning' | 'info';
 
-  constructor(
-    public dialogRef: MatDialogRef<ConfirmDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: ConfirmDialogData,
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.variante = data.variante || 'info';
   }
 

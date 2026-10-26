@@ -10,7 +10,7 @@
 // ║  - Texto claro                                       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subscription } from 'rxjs';
@@ -156,7 +156,7 @@ export class LoadingComponent implements OnInit, OnDestroy {
     return Math.max(0, Math.min(100, p));
   }
 
-  constructor(private loadingService: LoadingService) {}
+  private loadingService = inject(LoadingService);
 
   ngOnInit(): void {
     this.subscription = this.loadingService.loading$.subscribe(state => {

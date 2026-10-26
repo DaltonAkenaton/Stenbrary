@@ -16,7 +16,7 @@
 // ║  (Ctrl+K) cuando esté listo.                          ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -61,6 +61,9 @@ const DEFAULT_CATEGORIA: CategoriaConfigId = 'general';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfiguracionV2Component implements OnInit, OnDestroy {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
 
   readonly categorias = CATEGORIAS_CONFIG;
 
@@ -99,11 +102,6 @@ export class ConfiguracionV2Component implements OnInit, OnDestroy {
   });
 
   private sub?: Subscription;
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-  ) {}
 
   ngOnInit(): void {
     const fragment = this.route.snapshot.fragment as CategoriaConfigId | null;

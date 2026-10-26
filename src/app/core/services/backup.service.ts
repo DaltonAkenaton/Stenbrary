@@ -9,7 +9,7 @@
 // ║   v3.50.0 los motivos se emparejan por nombre)       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { ConfigService } from './config.service';
 import { BitacoraService, idsBorrados, renombresCarrera, traducirCarrera } from './bitacora.service';
@@ -70,12 +70,10 @@ export interface ResultadoImportacion {
   providedIn: 'root',
 })
 export class BackupService {
+  private databaseService = inject(DatabaseService);
+  private configService = inject(ConfigService);
+  private bitacora = inject(BitacoraService);
 
-  constructor(
-    private databaseService: DatabaseService,
-    private configService: ConfigService,
-    private bitacora: BitacoraService,
-  ) {}
 
   // ═══════════════════════════════════════════════
   // EXPORTAR

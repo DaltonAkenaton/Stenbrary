@@ -9,7 +9,7 @@
 // ║  entienda qué significa cada número.                  ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -531,7 +531,8 @@ DÍA OCUPADO:
   `]
 })
 export class FormulasInfoDialogComponent {
-  constructor(private dialogRef: MatDialogRef<FormulasInfoDialogComponent>) {}
+  private dialogRef = inject<MatDialogRef<FormulasInfoDialogComponent>>(MatDialogRef);
+
 
   cerrar(): void {
     this.dialogRef.close();

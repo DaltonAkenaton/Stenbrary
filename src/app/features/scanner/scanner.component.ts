@@ -300,6 +300,16 @@ declare class BarcodeDetector {
     styleUrl: './scanner.component.scss'
 })
 export class ScannerComponent implements OnInit, OnDestroy {
+  private databaseService = inject(DatabaseService);
+  private router = inject(Router);
+  private dialog = inject(MatDialog);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private soundService = inject(SoundService);
+  configService = inject(ConfigService);
+  aforoService = inject(AforoService);
+  private ngZone = inject(NgZone);
+
 
   @ViewChild('video',  { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvas', { static: false }) canvasElement!: ElementRef<HTMLCanvasElement>;
@@ -412,18 +422,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private readonly reloj = inject(RelojService);
   readonly horaSinVerificar = computed(() =>
     environment.production && (this.reloj.aviso() === 'nunca' || this.reloj.aviso() === 'cambiaron-hora'));
-
-  constructor(
-    private databaseService: DatabaseService,
-    private router: Router,
-    private dialog: MatDialog,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private soundService: SoundService,
-    public configService: ConfigService,
-    public aforoService: AforoService,
-    private ngZone: NgZone
-  ) {}
 
   // ═══════════════════════════════════════════════════════════════════════
   // LIFECYCLE

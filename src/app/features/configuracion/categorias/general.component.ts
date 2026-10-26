@@ -42,6 +42,14 @@ import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shar
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GeneralCategoriaComponent implements OnInit, OnDestroy {
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  configService = inject(ConfigService);
+  changelogService = inject(ChangelogService);
+  private pwaUpdateService = inject(PwaUpdateService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
 
   readonly reloj = inject(RelojService);
   private readonly dialog = inject(MatDialog);
@@ -63,15 +71,7 @@ export class GeneralCategoriaComponent implements OnInit, OnDestroy {
   nombreInstitucionBorrador = '';
   buscandoActualizacion = false;
 
-  constructor(
-    private databaseService: DatabaseService,
-    private toastService: ToastService,
-    public configService: ConfigService,
-    public changelogService: ChangelogService,
-    private pwaUpdateService: PwaUpdateService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {
+  constructor() {
     this.nombreInstitucionBorrador = this.configService.nombreInstitucion;
   }
 

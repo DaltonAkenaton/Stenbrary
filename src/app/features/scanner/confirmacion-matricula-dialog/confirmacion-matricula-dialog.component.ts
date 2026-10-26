@@ -4,7 +4,7 @@
 // ║  Solo cambios de estilos. Lógica intacta.           ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -209,13 +209,17 @@ import { MatIconModule } from '@angular/material/icon';
   `]
 })
 export class ConfirmacionMatriculaDialogComponent {
+  dialogRef = inject<MatDialogRef<ConfirmacionMatriculaDialogComponent>>(MatDialogRef);
+  data = inject<{
+    matricula: string;
+}>(MAT_DIALOG_DATA);
+
   /** Se pasó una credencial con el diálogo abierto: se descartó. */
   readonly lecturaIgnorada = signal(false);
 
-  constructor(
-    public dialogRef: MatDialogRef<ConfirmacionMatriculaDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { matricula: string }
-  ) {
+  constructor() {
+    const dialogRef = this.dialogRef;
+
     // Con el foco en "Confirmar", el Enter que manda el lector al final de
     // OTRA credencial confirmaría la de este alumno (el bug de v3.54.0, en
     // otra pantalla). El servicio reconoce la ráfaga y se come su Enter.

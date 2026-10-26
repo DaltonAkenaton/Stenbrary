@@ -72,6 +72,24 @@ interface NavSection {
     styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  private router = inject(Router);
+  private swUpdate = inject(SwUpdate);
+  private dialog = inject(MatDialog);
+  configService = inject(ConfigService);
+  changelogService = inject(ChangelogService);
+  databaseService = inject(DatabaseService);
+  syncService = inject(SyncService);
+  private toastService = inject(ToastService);
+  private diagnosticoService = inject(DiagnosticoService);
+  private restablecerService = inject(RestablecerService);
+  // Bootstrap del AuthService: al inyectarlo aquí se inicializa al
+  // arrancar la app y empieza a escuchar onAuthStateChange (necesario
+  // para capturar el callback del magic link aunque el usuario no esté
+  // en /login). Si Supabase no está configurado, queda en local-only.
+  authService = inject(AuthService);
+  permisos = inject(PermissionsService);
+  private pwaUpdateService = inject(PwaUpdateService);
+
 
   // ─── ESTADO DEL SIDEBAR ──────────────────────────────────
   isSidebarExpanded = signal(false);
@@ -133,25 +151,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   });
 
-  constructor(
-    private router: Router,
-    private swUpdate: SwUpdate,
-    private dialog: MatDialog,
-    public configService: ConfigService,
-    public changelogService: ChangelogService,
-    public databaseService: DatabaseService,
-    public syncService: SyncService,
-    private toastService: ToastService,
-    private diagnosticoService: DiagnosticoService,
-    private restablecerService: RestablecerService,
-    // Bootstrap del AuthService: al inyectarlo aquí se inicializa al
-    // arrancar la app y empieza a escuchar onAuthStateChange (necesario
-    // para capturar el callback del magic link aunque el usuario no esté
-    // en /login). Si Supabase no está configurado, queda en local-only.
-    public authService: AuthService,
-    public permisos: PermissionsService,
-    private pwaUpdateService: PwaUpdateService,
-  ) {
+  constructor() {
     // Al activar modo quiosco desde cualquier ruta, llevar inmediatamente al scanner
     effect(() => {
       if (this.configService.modoQuioscoSignal()) {

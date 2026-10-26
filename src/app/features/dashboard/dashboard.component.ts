@@ -20,7 +20,7 @@
 // ║  - Empty state respeta modo quiosco                  ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -130,6 +130,15 @@ interface Alerta {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  private databaseService = inject(DatabaseService);
+  aforoService = inject(AforoService);
+  configService = inject(ConfigService);
+  private estadisticasService = inject(EstadisticasAvanzadasService);
+  private backupService = inject(BackupService);
+  private toastService = inject(ToastService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
 
   cargando = true;
 
@@ -179,17 +188,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private fechasSemanaPasada: Date[] = [];
   /** Horas de entrada de ayer (fallback si la semana pasada no tiene datos). */
   private fechasAyer: Date[] = [];
-
-  constructor(
-    private databaseService: DatabaseService,
-    public aforoService: AforoService,
-    public configService: ConfigService,
-    private estadisticasService: EstadisticasAvanzadasService,
-    private backupService: BackupService,
-    private toastService: ToastService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   /** Estado interno del botón "Exportar" del banner — evita doble clic. */
   exportandoRespaldo = false;

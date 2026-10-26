@@ -18,9 +18,12 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import 'fake-indexeddb/auto';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { IDBFactory } from 'fake-indexeddb';
 import { DatabaseService } from './database.service';
 import { BackupService, BackupData } from './backup.service';
+import { ConfigService } from './config.service';
+import { BitacoraService } from './bitacora.service';
 import { Alumno, Registro } from '../models';
 import { CatalogoEscolar, agregarCarrera, catalogoInicial } from '../utils/catalogos.utils';
 
@@ -33,9 +36,21 @@ const configStub = {} as any;
 /** Lo que el servicio anota en la bitácora no es lo que se prueba aquí. */
 const bitacoraStub = { registrar: () => undefined } as any;
 
+/** BackupService usa inject(): se crea en un injector con sus dobles. */
+function crearBackup(db: DatabaseService, config: unknown): BackupService {
+  const injector = Injector.create({
+    providers: [
+      { provide: DatabaseService, useValue: db },
+      { provide: ConfigService, useValue: config },
+      { provide: BitacoraService, useValue: bitacoraStub },
+    ],
+  });
+  return runInInjectionContext(injector, () => new BackupService());
+}
+
 function nuevoServicio(): { db: DatabaseService; backup: BackupService } {
   const db = new DatabaseService();
-  return { db, backup: new BackupService(db, configStub, bitacoraStub) };
+  return { db, backup: crearBackup(db, configStub) };
 }
 
 /** Simula el viaje real por disco: Date → string ISO y de vuelta. */
@@ -357,7 +372,7 @@ describe('BackupService — round-trip', () => {
     /** Doble con el catálogo en memoria, como ConfigService. */
     function conCatalogo(cat: CatalogoEscolar) {
       const cfg = { catalogoEscolar: cat, setCatalogoEscolar(c: CatalogoEscolar) { cfg.catalogoEscolar = c; } };
-      return { cfg, servicio: new BackupService(db, cfg as any, bitacoraStub) };
+      return { cfg, servicio: crearBackup(db, cfg) };
     }
 
     it('viaja en el respaldo; combinar suma lo que falta y reemplazar trae el del archivo', async () => {

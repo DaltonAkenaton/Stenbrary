@@ -15,7 +15,7 @@
 // ║  despliegue A → B real (ronda de pruebas 2026-10).    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { BehaviorSubject, filter, timer } from 'rxjs';
 
@@ -28,14 +28,14 @@ const REVISION_CADA_MS = 15 * 60_000;
   providedIn: 'root',
 })
 export class PwaUpdateService {
+  private swUpdate = inject(SwUpdate);
+
 
   /** true cuando hay una versión nueva lista para instalar */
   private hayActualizacion$ = new BehaviorSubject<boolean>(false);
   public actualizacionDisponible$ = this.hayActualizacion$.asObservable();
 
   private iniciado = false;
-
-  constructor(private swUpdate: SwUpdate) {}
 
   /**
    * Inicializar el listener de actualizaciones.

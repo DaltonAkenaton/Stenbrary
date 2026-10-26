@@ -11,7 +11,7 @@
 // ║   (Datos de prueba pasó a Avanzado, tras PIN: v3.57) ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -39,6 +39,13 @@ import { LimpiezaRegistrosComponent } from '../limpieza-registros.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DatosCategoriaComponent {
+  configService = inject(ConfigService);
+  private backupService = inject(BackupService);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
+
 
   /** Notifica al shell para que la categoría General refresque conteos. */
   @Output() datosCambiaron = new EventEmitter<void>();
@@ -71,15 +78,6 @@ export class DatosCategoriaComponent {
 
   readonly horasNumOpciones = Array.from({ length: 24 }, (_, i) => i);
   readonly minutosNumOpciones = Array.from({ length: 60 }, (_, i) => i);
-
-  constructor(
-    public configService: ConfigService,
-    private backupService: BackupService,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private dialog: MatDialog,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   pad2(n: number): string {
     return n < 10 ? `0${n}` : `${n}`;

@@ -8,7 +8,7 @@
 // ║  - Auto-refresco cada 30 s + cierre automático       ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -688,6 +688,15 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
   `]
 })
 export class PresenciaComponent implements OnInit, OnDestroy {
+  private databaseService = inject(DatabaseService);
+  private configService = inject(ConfigService);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private soundService = inject(SoundService);
+  aforoService = inject(AforoService);
+  private dialog = inject(MatDialog);
+  private bitacora = inject(BitacoraService);
+
   // Signals: el template los lee como funciones (registros(), cargando(), …).
   // Combinado con OnPush evita CD redundante en cada tick del intervalo.
   registros = signal<RegistroPresencia[]>([]);
@@ -707,18 +716,7 @@ export class PresenciaComponent implements OnInit, OnDestroy {
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private visibilityListener: (() => void) | null = null;
-  private cargandoEnVuelo = false; // re-entry guard
-
-  constructor(
-    private databaseService: DatabaseService,
-    private configService: ConfigService,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private soundService: SoundService,
-    public aforoService: AforoService,
-    private dialog: MatDialog,
-    private bitacora: BitacoraService,
-  ) {}
+  private cargandoEnVuelo = false;
 
   async ngOnInit(): Promise<void> {
     await this.cargar();

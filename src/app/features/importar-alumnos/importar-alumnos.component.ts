@@ -791,6 +791,11 @@ interface ResultadoImportacion {
   `]
 })
 export class ImportarAlumnosComponent {
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private router = inject(Router);
+
 
   paso: 'seleccionar' | 'preview' | 'resultado' = 'seleccionar';
   nombreArchivo = '';
@@ -819,13 +824,6 @@ export class ImportarAlumnosComponent {
 
   private readonly bitacora = inject(BitacoraService);
   private readonly configService = inject(ConfigService);
-
-  constructor(
-    private databaseService: DatabaseService,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private router: Router,
-  ) {}
 
   // ═══════════════════════════════════════════════
   // GETTERS

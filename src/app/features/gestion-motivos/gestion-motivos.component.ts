@@ -45,6 +45,12 @@ import { BitacoraService } from '../../core/services/bitacora.service';
     styleUrl: './gestion-motivos.component.scss'
 })
 export class GestionMotivosComponent implements OnInit {
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  private loadingService = inject(LoadingService);
+  private dialog = inject(MatDialog);
+  private router = inject(Router);
+
   motivos: Motivo[] = [];
   cargando = true;
   filtroBusqueda = '';
@@ -69,14 +75,6 @@ export class GestionMotivosComponent implements OnInit {
   }
 
   private readonly bitacora = inject(BitacoraService);
-
-  constructor(
-    private databaseService: DatabaseService,
-    private toastService: ToastService,
-    private loadingService: LoadingService,
-    private dialog: MatDialog,
-    private router: Router,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.cargarMotivos();

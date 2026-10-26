@@ -12,7 +12,7 @@
 // ║     Alertas de inactividad (de Experiencia)           ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -36,6 +36,10 @@ import { DIAS_SEMANA } from '../../../core/utils/horarios.utils';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OperacionCategoriaComponent {
+  configService = inject(ConfigService);
+  private toastService = inject(ToastService);
+  private cdr = inject(ChangeDetectorRef);
+
 
   readonly diasSemana = DIAS_SEMANA.map((nombre, indice) => ({ indice, nombre }));
 
@@ -96,12 +100,6 @@ export class OperacionCategoriaComponent {
     { valor: 45, etiqueta: '45 min' },
     { valor: 60, etiqueta: '1 hora' },
   ];
-
-  constructor(
-    public configService: ConfigService,
-    private toastService: ToastService,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   get descripcionModoActual(): string {
     return this.opcionesAforoModo.find(o => o.valor === this.configService.aforoModo)?.descripcion ?? '';

@@ -10,7 +10,7 @@
 // ║  escáner pueden traer la misma).                     ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, ElementRef, Inject, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -229,6 +229,8 @@ export interface AgregarVisitaDialogData {
   `]
 })
 export class AgregarVisitaDialogComponent implements OnInit {
+  private dialogRef = inject<MatDialogRef<AgregarVisitaDialogComponent, number>>(MatDialogRef);
+
   @ViewChild('buscador') private buscador?: ElementRef<HTMLInputElement>;
 
   private readonly db = inject(DatabaseService);
@@ -270,10 +272,9 @@ export class AgregarVisitaDialogComponent implements OnInit {
     return a ? this.nombreDe(a) : '';
   });
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA) data: AgregarVisitaDialogData,
-    private dialogRef: MatDialogRef<AgregarVisitaDialogComponent, number>,
-  ) {
+  constructor() {
+    const data = inject<AgregarVisitaDialogData>(MAT_DIALOG_DATA);
+
     this.activos = data.alumnos.filter(a => a.activo !== false);
     this.registros = [...data.registros];
   }

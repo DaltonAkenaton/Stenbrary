@@ -8,7 +8,7 @@
 // ║  - v3.50.0: eliminar el registro (con confirmación)  ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -245,20 +245,18 @@ export type RegistroEditarSalida = RegistroEditarResultado | 'eliminado';
   `]
 })
 export class RegistroEditarDialogComponent implements OnInit {
+  data = inject<RegistroEditarDialogData>(MAT_DIALOG_DATA);
+  private dialogRef = inject<MatDialogRef<RegistroEditarDialogComponent, RegistroEditarSalida>>(MatDialogRef);
+  private databaseService = inject(DatabaseService);
+  private dialog = inject(MatDialog);
+  private aforoService = inject(AforoService);
+
   fechaEntradaInput = '';
   fechaSalidaInput = '';
   motivos = signal<Motivo[]>([]);
   motivoIdsSeleccionados = signal<string[]>([]);
 
   private readonly bitacora = inject(BitacoraService);
-
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public data: RegistroEditarDialogData,
-    private dialogRef: MatDialogRef<RegistroEditarDialogComponent, RegistroEditarSalida>,
-    private databaseService: DatabaseService,
-    private dialog: MatDialog,
-    private aforoService: AforoService,
-  ) {}
 
   async ngOnInit(): Promise<void> {
     this.fechaEntradaInput = this.toLocalInput(this.data.registro.fechaHora);

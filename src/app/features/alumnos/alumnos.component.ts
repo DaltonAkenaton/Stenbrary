@@ -7,7 +7,7 @@
 // ║  - exportarCSV() escapa campos con comas/comillas    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, OnInit, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, computed, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -73,6 +73,11 @@ function buildAlumnoRender(a: Alumno): AlumnoRender {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AlumnosComponent implements OnInit {
+  private databaseService = inject(DatabaseService);
+  private toastService = inject(ToastService);
+  private exportService = inject(ExportService);
+  private router = inject(Router);
+
 
   // ─── DATA ──────────────────────────────────────────────
   // Signal + computed: el filtrado se memoiza y solo se re-ejecuta si cambian
@@ -121,13 +126,6 @@ export class AlumnosComponent implements OnInit {
   columnas: string[] = [
     'matricula', 'nombre', 'carrera', 'grado', 'grupo', 'turno', 'acciones',
   ];
-
-  constructor(
-  private databaseService: DatabaseService,
-  private toastService: ToastService,
-  private exportService: ExportService,  // ← AGREGAR
-  private router: Router,
-) {}
 
   async ngOnInit(): Promise<void> {
     await this.cargarAlumnos();

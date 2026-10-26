@@ -7,7 +7,7 @@
 // ║  - Soporta sección "Top Alumnos" en el ranking PDF    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { Alumno, Motivo, Registro } from '../models';
 // Solo tipos: el bundler no incluirá jspdf/jspdf-autotable en el chunk inicial.
@@ -89,6 +89,8 @@ const SECCIONES_DEFAULT: Required<SeccionesReporte> = {
   providedIn: 'root',
 })
 export class ReportService {
+  private databaseService = inject(DatabaseService);
+
 
   /** Cache para fallback de turno (registros viejos sin r.turno). */
   private turnoPorMatricula = new Map<string, string>();
@@ -145,8 +147,6 @@ export class ReportService {
 
   /** Cache sincrónica del autoTableFn — se setea cuando cargarPdfLib resuelve. */
   private _autoTableFnCached: typeof autoTableT | null = null;
-
-  constructor(private databaseService: DatabaseService) {}
 
   async generarReporteAccesos(
     registros: Registro[],

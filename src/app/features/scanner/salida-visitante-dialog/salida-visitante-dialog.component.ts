@@ -8,7 +8,7 @@
 // ║  quiosco, donde /presencia está oculta.              ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -178,6 +178,9 @@ export interface SalidaVisitanteResultado {
   `]
 })
 export class SalidaVisitanteDialogComponent {
+  dialogRef = inject<MatDialogRef<SalidaVisitanteDialogComponent, SalidaVisitanteResultado | null>>(MatDialogRef);
+  data = inject<SalidaVisitanteData>(MAT_DIALOG_DATA);
+
   filtro = '';
   filtroSignal = signal('');
 
@@ -189,10 +192,9 @@ export class SalidaVisitanteDialogComponent {
     );
   });
 
-  constructor(
-    public dialogRef: MatDialogRef<SalidaVisitanteDialogComponent, SalidaVisitanteResultado | null>,
-    @Inject(MAT_DIALOG_DATA) public data: SalidaVisitanteData,
-  ) {
+  constructor() {
+    const dialogRef = this.dialogRef;
+
     // v3.57.2: la credencial de un alumno escribía sus dígitos en la
     // búsqueda (y la lista quedaba vacía). Se borran; esta lista es solo
     // para visitantes, el alumno marca su salida desde el escáner.

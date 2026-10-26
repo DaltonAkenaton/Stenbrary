@@ -9,7 +9,7 @@
 // ║  - Responsive: min-width removido en mobile          ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Component, Inject, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -223,6 +223,13 @@ import { BitacoraService, describirAlumno } from '../../../core/services/bitacor
   `]
 })
 export class EditarAlumnoDialogComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private databaseService = inject(DatabaseService);
+  private dialogRef = inject<MatDialogRef<EditarAlumnoDialogComponent>>(MatDialogRef);
+  data = inject<{
+    alumno: Alumno;
+}>(MAT_DIALOG_DATA);
+
   editarForm!: FormGroup;
   guardando = false;
   error: string | null = null;
@@ -239,13 +246,6 @@ export class EditarAlumnoDialogComponent implements OnInit {
   turnos = TURNOS;
 
   private readonly bitacora = inject(BitacoraService);
-
-  constructor(
-    private fb: FormBuilder,
-    private databaseService: DatabaseService,
-    private dialogRef: MatDialogRef<EditarAlumnoDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { alumno: Alumno },
-  ) {}
 
   ngOnInit(): void {
     this.editarForm = this.fb.group({

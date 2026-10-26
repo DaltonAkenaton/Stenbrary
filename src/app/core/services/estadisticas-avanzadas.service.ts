@@ -14,7 +14,7 @@
 // ║  - Boundaries de hora normalizados (00:00 / 23:59)    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { Registro, Alumno, Motivo } from '../models';
 import { desplazarDias, diasCalendarioEntre as diasEntre } from '../utils/tiempo.utils';
@@ -168,6 +168,8 @@ export interface DatosCarrera {
   providedIn: 'root',
 })
 export class EstadisticasAvanzadasService {
+  private databaseService = inject(DatabaseService);
+
 
   // Cache para evitar cargas múltiples en paralelo (8 queries simultáneas)
   private registrosCache: Registro[] | null = null;
@@ -175,8 +177,6 @@ export class EstadisticasAvanzadasService {
   private cacheInFlight: Promise<Registro[]> | null = null;
   private readonly CACHE_TTL = 300_000; // 5 minutos — los registros no cambian
                                         // mientras navegas en /estadisticas.
-
-  constructor(private databaseService: DatabaseService) {}
 
   /**
    * Obtiene todos los registros con caché de corta duración.
