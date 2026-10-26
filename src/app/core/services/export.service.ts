@@ -8,12 +8,20 @@
 // ║    el initial bundle adelgaza ese tamaño.            ║
 // ║                                                      ║
 // ║  Servicio reutilizable que genera archivos Excel.    ║
+// ║                                                      ║
+// ║  v3.62.0: cada texto pasa por `neutralizarFila`      ║
+// ║  (inyección de fórmulas) y los libros se arman en    ║
+// ║  `libroRegistros`/`libroAlumnos`, aparte de la       ║
+// ║  descarga, para poder inspeccionarlos en pruebas.    ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { Injectable } from '@angular/core';
 import { Registro, Alumno } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 import { duracionReal, esSalidaEstimada } from '../utils/estadisticas.utils';
+import { neutralizarFila } from '../utils/hoja-calculo.utils';
+
+type Xlsx = typeof import('xlsx');
 
 // Formateadores creados una vez. `toLocaleDateString('es-MX')` arma uno nuevo
 // en cada llamada: con 120 000 visitas el Excel tardaba ~16 s solo en las
@@ -42,12 +50,20 @@ export class ExportService {
   async exportarRegistrosXLSX(registros: Registro[], nombreArchivo?: string): Promise<void> {
     if (registros.length === 0) return;
     const XLSX = await this.cargarXlsx();
+    const wb = this.libroRegistros(XLSX, registros);
+    const nombre = nombreArchivo || `registros_stenbrary_${this.fechaHoy()}`;
+    // Sin `compression` SheetJS guarda el ZIP sin comprimir: 120 000 visitas
+    // pesaban 53 MB, demasiado para un correo.
+    XLSX.writeFile(wb, `${nombre}.xlsx`, { compression: true });
+  }
 
+  /** El libro de visitas, sin descargarlo (lo usan las pruebas). */
+  libroRegistros(XLSX: Xlsx, registros: Registro[]): import('xlsx').WorkBook {
     const hora = (x: Date) => FMT_HORA.format(x);
     const datos = registros.map(r => {
       const d = new Date(r.fechaHora);
       const real = duracionReal(r);
-      return {
+      return neutralizarFila({
         'Fecha': FMT_FECHA.format(d),
         'Hora': hora(d),
         'Matrícula': r.matricula,
@@ -61,7 +77,7 @@ export class ExportService {
         'Duración (min)': real ?? '',
         'Salida estimada': r.horaSalida && esSalidaEstimada(r) ? 'Sí' : '',
         'Capturada a mano': r.capturaManual ? 'Sí' : '',
-      };
+      });
     });
 
     const ws = XLSX.utils.json_to_sheet(datos);
@@ -100,11 +116,7 @@ export class ExportService {
     ]);
     notas['!cols'] = [{ wch: 20 }, { wch: 110 }];
     XLSX.utils.book_append_sheet(wb, notas, 'Notas');
-
-    const nombre = nombreArchivo || `registros_stenbrary_${this.fechaHoy()}`;
-    // Sin `compression` SheetJS guarda el ZIP sin comprimir: 120 000 visitas
-    // pesaban 53 MB, demasiado para un correo.
-    XLSX.writeFile(wb, `${nombre}.xlsx`, { compression: true });
+    return wb;
   }
 
   /**
@@ -120,8 +132,18 @@ export class ExportService {
   ): Promise<void> {
     if (alumnos.length === 0) return;
     const XLSX = await this.cargarXlsx();
+    const wb = this.libroAlumnos(XLSX, alumnos, columnasExtra);
+    const nombre = nombreArchivo || `alumnos_stenbrary_${this.fechaHoy()}`;
+    XLSX.writeFile(wb, `${nombre}.xlsx`, { compression: true });
+  }
 
-    const datos = alumnos.map(a => ({
+  /** El libro de alumnos, sin descargarlo (lo usan las pruebas). */
+  libroAlumnos(
+    XLSX: Xlsx,
+    alumnos: Alumno[],
+    columnasExtra?: (a: Alumno) => Record<string, string | number>,
+  ): import('xlsx').WorkBook {
+    const datos = alumnos.map(a => neutralizarFila({
       'Matrícula': a.matricula,
       'Nombre': a.nombre,
       'Apellido Paterno': a.apellidoPaterno,
@@ -153,9 +175,7 @@ export class ExportService {
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Alumnos');
-
-    const nombre = nombreArchivo || `alumnos_stenbrary_${this.fechaHoy()}`;
-    XLSX.writeFile(wb, `${nombre}.xlsx`, { compression: true });
+    return wb;
   }
 
   private fechaHoy(): string {

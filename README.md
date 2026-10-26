@@ -192,7 +192,7 @@ vendor/          SheetJS 0.20.3 (ver vendor/README.md)
 
 ## Pruebas
 
-- **460 pruebas unitarias** en 27 archivos (cobertura de sentencias 80 %),
+- **483 pruebas unitarias** en 29 archivos (cobertura de sentencias 80 %),
   centradas en la lógica pura (fechas, métricas, matrícula, calendario,
   importación, respaldos, hash del PIN) y en los servicios de datos. Incluyen
   fallos reales a media transacción y PDF generados con texto hostil.

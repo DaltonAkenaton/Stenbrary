@@ -13,7 +13,7 @@ Resultados obtenidos el 2026-10-26 en Windows 11, Node 24.13.1, rama
 | 3 | `npm run lint` | 0 errores, 0 avisos ("All files pass linting") |
 | 4 | Tipos de la app (`tsconfig.app.json`) | sin errores |
 | 5 | Tipos de las pruebas (`tsconfig.spec.json`), raíz (CI) y Worker | sin errores |
-| 6 | `npm run test:ci` (TZ `America/Matamoros`) | **460/460**, 27 archivos; cobertura: sentencias 80.4 %, ramas 68.4 %, funciones 76.1 %, líneas 82.6 % |
+| 6 | `npm run test:ci` (TZ `America/Matamoros`) | **460/460**, 27 archivos; cobertura: sentencias 80.4 %, ramas 68.4 %, funciones 76.1 %, líneas 82.6 %. Tras neutralizar la inyección de fórmulas en los Excel (§3): **483/483**, 29 archivos; sentencias 80.2 %, líneas 82.4 % |
 | 7 | E2E (`npx playwright test`) | **85/85** (6.3 min), servidor propio |
 | 8 | `npm run build` | correcto; inicial 1.22 MB (310 kB transferidos) |
 | 9 | `npm run check:version` | 3.62.0 consistente |
@@ -79,6 +79,13 @@ flujo de la puerta y 16 pantallas con datos, en escritorio y móvil: 0
 violaciones WCAG 2.1 A/AA. Contraste (`$text-muted` 0.52 → 0.70 y 14 colores
 fijos), 46 botones de solo ícono con nombre, texto oculto solo a la vista en
 móvil, sin controles anidados.
+
+**Exportación a Excel.** Los textos que una hoja de cálculo podría ejecutar
+como fórmula (empiezan con `=`, `+`, `-`, `@`, sus formas de ancho completo,
+tabulador o salto de línea) llevan un apóstrofo delante, solo en la salida.
+Las pruebas generan el `.xlsx` real, lo descomprimen y verifican que el XML
+de cada hoja no tiene fórmulas y que los datos normales salen igual.
+No hay exportación a CSV.
 
 **Tipos.** 85 `any` → 0 (regla en `error`).
 

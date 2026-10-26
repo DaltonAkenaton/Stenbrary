@@ -86,7 +86,22 @@ En la Fase 2 lo reemplazan cuentas con roles verificados por el servidor.
 disfrazados y excesivos; fallo real a media transacción (los datos quedan
 idénticos); E2E con archivos rechazados en el navegador real.
 
-### 2.4 PDF generados
+### 2.4 Excel exportados (inyección de fórmulas)
+
+Stenbrary exporta visitas y alumnos solo a `.xlsx` (no hay CSV). SheetJS
+escribe los textos como celdas de texto, sin fórmulas; aun así, como el
+archivo se puede volver a guardar como CSV, los textos que empiezan con `=`,
+`+`, `-`, `@` (o sus formas de ancho completo, tabulador o salto de línea,
+incluso tras espacios) llevan un apóstrofo delante, como recomienda OWASP
+(`core/utils/hoja-calculo.utils.ts`). Solo en la salida: IndexedDB no cambia,
+los números no se tocan.
+
+**Verificación:** `export.service.spec.ts` genera los dos libros con textos
+hostiles, descomprime el `.xlsx` y comprueba que el XML de las hojas no tiene
+ningún elemento `<f>`, que las celdas hostiles son texto con apóstrofo y que
+matrículas, nombres, fechas y números salen exactamente igual.
+
+### 2.5 PDF generados
 
 jsPDF 4.2.1. Stenbrary solo usa `text`, tablas y `save()`: no usa las APIs
 con avisos recientes (`output()` a ventana nueva, anotaciones FreeText,
@@ -94,14 +109,14 @@ con avisos recientes (`output()` a ventana nueva, anotaciones FreeText,
 reporte con textos que intentan cerrar la cadena e inyectar objetos PDF, lee
 el archivo y verifica que el texto sale escapado y que no hay acciones activas.
 
-### 2.5 Dependencias
+### 2.6 Dependencias
 
 `npm audit --omit=dev` y `npm audit`: **0 vulnerabilidades** (2026-10-26).
 `undici` se fija a 7.30.1 dentro de `@angular/build` (que la fija exacta en
 7.29.1) con `overrides`: es un parche de la misma línea; el build no cambia.
 Angular 21 tiene soporte LTS hasta junio de 2027.
 
-### 2.6 Privacidad
+### 2.7 Privacidad
 
 - La consola del navegador no muestra matrículas ni nombres en producción
   (`core/utils/logger.ts`).

@@ -82,12 +82,14 @@ npx ng build --configuration production && npm run e2e:produccion
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **460 specs unitarios en verde**, en 27 archivos —
+Suite activa: **483 specs unitarios en verde**, en 29 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `catalogos.utils`, `cuadre-cifras.service`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
 `backup.service`, `estadisticas-avanzadas.service`, `supabase.client`, `registros-filtros.utils`, `reloj.utils`, `visita-manual.utils`,
-`lectura-padron.utils`, `validacion-respaldo.utils`, `pin-hash.utils`, `pin.service`, `report.service`.
+`lectura-padron.utils`, `validacion-respaldo.utils`, `pin-hash.utils`, `pin.service`, `report.service`,
+`hoja-calculo.utils`, `export.service`. Toda columna nueva de un Excel exportado pasa por
+`neutralizarFila` (inyección de fórmulas) y se arma en `libroRegistros`/`libroAlumnos`.
 CI corre los unitarios con `TZ=America/Matamoros` (la zona de Nuevo Laredo,
 que **conserva el horario de verano**) y Playwright con `timezoneId` igual:
 los errores de fecha "un día antes" no existen en UTC, y los de días de 23/25 h
