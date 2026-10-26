@@ -37,7 +37,7 @@ import { ToastService, Toast } from '../../core/services/toast.service';
             </button>
           }
 
-          <button class="toast-close" (click)="removeToast(toast.id)">
+          <button class="toast-close" (click)="removeToast(toast.id)" aria-label="Cerrar el aviso">
             <mat-icon>close</mat-icon>
           </button>
         </div>

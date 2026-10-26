@@ -1,7 +1,8 @@
 <div class="registro-container">
   <!-- Header -->
   <div class="registro-header">
-    <button mat-icon-button class="back-button" (click)="cancelar()">
+    <button mat-icon-button class="back-button" (click)="cancelar()"
+            [attr.aria-label]="vieneDelScanner ? 'Volver al escáner' : 'Empezar de nuevo'">
       <mat-icon>{{ vieneDelScanner ? 'arrow_back' : 'refresh' }}</mat-icon>
     </button>
     <h1>Registro de Nuevo Alumno</h1>

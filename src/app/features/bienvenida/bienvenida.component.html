@@ -157,8 +157,8 @@
                 dentro. Vuelve al paso anterior y actívalo.
               </p>
             }
-            <label class="wiz-label">Al llegar al límite</label>
-            <div class="wiz-chips">
+            <span class="wiz-label" id="wiz-aforo-modo">Al llegar al límite</span>
+            <div class="wiz-chips" role="group" aria-labelledby="wiz-aforo-modo">
               <button class="wiz-chip" [class.sel]="aforoModo === 'permitir'"
                       (click)="aforoModo = 'permitir'">Solo avisar</button>
               <button class="wiz-chip" [class.sel]="aforoModo === 'confirmar'"
@@ -187,8 +187,8 @@
             </div>
 
             @if (horarioUniforme) {
-              <label class="wiz-label">Días que abre</label>
-              <div class="wiz-chips">
+              <span class="wiz-label" id="wiz-dias-abre">Días que abre</span>
+              <div class="wiz-chips" role="group" aria-labelledby="wiz-dias-abre">
                 @for (dia of diasSemana; track $index) {
                   <button class="wiz-chip corto" [class.sel]="esDiaAbierto($index)"
                           (click)="alternarDia($index)">{{ dia.slice(0, 3) }}</button>

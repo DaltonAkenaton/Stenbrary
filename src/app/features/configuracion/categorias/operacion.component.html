@@ -142,7 +142,7 @@
           <button type="button" class="stepper-btn"
                   (click)="setHorasAutoSalida(configService.horasAutoSalida - 1)"
                   [disabled]="configService.horasAutoSalida <= 0"
-                  matTooltip="Disminuir 1 hora">
+                  matTooltip="Disminuir 1 hora" aria-label="Disminuir 1 hora">
             <mat-icon>remove</mat-icon>
           </button>
           <input id="horasAutoSalidaInput" type="number" min="0" step="1"
@@ -152,7 +152,7 @@
           <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">h</span>
           <button type="button" class="stepper-btn"
                   (click)="setHorasAutoSalida(configService.horasAutoSalida + 1)"
-                  matTooltip="Aumentar 1 hora">
+                  matTooltip="Aumentar 1 hora" aria-label="Aumentar 1 hora">
             <mat-icon>add</mat-icon>
           </button>
         </div>
@@ -325,7 +325,7 @@
       <button type="button" class="stepper-btn"
               (click)="setUmbralDuplicado(configService.umbralDuplicadoMin - 1)"
               [disabled]="configService.umbralDuplicadoMin <= 0"
-              matTooltip="Disminuir 1 minuto">
+              matTooltip="Disminuir 1 minuto" aria-label="Disminuir 1 minuto">
         <mat-icon>remove</mat-icon>
       </button>
       <input id="umbralDuplicadoInput" type="number" min="0" step="1"
@@ -335,7 +335,7 @@
       <span style="color: rgba(200,230,240,0.55); padding: 0 8px; font-weight: 600;">min</span>
       <button type="button" class="stepper-btn"
               (click)="setUmbralDuplicado(configService.umbralDuplicadoMin + 1)"
-              matTooltip="Aumentar 1 minuto">
+              matTooltip="Aumentar 1 minuto" aria-label="Aumentar 1 minuto">
         <mat-icon>add</mat-icon>
       </button>
     </div>
@@ -380,7 +380,7 @@
               class="stepper-btn"
               (click)="setUmbralInactividad(configService.umbralInactividadDias - 1)"
               [disabled]="configService.umbralInactividadDias <= 0"
-              matTooltip="Disminuir 1 día"
+              matTooltip="Disminuir 1 día" aria-label="Disminuir 1 día"
               matTooltipPosition="above">
         <mat-icon>remove</mat-icon>
       </button>
@@ -397,7 +397,7 @@
       <button type="button"
               class="stepper-btn"
               (click)="setUmbralInactividad(configService.umbralInactividadDias + 1)"
-              matTooltip="Aumentar 1 día"
+              matTooltip="Aumentar 1 día" aria-label="Aumentar 1 día"
               matTooltipPosition="above">
         <mat-icon>add</mat-icon>
       </button>

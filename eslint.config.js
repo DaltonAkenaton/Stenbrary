@@ -92,18 +92,19 @@ module.exports = tseslint.config(
       // que pasa de texto a comprobación.
       '@angular-eslint/template/prefer-control-flow': 'error',
 
-      // ─── Accesibilidad: deuda con fecha ────────────────
-      // 41 avisos al instalar el linter, casi todos `<div (click)>` que
-      // deberían ser `<button>`. Arreglarlos bien no es renombrar etiquetas:
-      // hay que revisar foco, orden de tabulación y estilos de cada uno.
-      //
-      // La accesibilidad es Fase 3 en docs/ROADMAP.md. Ponerlo en `warn` lo
-      // deja contado y visible en vez de escondido, sin bloquear Fase 2 ni
-      // invitar a "arreglarlo" añadiendo `(keyup)` vacíos, que es peor que
-      // no hacer nada porque calla el aviso sin resolver el problema.
-      '@angular-eslint/template/click-events-have-key-events': 'warn',
-      '@angular-eslint/template/interactive-supports-focus': 'warn',
-      '@angular-eslint/template/label-has-associated-control': 'warn',
+      // ─── Accesibilidad (v3.62.0: en cero, ahora bloquea) ───
+      // Hubo 41 avisos, casi todos `<div (click)>`. Se resolvieron uno por
+      // uno (rol, foco, Enter/Espacio, nombre accesible; etiquetas de grupo
+      // con role="group"), no con `(keyup)` vacíos que callan el aviso sin
+      // resolver el problema. Pasan a `error` para que no vuelvan. Además,
+      // `npm run e2e` revisa el flujo principal con axe (e2e/accesibilidad).
+      '@angular-eslint/template/click-events-have-key-events': 'error',
+      '@angular-eslint/template/interactive-supports-focus': 'error',
+      '@angular-eslint/template/label-has-associated-control': [
+        'error',
+        // Un <label> que envuelve un control de Angular Material sí lo nombra.
+        { controlComponents: ['mat-checkbox', 'mat-slide-toggle', 'mat-radio-button', 'mat-select'] },
+      ],
     },
   },
 );

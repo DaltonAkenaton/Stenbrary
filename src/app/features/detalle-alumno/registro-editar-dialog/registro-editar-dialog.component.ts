@@ -74,7 +74,7 @@ export type RegistroEditarSalida = RegistroEditarResultado | 'eliminado';
             <input type="datetime-local" [(ngModel)]="fechaSalidaInput" />
             @if (fechaSalidaInput) {
               <button type="button" class="btn-clear" (click)="fechaSalidaInput = ''"
-                      matTooltip="Dejar en curso">
+                      matTooltip="Dejar en curso" aria-label="Dejar en curso">
                 <mat-icon>close</mat-icon>
               </button>
             }

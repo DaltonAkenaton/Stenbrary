@@ -1112,11 +1112,11 @@
           }
 
           <div class="top-limite-control">
-            <label class="top-limite-label">
-              <mat-icon>format_list_numbered</mat-icon>
+            <span class="top-limite-label" id="top-limite-titulo">
+              <mat-icon aria-hidden="true">format_list_numbered</mat-icon>
               Mostrar
-            </label>
-            <div class="top-limite-presets">
+            </span>
+            <div class="top-limite-presets" role="group" aria-labelledby="top-limite-titulo">
               @for (n of opcionesTopLimite; track n) {
                 <button class="mini-periodo-btn"
                         [class.active]="topLimite === n"
@@ -1138,7 +1138,9 @@
         @if (topAlumnos.length > 0) {
           <div class="top-alumnos-lista">
             @for (item of topAlumnos; track item.alumno.matricula; let i = $index) {
-              <div class="top-alumno-item" (click)="verDetalleAlumno(item)">
+              <div class="top-alumno-item" role="link" tabindex="0"
+                   [attr.aria-label]="'Ver el perfil de ' + item.alumno.nombre"
+                   (click)="verDetalleAlumno(item)" (keydown.enter)="verDetalleAlumno(item)">
                 <div class="alumno-ranking">
                   <span class="ranking-numero" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
                     {{ i + 1 }}
@@ -1199,7 +1201,7 @@
           <div class="comparador-slot slot-a">
             <div class="slot-header">
               <span class="slot-badge">A</span>
-              <select [(ngModel)]="presetA" (change)="setPresetComparador('a', presetA)" class="slot-select">
+              <select [(ngModel)]="presetA" (change)="setPresetComparador('a', presetA)" class="slot-select" aria-label="Período a evaluar (A)">
                 @for (op of opcionesComparador; track op.key) {
                   <option [value]="op.key">{{ op.label }}</option>
                 }
@@ -1281,7 +1283,7 @@
           <div class="comparador-slot slot-b">
             <div class="slot-header">
               <span class="slot-badge slot-badge-b">B</span>
-              <select [(ngModel)]="presetB" (change)="setPresetComparador('b', presetB)" class="slot-select">
+              <select [(ngModel)]="presetB" (change)="setPresetComparador('b', presetB)" class="slot-select" aria-label="Período de referencia (B)">
                 @for (op of opcionesComparador; track op.key) {
                   <option [value]="op.key">{{ op.label }}</option>
                 }

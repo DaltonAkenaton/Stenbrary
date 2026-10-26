@@ -48,7 +48,9 @@ import { TipoCambio } from '../../core/data/changelog.data';
                    [class.expandido]="estaExpandido(version.version)">
 
             <!-- Cabecera de release -->
-            <header class="release-header" (click)="toggle(version.version)">
+            <!-- v3.62.0: el control es el botón; su ::after cubre la cabecera
+                 para que toda ella siga siendo clicable (sin anidar controles). -->
+            <header class="release-header">
               <div class="release-version">
                 <span class="version-label">v{{ version.version }}</span>
                 @if (version.destacado) {
@@ -69,7 +71,10 @@ import { TipoCambio } from '../../core/data/changelog.data';
                 </span>
               </div>
 
-              <button class="toggle-btn"
+              <button class="toggle-btn" type="button"
+                      (click)="toggle(version.version)"
+                      [attr.aria-expanded]="estaExpandido(version.version)"
+                      [attr.aria-label]="(estaExpandido(version.version) ? 'Contraer' : 'Expandir') + ' la versión ' + version.version"
                       [matTooltip]="estaExpandido(version.version) ? 'Contraer' : 'Expandir'">
                 <mat-icon>{{ estaExpandido(version.version) ? 'expand_less' : 'expand_more' }}</mat-icon>
               </button>
@@ -215,6 +220,7 @@ import { TipoCambio } from '../../core/data/changelog.data';
       gap: 16px;
       cursor: pointer;
       user-select: none;
+      position: relative;   // el ::after del botón cubre la cabecera
     }
 
     .release-version {
@@ -300,6 +306,8 @@ import { TipoCambio } from '../../core/data/changelog.data';
       justify-content: center;
       transition: background .2s;
       &:hover { background: rgba(0, 200, 215, 0.14); }
+      // Toda la cabecera abre y cierra, pero el control sigue siendo este botón.
+      &::after { content: ''; position: absolute; inset: 0; }
     }
 
     /* ── BODY DE RELEASE ── */

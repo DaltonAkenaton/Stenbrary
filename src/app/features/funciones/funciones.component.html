@@ -71,7 +71,9 @@
 
         <div class="fx-grid">
           @for (f of bloque.funciones; track f.titulo) {
-            <article class="fx-tarjeta" [class.clicable]="!!f.ruta" (click)="abrir(f)">
+            <article class="fx-tarjeta" [class.clicable]="!!f.ruta" tabindex="0"
+                     [attr.role]="f.ruta ? 'link' : null"
+                     (click)="abrir(f)" (keydown.enter)="abrir(f)">
               <div class="fx-tarjeta-head">
                 <div class="fx-icono"><mat-icon>{{ f.icono }}</mat-icon></div>
                 <h3>{{ f.titulo }}</h3>

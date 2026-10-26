@@ -92,6 +92,7 @@
       <a
         class="nav-item version-info"
         routerLink="/novedades"
+        [attr.aria-label]="'Ver novedades de Stenbrary v' + changelogService.versionActualSignal().version"
         [matTooltip]="!isSidebarExpanded() ? ('Stenbrary v' + changelogService.versionActualSignal().version + ' — ver novedades') : ''"
         matTooltipPosition="right"
         matRipple
@@ -139,7 +140,7 @@
           (click)="abrirBusquedaGlobal()"
           matTooltip="Buscar (Ctrl+K)"
           matTooltipPosition="below"
-          aria-label="Abrir búsqueda global">
+          aria-keyshortcuts="Control+K">
           <mat-icon>search</mat-icon>
           <span class="search-label">Buscar</span>
           <span class="search-kbd">Ctrl+K</span>
@@ -192,7 +193,9 @@
           </button>
 
           <mat-menu #accountMenu="matMenu" xPosition="before" class="account-menu">
-            <div class="account-menu-header" (click)="$event.stopPropagation()">
+            <!-- No es un control: solo evita que el menú se cierre al tocar el encabezado. -->
+            <div class="account-menu-header" tabindex="-1"
+                 (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
               <div class="account-menu-avatar">{{ inicialUsuario() }}</div>
               <div class="account-menu-info">
                 <span class="account-menu-name">{{ nombreMostrado() }}</span>

@@ -65,7 +65,7 @@
     align-items: flex-start;
     gap: 8px;
     font-size: 0.8rem;
-    color: rgba(200, 230, 240, 0.45);
+    color: rgba(200, 230, 240, 0.6);
     line-height: 1.5;
 
     mat-icon {
@@ -82,7 +82,7 @@
 .section-hint {
   margin: 14px 0 0;
   font-size: 0.78rem;
-  color: rgba(200, 230, 240, 0.35);
+  color: rgba(200, 230, 240, 0.6);
   line-height: 1.5;
 
   mat-icon {
@@ -126,7 +126,7 @@
 
 .stat-label {
   font-size: 0.72rem;
-  color: rgba(200, 230, 240, 0.45);
+  color: rgba(200, 230, 240, 0.6);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -455,7 +455,7 @@
   border: 1px solid rgba(0, 200, 215, 0.08);
   border-radius: 10px;
 
-  label {
+  label, .etiqueta-grupo {
     font-size: 0.9rem;
     color: #E8F4F8;
     font-weight: 500;

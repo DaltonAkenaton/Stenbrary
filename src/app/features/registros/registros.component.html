@@ -64,16 +64,16 @@
     <div class="rango-personalizado">
       <div class="date-input-wrap">
         <mat-icon>event</mat-icon>
-        <label>Desde</label>
-        <input type="date" [(ngModel)]="fechaPersonalizadaInicio"
+        <label for="registros-desde">Desde</label>
+        <input type="date" id="registros-desde" [(ngModel)]="fechaPersonalizadaInicio"
                [max]="fechaPersonalizadaFin"
                (ngModelChange)="paginaActual.set(0)">
       </div>
       <span class="date-sep">—</span>
       <div class="date-input-wrap">
         <mat-icon>event</mat-icon>
-        <label>Hasta</label>
-        <input type="date" [(ngModel)]="fechaPersonalizadaFin"
+        <label for="registros-hasta">Hasta</label>
+        <input type="date" id="registros-hasta" [(ngModel)]="fechaPersonalizadaFin"
                [min]="fechaPersonalizadaInicio"
                (ngModelChange)="paginaActual.set(0)">
       </div>
@@ -102,7 +102,7 @@
         }
       </mat-autocomplete>
       @if (filtros().busqueda) {
-        <button class="clear-btn" (click)="actualizarFiltro('busqueda', '')">
+        <button class="clear-btn" (click)="actualizarFiltro('busqueda', '')" aria-label="Borrar la búsqueda">
           <mat-icon>close</mat-icon>
         </button>
       }
@@ -351,13 +351,13 @@
           <div class="pag-controls">
             <button mat-icon-button
               [disabled]="paginaActual() === 0"
-              (click)="paginaAnterior()">
+              (click)="paginaAnterior()" aria-label="Página anterior">
               <mat-icon>chevron_left</mat-icon>
             </button>
             <span class="pag-current mono">{{ paginaActual() + 1 }} / {{ totalPaginas }}</span>
             <button mat-icon-button
               [disabled]="paginaActual() >= totalPaginas - 1"
-              (click)="paginaSiguiente()">
+              (click)="paginaSiguiente()" aria-label="Página siguiente">
               <mat-icon>chevron_right</mat-icon>
             </button>
           </div>

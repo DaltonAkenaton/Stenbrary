@@ -533,7 +533,8 @@
 
   @media (max-width: 720px) {
     padding: 6px 8px;
-    .search-label, .search-kbd { display: none; }
+    // Solo el ícono a la vista; el texto sigue nombrando el botón (v3.62.0).
+    .search-label, .search-kbd { @include visualmente-oculto; }
   }
 }
 

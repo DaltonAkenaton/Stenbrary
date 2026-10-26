@@ -60,7 +60,7 @@
         [ngModel]="filtros().busqueda"
         (ngModelChange)="actualizarFiltro('busqueda', $event)">
       @if (filtros().busqueda) {
-        <button class="clear-btn" (click)="actualizarFiltro('busqueda', '')">
+        <button class="clear-btn" (click)="actualizarFiltro('busqueda', '')" aria-label="Borrar la búsqueda">
           <mat-icon>close</mat-icon>
         </button>
       }
@@ -254,11 +254,11 @@
             }} de {{ alumnosFiltrados.length }}
           </span>
           <div class="pag-controls">
-            <button mat-icon-button [disabled]="paginaActual() === 0" (click)="paginaAnterior()">
+            <button mat-icon-button [disabled]="paginaActual() === 0" (click)="paginaAnterior()" aria-label="Página anterior">
               <mat-icon>chevron_left</mat-icon>
             </button>
             <span class="pag-current">{{ paginaActual() + 1 }} / {{ totalPaginas }}</span>
-            <button mat-icon-button [disabled]="paginaActual() >= totalPaginas - 1" (click)="paginaSiguiente()">
+            <button mat-icon-button [disabled]="paginaActual() >= totalPaginas - 1" (click)="paginaSiguiente()" aria-label="Página siguiente">
               <mat-icon>chevron_right</mat-icon>
             </button>
           </div>
@@ -356,13 +356,13 @@
           <div class="pag-controls">
             <button mat-icon-button
               [disabled]="paginaActual() === 0"
-              (click)="paginaAnterior()">
+              (click)="paginaAnterior()" aria-label="Página anterior">
               <mat-icon>chevron_left</mat-icon>
             </button>
             <span class="pag-current">{{ paginaActual() + 1 }} / {{ totalPaginas }}</span>
             <button mat-icon-button
               [disabled]="paginaActual() >= totalPaginas - 1"
-              (click)="paginaSiguiente()">
+              (click)="paginaSiguiente()" aria-label="Página siguiente">
               <mat-icon>chevron_right</mat-icon>
             </button>
           </div>

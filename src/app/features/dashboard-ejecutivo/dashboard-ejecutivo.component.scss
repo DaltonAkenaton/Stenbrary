@@ -3056,7 +3056,8 @@ button:focus-visible {
     padding: 8px 12px;
     font-size: 0.82rem;
 
-    span { display: none; }
+    // Solo el ícono a la vista; el texto sigue nombrando la pestaña (v3.62.0).
+    span { @include visualmente-oculto; }
   }
 }
 

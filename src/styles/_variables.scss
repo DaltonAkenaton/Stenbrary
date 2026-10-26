@@ -40,7 +40,7 @@ $accent-color:  $teal-400;
 // Opacidades ajustadas para mejor legibilidad en dark theme
 $text-primary:   #E8F4F8;                   // Texto principal
 $text-secondary: rgba(200, 230, 240, 0.68); // Subtítulos, labels (era 0.65)
-$text-muted:     rgba(160, 200, 215, 0.52); // Placeholders, metadatos (era 0.40)
+$text-muted:     rgba(160, 200, 215, 0.70); // Placeholders, metadatos (era 0.52; 0.70 = 4.5:1 WCAG AA sobre todos los fondos navy)
 
 $text-disabled: $text-muted;
 

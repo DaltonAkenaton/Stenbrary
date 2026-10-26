@@ -102,7 +102,7 @@
         <button type="button" class="stepper-btn"
                 (click)="onChangeEscanerCooldown(configService.escanerCooldownMs - 100)"
                 [disabled]="configService.escanerCooldownMs <= 0"
-                matTooltip="Disminuir 100 ms">
+                matTooltip="Disminuir 100 ms" aria-label="Disminuir 100 ms">
           <mat-icon>remove</mat-icon>
         </button>
         <input id="cdMsInput" type="number" min="0" step="100"
@@ -111,7 +111,7 @@
                (ngModelChange)="onChangeEscanerCooldown($event)">
         <button type="button" class="stepper-btn"
                 (click)="onChangeEscanerCooldown(configService.escanerCooldownMs + 100)"
-                matTooltip="Aumentar 100 ms">
+                matTooltip="Aumentar 100 ms" aria-label="Aumentar 100 ms">
           <mat-icon>add</mat-icon>
         </button>
       </div>
@@ -207,7 +207,7 @@
         <button type="button" class="stepper-btn"
                 (click)="onChangeZoomDefaultPct(zoomDefaultPct - 10)"
                 [disabled]="zoomDefaultPct <= 100"
-                matTooltip="Disminuir 10%">
+                matTooltip="Disminuir 10%" aria-label="Disminuir 10%">
           <mat-icon>remove</mat-icon>
         </button>
         <input id="zoomDefInput" type="number" min="100" max="300" step="10"

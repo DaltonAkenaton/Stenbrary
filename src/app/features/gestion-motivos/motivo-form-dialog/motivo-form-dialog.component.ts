@@ -123,8 +123,8 @@ interface ColorOpcion {
 
           <!-- Color — Swatches visuales -->
           <div class="color-section">
-            <label class="color-label">Color</label>
-            <div class="color-swatches">
+            <span class="color-label" id="motivo-color-titulo">Color</span>
+            <div class="color-swatches" role="group" aria-labelledby="motivo-color-titulo">
               @for (color of coloresDisponibles; track color.valor) {
                 <button
                   type="button"

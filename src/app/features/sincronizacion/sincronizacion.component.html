@@ -149,7 +149,7 @@
           </h3>
           <button mat-icon-button
                   (click)="cerrarPanelErrores()"
-                  matTooltip="Cerrar">
+                  matTooltip="Cerrar" aria-label="Cerrar">
             <mat-icon>close</mat-icon>
           </button>
         </header>
@@ -172,7 +172,9 @@
     @if (conteos().motivos > 0) {
       <section class="sync-seccion">
         <header class="sync-seccion-header"
-                (click)="toggleSeccion('motivos')"
+                role="button" tabindex="0" [attr.aria-expanded]="secciones().motivos"
+                (click)="toggleSeccion('motivos')" (keydown.enter)="toggleSeccion('motivos')"
+                (keydown.space)="$event.preventDefault(); toggleSeccion('motivos')"
                 [class.collapsed]="!secciones().motivos">
           <mat-icon class="chevron">{{ secciones().motivos ? 'expand_more' : 'chevron_right' }}</mat-icon>
           <mat-icon class="tipo-icon">category</mat-icon>
@@ -226,13 +228,13 @@
                       </td>
                       <td class="td-acciones" (click)="$event.stopPropagation()">
                         <button mat-icon-button
-                                matTooltip="Subir solo este"
+                                matTooltip="Subir solo este" aria-label="Subir solo este"
                                 (click)="subirFila('motivos', m.id!, m.nombre)"
                                 [disabled]="subiendo()">
                           <mat-icon>cloud_upload</mat-icon>
                         </button>
                         <button mat-icon-button
-                                matTooltip="Descartar"
+                                matTooltip="Descartar" aria-label="Descartar"
                                 (click)="descartarFila('motivos', m.id!, m.nombre)"
                                 [disabled]="subiendo()">
                           <mat-icon>block</mat-icon>
@@ -252,7 +254,9 @@
     @if (conteos().alumnos > 0) {
       <section class="sync-seccion">
         <header class="sync-seccion-header"
-                (click)="toggleSeccion('alumnos')"
+                role="button" tabindex="0" [attr.aria-expanded]="secciones().alumnos"
+                (click)="toggleSeccion('alumnos')" (keydown.enter)="toggleSeccion('alumnos')"
+                (keydown.space)="$event.preventDefault(); toggleSeccion('alumnos')"
                 [class.collapsed]="!secciones().alumnos">
           <mat-icon class="chevron">{{ secciones().alumnos ? 'expand_more' : 'chevron_right' }}</mat-icon>
           <mat-icon class="tipo-icon">school</mat-icon>
@@ -301,13 +305,13 @@
                       <td class="muted">{{ a.turno }}</td>
                       <td class="td-acciones" (click)="$event.stopPropagation()">
                         <button mat-icon-button
-                                matTooltip="Subir solo este"
+                                matTooltip="Subir solo este" aria-label="Subir solo este"
                                 (click)="subirFila('alumnos', a.id!, a.matricula + ' — ' + nombreAlumno(a))"
                                 [disabled]="subiendo()">
                           <mat-icon>cloud_upload</mat-icon>
                         </button>
                         <button mat-icon-button
-                                matTooltip="Descartar"
+                                matTooltip="Descartar" aria-label="Descartar"
                                 (click)="descartarFila('alumnos', a.id!, a.matricula + ' — ' + nombreAlumno(a))"
                                 [disabled]="subiendo()">
                           <mat-icon>block</mat-icon>
@@ -327,7 +331,9 @@
     @if (conteos().registros > 0) {
       <section class="sync-seccion">
         <header class="sync-seccion-header"
-                (click)="toggleSeccion('registros')"
+                role="button" tabindex="0" [attr.aria-expanded]="secciones().registros"
+                (click)="toggleSeccion('registros')" (keydown.enter)="toggleSeccion('registros')"
+                (keydown.space)="$event.preventDefault(); toggleSeccion('registros')"
                 [class.collapsed]="!secciones().registros">
           <mat-icon class="chevron">{{ secciones().registros ? 'expand_more' : 'chevron_right' }}</mat-icon>
           <mat-icon class="tipo-icon">fact_check</mat-icon>
@@ -386,13 +392,13 @@
                       </td>
                       <td class="td-acciones" (click)="$event.stopPropagation()">
                         <button mat-icon-button
-                                matTooltip="Subir solo este"
+                                matTooltip="Subir solo este" aria-label="Subir solo este"
                                 (click)="subirFila('registros', r.id, r.matricula + ' — ' + fechaCorta(r.fechaHora))"
                                 [disabled]="subiendo()">
                           <mat-icon>cloud_upload</mat-icon>
                         </button>
                         <button mat-icon-button
-                                matTooltip="Descartar"
+                                matTooltip="Descartar" aria-label="Descartar"
                                 (click)="descartarFila('registros', r.id, r.matricula + ' — ' + fechaCorta(r.fechaHora))"
                                 [disabled]="subiendo()">
                           <mat-icon>block</mat-icon>
@@ -413,7 +419,9 @@
   @if (auth.isSignedIn() && !cargando() && totalDescartados() > 0) {
     <section class="sync-seccion sync-descartados">
       <header class="sync-seccion-header"
-              (click)="toggleSeccionDescartados()"
+              role="button" tabindex="0" [attr.aria-expanded]="seccionDescartados()"
+              (click)="toggleSeccionDescartados()" (keydown.enter)="toggleSeccionDescartados()"
+              (keydown.space)="$event.preventDefault(); toggleSeccionDescartados()"
               [class.collapsed]="!seccionDescartados()">
         <mat-icon class="chevron">{{ seccionDescartados() ? 'expand_more' : 'chevron_right' }}</mat-icon>
         <mat-icon class="tipo-icon">delete_outline</mat-icon>
@@ -444,7 +452,7 @@
                   <td>{{ m.nombre }}</td>
                   <td class="td-acciones">
                     <button mat-icon-button
-                            matTooltip="Restaurar"
+                            matTooltip="Restaurar" aria-label="Restaurar"
                             (click)="restaurarFila('motivos', m.id!, m.nombre)"
                             [disabled]="subiendo()">
                       <mat-icon>restore</mat-icon>
@@ -458,7 +466,7 @@
                   <td><span class="mono">{{ a.matricula }}</span> — {{ nombreAlumno(a) }}</td>
                   <td class="td-acciones">
                     <button mat-icon-button
-                            matTooltip="Restaurar"
+                            matTooltip="Restaurar" aria-label="Restaurar"
                             (click)="restaurarFila('alumnos', a.id!, a.matricula + ' — ' + nombreAlumno(a))"
                             [disabled]="subiendo()">
                       <mat-icon>restore</mat-icon>
@@ -472,7 +480,7 @@
                   <td><span class="mono">{{ r.matricula }}</span> — {{ fechaCorta(r.fechaHora) }}</td>
                   <td class="td-acciones">
                     <button mat-icon-button
-                            matTooltip="Restaurar"
+                            matTooltip="Restaurar" aria-label="Restaurar"
                             (click)="restaurarFila('registros', r.id, r.matricula + ' — ' + fechaCorta(r.fechaHora))"
                             [disabled]="subiendo()">
                       <mat-icon>restore</mat-icon>

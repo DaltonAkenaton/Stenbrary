@@ -50,7 +50,7 @@
                   class="stepper-btn"
                   (click)="setCelebracionPorcentaje(porcentajeCelebracion - 1)"
                   [disabled]="porcentajeCelebracion <= 0"
-                  matTooltip="Disminuir 1%"
+                  matTooltip="Disminuir 1%" aria-label="Disminuir 1%"
                   matTooltipPosition="above">
             <mat-icon>remove</mat-icon>
           </button>
@@ -118,7 +118,7 @@
               class="stepper-btn"
               (click)="setTiempoExitoSegundos(tiempoExitoSegundos - 1)"
               [disabled]="tiempoExitoSegundos <= 1"
-              matTooltip="Disminuir 1 s"
+              matTooltip="Disminuir 1 s" aria-label="Disminuir 1 s"
               matTooltipPosition="above">
         <mat-icon>remove</mat-icon>
       </button>
@@ -135,7 +135,7 @@
       <button type="button"
               class="stepper-btn"
               (click)="setTiempoExitoSegundos(tiempoExitoSegundos + 1)"
-              matTooltip="Aumentar 1 s"
+              matTooltip="Aumentar 1 s" aria-label="Aumentar 1 s"
               matTooltipPosition="above">
         <mat-icon>add</mat-icon>
       </button>
@@ -179,7 +179,9 @@
 
 <!-- Overlay de preview fullscreen -->
 @if (mostrarPreviewAnimacion) {
-  <div class="preview-overlay" (click)="cerrarPreviewAnimacion()">
+  <div class="preview-overlay" role="button" tabindex="0" aria-label="Cerrar la vista previa"
+       (click)="cerrarPreviewAnimacion()" (keydown.enter)="cerrarPreviewAnimacion()"
+       (keydown.space)="$event.preventDefault(); cerrarPreviewAnimacion()" (keydown.escape)="cerrarPreviewAnimacion()">
     <app-success-animation [temaForzado]="temaPreview" />
     <div class="preview-hint-tap">
       <mat-icon>touch_app</mat-icon>

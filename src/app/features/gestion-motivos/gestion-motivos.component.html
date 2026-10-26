@@ -42,7 +42,7 @@
             [(ngModel)]="filtroBusqueda"
             autocomplete="off">
           @if (filtroBusqueda) {
-            <button class="clear-btn" (click)="filtroBusqueda = ''">
+            <button class="clear-btn" (click)="filtroBusqueda = ''" aria-label="Borrar la búsqueda">
               <mat-icon>close</mat-icon>
             </button>
           }

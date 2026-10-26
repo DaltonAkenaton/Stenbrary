@@ -114,10 +114,11 @@
             <span class="stat-label">{{ stat.etiqueta }}</span>
             <span class="stat-subtexto">{{ stat.subtexto }}</span>
           </div>
-          <span class="stat-help"
+          <span class="stat-help" tabindex="0" role="img"
+                [attr.aria-label]="stat.tooltip"
                 [matTooltip]="stat.tooltip"
                 matTooltipPosition="above"
-                (click)="$event.stopPropagation()">
+                (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
             <mat-icon>help_outline</mat-icon>
           </span>
         </button>
@@ -244,7 +245,7 @@
             @for (a of actividadesHoy; track a.nombre) {
               <button class="actividad-item"
                 (click)="navegarActividad(a)"
-                [attr.aria-label]="'Ver ' + a.cantidad + ' registros de ' + a.nombre">
+                [attr.aria-label]="a.nombre + ' ' + a.cantidad + ': ver sus registros'">
                 <div class="actividad-icon"
                   [style.background]="a.color + '14'"
                   [style.border-color]="a.color + '25'">

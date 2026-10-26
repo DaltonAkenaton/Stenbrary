@@ -26,13 +26,13 @@
         <button type="button" class="vista-btn"
                 [class.active]="vista() === 'lista'"
                 (click)="setVista('lista')"
-                matTooltip="Ver como lista">
+                matTooltip="Ver como lista" aria-label="Ver como lista">
           <mat-icon>view_list</mat-icon>
         </button>
         <button type="button" class="vista-btn"
                 [class.active]="vista() === 'cards'"
                 (click)="setVista('cards')"
-                matTooltip="Ver como tarjetas">
+                matTooltip="Ver como tarjetas" aria-label="Ver como tarjetas">
           <mat-icon>grid_view</mat-icon>
         </button>
       </div>
@@ -64,7 +64,7 @@
       <button type="button" class="step-btn"
               (click)="setUmbral(umbralDias() - 1)"
               [disabled]="umbralDias() <= 1"
-              matTooltip="Reducir 1 día">
+              matTooltip="Reducir 1 día" aria-label="Reducir 1 día">
         <mat-icon>remove</mat-icon>
       </button>
       <input type="number"
@@ -77,7 +77,7 @@
       <span class="step-suffix">días</span>
       <button type="button" class="step-btn"
               (click)="setUmbral(umbralDias() + 1)"
-              matTooltip="Agregar 1 día">
+              matTooltip="Agregar 1 día" aria-label="Agregar 1 día">
         <mat-icon>add</mat-icon>
       </button>
       @if (configService.umbralInactividadDias !== umbralDias()) {
@@ -108,8 +108,8 @@
     </div>
 
     <div class="filtro-item">
-      <label>Carrera</label>
-      <select [ngModel]="filtroCarrera()" (ngModelChange)="filtroCarrera.set($event)">
+      <label for="inactivos-carrera">Carrera</label>
+      <select id="inactivos-carrera" [ngModel]="filtroCarrera()" (ngModelChange)="filtroCarrera.set($event)">
         <option value="">Todas</option>
         @for (c of carrerasDisponibles(); track c) {
           <option [value]="c">{{ c }}</option>
@@ -118,8 +118,8 @@
     </div>
 
     <div class="filtro-item">
-      <label>Orden</label>
-      <select [ngModel]="orden()" (ngModelChange)="orden.set($event)">
+      <label for="inactivos-orden">Orden</label>
+      <select id="inactivos-orden" [ngModel]="orden()" (ngModelChange)="orden.set($event)">
         @for (o of opcionesOrden; track o.valor) {
           <option [value]="o.valor">{{ o.etiqueta }}</option>
         }

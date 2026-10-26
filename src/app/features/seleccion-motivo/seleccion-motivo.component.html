@@ -151,7 +151,7 @@
                 <span class="confirm-chip" [style.--chip-color]="m.color || '#00C8D7'">
                   <mat-icon [style.color]="m.color || '#00C8D7'">{{ m.icono }}</mat-icon>
                   {{ m.nombre }}
-                  <button class="chip-remove" (click)="seleccionarMotivo(m)" [disabled]="registrando">
+                  <button class="chip-remove" (click)="seleccionarMotivo(m)" [attr.aria-label]="'Quitar ' + m.nombre" [disabled]="registrando">
                     <mat-icon>close</mat-icon>
                   </button>
                 </span>
@@ -210,7 +210,7 @@
 
         <!-- Header -->
         <div class="motivos-header">
-          <button mat-icon-button class="back-button" (click)="cancelar()">
+          <button mat-icon-button class="back-button" (click)="cancelar()" aria-label="Cancelar y volver al escáner">
             <mat-icon>arrow_back</mat-icon>
           </button>
           <div class="header-text">
@@ -243,10 +243,16 @@
         @if (!cargandoMotivos && !error) {
           <div class="motivos-grid">
             @for (motivo of motivos; track motivo.id; let i = $index) {
+              <!-- El Enter del lector de credenciales nunca llega aquí: LectorRafagaService
+                   lo detiene en la fase de captura. -->
               <div
                 class="motivo-card"
+                role="checkbox" tabindex="0"
+                [attr.aria-checked]="estaSeleccionado(motivo)"
                 [class.selected]="estaSeleccionado(motivo)"
                 (click)="seleccionarMotivo(motivo)"
+                (keydown.space)="$event.preventDefault(); seleccionarMotivo(motivo)"
+                (keydown.enter)="seleccionarMotivo(motivo)"
                 matRipple>
 
                 <div class="motivo-icon-wrap">

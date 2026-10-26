@@ -179,7 +179,7 @@
 
 .sidebar-item-desc {
   font-size: 0.72rem;
-  color: rgba(200, 230, 240, 0.4);
+  color: rgba(200, 230, 240, 0.6); // 4.5:1 sobre el ítem activo (era 0.4)
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -180,7 +180,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
           [ngModel]="busqueda()"
           (ngModelChange)="busqueda.set($event)">
         @if (busqueda()) {
-          <button class="clear-btn" (click)="busqueda.set('')">
+          <button class="clear-btn" (click)="busqueda.set('')" aria-label="Borrar la búsqueda">
             <mat-icon>close</mat-icon>
           </button>
         }
@@ -198,7 +198,8 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       @if (!cargando() && vistaCards() && registrosFiltrados().length > 0) {
         <div class="cards-grid">
           @for (r of registrosFiltrados(); track r.id) {
-            <div class="alumno-card" (click)="pedirSalida(r)" matRipple
+            <div class="alumno-card" role="button" tabindex="0" (click)="pedirSalida(r)" matRipple
+                 (keydown.enter)="pedirSalida(r)" (keydown.space)="$event.preventDefault(); pedirSalida(r)"
                  title="Toca para registrar salida"
                  [class.cierre-auto]="r.cierreAutomatico">
 
@@ -250,7 +251,8 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       @if (!cargando() && !vistaCards() && registrosFiltrados().length > 0) {
         <div class="lista-container">
           @for (r of registrosFiltrados(); track r.id) {
-            <div class="lista-row" (click)="pedirSalida(r)" matRipple
+            <div class="lista-row" role="button" tabindex="0" (click)="pedirSalida(r)" matRipple
+                 (keydown.enter)="pedirSalida(r)" (keydown.space)="$event.preventDefault(); pedirSalida(r)"
                  [class.cierre-auto]="r.cierreAutomatico">
 
               <mat-icon class="row-avatar" [class.guest]="r.matricula === 'INVITADO'">
@@ -424,7 +426,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
     }
     .mono { font-family: monospace; }
     .hora { font-size: .85rem; font-weight: 600; color: #E8F4F8; font-family: monospace; }
-    .elapsed { font-size: .72rem; color: rgba(200,230,240,.45); }
+    .elapsed { font-size: .72rem; color: rgba(200,230,240,.65); }
 
     /* ── CARDS GRID ── */
     .cards-grid {
@@ -458,14 +460,14 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       font-size: .95rem; font-weight: 700; color: #E8F4F8;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .card-matricula { font-size: .78rem; color: rgba(200,230,240,.5); }
+    .card-matricula { font-size: .78rem; color: rgba(200,230,240,.65); }
     .card-guest-badge {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: .72rem; font-weight: 600; color: #F5A623;
       mat-icon { font-size: 13px; width: 13px; height: 13px; }
     }
     .card-avatar.guest mat-icon { color: rgba(245,166,35,.5); }
-    .card-carrera { font-size: .78rem; color: rgba(200,230,240,.45); }
+    .card-carrera { font-size: .78rem; color: rgba(200,230,240,.65); }
     .card-motivos { display: flex; flex-wrap: wrap; gap: 5px; }
     .card-tiempo {
       display: flex; align-items: center; gap: 6px; margin-top: 4px;
@@ -477,7 +479,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       display: flex; align-items: center; gap: 5px;
       padding: 6px 10px; margin-top: 4px;
       background: rgba(0,200,215,.08); border-radius: 8px;
-      font-size: .75rem; font-weight: 600; color: rgba(0,200,215,.7);
+      font-size: .75rem; font-weight: 600; color: rgba(0,200,215,.95);
       opacity: 0; transition: opacity 180ms;
       mat-icon { font-size: 14px; width: 14px; height: 14px; }
     }
@@ -526,7 +528,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       gap: 10px; padding: 56px 24px; text-align: center;
       mat-icon { font-size: 50px; width: 50px; height: 50px; color: rgba(0,200,215,.2); }
       h3 { margin: 0; font-size: 1.1rem; color: rgba(200,230,240,.6); }
-      p { margin: 0; font-size: .85rem; color: rgba(200,230,240,.35); }
+      p { margin: 0; font-size: .85rem; color: rgba(200,230,240,.6); }
     }
 
     /* ── HINT FIJO ── */
@@ -537,7 +539,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
       background: rgba(4, 9, 15, 0.88);
       backdrop-filter: blur(8px);
       border-top: 1px solid rgba(255,255,255,.05);
-      font-size: .7rem; color: rgba(200,230,240,.28);
+      font-size: .7rem; color: rgba(200,230,240,.6);
       z-index: 10;
       mat-icon { font-size: 13px; width: 13px; height: 13px; }
 

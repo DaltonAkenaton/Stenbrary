@@ -39,7 +39,8 @@ const FRASES = [
     imports: [],
     template: `
     @if (visible) {
-      <div class="celebration-overlay" (click)="cerrar.emit()">
+      <div class="celebration-overlay" role="button" tabindex="0" aria-label="Cerrar la celebración"
+           (click)="cerrar.emit()" (keydown.enter)="cerrar.emit()" (keydown.escape)="cerrar.emit()">
         <div class="celebration-frase">{{ fraseElegida }}</div>
         <div class="celebration-particles">
           @for (p of particulas; track $index) {

@@ -60,7 +60,7 @@ interface ResultadoImportacion {
 
       <!-- Header -->
       <div class="page-header">
-        <button mat-icon-button class="back-btn" (click)="volver()">
+        <button mat-icon-button class="back-btn" (click)="volver()" aria-label="Volver">
           <mat-icon>arrow_back</mat-icon>
         </button>
         <div class="header-icon">
@@ -423,7 +423,7 @@ interface ResultadoImportacion {
     .subtitle {
       margin: 2px 0 0;
       font-size: 0.82rem;
-      color: rgba(200, 230, 240, 0.5);
+      color: rgba(200, 230, 240, 0.6);
     }
 
     /* ── Section Cards ── */
@@ -530,7 +530,7 @@ interface ResultadoImportacion {
 
     .btn-template {
       background: rgba(99, 102, 241, 0.10);
-      color: #6366F1;
+      color: #818CF8; // índigo más claro: 5.2:1 sobre el fondo (era #6366F1, 3.5:1)
       border: 1px solid rgba(99, 102, 241, 0.25);
 
       &:hover:not(:disabled) {
@@ -612,7 +612,7 @@ interface ResultadoImportacion {
       line-height: 1.5;
 
       mat-icon {
-        color: #6366F1;
+        color: #818CF8;
         font-size: 18px;
         width: 18px;
         height: 18px;
@@ -620,7 +620,7 @@ interface ResultadoImportacion {
         margin-top: 1px;
       }
 
-      strong { color: #6366F1; }
+      strong { color: #818CF8; }
     }
 
     /* ── Validación resumen ── */

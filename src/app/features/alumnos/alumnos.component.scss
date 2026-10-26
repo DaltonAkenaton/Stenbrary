@@ -445,8 +445,9 @@ h1 {
     width: 100%;
   }
 
+  // Solo el ícono a la vista; el texto sigue nombrando el botón (v3.62.0).
   .btn-text {
-    display: none;
+    @include visualmente-oculto;
   }
 
   .filtros-row {
