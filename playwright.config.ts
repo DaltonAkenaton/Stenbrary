@@ -27,6 +27,8 @@ const REUSAR = process.env['E2E_REUSE_SERVER'] === '1' && !process.env['CI'];
 
 export default defineConfig({
   testDir: './e2e',
+  // e2e/produccion corre aparte, contra el build (playwright.produccion.config.ts).
+  testIgnore: ['produccion/**'],
   globalSetup: './e2e/global-setup.ts',
   timeout: 30_000,
   expect: { timeout: 5_000 },

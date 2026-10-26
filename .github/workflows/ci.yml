@@ -84,6 +84,15 @@ jobs:
       - name: Run smoke E2E
         run: npm run e2e
 
+      # v3.62.0: el build de producción servido con public/_headers (la CSP
+      # que publica Cloudflare). Recorre la app buscando violaciones de la
+      # CSP y comprueba el service worker sin conexión.
+      - name: Production build (para las cabeceras)
+        run: npx ng build --configuration production
+
+      - name: E2E contra el build con cabeceras de seguridad
+        run: npm run e2e:produccion
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4

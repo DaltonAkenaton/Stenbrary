@@ -1,4 +1,4 @@
-# Cabeceras HTTP del sitio. Mismo formato en Cloudflare Pages y en Netlify.
+# Cabeceras HTTP del sitio (formato de Cloudflare Pages).
 #
 # Por qué existe (ronda de pruebas 2026-10): sin reglas de caché, un equipo
 # siguió ejecutando código viejo después de actualizar. El service worker
@@ -9,11 +9,31 @@
 # Ojo: si una ruta coincide con varias reglas, Cloudflare COMBINA las
 # cabeceras. Por eso no hay un "/*.js" genérico: ngsw-worker.js no lleva hash
 # y heredaría el "immutable".
+#
+# Seguridad (v3.62.0; detalle y excepciones en docs/SEGURIDAD.md):
+# - script-src 'self': ningún script inline ni de terceros, sin eval. Por
+#   eso el build no incrusta el CSS crítico (lo cargaba un onload inline) y
+#   Lottie usa el reproductor "light", sin eval.
+# - style-src 'unsafe-inline': ÚNICA excepción. Angular inyecta los estilos
+#   de cada componente como <style> en tiempo de ejecución y las plantillas
+#   usan atributos style; con hosting estático no hay nonce por respuesta.
+# - font-src fonts.gstatic.com: las fuentes de Google (el CSS de
+#   @font-face ya viene incrustado en el build). Sin conexión se usan las
+#   del sistema.
+# - connect-src 'self': la app no llama a ningún servidor externo. Si un
+#   build activa Supabase, hay que añadir su URL (https y wss) aquí.
+# - frame-ancestors 'none' + X-Frame-Options: nadie puede enmarcar la app
+#   (evita clickjacking sobre el quiosco).
+# Verificación: `npm run e2e:produccion` sirve el build con estas mismas
+# cabeceras y recorre la app buscando violaciones de la CSP.
 
 /*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(self), microphone=(), geolocation=()
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
 
 /index.html
   Cache-Control: no-cache
@@ -33,6 +53,8 @@
 /polyfills-*
   Cache-Control: public, max-age=31536000, immutable
 /chunk-*
+  Cache-Control: public, max-age=31536000, immutable
+/worker-*
   Cache-Control: public, max-age=31536000, immutable
 /styles-*
   Cache-Control: public, max-age=31536000, immutable

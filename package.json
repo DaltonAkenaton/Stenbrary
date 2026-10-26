@@ -13,7 +13,8 @@
     "check:version": "node scripts/check-version.mjs",
     "prepare": "husky",
     "lint": "ng lint",
-    "docs:word": "node scripts/generar-word.mjs"
+    "docs:word": "node scripts/generar-word.mjs",
+    "e2e:produccion": "playwright test -c playwright.produccion.config.ts"
   },
   "private": true,
   "dependencies": {

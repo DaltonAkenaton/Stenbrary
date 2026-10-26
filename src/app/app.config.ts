@@ -31,7 +31,10 @@ const tooltipDefaults: MatTooltipDefaultOptions = {
 // Lottie player se carga lazy (solo cuando un <ng-lottie> se monta).
 // El bundle inicial NO crece — el chunk de lottie-web es separado y
 // el SW lo cachea tras la primera carga, manteniendo el offline-first.
-const lottiePlayerFactory = () => import('lottie-web');
+// v3.62.0: el reproductor "light" (SVG, sin expresiones de After Effects):
+// el completo evalúa expresiones con `eval`, que la Content-Security-Policy
+// bloquea. Una animación que use expresiones se reproduce sin ellas.
+const lottiePlayerFactory = () => import('lottie-web/build/player/lottie_light');
 
 export const appConfig: ApplicationConfig = {
   providers: [
