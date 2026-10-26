@@ -33,15 +33,15 @@
     "@zxing/library": "^0.21.3",
     "chart.js": "^4.5.1",
     "idb": "^8.0.3",
-    "jspdf": "^4.2.0",
-    "jspdf-autotable": "^5.0.7",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "lottie-web": "^5.13.0",
     "material-icons": "^1.13.14",
     "ngx-lottie": "^21.2.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.6.0",
-    "uuid": "^10.0.0",
-    "xlsx": "^0.18.5",
+    "uuid": "^14.0.3",
+    "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
@@ -50,8 +50,6 @@
     "@angular/compiler-cli": "^21.2.25",
     "@playwright/test": "^1.59.1",
     "@types/jasmine": "~5.1.0",
-    "@types/uuid": "^10.0.0",
-    "@types/xlsx": "^0.0.35",
     "angular-eslint": "21.4.0",
     "docx": "^9.13.0",
     "eslint": "^9.28.0",
@@ -63,8 +61,13 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.33.1"
+  },
+  "overrides": {
+    "@angular/build": {
+      "undici": "7.30.1"
+    }
   }
 }
