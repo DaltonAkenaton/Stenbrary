@@ -16,7 +16,7 @@
 import {
   Component, Input, OnInit, ChangeDetectionStrategy, signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { LottieComponent, AnimationOptions } from 'ngx-lottie';
 
 interface Tema {
@@ -107,7 +107,7 @@ const PARTICLE_COUNT = 14;
 
 @Component({
     selector: 'app-success-animation',
-    imports: [CommonModule, LottieComponent],
+    imports: [LottieComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="success-anim" [class]="'theme-' + tema().id">

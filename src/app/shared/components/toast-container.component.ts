@@ -8,14 +8,14 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { MatIconModule } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
 import { ToastService, Toast } from '../../core/services/toast.service';
 
 @Component({
     selector: 'app-toast-container',
-    imports: [CommonModule, MatIconModule],
+    imports: [MatIconModule],
     template: `
     <div class="toast-container">
       @for (toast of toasts; track toast.id) {

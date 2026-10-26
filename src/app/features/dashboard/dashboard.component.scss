@@ -3,8 +3,8 @@
 // ║  Resumen con insights — Cyan Cube Dark Theme          ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 .dashboard-container {
   @include responsive-page-container;

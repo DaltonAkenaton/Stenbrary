@@ -17,7 +17,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -42,20 +42,19 @@ const DEFAULT_CATEGORIA: CategoriaConfigId = 'general';
 @Component({
     selector: 'app-configuracion-v2',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatIconModule,
-        GeneralCategoriaComponent,
-        EscanerCategoriaComponent,
-        OperacionCategoriaComponent,
-        QuioscoCategoriaComponent,
-        ExperienciaCategoriaComponent,
-        DatosCategoriaComponent,
-        CalendarioCategoriaComponent,
-        CatalogosCategoriaComponent,
-        AvanzadoCategoriaComponent,
-        BitacoraCategoriaComponent,
-    ],
+    FormsModule,
+    MatIconModule,
+    GeneralCategoriaComponent,
+    EscanerCategoriaComponent,
+    OperacionCategoriaComponent,
+    QuioscoCategoriaComponent,
+    ExperienciaCategoriaComponent,
+    DatosCategoriaComponent,
+    CalendarioCategoriaComponent,
+    CatalogosCategoriaComponent,
+    AvanzadoCategoriaComponent,
+    BitacoraCategoriaComponent
+],
     templateUrl: './configuracion-v2.component.html',
     styleUrls: ['./configuracion.styles.scss', './configuracion-v2.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -13,7 +13,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -25,12 +25,11 @@ import { DIAS_SEMANA } from '../../../core/utils/horarios.utils';
 @Component({
     selector: 'app-config-operacion',
     imports: [
-        CommonModule,
-        FormsModule,
-        RouterLink,
-        MatIconModule,
-        MatTooltipModule,
-    ],
+    FormsModule,
+    RouterLink,
+    MatIconModule,
+    MatTooltipModule
+],
     templateUrl: './operacion.component.html',
     styleUrls: ['../configuracion.styles.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

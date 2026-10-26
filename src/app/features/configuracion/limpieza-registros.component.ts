@@ -16,7 +16,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, effect, inject, signal, untracked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -40,17 +40,16 @@ type RangoPreset = 'personalizado' | 'hoy' | 'semana' | 'mes' | '3meses' | '6mes
 @Component({
     selector: 'app-limpieza-registros',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        MatDialogModule,
-        MatTooltipModule,
-    ],
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatDialogModule,
+    MatTooltipModule
+],
     template: `
     <div class="limpieza-container">
 

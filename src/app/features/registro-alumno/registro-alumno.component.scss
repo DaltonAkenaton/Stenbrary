@@ -7,8 +7,8 @@
 // ║  animations, decorative side stripe.                 ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 .registro-container {
   min-height: 100%;

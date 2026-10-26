@@ -19,7 +19,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -42,11 +42,10 @@ export interface ConfirmDialogData {
 @Component({
     selector: 'app-confirm-dialog',
     imports: [
-        CommonModule,
-        MatDialogModule,
-        MatButtonModule,
-        MatIconModule,
-    ],
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule
+],
     template: `
     <div class="dialog-container">
 

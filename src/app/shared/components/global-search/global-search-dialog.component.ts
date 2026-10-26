@@ -21,7 +21,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, ElementRef, HostListener, OnInit, ViewChild, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -48,7 +48,7 @@ type Item = ItemComando | ItemAlumno | ItemRegistro;
 
 @Component({
     selector: 'app-global-search-dialog',
-    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule],
+    imports: [FormsModule, MatDialogModule, MatIconModule],
     template: `
     <div class="palette">
       <div class="search-bar">

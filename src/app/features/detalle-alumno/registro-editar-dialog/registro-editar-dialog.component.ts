@@ -9,7 +9,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -38,7 +38,7 @@ export type RegistroEditarSalida = RegistroEditarResultado | 'eliminado';
 
 @Component({
     selector: 'app-registro-editar-dialog',
-    imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
+    imports: [FormsModule, MatDialogModule, MatButtonModule, MatIconModule],
     template: `
     <h2 mat-dialog-title>
       <mat-icon>edit_calendar</mat-icon>

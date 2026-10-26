@@ -3,8 +3,8 @@
 // ║  Stenbrary v4.1 — Rangos dinámicos + export          ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 // Base de los títulos de tarjeta. Varias tarjetas (mapa de calor, top alumnos,
 // tendencia) no le daban tamaño a su h2 y heredaban el global, enorme. Las

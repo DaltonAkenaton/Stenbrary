@@ -16,7 +16,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, signal, computed, Output, EventEmitter, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -89,18 +89,17 @@ const MS_POR_ALUMNO = 5;
 @Component({
     selector: 'app-datos-prueba',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        MatDialogModule,
-        MatProgressBarModule,
-        MatTooltipModule,
-    ],
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatDialogModule,
+    MatProgressBarModule,
+    MatTooltipModule
+],
     template: `
     <div class="seed-container">
 

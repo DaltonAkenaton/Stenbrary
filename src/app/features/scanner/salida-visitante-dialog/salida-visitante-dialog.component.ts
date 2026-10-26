@@ -10,7 +10,7 @@
 
 import { Component, signal, computed, inject } from '@angular/core';
 import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,7 +28,7 @@ export interface SalidaVisitanteResultado {
 
 @Component({
     selector: 'app-salida-visitante-dialog',
-    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule, MatButtonModule],
+    imports: [FormsModule, MatDialogModule, MatIconModule, MatButtonModule],
     template: `
     <div class="dlg-root">
       <div class="dlg-header">

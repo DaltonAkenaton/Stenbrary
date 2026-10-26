@@ -3,8 +3,8 @@
 // ║  Stenbrary v4.1 — Layout de lista horizontal         ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 .gestion-motivos-container {
   padding: $spacing-lg $spacing-xl;

@@ -10,7 +10,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,9 +19,11 @@ import { MatExpansionModule } from '@angular/material/expansion';
 @Component({
     selector: 'app-formulas-info-dialog',
     imports: [
-        CommonModule, MatDialogModule, MatIconModule,
-        MatButtonModule, MatExpansionModule,
-    ],
+    MatDialogModule,
+    MatIconModule,
+    MatButtonModule,
+    MatExpansionModule
+],
     template: `
     <div class="dlg-header">
       <div class="dlg-icon"><mat-icon>functions</mat-icon></div>

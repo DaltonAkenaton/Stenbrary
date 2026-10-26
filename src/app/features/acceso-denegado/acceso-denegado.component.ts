@@ -12,7 +12,7 @@
 // ║  un 404 confuso o un crash silencioso.               ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,7 +25,7 @@ import { UserRole } from '../../core/auth/auth.types';
 
 @Component({
     selector: 'app-acceso-denegado',
-    imports: [CommonModule, MatButtonModule, MatIconModule],
+    imports: [MatButtonModule, MatIconModule],
     templateUrl: './acceso-denegado.component.html',
     styleUrl: './acceso-denegado.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

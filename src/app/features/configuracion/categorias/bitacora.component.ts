@@ -14,7 +14,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../../core/services/config.service';
@@ -34,7 +34,7 @@ const POR_PAGINA = 50;
 
 @Component({
     selector: 'app-config-bitacora',
-    imports: [CommonModule, FormsModule, MatIconModule],
+    imports: [FormsModule, MatIconModule],
     templateUrl: './bitacora.component.html',
     styleUrls: ['../configuracion.styles.scss', './bitacora.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -9,7 +9,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -33,16 +33,15 @@ import { ABANDONO_MOTIVO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/fl
 @Component({
     selector: 'app-seleccion-motivo',
     imports: [
-        CommonModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatProgressSpinnerModule,
-        MatRippleModule,
-        MatTooltipModule,
-        CelebrationComponent,
-        SuccessAnimationComponent,
-    ],
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatRippleModule,
+    MatTooltipModule,
+    CelebrationComponent,
+    SuccessAnimationComponent
+],
     templateUrl: './seleccion-motivo.component.html',
     styleUrl: './seleccion-motivo.component.scss'
 })

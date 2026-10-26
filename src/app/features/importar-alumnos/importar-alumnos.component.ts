@@ -11,7 +11,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -45,16 +45,15 @@ interface ResultadoImportacion {
 @Component({
     selector: 'app-importar-alumnos',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatTableModule,
-        MatTooltipModule,
-        MatChipsModule,
-        MatProgressSpinnerModule,
-    ],
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTableModule,
+    MatTooltipModule,
+    MatChipsModule,
+    MatProgressSpinnerModule
+],
     template: `
     <div class="importar-container">
 

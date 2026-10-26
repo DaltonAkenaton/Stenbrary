@@ -8,8 +8,8 @@
 // ║  descuido, es que resolverlos puede borrar trabajo.  ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 .descarga-container {
   display: flex;

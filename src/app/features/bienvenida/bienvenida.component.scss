@@ -10,8 +10,8 @@
 // ║  Áreas de toque grandes — se configura desde tablet. ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 // ─── ESCENARIO ───────────────────────────────────────────
 // Pantalla completa con un fondo que respira. La referencia es el primer

@@ -4,8 +4,8 @@
 // ║  Stenbrary v3.3 — Navegación por secciones           ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../styles/variables';
-@import '../styles/mixins';
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
 
 // ─── SHELL PRINCIPAL ─────────────────────────────────────
 .app-shell {

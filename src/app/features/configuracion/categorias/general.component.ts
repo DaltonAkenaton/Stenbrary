@@ -11,7 +11,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -31,12 +31,11 @@ import { PinCoordinadorDialogComponent, PinCoordinadorData } from '../../../shar
 @Component({
     selector: 'app-config-general',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatIconModule,
-        MatProgressSpinnerModule,
-        MatTooltipModule,
-    ],
+    FormsModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
+],
     templateUrl: './general.component.html',
     styleUrls: ['../configuracion.styles.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

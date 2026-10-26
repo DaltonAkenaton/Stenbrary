@@ -3,8 +3,8 @@
 // ║  Cyan Cube Dark Theme                                 ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 .alumnos-container {
   @include responsive-page-container;

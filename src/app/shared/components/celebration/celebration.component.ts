@@ -12,7 +12,7 @@
 import {
   Component, Input, Output, EventEmitter, OnChanges, SimpleChanges,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 interface Particula {
   x: number;       // posición horizontal % (0-100)
@@ -36,7 +36,7 @@ const FRASES = [
 
 @Component({
     selector: 'app-celebration',
-    imports: [CommonModule],
+    imports: [],
     template: `
     @if (visible) {
       <div class="celebration-overlay" (click)="cerrar.emit()">

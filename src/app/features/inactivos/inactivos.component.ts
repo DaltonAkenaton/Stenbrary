@@ -9,7 +9,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -60,18 +60,17 @@ type OrdenMode = 'dias-desc' | 'dias-asc' | 'nombre' | 'carrera';
 @Component({
     selector: 'app-inactivos',
     imports: [
-        CommonModule,
-        FormsModule,
-        RouterLink,
-        MatIconModule,
-        MatButtonModule,
-        MatTooltipModule,
-        MatChipsModule,
-        MatFormFieldModule,
-        MatSelectModule,
-        MatInputModule,
-        MatDialogModule,
-    ],
+    FormsModule,
+    RouterLink,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatChipsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatDialogModule
+],
     templateUrl: './inactivos.component.html',
     styleUrl: './inactivos.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

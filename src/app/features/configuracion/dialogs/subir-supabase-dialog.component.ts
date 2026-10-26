@@ -12,7 +12,7 @@
 // ║  duplica (UPSERT en el adapter y la función SQL).    ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -32,13 +32,12 @@ type Estado = 'cargando-preview' | 'preview' | 'running' | 'done' | 'error';
 @Component({
     selector: 'app-subir-supabase-dialog',
     imports: [
-        CommonModule,
-        MatDialogModule,
-        MatButtonModule,
-        MatIconModule,
-        MatProgressBarModule,
-        MatProgressSpinnerModule,
-    ],
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule
+],
     templateUrl: './subir-supabase-dialog.component.html',
     styleUrl: './subir-supabase-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

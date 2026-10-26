@@ -12,7 +12,7 @@
 // ║  presenta; las salvaguardas viven en la BD.          ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -40,13 +40,12 @@ const ROLES_ASIGNABLES: { valor: UserRole; etiqueta: string }[] = [
 @Component({
     selector: 'app-usuarios',
     imports: [
-        CommonModule,
-        MatButtonModule,
-        MatDialogModule,
-        MatIconModule,
-        MatProgressSpinnerModule,
-        MatTooltipModule,
-    ],
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
+],
     templateUrl: './usuarios.component.html',
     styleUrl: './usuarios.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

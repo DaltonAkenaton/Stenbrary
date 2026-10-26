@@ -9,7 +9,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfigService } from '../../core/services/config.service';
 import { MatCardModule } from '@angular/material/card';
@@ -65,15 +65,14 @@ interface EstadisticasAlumno {
 @Component({
     selector: 'app-detalle-alumno',
     imports: [
-        CommonModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatTableModule,
-        MatChipsModule,
-        MatDialogModule,
-        MatTooltipModule,
-    ],
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTableModule,
+    MatChipsModule,
+    MatDialogModule,
+    MatTooltipModule
+],
     templateUrl: './detalle-alumno.component.html',
     styleUrl: './detalle-alumno.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

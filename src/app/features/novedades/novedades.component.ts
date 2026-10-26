@@ -12,7 +12,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChangelogService } from '../../core/services/changelog.service';
@@ -21,10 +21,9 @@ import { TipoCambio } from '../../core/data/changelog.data';
 @Component({
     selector: 'app-novedades',
     imports: [
-        CommonModule,
-        MatIconModule,
-        MatTooltipModule,
-    ],
+    MatIconModule,
+    MatTooltipModule
+],
     template: `
     <div class="novedades-container">
 

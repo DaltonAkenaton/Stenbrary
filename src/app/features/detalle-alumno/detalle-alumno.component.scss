@@ -3,8 +3,9 @@
 // ║  Stenbrary v3.0 — Cyan Cube Dark Theme               ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use 'sass:color';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 .detalle-alumno-container {
   min-height: 100vh;
@@ -283,7 +284,7 @@
     }
 
     &.motivo {
-      background: linear-gradient(135deg, $amber-color, darken($amber-color, 10%));
+      background: linear-gradient(135deg, $amber-color, color.adjust($amber-color, $lightness: -10%));
       box-shadow: 0 4px 16px rgba(245, 166, 35, 0.25);
     }
 
@@ -293,7 +294,7 @@
     }
 
     &.horas {
-      background: linear-gradient(135deg, $success-color, darken($success-color, 10%));
+      background: linear-gradient(135deg, $success-color, color.adjust($success-color, $lightness: -10%));
       box-shadow: 0 4px 16px rgba(14, 176, 123, 0.25);
     }
 

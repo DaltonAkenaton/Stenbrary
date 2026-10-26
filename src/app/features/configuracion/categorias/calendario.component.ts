@@ -12,7 +12,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -46,7 +46,7 @@ const FMT_CORTA = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'sho
 
 @Component({
     selector: 'app-config-calendario',
-    imports: [CommonModule, FormsModule, MatIconModule, MatTooltipModule],
+    imports: [FormsModule, MatIconModule, MatTooltipModule],
     templateUrl: './calendario.component.html',
     styleUrls: ['../configuracion.styles.scss', './calendario.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

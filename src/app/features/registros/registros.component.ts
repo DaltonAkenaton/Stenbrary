@@ -9,7 +9,7 @@
 // ╚══════════════════════════════════════════════════════╝
 import { ReportService, TipoReporte } from '../../core/services/report.service';
 import { Component, OnInit, computed, signal, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -90,20 +90,19 @@ function decorarParaTabla(r: RegistroRender): RegistroRender {
 @Component({
     selector: 'app-registros',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        MatTableModule,
-        MatTooltipModule,
-        MatProgressSpinnerModule,
-        MatDialogModule,
-        MatAutocompleteModule,
-    ],
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatTableModule,
+    MatTooltipModule,
+    MatProgressSpinnerModule,
+    MatDialogModule,
+    MatAutocompleteModule
+],
     templateUrl: './registros.component.html',
     styleUrl: './registros.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

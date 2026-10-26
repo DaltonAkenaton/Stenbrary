@@ -10,7 +10,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -31,16 +31,15 @@ import { BitacoraService } from '../../core/services/bitacora.service';
 @Component({
     selector: 'app-gestion-motivos',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatCardModule,
-        MatButtonModule,
-        MatIconModule,
-        MatChipsModule,
-        MatTooltipModule,
-        MatDialogModule,
-        MatTableModule,
-    ],
+    FormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    MatTooltipModule,
+    MatDialogModule,
+    MatTableModule
+],
     templateUrl: './gestion-motivos.component.html',
     styleUrl: './gestion-motivos.component.scss'
 })

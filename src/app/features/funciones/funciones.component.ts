@@ -33,7 +33,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -82,7 +82,7 @@ const UMBRAL_GESTO_PX = 48;
 
 @Component({
     selector: 'app-funciones',
-    imports: [CommonModule, FormsModule, MatIconModule, FuncionIlustracionComponent],
+    imports: [FormsModule, MatIconModule, FuncionIlustracionComponent],
     templateUrl: './funciones.component.html',
     styleUrl: './funciones.component.scss'
 })

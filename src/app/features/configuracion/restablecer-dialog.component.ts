@@ -15,7 +15,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,7 +27,7 @@ import { mensajeParaUsuario } from '../../core/utils/mensaje-error.utils';
 
 @Component({
     selector: 'app-restablecer-dialog',
-    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule],
+    imports: [FormsModule, MatDialogModule, MatIconModule],
     template: `
     <div class="rd">
       <div class="rd-head">

@@ -17,7 +17,7 @@
 // ║     debe acompañar, no robar la atención.            ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../../styles/variables';
+@use '../../../../styles/variables' as *;
 
 :host {
   position: relative;

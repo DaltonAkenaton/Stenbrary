@@ -8,8 +8,8 @@
 // ║  de usar el sistema "no vaya a ser que lo rompa".    ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 .diag-container {
   display: flex;

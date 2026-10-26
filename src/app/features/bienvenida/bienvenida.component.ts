@@ -22,7 +22,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -68,7 +68,7 @@ interface DiaHorario {
 
 @Component({
     selector: 'app-bienvenida',
-    imports: [CommonModule, FormsModule, MatIconModule, MatDialogModule],
+    imports: [FormsModule, MatIconModule, MatDialogModule],
     templateUrl: './bienvenida.component.html',
     styleUrl: './bienvenida.component.scss'
 })

@@ -11,7 +11,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -30,12 +30,11 @@ import { DatosPruebaComponent } from '../datos-prueba.component';
 @Component({
     selector: 'app-config-avanzado',
     imports: [
-        CommonModule,
-        MatIconModule,
-        MatTooltipModule,
-        MatDialogModule,
-        DatosPruebaComponent,
-    ],
+    MatIconModule,
+    MatTooltipModule,
+    MatDialogModule,
+    DatosPruebaComponent
+],
     templateUrl: './avanzado.component.html',
     styleUrls: ['../configuracion.styles.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

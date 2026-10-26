@@ -8,7 +8,7 @@
 
 import { Component, inject } from '@angular/core';
 import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,10 +19,13 @@ import { MatInputModule } from '@angular/material/input';
 @Component({
     selector: 'app-invitado-nombre-dialog',
     imports: [
-        CommonModule, FormsModule,
-        MatDialogModule, MatButtonModule, MatIconModule,
-        MatFormFieldModule, MatInputModule,
-    ],
+    FormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule
+],
     template: `
     <h2 mat-dialog-title>
       <mat-icon>person_outline</mat-icon>

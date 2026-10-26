@@ -12,7 +12,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -27,13 +27,12 @@ import { LimpiezaRegistrosComponent } from '../limpieza-registros.component';
 @Component({
     selector: 'app-config-datos',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatIconModule,
-        MatTooltipModule,
-        MatDialogModule,
-        LimpiezaRegistrosComponent,
-    ],
+    FormsModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatDialogModule,
+    LimpiezaRegistrosComponent
+],
     templateUrl: './datos.component.html',
     styleUrls: ['../configuracion.styles.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

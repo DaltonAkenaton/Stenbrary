@@ -10,7 +10,7 @@
 // ║    - Filtro CSS de "punch" en el peak                 ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../../styles/variables';
+@use '../../../../styles/variables' as *;
 
 // ─── STAGE PRINCIPAL ────────────────────────────────────
 .success-anim {

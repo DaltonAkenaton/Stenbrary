@@ -27,7 +27,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -45,7 +45,7 @@ type Paso = 'pin' | 'codigo' | 'nuevo' | 'menu';
 
 @Component({
     selector: 'app-quiosco-pin-dialog',
-    imports: [CommonModule, FormsModule, MatDialogModule, MatIconModule, NuevoPinComponent],
+    imports: [FormsModule, MatDialogModule, MatIconModule, NuevoPinComponent],
     template: `
     <div class="pin-dialog">
       @switch (paso()) {

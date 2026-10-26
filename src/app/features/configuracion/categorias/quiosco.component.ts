@@ -16,7 +16,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -29,11 +29,10 @@ import { BitacoraService } from '../../../core/services/bitacora.service';
 @Component({
     selector: 'app-config-quiosco',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatIconModule,
-        MatTooltipModule,
-    ],
+    FormsModule,
+    MatIconModule,
+    MatTooltipModule
+],
     templateUrl: './quiosco.component.html',
     styleUrls: ['../configuracion.styles.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -10,7 +10,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -21,11 +21,10 @@ import { ConfigService, CamaraPreferida } from '../../../core/services/config.se
 @Component({
     selector: 'app-config-escaner',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatIconModule,
-        MatTooltipModule,
-    ],
+    FormsModule,
+    MatIconModule,
+    MatTooltipModule
+],
     templateUrl: './escaner.component.html',
     styleUrls: ['../configuracion.styles.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

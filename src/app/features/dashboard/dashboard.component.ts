@@ -21,7 +21,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -120,11 +120,10 @@ interface Alerta {
 @Component({
     selector: 'app-dashboard',
     imports: [
-        CommonModule,
-        MatIconModule,
-        MatTooltipModule,
-        MatProgressSpinnerModule,
-    ],
+    MatIconModule,
+    MatTooltipModule,
+    MatProgressSpinnerModule
+],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -18,7 +18,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { LectorRafagaService } from '../../../core/services/lector-rafaga.service';
 import { CLAVE_LECTURA_PENDIENTE, decidirLecturaEnFlujo } from '../../../core/utils/flujo-puerta.utils';
-import { CommonModule } from '@angular/common';
+
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -42,11 +42,10 @@ export type RegistroDuplicadoResultado = 'salida' | 'nuevo' | 'cancelar';
 @Component({
     selector: 'app-registro-duplicado-dialog',
     imports: [
-        CommonModule,
-        MatDialogModule,
-        MatButtonModule,
-        MatIconModule,
-    ],
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule
+],
     template: `
     <div class="dialog-container" [class.quiosco]="data.modoQuiosco" (pointerdown)="tocado()">
 

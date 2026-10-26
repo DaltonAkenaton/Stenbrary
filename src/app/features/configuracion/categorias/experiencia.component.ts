@@ -11,7 +11,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule, } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -22,12 +22,11 @@ import { SuccessAnimationComponent } from '../../../shared/components/success-an
 @Component({
     selector: 'app-config-experiencia',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatIconModule,
-        MatTooltipModule,
-        SuccessAnimationComponent,
-    ],
+    FormsModule,
+    MatIconModule,
+    MatTooltipModule,
+    SuccessAnimationComponent
+],
     templateUrl: './experiencia.component.html',
     styleUrls: ['../configuracion.styles.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

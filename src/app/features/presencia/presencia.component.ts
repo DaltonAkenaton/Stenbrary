@@ -9,7 +9,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -68,15 +68,14 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
     selector: 'app-presencia',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
-        FormsModule,
-        MatIconModule,
-        MatButtonModule,
-        MatProgressSpinnerModule,
-        MatTooltipModule,
-        MatDialogModule,
-        MatRippleModule,
-    ],
+    FormsModule,
+    MatIconModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatDialogModule,
+    MatRippleModule
+],
     template: `
     <div class="presencia-container">
 
@@ -88,7 +87,7 @@ function buildRegistroPresencia(r: Registro, ahora: number): RegistroPresencia {
           </div>
           <div>
             <h1>En Biblioteca Ahora</h1>
-            @if (!cargando) {
+            @if (!cargando()) {
               <p class="header-subtitle">
                 @if (registrosFiltrados().length > 0) {
                   <span class="count-badge">{{ registrosFiltrados().length }}</span>

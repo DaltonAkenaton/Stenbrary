@@ -7,7 +7,7 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -23,7 +23,7 @@ interface GrupoAtajos {
 
 @Component({
     selector: 'app-keyboard-shortcuts-dialog',
-    imports: [CommonModule, MatDialogModule, MatIconModule],
+    imports: [MatDialogModule, MatIconModule],
     template: `
     <div class="ks-container">
       <div class="ks-header">

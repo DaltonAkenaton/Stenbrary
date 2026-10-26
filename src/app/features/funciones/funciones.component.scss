@@ -21,8 +21,8 @@
 // ║  componente (`ilustracion/`), no aquí.               ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 // ─── Tokens locales ──────────────────────────────────────
 // Antes había 28 `rgba(0, 200, 215, x)` escritos a mano por el archivo. Al

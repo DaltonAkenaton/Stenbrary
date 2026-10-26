@@ -11,8 +11,8 @@
 // ║  - Guard de prefers-reduced-motion                   ║
 // ╚══════════════════════════════════════════════════════╝
 
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables' as *;
+@use '../../../styles/mixins' as *;
 
 // ─── CONTENEDOR PRINCIPAL ────────────────────────────────
 .scanner-container {

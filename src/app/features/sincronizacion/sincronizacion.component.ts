@@ -18,7 +18,7 @@
 // ║    el coordinador pueda revisar y reintentar.        ║
 // ╚══════════════════════════════════════════════════════╝
 
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -46,17 +46,16 @@ type SelMap = Record<SyncStore, Set<string>>;
 @Component({
     selector: 'app-sincronizacion',
     imports: [
-        CommonModule,
-        FormsModule,
-        MatButtonModule,
-        MatDialogModule,
-        MatFormFieldModule,
-        MatIconModule,
-        MatInputModule,
-        MatProgressBarModule,
-        MatProgressSpinnerModule,
-        MatTooltipModule,
-    ],
+    FormsModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
+],
     templateUrl: './sincronizacion.component.html',
     styleUrl: './sincronizacion.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

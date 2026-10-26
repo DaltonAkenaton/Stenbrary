@@ -33,7 +33,7 @@ import {
   Component, OnInit, OnDestroy,
   ViewChild, ElementRef, NgZone, signal, inject, computed
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -292,10 +292,14 @@ declare class BarcodeDetector {
 @Component({
     selector: 'app-scanner',
     imports: [
-        CommonModule, FormsModule,
-        MatButtonModule, MatFormFieldModule, MatInputModule,
-        MatIconModule, MatCardModule, MatDialogModule,
-    ],
+    FormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+    MatCardModule,
+    MatDialogModule
+],
     templateUrl: './scanner.component.html',
     styleUrl: './scanner.component.scss'
 })
