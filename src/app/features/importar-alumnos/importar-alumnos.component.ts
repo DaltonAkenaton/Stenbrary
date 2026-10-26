@@ -33,7 +33,8 @@ import { BitacoraService } from '../../core/services/bitacora.service';
 import {
   CAMPOS_IMPORTACION, CampoImportacion, DefCampo, FilaImportacion, MapeoColumnas,
   camposFaltantes, detectarMapeo, procesarFilas,
-} from '../../core/utils/importacion.utils';
+} from '../../core/utils/importacion.utils';
+import { log } from '../../core/utils/logger';
 
 interface ResultadoImportacion {
   total: number;
@@ -1052,7 +1053,7 @@ export class ImportarAlumnosComponent {
         this.toastService.warning('No se importaron alumnos nuevos (todos duplicados)');
       }
 
-      console.log('✅ Importación completada:', resultado);
+      log('✅ Importación completada:', resultado);
     } catch (error) {
       console.error('Error al importar el padrón:', error);
       this.loadingService.hide();

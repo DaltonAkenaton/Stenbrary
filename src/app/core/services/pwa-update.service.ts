@@ -17,7 +17,8 @@
 
 import { Injectable, inject } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { BehaviorSubject, filter, timer } from 'rxjs';
+import { BehaviorSubject, filter, timer } from 'rxjs';
+import { log } from '../utils/logger';
 
 /** Primera revisión tras arrancar (deja que el SW termine de registrarse). */
 const PRIMERA_REVISION_MS = 60_000;
@@ -45,7 +46,7 @@ export class PwaUpdateService {
     if (this.iniciado) return;
     this.iniciado = true;
     if (!this.swUpdate.isEnabled) {
-      console.log('⚙️ Service Worker no habilitado (modo desarrollo)');
+      log('⚙️ Service Worker no habilitado (modo desarrollo)');
       return;
     }
 
@@ -53,7 +54,7 @@ export class PwaUpdateService {
     this.swUpdate.versionUpdates
       .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
       .subscribe(evt => {
-        console.log('🆕 Nueva versión disponible:', evt.latestVersion.hash);
+        log('🆕 Nueva versión disponible:', evt.latestVersion.hash);
         this.hayActualizacion$.next(true);
       });
 
@@ -63,14 +64,14 @@ export class PwaUpdateService {
     timer(Math.min(PRIMERA_REVISION_MS, cada), cada).subscribe(async () => {
       try {
         const hay = await this.swUpdate.checkForUpdate();
-        console.log(`🔎 Revisión de versión: ${hay ? 'hay una nueva' : 'sin cambios'}`);
+        log(`🔎 Revisión de versión: ${hay ? 'hay una nueva' : 'sin cambios'}`);
       } catch (e) {
         // No es grave (sin red, SW aún registrándose); se reintenta en la próxima.
         console.warn('Revisión de versión fallida:', e);
       }
     });
 
-    console.log('✅ PWA Update Service inicializado');
+    log('✅ PWA Update Service inicializado');
   }
 
   /**

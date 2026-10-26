@@ -18,6 +18,7 @@ import { Alumno, Registro, Motivo, EventoBitacora } from '../models';
 import { fechaLocalISO } from '../utils/tiempo.utils';
 import { MAX_BYTES_RESPALDO, validarRespaldo } from '../utils/validacion-respaldo.utils';
 import { v4 as uuidv4 } from 'uuid';
+import { log } from '../utils/logger';
 
 export interface BackupData {
   meta: {
@@ -132,7 +133,7 @@ export class BackupService {
       // navegadores: el archivo de respaldo saldría vacío o no saldría.
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
 
-      console.log('✅ Backup exportado:', nombreArchivo);
+      log('✅ Backup exportado:', nombreArchivo);
       // Registrar el timestamp para el recordatorio de respaldo.
       // Se hace después de disparar la descarga para no marcar como "hecho"
       // si la construcción del blob falló.
@@ -407,7 +408,7 @@ export class BackupService {
       `(${modo === 'replace' ? 'reemplazar' : 'combinar'}): ` +
       `${resultado.registrosNuevos} visitas nuevas, ${resultado.alumnosNuevos} alumnos nuevos${borrados}`,
     );
-    console.log('✅ Importación completada:', resultado);
+    log('✅ Importación completada:', resultado);
   }
 
 }

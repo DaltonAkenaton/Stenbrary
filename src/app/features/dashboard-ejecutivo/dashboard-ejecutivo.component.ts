@@ -82,6 +82,7 @@ import {
 import { Motivo, Registro } from '../../core/models';
 import { periodoActual, periodoAnterior, PeriodoResuelto, rangoDePeriodo } from '../../core/utils/calendario.utils';
 import { desplazarDias, fechaLocalISO } from '../../core/utils/tiempo.utils';
+import { log } from '../../core/utils/logger';
 
 Chart.register(...registerables);
 
@@ -1443,8 +1444,8 @@ formatHora(h: number): string {
       ]);
       const prediccion = this.estadisticasService.predecirDiaOcupadoDesde(heatmap);
       const TQ1 = performance.now();
-      console.log(`⏱ [stats] queries fase 1: ${(TQ1 - TQ).toFixed(0)}ms (${registrosCrudos.length} registros)`);
-      if (cancelado()) { console.log('🛑 carga obsoleta (clicks rápidos), abortando'); return; }
+      log(`⏱ [stats] queries fase 1: ${(TQ1 - TQ).toFixed(0)}ms (${registrosCrudos.length} registros)`);
+      if (cancelado()) { log('🛑 carga obsoleta (clicks rápidos), abortando'); return; }
 
       const TQ2a = performance.now();
       // Las métricas del rango se derivan del array ya filtrado (rápido, en JS).
@@ -1456,7 +1457,7 @@ formatHora(h: number): string {
         this.estadisticasService.obtenerDistribucionMotivos(rango, horaFiltro),
         this.estadisticasService.analizarPorCarrera(rango, horaFiltro),
       ]);
-      console.log(`⏱ [stats] queries fase 2: ${(performance.now() - TQ2a).toFixed(0)}ms`);
+      log(`⏱ [stats] queries fase 2: ${(performance.now() - TQ2a).toFixed(0)}ms`);
       if (cancelado()) return;
 
       this.tendencia = tendencia;
@@ -1549,7 +1550,7 @@ formatHora(h: number): string {
       this.actualizarLabelTopAlumnos();
 
 
-      console.log(`⏱ [stats] cálculos JS: ${(performance.now() - TM).toFixed(0)}ms`);
+      log(`⏱ [stats] cálculos JS: ${(performance.now() - TM).toFixed(0)}ms`);
 
       this.cargando = false;
       this.recargando = false;
@@ -1569,7 +1570,7 @@ formatHora(h: number): string {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         const TR = performance.now();
         this.renderizarGraficas();
-        console.log(`⏱ [stats] render charts: ${(performance.now() - TR).toFixed(0)}ms · TOTAL: ${(performance.now() - T0).toFixed(0)}ms`);
+        log(`⏱ [stats] render charts: ${(performance.now() - TR).toFixed(0)}ms · TOTAL: ${(performance.now() - T0).toFixed(0)}ms`);
       }));
     } catch (error) {
       console.error('❌ Error al cargar estadísticas avanzadas:', error);

@@ -84,6 +84,7 @@ import {
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { verificarHorario } from '../../core/utils/horarios.utils';
 import { RestriccionCamara, RestriccionesVideo, aplicar, capacidades, datosError } from './camara.types';
+import { log } from '../../core/utils/logger';
 
 
 
@@ -587,13 +588,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
         );
         if (tieneLineales) {
           this.usandoNativo = true;
-          console.log('✅ BarcodeDetector nativo:', formatos.join(', '));
+          log('✅ BarcodeDetector nativo:', formatos.join(', '));
           return;
         }
       }
     } catch { /* silenciar */ }
     this.usandoNativo = false;
-    console.log('⚠️ Sin BarcodeDetector nativo → @zxing/browser');
+    log('⚠️ Sin BarcodeDetector nativo → @zxing/browser');
   }
 
   /**
@@ -777,7 +778,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.effectiveScanInterval = Math.max(0, this.configService.escanerVelocidadMs);
     this.effectiveBudget = this.esLowRes ? 70 : 60;
     this.sharpenEnabled = true;
-    console.log(`📷 Cámara ${vw}×${vh} — pipeline agresivo activado: ${this.effectiveStrategies.length} estrategias, sharpening ON, budget ${this.effectiveBudget}ms`);
+    log(`📷 Cámara ${vw}×${vh} — pipeline agresivo activado: ${this.effectiveStrategies.length} estrategias, sharpening ON, budget ${this.effectiveBudget}ms`);
 
     // Crear canvas auxiliar para rotaciones (reutilizable, evita GC)
     this.rotCanvas = document.createElement('canvas');
@@ -818,7 +819,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
             const autoZoom = Math.min(this.zoomMax, Math.max(this.zoomMin, zoomDefault));
             await aplicar(track, { zoom: autoZoom });
             this.zoomActual = autoZoom;
-            console.log(`📷 Zoom HARDWARE [${this.zoomMin}×–${this.zoomMax}×] — zoom inicial ${autoZoom}×`);
+            log(`📷 Zoom HARDWARE [${this.zoomMin}×–${this.zoomMax}×] — zoom inicial ${autoZoom}×`);
             return;
           }
         }
@@ -837,7 +838,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.zoomStep       = 0.5;
     this.zoomActual     = Math.min(this.zoomMax, Math.max(this.zoomMin, zoomDefault));
     this.aplicarZoomSoftware();
-    console.log(`📷 Zoom SOFTWARE [${this.zoomMin}×–${this.zoomMax}×] — zoom inicial ${this.zoomActual}×`);
+    log(`📷 Zoom SOFTWARE [${this.zoomMin}×–${this.zoomMax}×] — zoom inicial ${this.zoomActual}×`);
   }
 
   /**
@@ -923,7 +924,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
       if (advanced.length > 0) {
         await aplicar(track, ...advanced);
-        console.log('📷 Exposición optimizada:', advanced.map(a => Object.keys(a).join(',')).join(' + '));
+        log('📷 Exposición optimizada:', advanced.map(a => Object.keys(a).join(',')).join(' + '));
       }
     } catch {
       // Best-effort: si la cámara no lo soporta, silenciar
@@ -1405,7 +1406,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.ultimoQrEscaneado = texto;
     this.ultimaDeteccionTs = ahora;
     this.enCooldown = true;
-    console.log(`✅ Detectado [${fuente}]: ${texto}`);
+    log(`✅ Detectado [${fuente}]: ${texto}`);
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     this.soundService.beepScan();
     const habiaCamara = this.scannerActivo;

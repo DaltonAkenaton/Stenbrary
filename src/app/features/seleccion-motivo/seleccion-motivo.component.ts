@@ -28,7 +28,8 @@ import { CelebrationComponent } from '../../shared/components/celebration/celebr
 import { SuccessAnimationComponent } from '../../shared/components/success-animation/success-animation.component';
 import { logError } from '../../core/utils/logger';
 import { LectorRafagaService } from '../../core/services/lector-rafaga.service';
-import { ABANDONO_MOTIVO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/flujo-puerta.utils';
+import { ABANDONO_MOTIVO_MS, CLAVE_LECTURA_PENDIENTE } from '../../core/utils/flujo-puerta.utils';
+import { log } from '../../core/utils/logger';
 
 @Component({
     selector: 'app-seleccion-motivo',
@@ -257,7 +258,7 @@ export class SeleccionMotivoComponent implements OnInit, OnDestroy {
       const displayName = this.esInvitado
         ? (this.alumno.nombre !== 'Visitante' ? this.alumno.nombre : 'Visitante')
         : this.alumno.nombre;
-      console.log('🎉 Registro completado:', displayName, '-', this.resumenMotivos);
+      log('🎉 Registro completado:', displayName, '-', this.resumenMotivos);
 
       // En modo quiosco no mostramos "Deshacer" — el toast queda visible
       // mientras el siguiente alumno se forma; un botón Deshacer expuesto ahí
