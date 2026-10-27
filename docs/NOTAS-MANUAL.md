@@ -449,12 +449,22 @@ Bajo el TOTAL de cada fila del mapa de calor: visitas de ese día ÷ cuántos de
 esos días tuvieron visitas (p. ej. 62 visitas en 9 martes = 6.9/día). Es lo
 que decide la tarjeta "Día más concurrido".
 
-## Comparar un mes contra el anterior
+## Comparar un mes contra el anterior (v3.62.1)
 
-Al elegir un mes completo, "Contra los N días anteriores" compara contra el
-mismo número de días justo antes (septiembre, 30 días → 2 al 31 de agosto), no
-contra el mes anterior completo. Por eso puede no coincidir con la cuenta
-"septiembre contra agosto" hecha a mano.
+En **Personalizado**, si las fechas son meses completos (del día 1 al último
+día del mes), se comparan contra los mismos meses justo antes: septiembre
+(1–30) contra agosto completo (1–31), "Contra el mes anterior"; agosto–
+septiembre contra junio–julio, "Contra los 2 meses anteriores". Un año de
+enero a diciembre se compara con el año anterior, y un rango que coincide
+exactamente con un periodo escolar, con el periodo anterior.
+
+Cualquier otro rango (p. ej. 2–30 de septiembre) sigue comparándose contra el
+mismo número de días justo antes: "Contra los N días anteriores".
+
+Hasta la v3.62.0, un mes completo elegido en Personalizado se comparaba con los
+mismos días hacia atrás (septiembre → 2 al 31 de agosto), aunque arriba dijera
+"Septiembre 2026". No coincidía con la cuenta "septiembre contra agosto" hecha
+a mano.
 
 ## Hora del sistema (v3.59.0)
 

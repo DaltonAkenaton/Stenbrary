@@ -300,7 +300,7 @@ const PREGUNTAS = [
   ['12', '¿Cuántas salidas puso el sistema y cuántas visitas quedaron sin salida?'],
   ['13', 'Top 5 de alumnos con más visitas.'],
   ['14', '¿Cuántas visitas hubo en el periodo Verano 2026 (hasta el 16-ago) y cuántas en Otoño 2026?'],
-  ['15', 'Septiembre contra agosto: ¿subió o bajó, y en qué porcentaje? OJO: el sistema compara septiembre contra los 30 días anteriores (2 al 31 de agosto), no contra agosto completo.'],
+  ['15', 'Septiembre contra agosto: ¿subió o bajó, y en qué porcentaje? El sistema compara septiembre contra agosto completo (1 al 31).'],
   ['16', 'Martes 8 de septiembre: ¿cuántas visitas en la hora 12 y en la hora 13?'],
 ];
 const hojaPreguntas = PREGUNTAS.map(([n, p]) => ({ 'N.º': n, 'Pregunta': p, 'Tu respuesta': '', 'Lo que dice el sistema': '', '¿Cuadra?': '' }));

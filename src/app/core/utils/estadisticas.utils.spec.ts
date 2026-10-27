@@ -14,6 +14,7 @@ import {
   calcularInactividad,
   contarUnaSolaVisita,
   rangoAnteriorDeUnidad,
+  unidadDeRangoCalendario,
   combinacionesDeMotivos,
   conteoMensual,
   cuartilesDeCeldas,
@@ -486,6 +487,59 @@ describe('estadisticas.utils', () => {
     it('sin periodo anterior no inventa uno', () => {
       expect(rangoAnteriorDeUnidad({ tipo: 'periodo', anterior: null },
         { inicio: dia(2026, 8, 17), fin: finDe(2026, 12, 31) })).toBeNull();
+    });
+
+    it('varios meses completos contra los mismos meses justo antes', () => {
+      const r = rangoAnteriorDeUnidad({ tipo: 'mes', meses: 3 }, { inicio: dia(2026, 1, 1), fin: finDe(2026, 3, 31) }, dia(2026, 10, 6))!;
+      expect(iso(r.inicio)).toBe('2025-10-01 00:00');
+      expect(iso(r.fin)).toBe('2025-12-31 23:59');
+    });
+  });
+
+  // ─── Personalizado que es una unidad de calendario (v3.62.1) ───
+  describe('unidadDeRangoCalendario', () => {
+    const iso = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ` +
+      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const dia = (a: number, m: number, d: number) => new Date(a, m - 1, d, 0, 0, 0, 0);
+    const finDe = (a: number, m: number, d: number) => new Date(a, m - 1, d, 23, 59, 59, 999);
+
+    it('1–30 de septiembre se compara con agosto completo, no con el 2–31 de agosto', () => {
+      // Captura del usuario (2026-10-27): "Comparado contra: del 02-ago al 31-ago".
+      const sep = { inicio: dia(2026, 9, 1), fin: finDe(2026, 9, 30) };
+      const unidad = unidadDeRangoCalendario(sep)!;
+      expect(unidad).toEqual({ tipo: 'mes', meses: 1 });
+      const r = rangoAnteriorDeUnidad(unidad, sep, dia(2026, 10, 27))!;
+      expect(iso(r.inicio)).toBe('2026-08-01 00:00');
+      expect(iso(r.fin)).toBe('2026-08-31 23:59');
+    });
+
+    it('varios meses completos', () => {
+      expect(unidadDeRangoCalendario({ inicio: dia(2026, 8, 1), fin: finDe(2026, 9, 30) }))
+        .toEqual({ tipo: 'mes', meses: 2 });
+      expect(unidadDeRangoCalendario({ inicio: dia(2025, 11, 1), fin: finDe(2026, 2, 28) }))
+        .toEqual({ tipo: 'mes', meses: 4 });
+    });
+
+    it('un año calendario completo se compara con el año anterior', () => {
+      expect(unidadDeRangoCalendario({ inicio: dia(2025, 1, 1), fin: finDe(2025, 12, 31) })).toEqual({ tipo: 'anio' });
+    });
+
+    it('12 meses que no empiezan en enero siguen siendo meses', () => {
+      expect(unidadDeRangoCalendario({ inicio: dia(2025, 7, 1), fin: finDe(2026, 6, 30) })).toEqual({ tipo: 'mes', meses: 12 });
+    });
+
+    it('un rango que no es meses completos conserva "los mismos días hacia atrás"', () => {
+      expect(unidadDeRangoCalendario({ inicio: dia(2026, 9, 2), fin: finDe(2026, 9, 30) })).toBeNull();
+      expect(unidadDeRangoCalendario({ inicio: dia(2026, 9, 1), fin: finDe(2026, 9, 29) })).toBeNull();
+      expect(unidadDeRangoCalendario({ inicio: dia(2026, 9, 10), fin: finDe(2026, 10, 9) })).toBeNull();
+    });
+
+    it('el mes en curso se compara al mismo avance, igual que "Este mes"', () => {
+      const oct = { inicio: dia(2026, 10, 1), fin: finDe(2026, 10, 31) };
+      const r = rangoAnteriorDeUnidad(unidadDeRangoCalendario(oct)!, oct, new Date(2026, 9, 27, 14, 0))!;
+      expect(iso(r.inicio)).toBe('2026-09-01 00:00');
+      expect(iso(r.fin)).toBe('2026-09-27 14:00');
     });
   });
 });

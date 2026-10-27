@@ -70,6 +70,7 @@ import {
   promedioPorDiaConActividad,
   ProyeccionDia,
   rangoAnteriorDeUnidad,
+  unidadDeRangoCalendario,
   UnidadDeComparacion,
   resumirCrecimiento,
   resumirEstancia,
@@ -688,6 +689,8 @@ formatHora(h: number): string {
    * Unidad de calendario del preset, para comparar contra la unidad anterior
    * al mismo avance (lunes–martes contra lunes–martes de la semana pasada).
    * `null` = rango móvil o libre: se compara con los mismos días hacia atrás.
+   * Personalizado que coincide con meses completos, un año o un periodo
+   * escolar se trata como esa unidad (v3.62.1).
    */
   private unidadDelPreset(preset: PresetRango, rango: RangoFechas): UnidadDeComparacion | null {
     switch (preset) {
@@ -702,6 +705,20 @@ formatHora(h: number): string {
         });
         const anterior = delRango ? periodoAnterior(cal, delRango) : null;
         return { tipo: 'periodo', anterior: anterior ? anterior.rango : null };
+      }
+      case 'personalizado': {
+        // Si las fechas elegidas son exactamente un periodo escolar o meses
+        // completos, se comparan como tales (v3.62.1).
+        const cal = this.configService.calendarioEscolar;
+        const periodo = cal.periodos.find(p => {
+          const r = rangoDePeriodo(p);
+          return r !== null && r.inicio.getTime() === rango.inicio.getTime() && r.fin.getTime() === rango.fin.getTime();
+        });
+        if (periodo) {
+          const anterior = periodoAnterior(cal, periodo);
+          return { tipo: 'periodo', anterior: anterior ? anterior.rango : null };
+        }
+        return unidadDeRangoCalendario(rango);
       }
       default: return null;
     }
@@ -1542,7 +1559,8 @@ formatHora(h: number): string {
       this.labelRegistrosDiarios = `Registros ${g === 'mes' ? 'por mes' : g === 'semana' ? 'por semana' : 'por día'}`;
       // El título dice CONTRA QUÉ se compara (antes "Tendencia anual" con 4 meses).
       this.labelTendencia = this.unidadActiva?.tipo === 'semana' ? 'Contra la semana anterior'
-        : this.unidadActiva?.tipo === 'mes' ? 'Contra el mes anterior'
+        : this.unidadActiva?.tipo === 'mes'
+          ? ((this.unidadActiva.meses ?? 1) > 1 ? `Contra los ${this.unidadActiva.meses} meses anteriores` : 'Contra el mes anterior')
         : this.unidadActiva?.tipo === 'anio' ? 'Contra el año anterior'
         : this.unidadActiva?.tipo === 'periodo' ? 'Contra el periodo anterior'
         : dias === 1 ? 'Contra el día anterior' : `Contra los ${dias} días anteriores`;

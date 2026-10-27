@@ -82,7 +82,7 @@ npx ng build --configuration production && npm run e2e:produccion
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **483 specs unitarios en verde**, en 29 archivos —
+Suite activa: **490 specs unitarios en verde**, en 29 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `catalogos.utils`, `cuadre-cifras.service`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,

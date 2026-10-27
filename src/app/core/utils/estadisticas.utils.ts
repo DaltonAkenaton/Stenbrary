@@ -754,7 +754,8 @@ export function nivelDeIntensidad(cantidad: number, c: { p25: number; p50: numbe
 
 export type UnidadDeComparacion =
   | { tipo: 'semana' }
-  | { tipo: 'mes' }
+  /** `meses` = cuántos meses completos abarca (1 si se omite). */
+  | { tipo: 'mes'; meses?: number }
   | { tipo: 'anio' }
   /** `anterior` = rango del periodo escolar previo; null si no hay. */
   | { tipo: 'periodo'; anterior: { inicio: Date; fin: Date } | null };
@@ -793,11 +794,12 @@ export function rangoAnteriorDeUnidad(
       return { inicio: desplazarDias(actual.inicio, -7), fin: desplazarDias(finEfectivo, -7) };
 
     case 'mes': {
-      const inicio = desplazarMeses(actual.inicio, -1);
+      const n = unidad.meses ?? 1;
+      const inicio = desplazarMeses(actual.inicio, -n);
       // Mes completo contra mes completo: el 30 de abril se compara con el 31 de marzo, no con el 30.
       const fin = esFinDeMes(finEfectivo)
-        ? new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0, 23, 59, 59, 999)
-        : desplazarMeses(finEfectivo, -1);
+        ? new Date(inicio.getFullYear(), inicio.getMonth() + n, 0, 23, 59, 59, 999)
+        : desplazarMeses(finEfectivo, -n);
       return { inicio, fin };
     }
 
@@ -816,4 +818,20 @@ export function rangoAnteriorDeUnidad(
       };
     }
   }
+}
+
+/**
+ * Un rango personalizado que coincide con una unidad de calendario se
+ * compara como esa unidad (v3.62.1). "Del 1 al 30 de septiembre" se mostraba
+ * como "Septiembre 2026" pero se comparaba con los 30 días previos (2–31 de
+ * agosto); ahora, con agosto completo. Devuelve null si no es una unidad
+ * exacta: entonces sigue valiendo "los mismos días hacia atrás".
+ */
+export function unidadDeRangoCalendario(rango: { inicio: Date; fin: Date }): UnidadDeComparacion | null {
+  const { inicio, fin } = rango;
+  const empiezaEnDia1 = inicio.getDate() === 1 && inicio.getHours() === 0 && inicio.getMinutes() === 0;
+  if (!empiezaEnDia1 || !esFinDeMes(fin) || fin.getTime() < inicio.getTime()) return null;
+  const meses = (fin.getFullYear() - inicio.getFullYear()) * 12 + fin.getMonth() - inicio.getMonth() + 1;
+  if (meses === 12 && inicio.getMonth() === 0) return { tipo: 'anio' };
+  return { tipo: 'mes', meses };
 }

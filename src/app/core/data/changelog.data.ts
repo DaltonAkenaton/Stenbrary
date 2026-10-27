@@ -49,6 +49,16 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.62.1',
+    fecha: '2026-10-27',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'Estadísticas: al elegir en "Personalizado" un mes completo (por ejemplo, del 1 al 30 de septiembre), ahora se compara contra el mes anterior completo (del 1 al 31 de agosto) y la tarjeta dice "Contra el mes anterior". Antes se comparaba contra los mismos días hacia atrás (del 2 al 31 de agosto). Lo mismo con varios meses completos, un año de enero a diciembre o las fechas exactas de un periodo escolar.',
+      },
+    ],
+  },
+  {
     version: '3.62.0',
     fecha: '2026-10-26',
     titulo: 'Más seguro y más fácil de usar para todos',

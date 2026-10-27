@@ -9,6 +9,31 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-27 — v3.62.1: Personalizado compara por unidad de calendario
+
+**Qué se hizo**
+- Estadísticas → Personalizado del 1 al 30 de septiembre mostraba "Septiembre
+  2026" pero se comparaba con los 30 días previos (2–31 ago). Ahora
+  `unidadDeRangoCalendario` (`estadisticas.utils.ts`) reconoce meses
+  completos (`{ tipo: 'mes', meses: n }`) y el año enero–diciembre; el
+  componente reconoce además las fechas exactas de un periodo escolar. Lo
+  demás sigue con "los mismos días hacia atrás".
+- `rangoAnteriorDeUnidad` 'mes' acepta `meses` (N meses completos contra los N
+  anteriores). Etiqueta "Contra los N meses anteriores". 7 specs nuevas.
+
+**Qué se descubrió**
+- El comportamiento viejo estaba documentado en `NOTAS-MANUAL.md` y en la
+  pregunta 15 de `crear-verificacion.cjs` como advertencia; la hoja de
+  respuestas ya contaba "contra agosto completo" (136 vs 79, +72.2 %). Ahora la
+  app da esa misma cifra. El `.xlsx` de visitas no se regeneró (la versión
+  del repo está ordenada a mano); la nota nueva queda en el generador.
+
+**Publicación del historial saneado (mismo día)**: `main` y 20 tags con push
+atómico y leases; trigger temporal retirado (`34fc9b9`); tag `v3.62.0`; rama
+de hardening borrada en GitHub.
+
+---
+
 ## 2026-10-26 — v3.62.0: hardening integral
 
 **Qué se hizo** (evidencia completa en `docs/HARDENING-2026-10.md`)
