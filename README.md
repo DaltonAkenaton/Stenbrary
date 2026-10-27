@@ -18,9 +18,14 @@ estadísticas y reportes sin configurar nada.
 **Público objetivo:** coordinación y personal de bibliotecas que hoy registran
 las visitas en papel o en hojas de cálculo y necesitan cifras confiables de uso.
 
-**Estado:** desarrollado y probado (versión 3.62.0). Su implementación
-institucional en una biblioteca universitaria está pendiente de acordarse; por
-ahora no está en operación ni tiene usuarios reales.
+**Estado:** desarrollado y probado (versión 3.62.1). Se diseñó con la
+coordinación de una biblioteca universitaria y se validó con ella, pero **no se
+adoptó**: las bibliotecas de esa institución registran sus visitas en un
+formulario estandarizado de Google Forms, del que salen los reportes oficiales,
+y cambiarlo en una sola biblioteca rompería ese estándar. Se mantiene como
+proyecto de portafolio; no está en operación ni tiene usuarios reales. De esa
+experiencia salió una herramienta más pequeña que **complementa** el formulario
+en lugar de reemplazarlo.
 
 **Autoría:** proyecto individual. Diseño, desarrollo, pruebas, documentación y despliegue.
 Desarrollado con apoyo de Claude Code como asistente de programación; las
@@ -225,20 +230,25 @@ sin servidor: [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md).
   sistema en su lugar.
 - El PIN del coordinador protege el modo quiosco del uso casual; no es un
   control de acceso frente a quien controla el equipo (ver `docs/SEGURIDAD.md`).
-- No se ha probado todavía en una biblioteca real: el piloto está definido en
-  `docs/PRUEBA-PILOTO-BIBLIOTECA.md`.
+- No se ha usado en una biblioteca real. El piloto que se había definido
+  (`docs/PRUEBA-PILOTO-BIBLIOTECA.md`) queda como referencia.
 - Deuda registrada: algunos componentes grandes, como el escáner y las
   estadísticas.
 
 ## Estado y próximos pasos
 
-- **Fase 1** (PWA offline-first): en cierre; la versión 4.0 corresponderá a la
-  entrega a la biblioteca.
-- **Fase 2:** autenticación por roles y sincronización supervisada por el
-  coordinador con Supabase.
-- Más adelante: préstamos de libros y configuración por institución.
+- **Fase 1** (PWA offline-first): terminada. La versión 3.62.1 es la versión
+  estable; la 4.0 estaba reservada para la entrega a la biblioteca, que no se
+  realizó.
+- El proyecto está en **mantenimiento**: correcciones de errores y mejoras
+  puntuales.
+- Lo que estaba planeado y no se desarrolló (autenticación por roles y
+  sincronización con Supabase, préstamos de libros, configuración por
+  institución) está documentado en `docs/ROADMAP.md`.
 
-El plan completo está en `docs/ROADMAP.md`.
+**Lección principal:** antes de construir, entender el proceso institucional
+en el que tiene que encajar el sistema. Un sistema completo que no encaja en el
+proceso existente no se adopta.
 
 ## Licencia y propiedad intelectual
 
