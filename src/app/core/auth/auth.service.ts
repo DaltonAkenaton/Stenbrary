@@ -120,14 +120,24 @@ export class AuthService {
     const { error } = await this.supabase.auth.signInWithOtp({
       email: normalized,
       options: {
+        // Solo cuentas existentes: el acceso es por invitación. Sin esto,
+        // cualquier correo creaba una cuenta (la 0009 ya la deja sin datos,
+        // pero no tiene por qué existir).
+        shouldCreateUser: false,
         // Volver al login para que la pantalla muestre el resultado al regresar.
         emailRedirectTo: `${window.location.origin}${REDIRECT_PATH}`,
       },
     });
 
     if (error) {
-      this.stateSignal.update((s) => ({ ...s, error: error.message }));
-      return { ok: false, error: error.message };
+      // Correo sin cuenta: Supabase responde en inglés ("Signups not allowed
+      // for otp"). El acceso es por invitación; decirlo así.
+      const sinCuenta = error.code === 'otp_disabled' || /signups not allowed/i.test(error.message);
+      const mensaje = sinCuenta
+        ? 'Ese correo no tiene acceso. Pide al coordinador que te invite.'
+        : error.message;
+      this.stateSignal.update((s) => ({ ...s, error: mensaje }));
+      return { ok: false, error: mensaje };
     }
 
     return { ok: true };

@@ -7,7 +7,7 @@
 // ║  sintéticos (rango matrícula 9000001+, dispositivo    ║
 // ║  SEED-TEST) para probar el sistema con volumen real.  ║
 // ║                                                      ║
-// ║  Usa el modelo UAT del servicio (3 períodos, verano   ║
+// ║  Usa el modelo universitario del servicio (3 períodos,║
 // ║  con pocos inscritos, vacaciones respetadas,          ║
 // ║  horario 7–22, turnos ponderados 2/3 matutino).       ║
 // ║                                                      ║
@@ -65,7 +65,7 @@ const PRESETS: Record<Exclude<PresetVolumen, 'personalizado'>, PresetConfig> = {
     config: { cantidadAlumnos: 500, ventanaDias: 180, registrosPorAlumnoPorMes: 2 },
   },
   uat: {
-    label: 'Tu universidad (UAT)',
+    label: 'Una universidad real',
     descripcion: '2554 alumnos · 30 días · caso real',
     config: { cantidadAlumnos: 2554, ventanaDias: 30, registrosPorAlumnoPorMes: 2 },
   },
@@ -111,7 +111,7 @@ const MS_POR_ALUMNO = 5;
         <div>
           <h3>Datos de prueba</h3>
           <p class="section-desc">
-            Genera alumnos y registros sintéticos con calendario real UAT
+            Genera alumnos y registros sintéticos con un calendario universitario real
             (3 períodos, vacaciones, festivos, horario 7–22).
             Matrículas <code>9000001+</code> · fácil de limpiar.
           </p>
@@ -664,7 +664,7 @@ export class DatosPruebaComponent implements OnInit {
       mensaje:
         `Se crearán ~${this.config.cantidadAlumnos} alumnos y ` +
         `~${this.estimadoRegistros()} registros (${this.tiempoEstimadoLabel()}). ` +
-        `Respeta calendario UAT: vacaciones, festivos, verano con 15% asistencia. ` +
+        `Respeta el calendario universitario: vacaciones, festivos, verano con 15% asistencia. ` +
         `No afecta datos reales.`,
       variante: 'info',
       textoConfirmar: 'Generar',

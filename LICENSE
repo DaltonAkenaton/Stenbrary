@@ -2,8 +2,16 @@ Copyright (c) 2026 Dalton Akenaton Gómez Arellano. Todos los derechos reservado
 
 Este repositorio y todo su contenido —incluidos el código fuente, el diseño, la documentación y los recursos gráficos— son propiedad del autor.
 
-No se concede autorización para usar, copiar, modificar, publicar, distribuir, sublicenciar o vender este software, total o parcialmente, sin autorización previa y por escrito del titular de los derechos.
+PERMISO DE EVALUACIÓN
 
-El acceso al repositorio con fines de evaluación técnica o reclutamiento no concede derechos adicionales de uso.
+Se permite, sin costo, consultar el código, clonar el repositorio, instalar sus dependencias, ejecutarlo en un equipo propio y correr sus pruebas, con el único fin de evaluar el trabajo del autor (por ejemplo, en un proceso de reclutamiento o una revisión técnica).
+
+Este permiso no incluye usar el software en operación real, desplegarlo para terceros, publicar o distribuir copias o versiones modificadas, sublicenciarlo ni venderlo.
+
+RESERVA DE DERECHOS
+
+Fuera del permiso anterior, no se concede autorización para usar, copiar, modificar, publicar, distribuir, sublicenciar o vender este software, total o parcialmente, sin autorización previa y por escrito del titular de los derechos.
+
+El software se proporciona "tal cual", sin garantía de ningún tipo.
 
 Las dependencias y los recursos de terceros se rigen por sus respectivas licencias.

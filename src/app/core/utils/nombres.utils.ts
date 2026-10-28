@@ -2,7 +2,7 @@
 // ║  nombres.utils.ts                                    ║
 // ║  Stenbrary v3.54.0 — Nombres que escriben los alumnos║
 // ║                                                      ║
-// ║  Sin el Excel de la UAT, cada alumno se registra     ║
+// ║  Sin el Excel del padrón, cada alumno se registra    ║
 // ║  solo en la puerta. Llegaba "juan  carlos",          ║
 // ║  "GARCIA" o "Ana2": búsquedas que fallan, reportes y ║
 // ║  constancias con mayúsculas al azar.                 ║

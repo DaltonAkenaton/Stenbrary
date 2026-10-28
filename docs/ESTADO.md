@@ -17,12 +17,15 @@ CHANGELOG; la evidencia del hardening, en `docs/HARDENING-2026-10.md`.
 - v3.62.0 — Hardening: Angular 21 LTS, 0 vulnerabilidades, CSP, PIN con hash,
   importación y respaldos validados y atómicos, accesibilidad WCAG 2.1 AA
   verificada con axe, 0 `any`, E2E con servidor propio.
+- v3.62.2 — Backend en pausa: corrección de las políticas RLS (`0009`) con
+  pruebas pgTAP; registro libre cerrado; se retira el keep-alive.
 
 **No está validado en una biblioteca real.** El piloto pendiente está en
 `docs/PRUEBA-PILOTO-BIBLIOTECA.md`.
 
-**Cierre de Fase 1 (v4.0)**: ver §2.0 abajo. Después de v4.0 arranca
-**Fase 2** (backend + auth + sync) — detalle en `docs/ROADMAP.md`.
+**Fase 2** (backend + auth + sync): **en pausa** desde 2026-10-27. El
+código y el esquema quedan como prototipo probado en local; no se despliega
+(`docs/ROADMAP.md`).
 
 ---
 
@@ -96,7 +99,7 @@ CHANGELOG; la evidencia del hardening, en `docs/HARDENING-2026-10.md`.
   - Celebraciones (v3.9.0) con probabilidad 0–1.
   - Umbral de inactividad.
   - **Limpieza masiva de registros por rango**.
-  - **Datos de prueba** (v3.13 en curso): generador con modelo UAT.
+  - **Datos de prueba** (v3.13 en curso): generador con modelo universitario.
   - **Backup**: export/import JSON completo.
 
 ### 1.9 Importación y exportación
@@ -170,7 +173,7 @@ Schema de Postgres + adapter + subida idempotente de IndexedDB a Supabase.
 - [x] `RemoteDatabaseService` (adapter contra Supabase, mismo shape que `DatabaseService` local): mappers snake↔camel, helper `asUuidOrNull` para IDs sintéticos.
 - [x] `ImportSupabaseService`: preview + subida en 3 fases (motivos → alumnos → registros) con reporte final.
 - [x] UI: diálogo `SubirSupabaseDialogComponent` (preview / running / done / error) accesible desde `/configuracion#avanzado` solo si signed-in.
-- [x] Validado con dataset UAT (500+ alumnos, 5000+ registros): 0 errores tras los 3 fixes encontrados.
+- [x] Validado con datos de prueba a escala universitaria (500+ alumnos, 5000+ registros, generador interno — no datos reales): 0 errores tras los 3 fixes encontrados.
 - [x] Idempotencia probada: re-corrida sin duplicados.
 
 **Granularidad pendiente** (sólo hoy / sólo nuevos / etc.): es Fase 2.2. Decidir si extender el one-shot con filtros simples o saltar a la bandeja de sincronización completa.
@@ -261,10 +264,10 @@ Suite: **184 unitarios + 20 E2E**.
 
 ### 2.2 Calendario escolar configurable 🟡 (base hecha en v3.43.0; lo que falta bloquea venta)
 
-- [x] **Periodos y días inhábiles editables** (v3.43.0): `calendarioEscolar` en `ConfigService` + funciones puras en `core/utils/calendario.utils.ts` + Configuración → Calendario escolar. Fechas absolutas por año (`'YYYY-MM-DD'`), no `MMDD` recurrente: la UAT mueve festivos de un año a otro.
-- [x] **Defaults UAT 2026** precargados (PDF oficial), botón "Cargar UAT 2026".
+- [x] **Periodos y días inhábiles editables** (v3.43.0): `calendarioEscolar` en `ConfigService` + funciones puras en `core/utils/calendario.utils.ts` + Configuración → Calendario escolar. Fechas absolutas por año (`'YYYY-MM-DD'`), no `MMDD` recurrente: la universidad mueve festivos de un año a otro.
+- [x] **Defaults 2026** precargados (PDF oficial), botón "Cargar calendario base".
 - [x] Presets "Este periodo / Periodo anterior" en Estadísticas y Comparar; el Resumen reconoce días inhábiles.
-- [ ] **`DatosPruebaService`** sigue con su calendario UAT propio hardcoded: debería leer `calendarioEscolar`.
+- [ ] **`DatosPruebaService`** sigue con su calendario universitario propio hardcoded: debería leer `calendarioEscolar`.
 - [ ] Parámetros del generador de datos de prueba (densidad por periodo, horario, ponderación de turnos) — solo importan para el seed.
 - [ ] **Plantillas preconfiguradas** para otras universidades comunes (a llenar cuando se tenga el primer cliente).
 - [ ] **Modalidad de períodos:** soporte para semestres (2/año), trimestres (3/año, ene-mar/abr-jun/jul-sep/oct-dic), cuatrimestres (3/año pero distintos), bimestres y módulos. El comparador del Dashboard Ejecutivo y los presets de período usan este servicio. Hoy "Semestre actual / Semestre anterior" en el comparador asume convención genérica ene-jun / jul-dic — al implementar este servicio, esos atajos se vuelven dinámicos según la modalidad configurada.

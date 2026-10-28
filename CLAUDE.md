@@ -20,7 +20,7 @@ El sistema debe ser **moldeable**. Toda configuración visible al coordinador de
 Stenbrary va más allá de la versión actual. El plan completo está en `docs/ROADMAP.md` (fuente única de verdad del largo plazo). Aquí el resumen para tener contexto al tomar decisiones:
 
 - **Fase 1 — PWA offline-first (cerrando, v3.x → v4.0).** Sistema actual: scanner, registros, motivos, aforo, horarios, quiosco, estadísticas, todo en IndexedDB. Última milla antes de cerrar Fase 1: rediseño de `/configuración` (sidebar + panel) y **command palette Ctrl+K** (navegación + toggles de settings + acciones).
-- **Fase 2 — Backend + auth + sync (post-v4.0).** Migrar a un modelo cliente-servidor manteniendo offline-first. Stack elegido: **Supabase** (Postgres + Auth + Storage + Realtime). 4 roles: super-admin, coordinador, asistente, alumno. Sync **supervisado por el coordinador** (no automático ciego — debe poder descartar registros basura antes de subir). Sub-fases 2.0 a 2.5 detalladas en `ROADMAP.md`.
+- **Fase 2 — Backend + auth + sync: EN PAUSA (2026-10-27), sin planes de retomarla.** El código y el esquema se conservan como prototipo probado en local (portafolio); no hay proyectos de Supabase desplegados. No proponer desplegarla. Plan original: migrar a un modelo cliente-servidor manteniendo offline-first. Stack elegido: **Supabase** (Postgres + Auth + Storage + Realtime). 4 roles: super-admin, coordinador, asistente, alumno. Sync **supervisado por el coordinador** (no automático ciego — debe poder descartar registros basura antes de subir). Sub-fases 2.0 a 2.5 detalladas en `ROADMAP.md`.
 - **Fase 3 — Pulir el producto.** Post-Fase 2: hardening, performance con volumen real, accesibilidad, UX refinada, documentación para usuario final, capacitación.
 - **Fase 4 — Módulo de préstamos.** Largo plazo. Requiere investigación con el coordinador antes de diseñar (catálogo de libros, reservas, devoluciones, multas, integración con el sistema bibliotecario existente si lo hay).
 - **Fase 5 — Comercialización.** Distribuir a otras universidades. Bloqueada hasta que esté: multi-tenant real (preparación en Fase 2.5), calendario escolar configurable (`docs/ESTADO.md` §2.2), catálogos editables (§2.3.1), branding por institución, plan de capacitación, modelo de licenciamiento.
@@ -68,6 +68,12 @@ npx tsc --noEmit -p tsconfig.spec.json
 # Guardrail de versión (package.json ↔ CHANGELOG)
 node scripts/check-version.mjs
 
+# Esquema del backend (prototipo en pausa; requiere Docker). 43 pruebas pgTAP
+# en supabase/tests/database/: sin sesión y cuenta sin rol no tocan datos.
+# Puertos 5532x (supabase/config.toml) para convivir con otros proyectos.
+npx supabase start -x studio,storage-api,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,mailpit,postgres-meta,kong,postgrest
+npx supabase test db
+
 # E2E (Playwright). Levanta SU PROPIO dev server en el 4300 (v3.62.0; antes
 # reutilizaba lo que hubiera en el 4200 y llegó a probar otro proyecto). Puerto
 # ocupado → se detiene con "is already used": usa otro con E2E_PORT=4310.
@@ -82,7 +88,7 @@ npx ng build --configuration production && npm run e2e:produccion
 npx playwright test --grep "recorrido guiado"
 ```
 
-Suite activa: **490 specs unitarios en verde**, en 29 archivos —
+Suite activa: **491 specs unitarios en verde**, en 29 archivos —
 `matricula.utils`, `horarios.utils`, `insignias.utils`, `integridad.utils`,
 `invariante.utils`, `importacion.utils`, `catalogos.utils`, `cuadre-cifras.service`, `descarga.utils`, `tiempo.utils`, `estadisticas.utils`,
 `calendario.utils`, `quiosco.utils`, `flujo-puerta.utils`, `nombres.utils`, `database.service`,
@@ -144,7 +150,7 @@ El pre-commit corre `eslint . --quiet` (solo errores); CI corre el lint completo
 
 ## Arquitectura
 
-**Stenbrary** es una PWA Angular 21 (LTS hasta 2027-06; builder `@angular/build`, `inject()` en vez de parámetros del constructor, Sass con `@use`) offline-first para control de acceso a biblioteca (UAT). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: la de `package.json` (no se repite aquí porque se desactualiza; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
+**Stenbrary** es una PWA Angular 21 (LTS hasta 2027-06; builder `@angular/build`, `inject()` en vez de parámetros del constructor, Sass con `@use`) offline-first para control de acceso a biblioteca (universidad). Toda la persistencia ocurre en IndexedDB (sin backend); el Service Worker (`@angular/service-worker`) permite operación sin internet. Versión actual: la de `package.json` (no se repite aquí porque se desactualiza; la versión mostrada en UI viene del primer elemento de `CHANGELOG` en `src/app/core/data/changelog.data.ts`).
 
 ### Documentación del proyecto (capas)
 
@@ -172,7 +178,7 @@ subió una versión por cada tanda (20 el 31-ago-2026) y quedaron huecos (no hay
   publica, su cambio se acumula en la siguiente entrada.
 - Números consecutivos: `menor` para funciones o cambios visibles, `parche` solo
   para correcciones.
-- **v4.0.0 = la entrega a la UAT** (cierre de Fase 1 en el ROADMAP).
+- **v4.0.0** estaba reservada para la entrega a la universidad, que se canceló (2026-10-27): el proyecto sigue en 3.x como portafolio.
 - Cada versión publicada lleva su `git tag vX.Y.Z` (hasta v3.46.0 no hay ninguna).
 
 ### Rutas (`src/app/app.routes.ts`)
@@ -266,7 +272,7 @@ Métodos clave adicionales:
 Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los principales; algunos (`ConfigService`, `AforoService`, `SoundService`, `ChangelogService`, `PwaUpdateService`) se importan por ruta.
 
 - `DatabaseService` — ver sección anterior.
-- `ConfigService` — persiste en `localStorage` bajo `stenbrary-config`. Claves: `registroSalidaActivo`, `horasAutoSalida` (0 = off), `nombreInstitucion`, `nombreEquipo` (v3.52.0: "Puerta", "Oficina"; va en cada evento de la bitácora y en `meta.equipo` del respaldo), `umbralDuplicadoMin` (default 30), `aforoMaximo` (0 = off), `aforoModo` (`'permitir' | 'confirmar' | 'bloquear'`), `modoQuiosco` + `quioscoPin` (v3.9.0; **desde v3.62.0 es un hash**: no se lee para mostrarlo, se usan `hayPin`, `quioscoPinLargo` y `quioscoPinDeFabrica`; solo `PinService` lo compara y lo cambia) + `quioscoAutoMinutos` (v3.49.0: minutos sin uso para reactivar el quiosco solo, 0 = off; lo vigila `QuioscoAutoService`), `horarioActivo` + `horarios` (por día, 0=domingo … 6=sábado) + `horarioModo` (`'advertir' | 'bloquear'`, v3.9.0), `celebracionActiva` + `celebracionProbabilidad` (0–1, v3.9.0), `mostrarBotonCamara` (v3.45.0, default true: el lector físico es el camino principal y la cámara un respaldo ocultable), `calendarioEscolar` (periodos + días inhábiles, v3.43.0; funciones puras en `core/utils/calendario.utils.ts`, precarga UAT 2026, signal `calendarioSignal`). Getter derivado: `aforoActivo = aforoMaximo > 0 && registroSalidaActivo`. Signals: `hayAutoClose` (cierres pendientes) y `modoQuioscoSignal` (reactivo para `AppComponent`).
+- `ConfigService` — persiste en `localStorage` bajo `stenbrary-config`. Claves: `registroSalidaActivo`, `horasAutoSalida` (0 = off), `nombreInstitucion`, `nombreEquipo` (v3.52.0: "Puerta", "Oficina"; va en cada evento de la bitácora y en `meta.equipo` del respaldo), `umbralDuplicadoMin` (default 30), `aforoMaximo` (0 = off), `aforoModo` (`'permitir' | 'confirmar' | 'bloquear'`), `modoQuiosco` + `quioscoPin` (v3.9.0; **desde v3.62.0 es un hash**: no se lee para mostrarlo, se usan `hayPin`, `quioscoPinLargo` y `quioscoPinDeFabrica`; solo `PinService` lo compara y lo cambia) + `quioscoAutoMinutos` (v3.49.0: minutos sin uso para reactivar el quiosco solo, 0 = off; lo vigila `QuioscoAutoService`), `horarioActivo` + `horarios` (por día, 0=domingo … 6=sábado) + `horarioModo` (`'advertir' | 'bloquear'`, v3.9.0), `celebracionActiva` + `celebracionProbabilidad` (0–1, v3.9.0), `mostrarBotonCamara` (v3.45.0, default true: el lector físico es el camino principal y la cámara un respaldo ocultable), `calendarioEscolar` (periodos + días inhábiles, v3.43.0; funciones puras en `core/utils/calendario.utils.ts`, precarga universidad 2026, signal `calendarioSignal`). Getter derivado: `aforoActivo = aforoMaximo > 0 && registroSalidaActivo`. Signals: `hayAutoClose` (cierres pendientes) y `modoQuioscoSignal` (reactivo para `AppComponent`).
 - `AforoService` — usa `signal`/`computed` sobre la ocupación actual. Estados: `inactivo`, `libre` (<50%), `normal` (50–79%), `alto` (80–99%), `lleno` (100%), `sobreaforo` (>100%). `refrescar()` relee de la BD; `setOcupacion()` para evitar doble lectura cuando ya tenemos el conteo (p.ej. en `/presencia`).
 - `ChangelogService` — compara `versionActual().version` con `stenbrary-changelog-vista` (localStorage). Signal `hayNovedades` alimenta el badge del sidebar. En primera instalación NO muestra badge (marca la versión como vista).
 - `SoundService` — beeps vía Web Audio API (sin archivos). Flag en `stenbrary-sonido-activo`. Métodos: `beepScan`, `beepSalida`, `beepError`.
@@ -279,7 +285,7 @@ Todos `providedIn: 'root'`. El barrel export en `index.ts` solo re-exporta los p
   **Ojo al probar el SW con Playwright:** el Chrome que lanza Playwright (`channel: 'chrome'` o su Chromium con perfil persistente) arranca el SW de Angular en `SAFE_MODE` ("Entry already exists"); el Chrome real del usuario y Edge no. Para pruebas de SW/offline usar `channel: 'msedge'`.
 - `ErrorReporterService` — cola offline en localStorage, drena en evento `online`. Endpoint configurable por environment. Cero costo de bundle si no se configura. Wired al `GlobalErrorHandler`.
 - `GlobalErrorHandler` — provider en `app.config.ts`.
-- `DatosPruebaService` — generador de alumnos/registros sintéticos con modelo UAT (3 períodos, vacaciones, festivos, Semana Santa, horario 7–22, turnos 66/22/12). Matrícula `9000001+` + `dispositivo: 'SEED-TEST'` como marcadores para limpieza selectiva. **Calendario hardcoded** — cuando se venda a otra universidad, abstraer a `CalendarioEscolarService` configurable desde UI (pendiente en `docs/ESTADO.md`).
+- `DatosPruebaService` — generador de alumnos/registros sintéticos con modelo universitario (3 períodos, vacaciones, festivos, Semana Santa, horario 7–22, turnos 66/22/12). Matrícula `9000001+` + `dispositivo: 'SEED-TEST'` como marcadores para limpieza selectiva. **Calendario hardcoded** — cuando se venda a otra universidad, abstraer a `CalendarioEscolarService` configurable desde UI (pendiente en `docs/ESTADO.md`).
 
 ### Auth y nube (`core/auth/`, Fase 2)
 
@@ -319,7 +325,15 @@ Rutas protegidas por `roleGuard`: `/estadisticas`, `/gestion-motivos`,
 
 Para desplegar la nube en producción: `docs/DESPLIEGUE-NUBE.md`.
 
-**Mientras el sistema se use en modo local** (decisión 2026-10-06: sin autorización de la UAT no se suben datos de alumnos a la nube), `environment.mostrarConexionNube = false` oculta la sección de Configuración → Avanzado; se muestra igual si una instalación ya tiene la nube encendida, para poder apagarla.
+**Políticas RLS (0009).** Toda política nueva va `to authenticated`, exige
+`es_personal()` y lleva su prueba pgTAP sin sesión. La razón: en 0003,
+`organization_id is not distinct from current_organization_id()` daba
+verdadero sin sesión (NULL = NULL) y `anon` leía y borraba todo
+(`docs/SEGURIDAD.md` §2.8). Las cuentas nuevas nacen como `alumno` y el
+registro libre está cerrado: acceso por invitación. Una migración nueva se
+prueba con `npx supabase db reset` + `npx supabase test db`.
+
+**Mientras el sistema se use en modo local** (decisión 2026-10-06: sin autorización de la universidad no se suben datos de alumnos a la nube), `environment.mostrarConexionNube = false` oculta la sección de Configuración → Avanzado; se muestra igual si una instalación ya tiene la nube encendida, para poder apagarla.
 
 ### Scanner (dual-mode, `features/scanner/scanner.component.ts`)
 

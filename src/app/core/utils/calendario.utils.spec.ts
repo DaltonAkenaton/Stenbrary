@@ -4,10 +4,10 @@
 // ╚══════════════════════════════════════════════════════╝
 
 import {
-  CALENDARIO_UAT_2026,
+  CALENDARIO_BASE_2026,
   CalendarioEscolar,
   calendarioInicial,
-  calendarioTipicoUat,
+  calendarioTipico,
   domingoDePascua,
   diaInhabilEn,
   periodoActual,
@@ -134,23 +134,23 @@ describe('calendario.utils', () => {
     });
 
     it('avisa cuando el calendario ya no cubre hoy (cambio de año)', () => {
-      const avisos = revisarCalendario(CALENDARIO_UAT_2026, new Date(2027, 0, 10));
+      const avisos = revisarCalendario(CALENDARIO_BASE_2026, new Date(2027, 0, 10));
       expect(avisos.some(a => a.mensaje.includes('ya no cubre'))).toBe(true);
     });
   });
 
-  describe('CALENDARIO_UAT_2026', () => {
+  describe('CALENDARIO_BASE_2026', () => {
     it('no tiene errores ni huecos durante 2026', () => {
-      expect(revisarCalendario(CALENDARIO_UAT_2026, new Date(2026, 9, 6))).toEqual([]);
+      expect(revisarCalendario(CALENDARIO_BASE_2026, new Date(2026, 9, 6))).toEqual([]);
     });
 
     it('el 13 de octubre es inhábil y el 10 de diciembre no (resultados de admisión)', () => {
-      expect(diaInhabilEn(CALENDARIO_UAT_2026, new Date(2026, 9, 13, 10))).not.toBeNull();
-      expect(diaInhabilEn(CALENDARIO_UAT_2026, new Date(2026, 11, 10, 10))).toBeNull();
+      expect(diaInhabilEn(CALENDARIO_BASE_2026, new Date(2026, 9, 13, 10))).not.toBeNull();
+      expect(diaInhabilEn(CALENDARIO_BASE_2026, new Date(2026, 11, 10, 10))).toBeNull();
     });
   });
 
-  describe('calendario típico UAT', () => {
+  describe('calendario típico', () => {
     const inhabil = (cal: CalendarioEscolar, clave: string) =>
       cal.diasInhabiles.find(d => d.id.endsWith(clave))!;
 
@@ -161,8 +161,8 @@ describe('calendario.utils', () => {
     });
 
     it('para 2026 reproduce las fechas del calendario oficial', () => {
-      const tipico = calendarioTipicoUat(2026);
-      const oficial = (desde: string) => CALENDARIO_UAT_2026.diasInhabiles.find(d => d.desde === desde);
+      const tipico = calendarioTipico(2026);
+      const oficial = (desde: string) => CALENDARIO_BASE_2026.diasInhabiles.find(d => d.desde === desde);
       // Cada festivo del típico existe en el oficial con el mismo rango.
       for (const d of tipico.diasInhabiles) {
         const o = oficial(d.desde);
@@ -174,7 +174,7 @@ describe('calendario.utils', () => {
     });
 
     it('para 2027 recorre los festivos de ley y mueve Semana Santa', () => {
-      const c = calendarioTipicoUat(2027);
+      const c = calendarioTipico(2027);
       expect(inhabil(c, 'constitucion').desde).toBe('2027-02-01');   // primer lunes de febrero
       expect(inhabil(c, 'juarez').desde).toBe('2027-03-15');         // tercer lunes de marzo
       expect(inhabil(c, 'revolucion').desde).toBe('2027-11-15');     // tercer lunes de noviembre
@@ -188,12 +188,12 @@ describe('calendario.utils', () => {
 
     it('no tiene errores ni huecos entre periodos', () => {
       for (const anio of [2027, 2028, 2030]) {
-        expect(revisarCalendario(calendarioTipicoUat(anio), new Date(anio, 5, 1))).withContext(String(anio)).toEqual([]);
+        expect(revisarCalendario(calendarioTipico(anio), new Date(anio, 5, 1))).withContext(String(anio)).toEqual([]);
       }
     });
 
     it('al arrancar usa el oficial en 2026 y el típico en otros años', () => {
-      expect(calendarioInicial(new Date(2026, 9, 6))).toBe(CALENDARIO_UAT_2026);
+      expect(calendarioInicial(new Date(2026, 9, 6))).toBe(CALENDARIO_BASE_2026);
       expect(calendarioInicial(new Date(2027, 0, 10)).periodos[0].nombre).toBe('Primavera 2027');
     });
   });

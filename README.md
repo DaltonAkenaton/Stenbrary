@@ -18,7 +18,7 @@ estadísticas y reportes sin configurar nada.
 **Público objetivo:** coordinación y personal de bibliotecas que hoy registran
 las visitas en papel o en hojas de cálculo y necesitan cifras confiables de uso.
 
-**Estado:** desarrollado y probado (versión 3.62.1). Se diseñó con la
+**Estado:** desarrollado y probado (versión 3.62.2). Se diseñó con la
 coordinación de una biblioteca universitaria y se validó con ella, pero **no se
 adoptó**: las bibliotecas de esa institución registran sus visitas en un
 formulario estandarizado de Google Forms, del que salen los reportes oficiales,
@@ -134,7 +134,7 @@ y tiene Supabase desactivado.
 - **Jasmine + Karma** (unitarias), **Playwright** (E2E), **axe-core** (accesibilidad), **fake-indexeddb**
 - **ESLint** (angular-eslint), **Husky** (pre-commit) y **GitHub Actions** (CI)
 - **Cloudflare Pages** para la demo
-- **Supabase** (Auth + Postgres con RLS): preparado en el código y desactivado en la versión actual
+- **Supabase** (Auth + Postgres con RLS, pgTAP): prototipo de backend en pausa — ver [Backend](#backend-prototipo-en-pausa)
 
 ## Requisitos e instalación
 
@@ -165,7 +165,7 @@ npm start        # http://localhost:4200
 ```
 src/app/
   core/
-    auth/        Supabase, guards por rol y matriz de permisos (Fase 2, desactivada)
+    auth/        Supabase, guards por rol y matriz de permisos (prototipo en pausa)
     constants/   valores de fábrica de los catálogos
     data/        historial de versiones y contenido estático
     guards/      protección del flujo de registro y acceso por rol
@@ -175,7 +175,7 @@ src/app/
   features/      una carpeta por pantalla, todas con carga diferida
   shared/        diálogos y componentes reutilizables
 e2e/             pruebas Playwright y fixtures generados por script
-supabase/        migraciones SQL (Fase 2)
+supabase/        migraciones SQL y pruebas pgTAP del esquema (prototipo en pausa)
 scripts/         guardrail de versión y utilidades
 docs/            seguridad, auditoría de métricas, roadmap, despliegue, pruebas manuales y piloto
 vendor/          SheetJS 0.20.3 (ver vendor/README.md)
@@ -192,12 +192,40 @@ vendor/          SheetJS 0.20.3 (ver vendor/README.md)
   (combinar o reemplazar). No hay sincronización en tiempo real.
 - **Acciones irreversibles** (borrar por fechas, reemplazar datos, restablecer)
   piden el PIN del coordinador.
-- **Supabase** está desactivado: el build de producción no incluye
-  credenciales y la conexión requiere además activarla en cada instalación.
+- **Supabase** está desactivado: ningún build incluye credenciales y la
+  conexión requiere además activarla en cada instalación.
+
+## Backend (prototipo en pausa)
+
+Se construyó un backend con **Supabase** para pasar de un equipo aislado a
+varios equipos con cuentas. Funciona en local, pero el proyecto quedó como
+sistema local y el backend no está desplegado. El código se conserva:
+
+- **Autenticación** por magic link y **4 roles** (super-admin, coordinador,
+  asistente, alumno), con una matriz de permisos declarativa
+  (`core/auth/permissions.ts`) y guards por ruta.
+- **Esquema Postgres** en 9 migraciones (`supabase/migrations/`): tablas espejo
+  de IndexedDB con `organization_id` preparado para varias instituciones,
+  alta atómica de visita + motivos en una función, y una RPC para cambiar roles
+  con salvaguardas contra la auto-escalación.
+- **Row Level Security** en todas las tablas. Una auditoría encontró que las
+  políticas dejaban leer y borrar datos **sin sesión** (`NULL is not distinct
+  from NULL`); la migración `0009` lo corrige y lo prueban 43 pruebas pgTAP que
+  fallan sin ella. Explicación completa en
+  [`docs/SEGURIDAD.md` §2.8](docs/SEGURIDAD.md).
+- **Sincronización supervisada**: los cambios locales quedan pendientes y el
+  coordinador revisa y descarta lo que no deba subir antes de enviarlo; también
+  descarga de la nube con detección de conflictos.
+- **Encendido por instalación**: aunque un build traiga credenciales, cada
+  equipo arranca en modo local hasta que el coordinador conecta la nube, y el
+  login tiene una salida de emergencia al modo local.
+
+Para probar el esquema (requiere Docker): `npx supabase start` y
+`npx supabase test db`. Guía completa: [`docs/DESPLIEGUE-NUBE.md`](docs/DESPLIEGUE-NUBE.md).
 
 ## Pruebas
 
-- **483 pruebas unitarias** en 29 archivos (cobertura de sentencias 80 %),
+- **491 pruebas unitarias** en 29 archivos (cobertura de sentencias 80 %),
   centradas en la lógica pura (fechas, métricas, matrícula, calendario,
   importación, respaldos, hash del PIN) y en los servicios de datos. Incluyen
   fallos reales a media transacción y PDF generados con texto hostil.
@@ -209,6 +237,9 @@ vendor/          SheetJS 0.20.3 (ver vendor/README.md)
 - **CI** (GitHub Actions) ejecuta lint, verificación de tipos, pruebas
   unitarias con la zona horaria `America/Matamoros`, build de producción, E2E
   y las pruebas del build con cabeceras.
+- **43 pruebas del esquema** de la base (pgTAP, `npx supabase test db`): sin
+  sesión no se lee ni se escribe nada, y una cuenta sin rol no toca datos.
+  Se corren en local; no forman parte del CI porque el backend no está desplegado.
 - El pre-commit verifica la versión, los tipos y los errores de lint.
 
 ## Seguridad
@@ -237,14 +268,15 @@ sin servidor: [`docs/SEGURIDAD.md`](docs/SEGURIDAD.md).
 
 ## Estado y próximos pasos
 
-- **Fase 1** (PWA offline-first): terminada. La versión 3.62.1 es la versión
+- **Fase 1** (PWA offline-first): terminada. La versión 3.62.2 es la versión
   estable; la 4.0 estaba reservada para la entrega a la biblioteca, que no se
   realizó.
 - El proyecto está en **mantenimiento**: correcciones de errores y mejoras
   puntuales.
-- Lo que estaba planeado y no se desarrolló (autenticación por roles y
-  sincronización con Supabase, préstamos de libros, configuración por
-  institución) está documentado en `docs/ROADMAP.md`.
+- El backend con Supabase llegó a prototipo funcional en local y está en pausa
+  (ver [Backend](#backend-prototipo-en-pausa)). Lo que no se desarrolló
+  (despliegue del backend, préstamos de libros, configuración por institución)
+  está documentado en `docs/ROADMAP.md`.
 
 **Lección principal:** antes de construir, entender el proceso institucional
 en el que tiene que encajar el sistema. Un sistema completo que no encaja en el
@@ -253,5 +285,6 @@ proceso existente no se adopta.
 ## Licencia y propiedad intelectual
 
 Software propietario. © 2026 Dalton Akenaton Gómez Arellano. Todos los derechos
-reservados; ver [`LICENSE`](LICENSE). Las dependencias de terceros se rigen por
+reservados, con un permiso explícito de evaluación: se puede clonar, ejecutar en
+local y correr las pruebas para evaluar el trabajo; ver [`LICENSE`](LICENSE). Las dependencias de terceros se rigen por
 sus propias licencias.

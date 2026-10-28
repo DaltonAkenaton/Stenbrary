@@ -457,7 +457,7 @@ test.describe('Verificación ago–sep: filtros de Registros y días del períod
     await page.goto('/estadisticas?p=personalizado&ini=2026-08-01&fin=2026-09-30&tab=resumen');
     const dias = page.locator('.iq-dias-periodo');
     await expect(dias).toContainText(/8.*sep.*· 10/i, { timeout: 15000 });  // martes 8-sep, 10 visitas
-    // Horario de fábrica (L–V) y calendario UAT (16-sep inhábil): 42 días, todos con visitas.
+    // Horario de fábrica (L–V) y calendario base (16-sep inhábil): 42 días, todos con visitas.
     await expect(dias).toContainText('Todos los días hábiles tuvieron visitas (42)');
   });
 });

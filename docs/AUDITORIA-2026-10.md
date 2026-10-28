@@ -9,7 +9,7 @@
 |---|---|---|
 | 1 — R1, R2, R3, R4, R5, O5, O14, O15, O16, M10, M12 | ✅ Hecha (2026-10-06) | v3.41.1 |
 | 2 — R6, O1, O2, O3, O9, O10, O11, O12, M1, M7 + horario de verano | ✅ Hecha (2026-10-06) | v3.42.0 |
-| 2b — calendario escolar (P7): periodos y días inhábiles UAT | ✅ Hecha (2026-10-06) | v3.43.0 |
+| 2b — calendario escolar (P7): periodos y días inhábiles de la universidad | ✅ Hecha (2026-10-06) | v3.43.0 |
 | 3 — O6, O7, O8, O13, M2–M6, M8, M9, M11, M13–M17, M19 + blindaje | ✅ Hecha (2026-10-06) | v3.44.0 |
 | Ronda de pruebas automatizada (cuadre, volumen, exportes) | ✅ Hecha (2026-10-06) — `docs/PRUEBAS-RONDA-2026-10.md` | v3.44.1 |
 | Pruebas manuales con el equipo real | ⏳ Usuario | |
@@ -19,7 +19,7 @@
   resumen de crecimiento y cuartiles del mapa de calor salieron del componente a `estadisticas.utils.ts`,
   con tests. Al sacarlos apareció otro "porcentaje inventado": la tendencia trimestral decía "↑ 100 %"
   si el trimestre previo tenía 0 visitas (mismo patrón que R4). Corregido.
-- **No se hizo, a propósito:** M18 (rango de matrículas de prueba 9000001–9100000). La UAT usa
+- **No se hizo, a propósito:** M18 (rango de matrículas de prueba 9000001–9100000). La universidad usa
   matrículas de 10 dígitos; se revisa cuando haya otra institución (Fase 5).
 
 **Hallazgo nuevo durante la Tanda 1 (corregido):** el PDF de `/registros` calculaba su propio período
@@ -32,7 +32,7 @@ P3 → las salidas estimadas no cuentan en promedios, horas ni constancia.
 P4 → promedio entre días con al menos un registro.
 P5 → los invitados no cuentan en carreras, turnos ni grados.
 P6 → comparar al mismo avance (mismo día relativo y hora).
-P7 → la UAT tiene 3 periodos (Primavera, Verano, Otoño): calendario configurable a mano, precargado con
+P7 → la universidad tiene 3 periodos (Primavera, Verano, Otoño): calendario configurable a mano, precargado con
 el PDF oficial 2026, periodos sin huecos (en un hueco, "Este periodo" = el último que terminó).
 P8 → el usuario delegó la decisión: proyección con el historial real, oculta sin base.
 
@@ -193,7 +193,7 @@ componente (2810 líneas), sin tests.
 | M15 | Diagnóstico y Presencia | El texto de "duración negativa" dice que el promedio está mal, pero el cálculo ya las excluye. Faltan dos detecciones: **entradas abiertas de días anteriores** (nunca se cierran ni aparecen en Presencia) y **cierres automáticos sin confirmar de días anteriores** (desaparecen de Presencia sin que nadie los revise). |
 | M16 | Configuración | El umbral de duplicados solo acepta presets, lo que **va contra el principio de flexibilidad** de CLAUDE.md. `setHorasAutoSalida` y `setUmbralDuplicadoMin` no validan en el servicio, y cada tecla del input dispara un aviso. |
 | M17 | Gestión de motivos | Permite dos motivos con el mismo nombre; las estadísticas los fusionan sin avisar. |
-| M18 | Datos de prueba | Las matrículas 9000001–9099999 se consideran de prueba. La UAT usa 10 dígitos, así que hoy el riesgo es bajo; anotarlo para la Fase 5 (otras instituciones). |
+| M18 | Datos de prueba | Las matrículas 9000001–9099999 se consideran de prueba. La universidad usa 10 dígitos, así que hoy el riesgo es bajo; anotarlo para la Fase 5 (otras instituciones). |
 | M19 | Rendimiento de Estadísticas | Cada carga lee y ordena **todos** los registros **4 veces** (caché, métricas globales, meses disponibles y crecimiento de 12 meses); tres de esas lecturas se saltan la caché. Medido: ordenar 100 000 registros cuesta **~215 ms** en un equipo de desarrollo (300 000: ~830 ms), sin contar la lectura de IndexedDB. En un equipo de biblioteca, probablemente varios segundos. Arreglo: una sola lectura compartida y fechas convertidas una vez. |
 
 **Pasadas rápidas sin hallazgos de cálculo:** Alumnos (los filtros por visitas cuadran) y Gestión de
@@ -212,7 +212,7 @@ descuenta bien los cierres automáticos; solo aplica M15.
 | P4 | El "promedio por día", ¿entre qué días se divide? | Si hay horario configurado, entre los **días que abrió**; si no, entre los días con al menos un registro. Indicar en pantalla cuál se usó. |
 | P5 | Los invitados, ¿cuentan en total de visitas, motivos, carreras, turnos y grados? | **Sí** en totales y motivos; **no** en carreras, turnos, grados ni alumnos únicos. En esas vistas, fila aparte "Invitados". |
 | P6 | Al comparar un período **en curso** (este mes, hoy), ¿contra qué se compara? | Contra el período anterior **al mismo avance** (días 1–5 contra días 1–5; hoy hasta las 10:00 contra el lunes pasado hasta las 10:00). |
-| P7 | "Este semestre": la UAT, ¿trabaja con semestres enero–junio y julio–diciembre? El generador de datos de prueba usa **3 períodos**. | Preguntarlo al coordinador. Mientras tanto, renombrarlo a "Ene–Jun / Jul–Dic". |
+| P7 | "Este semestre": la universidad, ¿trabaja con semestres enero–junio y julio–diciembre? El generador de datos de prueba usa **3 períodos**. | Preguntarlo al coordinador. Mientras tanto, renombrarlo a "Ene–Jun / Jul–Dic". |
 | P8 | La proyección "Hoy al cierre", ¿se rehace o se quita? | Rehacerla con el horario configurado y el perfil histórico por hora. Si no hay al menos 4 semanas de historial, ocultarla. |
 
 ---

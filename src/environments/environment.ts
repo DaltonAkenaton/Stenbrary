@@ -4,7 +4,7 @@ export const environment = {
   /**
    * Muestra la sección "Conexión con la nube" en Configuración → Avanzado
    * (v3.46.0). Apagado: el sistema se presenta e instala en modo local
-   * mientras la UAT no autorice guardar datos de alumnos en la nube, y la
+   * mientras la universidad no autorice guardar datos de alumnos en la nube, y la
    * sección solo confundiría. Si una instalación YA tiene la nube encendida,
    * la sección se muestra igual para poder apagarla.
    */
@@ -14,7 +14,7 @@ export const environment = {
    * Reporte de errores en producción.
    * - endpoint: URL que recibe POST con el payload del error.
    *   Vacío = no-op (solo log local).
-   * - Sentry: usar una Netlify Function/tunnel que reenvíe al ingest endpoint.
+   * - Sentry: usar una función serverless (tunnel) que reenvíe al ingest endpoint.
    * - Endpoint propio: cualquier URL que acepte JSON.
    */
   errorReporting: {
@@ -22,13 +22,15 @@ export const environment = {
   },
 
   /**
-   * Supabase — Fase 2 (auth + sync). Vacío = modo solo-local (sin backend).
-   * Proyecto DEV: stenbrary-dev. La `anonKey` puede ser la JWT clásica o el
-   * formato nuevo `sb_publishable_*` — supabase-js acepta ambos.
-   * NUNCA pegar service_role key aquí — esa solo va en Supabase CLI/admin.
+   * Supabase — prototipo de backend, en pausa. Vacío = modo solo-local
+   * (sin backend): es como se distribuye el sistema.
+   * Para probarlo contra una base local: `npx supabase start` y pegar
+   * aquí la URL y la llave publicable que imprime (son de demostración;
+   * la de un proyecto real no se sube al repositorio).
+   * NUNCA pegar la service_role key — esa solo va en Supabase CLI/admin.
    */
   supabase: {
-    url: 'https://yhibkewgxhmwoemlvruy.supabase.co',
-    anonKey: 'sb_publishable_pLIblkALe_5TbYyNJZQTTg_jnihv3sd',
+    url: '',
+    anonKey: '',
   },
 };

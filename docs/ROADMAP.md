@@ -27,7 +27,7 @@ Stenbrary es un sistema de **control de acceso a biblioteca universitaria** que 
 | Fase | Estado | Objetivo | Duración estimada |
 |---|---|---|---|
 | **1 — PWA offline-first** | ✅ Cerrada (2026-09-02) | Sistema operativo local completo | — (ya en producción) |
-| **2 — Backend + auth + sync** | En curso (2.0–2.3 en código; falta desplegar) | Multi-usuario, sync a nube supervisado | 4–5 meses part-time |
+| **2 — Backend + auth + sync** | ⏸ En pausa (2.0–2.3 en código y probado en local; sin desplegar, sin planes de retomarla) | Multi-usuario, sync a nube supervisado | — |
 | **3 — Pulir producto** | Futura | Hardening, perf, a11y, capacitación | 2–3 meses |
 | **4 — Módulo de préstamos** | Investigación | Reservas, devoluciones, multas | TBD tras investigación |
 | **5 — Comercialización** | Largo plazo | Vender a otras universidades | TBD |
@@ -54,6 +54,14 @@ Cualquier feature nueva del modelo local se evalúa contra "¿esto debería espe
 ---
 
 ## Fase 2 — Backend + auth + sync
+
+> **En pausa (2026-10-27).** El proyecto quedó como sistema local, sin
+> institución usuaria, y la nube no se va a desplegar. El código y el esquema
+> se conservan como prototipo funcional: se prueban en local con
+> `npx supabase test db` (ver `docs/DESPLIEGUE-NUBE.md` §0). La auditoría de
+> ese día corrigió las políticas RLS en `0009` (`docs/SEGURIDAD.md` §2.8).
+> Los proyectos de Supabase de desarrollo se eliminaron. Lo de abajo queda
+> como registro del plan.
 
 ### Decisiones arquitectónicas (tomadas 2026-05-18)
 
@@ -130,7 +138,7 @@ fuera de su propio sistema necesita lo mismo.
 - Migrar schema `alumnos / registros / motivos` a Postgres con tipos correctos.
 - RLS policies básicas (por ahora solo "usuario autenticado puede leer/escribir lo suyo").
 - `RemoteDatabaseService` con la **misma interfaz pública** que `DatabaseService` local (adapter pattern). Esto permite swap por feature flag durante desarrollo.
-- Importador one-shot: subir el IndexedDB de UAT al Supabase como prueba real.
+- Importador one-shot: subir el IndexedDB de la universidad al Supabase como prueba real.
 - Aún sin sync — solo CRUD remoto disponible para admins con Internet.
 - **Aprendizajes esperados:** SQL avanzado, RLS, diseño de schemas, índices Postgres, supabase-js SDK.
 
@@ -174,7 +182,7 @@ fuera de su propio sistema necesita lo mismo.
 |---|---|
 | Sync engine (2.2) es más complejo de lo estimado | Spike de 1 sem antes de comprometer 6 sem. Documentar approach en ADR. |
 | RLS mal diseñada filtra datos entre usuarios/orgs | Tests automatizados de RLS con usuarios de prueba de distintos roles. Defense in depth (front + back). |
-| Migración de IndexedDB UAT a Postgres pierde data | Import dry-run + diff antes de commit. Backup JSON completo antes de tocar. |
+| Migración de IndexedDB local a Postgres pierde data | Import dry-run + diff antes de commit. Backup JSON completo antes de tocar. |
 | Supabase tier gratis se queda corto | Monitoreo desde el día 1. Plan de migración a tier $25/mes documentado antes de necesitarlo. |
 | Coordinador rechaza el modelo de sync supervisado | Validar UX de la bandeja con coordinador real antes de Fase 2.2. Si rechaza, hacer sync automático opcional default-on. |
 

@@ -7,7 +7,7 @@
 // ║  inhábiles, capturados a mano. Se edita un BORRADOR   ║
 // ║  y se guarda entero: así un error a medio capturar    ║
 // ║  no deja las estadísticas apuntando a fechas rotas.   ║
-// ║  Precarga: calendario UAT 2026 (core/utils/           ║
+// ║  Precarga: calendario base 2026 (core/utils/          ║
 // ║  calendario.utils.ts).                                ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -21,9 +21,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '../../../core/services/config.service';
 import { ToastService } from '../../../core/services/toast.service';
 import {
-  CALENDARIO_UAT_2026,
+  CALENDARIO_BASE_2026,
   CalendarioEscolar,
-  calendarioTipicoUat,
+  calendarioTipico,
   DiaInhabil,
   PeriodoEscolar,
   periodoActual,
@@ -148,7 +148,7 @@ export class CalendarioCategoriaComponent {
   anioACargar = new Date().getFullYear();
 
   /**
-   * Carga el calendario de la UAT para el año elegido: el OFICIAL si lo
+   * Carga el calendario de la universidad para el año elegido: el OFICIAL si lo
    * tenemos capturado (2026) y, si no, el TÍPICO calculado con las reglas
    * del calendario oficial (festivos recorridos, Semana Santa, vacaciones).
    */
@@ -158,10 +158,10 @@ export class CalendarioCategoriaComponent {
     const ref = this.dialog.open(ConfirmDialogComponent, {
       width: '440px',
       data: {
-        titulo: oficial ? '¿Cargar el calendario oficial UAT 2026?' : `¿Cargar el calendario típico UAT ${anio}?`,
+        titulo: oficial ? '¿Cargar el calendario oficial 2026?' : `¿Cargar el calendario típico ${anio}?`,
         mensaje: (oficial
-          ? 'Se usará el calendario oficial UAT 2026.'
-          : `Es una APROXIMACIÓN calculada con las reglas habituales de la UAT (festivos que se recorren a lunes, ` +
+          ? 'Se usará el calendario oficial 2026.'
+          : `Es una APROXIMACIÓN calculada con las reglas habituales de la universidad (festivos que se recorren a lunes, ` +
             `Semana Santa, vacaciones). Compárala con el calendario oficial ${anio} y ajusta lo que la universidad haya movido.`) +
           ' Reemplaza lo que tienes en pantalla y no se guarda hasta que pulses "Guardar".',
         variante: 'warning',
@@ -170,7 +170,7 @@ export class CalendarioCategoriaComponent {
       } as ConfirmDialogData,
     });
     if (!(await ref.afterClosed().toPromise())) return;
-    this.borrador.set(copiar(oficial ? CALENDARIO_UAT_2026 : calendarioTipicoUat(anio)));
+    this.borrador.set(copiar(oficial ? CALENDARIO_BASE_2026 : calendarioTipico(anio)));
   }
 
   // ─── Helpers de vista ──────────────────────────────────

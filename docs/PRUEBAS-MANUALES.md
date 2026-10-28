@@ -1,7 +1,7 @@
 # Pruebas manuales — Stenbrary
 
 Lista exhaustiva de pruebas manuales para validar el sistema con el generador
-de datos de prueba (calendario UAT: 3 períodos, vacaciones, festivos, 7–22,
+de datos de prueba (calendario universitario: 3 períodos, vacaciones, festivos, 7–22,
 turnos 2/3 matutino).
 
 **Cómo usar:** antes de cada release (o cuando cambies algo sensible), marca
@@ -47,7 +47,7 @@ anótalo en una columna "incidencias" al final de cada sección.
 Ir a `/configuracion` → sección "Datos de prueba".
 
 - [✅] Muestra "Aún no hay datos de prueba cargados"
-- [✅] Presets visibles: Pequeño, Medio, Tu universidad (UAT), Histórico 12m, Histórico 30m
+- [✅] Presets visibles: Pequeño, Medio, Una universidad real, Histórico 12m, Histórico 30m
 - [✅] Seleccionar preset rellena los 3 inputs
 - [✅] Tocar cualquier input cambia dropdown a "Personalizado"
 - [✅] Estimación actualiza en vivo
@@ -57,7 +57,7 @@ Ir a `/configuracion` → sección "Datos de prueba".
 
 ### 1.2 Preset "Pequeño" (100/30/2)
 - [🤖✅] Click "Generar datos de prueba" → diálogo de confirmación
-- [🤖✅] Diálogo menciona "calendario UAT: vacaciones, festivos, verano 15%"
+- [🤖✅] Diálogo menciona "calendario universitario: vacaciones, festivos, verano 15%"
 - [ ] Confirmar → barra de progreso visible
 - [ ] Fase 1: "Creando alumnos..." llega a 100
 - [ ] Fase 2: "Generando registros..." llega al total estimado ±20%
@@ -803,11 +803,11 @@ Ejecutar con Histórico 30m cargado (≈90k registros, 2500 alumnos).
 
 ## 27. INSTALACIÓN EN UNIVERSIDAD (escenario real)
 
-Antes de instalar en la UAT, validar end-to-end con datos reales de muestra.
+Antes de instalar en la universidad, validar end-to-end con datos reales de muestra.
 
 - [ ] Borrar datos de prueba (dejar BD limpia)
 - [ ] Importar alumnos reales vía xlsx
-- [ ] Configurar nombre institución "Biblioteca UAT"
+- [ ] Configurar nombre institución "Biblioteca de la universidad"
 - [ ] Configurar horarios reales
 - [ ] Configurar aforo real
 - [ ] Generar matrículas de prueba (5–10) y probar flujo completo

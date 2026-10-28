@@ -1,5 +1,10 @@
 # Desplegar la nube en producción
 
+> **Estado (2026-10-27): prototipo en pausa.** Stenbrary se distribuye en modo
+> solo-local y no hay ningún proyecto de Supabase desplegado (los de desarrollo
+> se eliminaron). Este documento queda como guía por si el backend se retoma;
+> el esquema se puede probar en local con la sección 0.
+
 Cómo pasar de "Fase 2 funciona en mi laptop" a "Fase 2 existe en el sitio
 publicado". Todo lo de este documento se hace **una vez**.
 
@@ -17,6 +22,21 @@ alcanzable ahí. Esto lo arregla.
 
 ---
 
+## 0. Probar el esquema en local
+
+Requiere Docker. Levanta Postgres + Auth con las 9 migraciones y corre las
+pruebas de seguridad del esquema (pgTAP, `supabase/tests/database/`):
+
+```bash
+npx supabase start -x studio,storage-api,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,mailpit,postgres-meta,kong,postgrest
+npx supabase test db      # 43 pruebas: sin sesión y cuenta sin rol no tocan datos
+npx supabase db reset     # vuelve a aplicar las migraciones desde cero
+npx supabase stop
+```
+
+Los puertos van en `5532x` (no los `5432x` por defecto) para convivir con
+otros proyectos locales de Supabase. Ver `supabase/config.toml`.
+
 ## 1. Crear el proyecto de PROD
 
 En [supabase.com/dashboard](https://supabase.com/dashboard) → **New project**.
@@ -33,7 +53,7 @@ cualquier prueba local escribe en los datos reales del coordinador, y que un
 
 ## 2. Aplicar las migraciones
 
-Las 8 migraciones de `supabase/migrations/` van **en orden**:
+Las 9 migraciones de `supabase/migrations/` van **en orden**:
 
 | Archivo | Qué deja |
 |---|---|
@@ -45,6 +65,7 @@ Las 8 migraciones de `supabase/migrations/` van **en orden**:
 | `0006_user_management.sql` | RPC `set_user_role` + revoke anti-escalación |
 | `0007_user_profiles_email.sql` | email en `user_profiles` (lo necesita `/usuarios`) |
 | `0008_salida_estimada.sql` | marca las salidas que puso el sistema, para no contarlas como estancias reales |
+| `0009_rls_sin_sesion.sql` | **seguridad:** sin sesión no hay acceso a datos; una cuenta nueva nace sin rol de personal (ver `docs/SEGURIDAD.md`) |
 
 Con el CLI (recomendado — deja el historial registrado en Supabase):
 
@@ -59,7 +80,9 @@ siguientes asumen el estado de las anteriores.
 
 **Verificación:** en Table Editor deben existir `organizations`,
 `user_profiles`, `motivos`, `alumnos`, `registros`, `registro_motivos`, todas
-con el candado de RLS.
+con el candado de RLS. Y en Authentication → Sign In / Providers, **desactivar
+"Allow new users to sign up"**: el acceso es solo por invitación (la app ya
+pide `shouldCreateUser: false`, pero la regla tiene que vivir en el servidor).
 
 ## 3. Configurar el redirect del magic link
 
@@ -92,19 +115,22 @@ coordinador se quede fuera.
 
 ## 5. Crear la cuenta del coordinador y darle el rol
 
-El trigger `handle_new_user` da rol `asistente` a todo el que entra por
-primera vez. El primero tiene que promoverse a mano, porque `/usuarios` está
-restringido justamente al rol que todavía no tiene nadie.
+Con el registro libre cerrado, las cuentas se crean por invitación:
+Authentication → Users → **Invite user**. El trigger `handle_new_user` les da
+rol `alumno` (sin acceso a datos, desde la 0009). El primer coordinador tiene
+que promoverse a mano, porque `/usuarios` está restringido justamente al rol
+que todavía no tiene nadie.
 
-1. Que el coordinador inicie sesión una vez en el sitio publicado (con la nube
-   ya encendida en su equipo — paso 8).
+1. Invitar su correo y que inicie sesión una vez en el sitio publicado (con
+   la nube ya encendida en su equipo — paso 8).
 2. SQL Editor:
 
 ```sql
 update user_profiles set rol = 'coordinador' where email = '<su-correo>';
 ```
 
-3. Que recargue. A partir de ahí puede asignar roles desde `/usuarios` sin SQL.
+3. Que recargue. A partir de ahí invita al resto desde el panel y les asigna
+   rol desde `/usuarios` sin SQL.
 
 ## 6. Pegar las claves y publicar
 
@@ -125,19 +151,14 @@ la de dev. **La `service_role` no entra aquí ni en ningún archivo del repo.**
 
 Commit y push: Cloudflare Pages reconstruye solo.
 
-## 7. Keep-alive del proyecto de PROD
+## 7. Evitar que el proyecto se pause
 
-`.github/workflows/supabase-keepalive.yml` hace un ping **solo al proyecto de
-dev** y, desde v3.62.0, **solo a mano** (Actions → "Supabase Keep-Alive" →
-Run): con la Fase 2 en pausa no había razón para mantener despierto un
-proyecto sin datos reales. El free tier pausa un proyecto tras ~7 días sin
-peticiones, y un proyecto de producción pausado es una caída silenciosa.
-
-Al desplegar producción: volver a ponerle `schedule` (diario) y duplicar el
-paso `Ping Supabase REST` con la URL y la key de PROD, o parametrizarlo con
-una matriz. Mientras el coordinador use la app a diario el
-tráfico real basta, pero durante vacaciones no hay tráfico — que es justo
-cuando no quieres descubrir que el proyecto se pausó.
+El free tier pausa un proyecto tras ~7 días sin peticiones, y un proyecto de
+producción pausado es una caída silenciosa. Hubo un workflow de keep-alive
+para el proyecto de desarrollo; se retiró junto con ese proyecto. Al desplegar
+producción: un workflow programado (diario) que haga un `GET` a
+`/auth/v1/health`, o un plan de pago. Durante vacaciones no hay tráfico real
+— que es justo cuando no quieres descubrir que el proyecto se pausó.
 
 ## 8. Encender la nube en el equipo del coordinador
 
@@ -166,6 +187,10 @@ a Configuración, el botón "Usar sin cuenta" de `/login` hace lo mismo.
       `/configuracion` sigue abriendo (perfil cacheado).
 - [ ] "Volver a modo solo-local" devuelve el equipo al estado del primer punto.
 - [ ] Subir un lote real desde `/sincronizacion` y comprobar en Table Editor.
+- [ ] Sin sesión, con la URL y la llave publicable, `GET /rest/v1/alumnos`
+      responde **401/403** (permission denied), no un arreglo.
+- [ ] Pedir el magic link con un correo no invitado: "Ese correo no tiene
+      acceso".
 
 ## Pendiente después de esto
 

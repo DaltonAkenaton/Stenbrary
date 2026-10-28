@@ -72,7 +72,7 @@ Marca ✅/❌ y anota lo raro. Todo lo demás está cubierto por las pruebas aut
 
 **B. Escáner con la cámara real** (`PRUEBAS-MANUALES.md` §2)
 - [ ] B1. Permiso de cámara: aceptar y rechazar, y que el mensaje sea claro.
-- [ ] B2. Credenciales reales de la UAT: leer 10 seguidas y ver cuántas fallan.
+- [ ] B2. Credenciales reales de la universidad: leer 10 seguidas y ver cuántas fallan.
 - [ ] B3. Con poca luz: probar linterna y zoom, si la cámara los tiene.
 - [ ] B4. Escanear la misma credencial dos veces seguidas: debe pedir confirmación de duplicado (con el módulo de salida apagado).
 - [ ] B5. Lector USB, si lo hay (§3.4).

@@ -78,8 +78,8 @@ instalación.
 
 1. [x] Borrar `public/_redirects` (ya no hará falta) y actualizar la sección *Deployment* de `CLAUDE.md`.
 2. [x] En Netlify: Site settings → borrar el sitio.
-3. Si la nube ya está desplegada: en Supabase → Authentication → URL Configuration, cambiar las
-   *Redirect URLs* de Netlify por `https://stenbrary.pages.dev/**` (ver `docs/DESPLIEGUE-NUBE.md`).
+3. [x] No aplica: la nube nunca se desplegó en producción (backend en pausa). Si se retoma, las
+   *Redirect URLs* van a `https://stenbrary.pages.dev/**` (ver `docs/DESPLIEGUE-NUBE.md`).
 
 ## Dominio propio (opcional, más adelante)
 

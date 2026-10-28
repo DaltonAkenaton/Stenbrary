@@ -643,7 +643,7 @@ formatHora(h: number): string {
 
       // Periodos del calendario escolar (Configuración → Calendario escolar).
       // Antes era "semestre" fijo ene–jun / jul–dic, que no corresponde a la
-      // UAT (Primavera, Verano, Otoño). Sin periodos capturados, cae a "este
+      // de la universidad (Primavera, Verano, Otoño). Sin periodos capturados, cae a "este
       // mes" y lo avisa en vez de inventar fechas.
       case 'periodo-actual': {
         const p = periodoActual(this.configService.calendarioEscolar, hoy);

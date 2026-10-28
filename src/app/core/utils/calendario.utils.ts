@@ -2,9 +2,9 @@
 // ║  calendario.utils.ts                                  ║
 // ║  Stenbrary v3.43.0 — Calendario escolar configurable   ║
 // ║                                                       ║
-// ║  Periodos (Primavera / Verano / Otoño en la UAT) y    ║
+// ║  Periodos (Primavera / Verano / Otoño) y               ║
 // ║  días inhábiles, capturados a mano por el coordinador. ║
-// ║  No se calculan con reglas: la UAT "usualmente"        ║
+// ║  No se calculan con reglas: la universidad "usualmente"║
 // ║  recorre los festivos al lunes o al viernes, pero no   ║
 // ║  siempre — solo una lista editable lo refleja.         ║
 // ║                                                       ║
@@ -41,7 +41,7 @@ export interface CalendarioEscolar {
 }
 
 /**
- * Calendario escolar UAT 2026 como punto de partida, leído del PDF oficial
+ * Calendario escolar 2026 como punto de partida, leído del PDF oficial
  * "Calendario Escolar Administrativo 2026" (D-OP-01-04-01-VER-6). Es solo
  * un valor inicial: todo se edita en Configuración → Calendario escolar.
  *
@@ -50,7 +50,7 @@ export interface CalendarioEscolar {
  * de cada periodo empiezan después (19 ene, ~1 jun, 17 ago); los días
  * previos son de inscripciones y trámites, en los que la biblioteca abre.
  */
-export const CALENDARIO_UAT_2026: CalendarioEscolar = {
+export const CALENDARIO_BASE_2026: CalendarioEscolar = {
   periodos: [
     { id: 'uat-2026-primavera', nombre: 'Primavera 2026', inicio: '2026-01-05', fin: '2026-05-31' },
     { id: 'uat-2026-verano', nombre: 'Verano 2026', inicio: '2026-06-01', fin: '2026-08-16' },
@@ -66,7 +66,7 @@ export const CALENDARIO_UAT_2026: CalendarioEscolar = {
     { id: 'uat-2026-07', desde: '2026-05-15', hasta: '2026-05-15', descripcion: 'Día del Maestro' },
     { id: 'uat-2026-08', desde: '2026-07-20', hasta: '2026-07-31', descripcion: 'Vacaciones de verano' },
     { id: 'uat-2026-09', desde: '2026-09-16', hasta: '2026-09-16', descripcion: 'Día de la Independencia' },
-    { id: 'uat-2026-10', desde: '2026-10-13', hasta: '2026-10-13', descripcion: 'Día libre UAT' },
+    { id: 'uat-2026-10', desde: '2026-10-13', hasta: '2026-10-13', descripcion: 'Día libre de la universidad' },
     { id: 'uat-2026-11', desde: '2026-11-02', hasta: '2026-11-02', descripcion: 'Día de Muertos' },
     { id: 'uat-2026-12', desde: '2026-11-16', hasta: '2026-11-16', descripcion: 'Día de la Revolución' },
     { id: 'uat-2026-13', desde: '2026-12-16', hasta: '2026-12-31', descripcion: 'Vacaciones de invierno' },
@@ -202,12 +202,12 @@ export function revisarCalendario(cal: CalendarioEscolar, hoy: Date = new Date()
 }
 
 // ═══════════════════════════════════════════════════════
-// CALENDARIO TÍPICO UAT PARA CUALQUIER AÑO (v3.46.0)
+// CALENDARIO TÍPICO PARA CUALQUIER AÑO (v3.46.0)
 // ═══════════════════════════════════════════════════════
 // El PDF oficial sale una vez al año y no siempre a tiempo. Este generador
 // reproduce el patrón del calendario 2026 con reglas, para que el
 // coordinador arranque con fechas cercanas a las reales y solo ajuste lo
-// que la UAT haya movido ese año. ES UNA APROXIMACIÓN: la pantalla lo dice.
+// que la universidad haya movido ese año. ES UNA APROXIMACIÓN: la pantalla lo dice.
 //
 // Reglas (sacadas del PDF 2026; verificadas contra él en los tests):
 // - Periodos sin huecos: Primavera 1 ene–31 may; Verano 1 jun hasta el día
@@ -216,7 +216,7 @@ export function revisarCalendario(cal: CalendarioEscolar, hoy: Date = new Date()
 // - Festivos de ley con lunes "recorridos": primer lunes de febrero,
 //   tercer lunes de marzo y tercer lunes de noviembre.
 // - Semana Santa: del lunes de la semana santa al viernes de la semana
-//   siguiente (la UAT suma días del contrato colectivo). Depende de la
+//   siguiente (la universidad suma días del contrato colectivo). Depende de la
 //   fecha de Pascua, que se calcula.
 // - Verano: las dos semanas antes del primer lunes de agosto.
 // - Invierno: 16–31 de diciembre. Año Nuevo: del 1 de enero al viernes
@@ -258,8 +258,8 @@ export function domingoDePascua(anio: number): Date {
   return new Date(anio, mes - 1, dia);
 }
 
-/** Calendario aproximado de la UAT para `anio`, con las reglas de arriba. */
-export function calendarioTipicoUat(anio: number): CalendarioEscolar {
+/** Calendario aproximado de la universidad para `anio`, con las reglas de arriba. */
+export function calendarioTipico(anio: number): CalendarioEscolar {
   const inicioOtono = lunesNumero(anio, 7, 3);
   const primerLunesAgosto = lunesNumero(anio, 7, 1);
   const pascua = domingoDePascua(anio);
@@ -292,7 +292,7 @@ export function calendarioTipicoUat(anio: number): CalendarioEscolar {
       un('maestro', dia(4, 15), 'Día del Maestro'),
       rango('verano', sumarDias(primerLunesAgosto, -14), sumarDias(primerLunesAgosto, -3), 'Vacaciones de verano'),
       un('independencia', dia(8, 16), 'Día de la Independencia'),
-      un('uat', dia(9, 13), 'Día libre UAT (verificar con el calendario oficial)'),
+      un('uat', dia(9, 13), 'Día libre de la universidad (verificar con el calendario oficial)'),
       un('muertos', dia(10, 2), 'Día de Muertos'),
       un('revolucion', lunesNumero(anio, 10, 3), 'Día de la Revolución'),
       rango('invierno', new Date(anio, 11, 16), new Date(anio, 11, 31), 'Vacaciones de invierno'),
@@ -305,5 +305,5 @@ export function calendarioTipicoUat(anio: number): CalendarioEscolar {
  * que tenemos capturado del PDF (2026), el típico calculado si no.
  */
 export function calendarioInicial(hoy: Date = new Date()): CalendarioEscolar {
-  return hoy.getFullYear() === 2026 ? CALENDARIO_UAT_2026 : calendarioTipicoUat(hoy.getFullYear());
+  return hoy.getFullYear() === 2026 ? CALENDARIO_BASE_2026 : calendarioTipico(hoy.getFullYear());
 }

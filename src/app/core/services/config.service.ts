@@ -176,7 +176,7 @@ interface AppConfig {
   camaraPreferida: CamaraPreferida;
 
   // ── Calendario escolar (v3.43.0) ──
-  /** Periodos y días inhábiles, capturados a mano. Default: UAT 2026. */
+  /** Periodos y días inhábiles, capturados a mano. Default: calendario base 2026. */
   calendarioEscolar: CalendarioEscolar;
 
   // ── Catálogos editables (v3.57.0) ──

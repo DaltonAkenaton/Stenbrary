@@ -9,6 +9,61 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-27 — v3.62.2: auditoría de portafolio y RLS sin sesión (0009)
+
+**Qué se hizo**
+- Auditoría de seguridad del repositorio antes de usarlo como portafolio
+  (credenciales, datos personales, historial, infraestructura).
+- `0009_rls_sin_sesion.sql`: `anon` sin privilegios sobre las tablas de datos
+  ni sobre `crear_registro_completo`; políticas `to authenticated` con
+  `es_personal()`; cuentas nuevas nacen como `alumno`.
+- Primera suite de esquema: `supabase/tests/database/` (pgTAP, 43 pruebas) +
+  `supabase/config.toml` (puertos 5532x para convivir con otro proyecto local).
+- Cliente: `signInWithOtp` con `shouldCreateUser: false` y mensaje en español
+  para un correo no invitado. `enable_signup = false` en el config local.
+- `environment.ts` sin URL ni llave; se retira `supabase-keepalive.yml`.
+- `supabase.client.spec` ya no depende de las credenciales del environment
+  (fija las suyas) + caso "build sin credenciales no conecta".
+- Docs: SEGURIDAD §2.8, DESPLIEGUE-NUBE §0, README (sección Backend),
+  ROADMAP/ESTADO (Fase 2 en pausa). Hoja "Preguntas" del xlsx de
+  verificación sin las respuestas a mano (el resto del archivo, intacto).
+
+**Qué se descubrió**
+- `organization_id is not distinct from current_organization_id()` (0003)
+  daba verdadero **sin sesión**: NULL = NULL. Con la URL y la llave publicable
+  del repositorio se podía leer, modificar y borrar todo. Además toda cuenta
+  nueva nacía `asistente` y las políticas no miraban el rol.
+- Probado, no supuesto: con 0001–0008 fallan 31 de 43 pruebas; con 0009 pasan
+  las 43. Los controles positivos (el coordinador opera, invita y promueve)
+  pasan en ambos casos: la corrección no es "bloquear todo".
+- La entrada de 2026-05-22 decía "datos reales"; eran del generador.
+  Corregido aquí y en ESTADO.
+- Las 8 migraciones previas nunca se habían aplicado en una base limpia (se
+  pegaban en el SQL Editor). Aplican sin error.
+
+**Qué se decidió**
+- El repositorio ya no nombra a la institución: "la universidad" en docs y
+  comentarios; identificadores `CALENDARIO_BASE_2026` / `calendarioTipico`;
+  el botón dice "Cargar calendario base". Los `id` de los días inhábiles
+  (`uat-2026-…`) **no** se renombran: viven en el localStorage de las
+  instalaciones. El historial de Git conserva el nombre (no se reescribe).
+- LICENSE: se mantienen todos los derechos reservados y se agrega un permiso
+  explícito de evaluación (clonar, ejecutar en local, correr pruebas). Antes
+  prohibía hasta eso, que es justo lo que hace un reclutador.
+- El backend se queda como prototipo en pausa (muestra de trabajo), no se
+  borra; pero lo que se muestra tiene que estar bien. Los proyectos de
+  Supabase de desarrollo se eliminaron.
+- La 0009 conserva el modo de una sola institución (`organization_id` NULL):
+  exigir organización habría roto ese diseño; se exige rol de personal.
+- Las pruebas de esquema no van al CI: el backend no está desplegado.
+
+**Sigue**
+- Nada del backend. Pendiente fuera del código: limpiar las referencias
+  locales del historial reescrito (`refs/respaldo`, `refs/reescrito`,
+  `refs/saneados`) y confirmar con GitHub que los SHAs viejos no cargan.
+
+---
+
 ## 2026-10-27 — v3.62.1: Personalizado compara por unidad de calendario
 
 **Qué se hizo**
@@ -530,7 +585,7 @@ script no se commiteó: se sembraba en una transacción por lote; el generador d
 
 ## 2026-10-14 — La puerta con prisas: lector fuera del escáner y flujos abandonados (v3.54.0)
 
-Segunda vuelta de revisión. Sin el Excel de la UAT, cada alumno se registra
+Segunda vuelta de revisión. Sin el Excel de la universidad, cada alumno se registra
 solo en la puerta, así que se revisó ese camino con el lector y con gente que
 se va a medias.
 
@@ -722,7 +777,7 @@ Revisión de sus notas del bloc. Lo que se hizo y lo que apareció al revisar:
 - **Versionado.** 63 versiones, consistentes con `package.json`, pero 20 el
   31-ago, huecos (3.23.1, 3.28.0–2) y ninguna `git tag`. Sin renumerar:
   política nueva en CLAUDE.md (una versión por publicación, v4.0.0 = entrega
-  UAT, tag por versión).
+  a la universidad, tag por versión).
 - **Manual de fórmulas contra el código.** Lo documentado cuadraba; faltaban
   "Vinieron solo 1 vez", "Carrera en crecimiento" y el resumen del
   crecimiento. Dos errores reales: la carrera en crecimiento mostraba +100 %
@@ -772,7 +827,7 @@ apareció al verificarlos.
   lanza Playwright. Lección (también en memoria): ante un hallazgo grave,
   reportar y pedir la prueba más barata ANTES de excavar.
 - Mapa de calor sigue al período principal por defecto; calendario típico
-  UAT para cualquier año (Pascua calculada; el típico 2026 coincide festivo
+  de la universidad para cualquier año (Pascua calculada; el típico 2026 coincide festivo
   por festivo con el PDF); "¿Qué es esta pantalla?" en Diagnóstico;
   `environment.mostrarConexionNube` para ocultar la nube en modo local.
 
@@ -853,13 +908,13 @@ volumen es la ronda siguiente.
 
 ## 2026-10-06 — Tanda 2b: calendario escolar capturado a mano
 
-El preset "Este semestre" suponía enero–junio / julio–diciembre; la UAT tiene
+El preset "Este semestre" suponía enero–junio / julio–diciembre; la universidad tiene
 tres periodos (Primavera, Verano, Otoño). Con el PDF oficial 2026 que mandó el
-usuario se armó `core/utils/calendario.utils.ts` (tipos, `CALENDARIO_UAT_2026`
+usuario se armó `core/utils/calendario.utils.ts` (tipos, `CALENDARIO_BASE_2026`
 y funciones puras) y la categoría **Configuración → Calendario escolar**.
 
 **Qué se decidió.**
-- **Lista editable, no reglas.** La UAT "usualmente" recorre los festivos al
+- **Lista editable, no reglas.** La universidad "usualmente" recorre los festivos al
   lunes o viernes, pero no siempre: ninguna regla lo cubre.
 - **Periodos sin huecos** (decisión del usuario): Primavera arranca el 5 de
   enero (inicio de actividades administrativas) y no el 19 (clases), para
@@ -868,7 +923,7 @@ y funciones puras) y la categoría **Configuración → Calendario escolar**.
 - **Borrador + Guardar** en la pantalla: editar fechas a mano produce estados
   intermedios inválidos, y las estadísticas no deben apuntar a ellos.
 - Vive en `ConfigService` (localStorage) como el resto de la configuración.
-  Las instalaciones previas reciben el calendario UAT al cargar. Cuando la
+  Las instalaciones previas reciben el calendario universitario al cargar. Cuando la
   configuración viaje a la nube (Fase 2), el calendario va con ella.
 - Fechas como `'YYYY-MM-DD'`, siempre vía `parseFechaLocal`: la lección de la
   Tanda 1.
@@ -910,7 +965,7 @@ mismo concepto que divergieron sin que nadie lo decidiera.
 `false`: no hay forma fiable de reconocerlas (una visita real puede durar
 justo 4 h).
 
-**Sigue:** Tanda 2b (calendario UAT configurable: periodos y días inhábiles;
+**Sigue:** Tanda 2b (calendario universitario configurable: periodos y días inhábiles;
 el PDF 2026 ya está leído en memoria) y Tanda 3 (resto de 🟠/🟡).
 
 ---
@@ -1694,7 +1749,8 @@ acciones individuales y bulk, subida ordenada por FKs y panel de errores.
 ## 2026-05-22 — Fase 2.1 cerrada: schema espejo + adapter + importador one-shot
 
 Primera tanda de Fase 2.1. Objetivo: subir el IndexedDB local a Postgres
-manteniendo los UUIDs y validar end-to-end con datos reales del UAT.
+manteniendo los UUIDs y validar end-to-end con un volumen como el de la universidad
+(datos de prueba del generador, no de alumnos reales).
 
 **Hecho:**
 - `supabase/migrations/0003_data_tables.sql`: tablas `motivos`, `alumnos`,
@@ -1726,7 +1782,8 @@ manteniendo los UUIDs y validar end-to-end con datos reales del UAT.
 - `supabase.client.ts`: lock pass-through para silenciar el warning de
   NavigatorLockManager (irrelevante en PWA de una pestaña).
 
-**Validado end-to-end con datos UAT reales:**
+**Validado end-to-end con datos de prueba a escala universitaria** (generador interno;
+nunca se subieron datos de alumnos reales):
 - 500+ alumnos, 5000+ registros, 5 motivos subidos sin errores tras
   resolver los 3 bugs encontrados.
 - Idempotencia verificada: re-corrida no duplica, todos `subidos = N` y
@@ -1956,7 +2013,7 @@ app actual.
 - `RemoteDatabaseService` con la misma interfaz pública de
   `DatabaseService` (adapter pattern) para poder hacer feature-flag
   swap durante desarrollo.
-- Importador one-shot: subir el IndexedDB de UAT al Supabase como
+- Importador one-shot: subir el IndexedDB de la universidad al Supabase como
   prueba con datos reales.
 
 **Notas para el futuro:**
@@ -2285,19 +2342,19 @@ performance con volumen realista sin clickear a mano.
 
 ---
 
-## 2026-04-20 — Calendario UAT en generador + lista maestra de pruebas
+## 2026-04-20 — Calendario universitario en generador + lista maestra de pruebas
 
 Refinamiento del generador A1 con modelo realista basado en el calendario
-escolar UAT 2026 (foto compartida por el coordinador), y entrega de la
+escolar universitario 2026 (foto compartida por el coordinador), y entrega de la
 "lista de mandado" para pruebas manuales end-to-end.
 
 **Hecho:**
-- `datos-prueba.service.ts` reescrito con modelo UAT:
+- `datos-prueba.service.ts` reescrito con modelo universitario:
   - 3 períodos lectivos: primavera (12-ene → 15-may), verano
     (01-jun → 15-jul), otoño (17-ago → 07-dic).
   - Verano: solo 15% de alumnos activos (refleja "200–400 inscritos
     en cursos de verano" dicho por coordinador).
-  - Festivos oficiales MX + UAT excluidos (01-ene, 05-feb, 16-mar,
+  - Festivos oficiales MX + universidad excluidos (01-ene, 05-feb, 16-mar,
     01-may, 05-may, 16-sep, 02-nov, 16-nov, 12-dic, 25-dic).
   - Semana Santa aproximada (25-mar → 05-abr): 0 registros.
   - Domingos cerrado · sábado 30% operación.
@@ -2317,7 +2374,7 @@ escolar UAT 2026 (foto compartida por el coordinador), y entrega de la
     debugging y futuras vistas.
 - `datos-prueba.component.ts` actualizado:
   - Nuevos presets: Pequeño (100/30), Medio (500/180),
-    Tu universidad UAT (2554/30), Histórico 12m (2500/365),
+    Una universidad real (2554/30), Histórico 12m (2500/365),
     Histórico 30m (2500/900).
   - Label renombrado: "Registros por alumno / mes".
   - Estimación de tiempo (~10ms por registro × 2 writes IDB).
@@ -2325,17 +2382,17 @@ escolar UAT 2026 (foto compartida por el coordinador), y entrega de la
 - `docs/PRUEBAS-MANUALES.md` — checklist de 300+ items cubriendo
   27 áreas (setup, generador, scanner, registros, dashboard,
   /presencia, /inactivos, configuración, exportación, PWA,
-  performance, edge cases, accesibilidad, escenario real UAT).
+  performance, edge cases, accesibilidad, escenario universitario real).
 
 **Descubierto:**
-- El calendario UAT usa 3 períodos (no 2 semestres), corregido.
+- El calendario universitario usa 3 períodos (no 2 semestres), corregido.
 - `actualizarRegistroManual` acepta `horaSalida` — bien. Pero
   `crearRegistro` NO acepta `fechaHora` custom, por eso seguimos
   con el patrón "crear + actualizar" (2 writes/registro).
   Pendiente: `crearRegistrosBatch()` como optimización.
 
 **Decidido:**
-- Calendario UAT HARDCODED en constantes del servicio (no en
+- Calendario universitario HARDCODED en constantes del servicio (no en
   ConfigService). Razón: es infra de testing, no config de
   producción. Cuando se venda a otra universidad, se abstraerá
   a un `CalendarioEscolarService` configurable por el coordinador.

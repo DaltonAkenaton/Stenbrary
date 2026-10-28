@@ -96,7 +96,7 @@ const SCAN_INTERVAL_MS         = 160; // más frecuente que 200ms para mejor res
 const LOWRES_THRESHOLD         = 1400;
 
 /**
- * Estrategias de preprocesado optimizadas para CODE 128 (credenciales UAT).
+ * Estrategias de preprocesado optimizadas para CODE 128 (credenciales universitarias).
  *
  * Code 128 es un código de barras 1D que requiere:
  *   - Alto contraste entre barras negras y espacios blancos
@@ -631,7 +631,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.enCooldown = false;
 
       if (this.usandoNativo) {
-        // Solo Code 128 y Code 39 — credenciales UAT usan Code 128.
+        // Solo Code 128 y Code 39 — las credenciales universitarias usan Code 128.
         // Menos formatos = el browser dedica todo su tiempo a un solo decoder.
         this.nativeDetector = new BarcodeDetector({
           formats: ['code_128', 'code_39'],

@@ -179,23 +179,23 @@ teclado: no necesita instalar nada.
 Configuración → **Calendario escolar**. Todo se captura a mano.
 
 - **Periodos:** nombre, fecha de inicio y de fin. Viene precargado el
-  calendario UAT 2026 (Primavera 5 ene–31 may, Verano 1 jun–16 ago, Otoño
+  calendario universitario 2026 (Primavera 5 ene–31 may, Verano 1 jun–16 ago, Otoño
   17 ago–31 dic). Se recomienda capturarlos **sin huecos**: cada periodo
   empieza el día después de que termina el anterior, para que siempre haya
   uno en curso. Si queda un hueco, "Este periodo" muestra el último que
   terminó, marcado "terminado".
-- **Días inhábiles:** un día o un rango (vacaciones) con descripción. La UAT
+- **Días inhábiles:** un día o un rango (vacaciones) con descripción. La universidad
   *suele* recorrer los festivos al lunes o al viernes, pero no siempre: por eso
   es una lista editable y no una regla. Si recorren un festivo, se cambia la
   fecha.
 - Los cambios se hacen sobre un borrador: no cuentan hasta pulsar
   **Guardar**. "Descartar cambios" vuelve a lo guardado.
-- **Año nuevo:** elegir el año y pulsar **Cargar calendario UAT** (v3.46.0).
+- **Año nuevo:** elegir el año y pulsar **Cargar calendario base** (v3.46.0).
   Para 2026 carga el oficial; para otros años, una **aproximación** calculada
-  con las reglas de la UAT: festivos de ley recorridos a lunes (primer lunes de
+  con las reglas de la universidad: festivos de ley recorridos a lunes (primer lunes de
   febrero, tercer lunes de marzo y de noviembre), Semana Santa según la fecha
   de Pascua, vacaciones de verano e invierno y Otoño desde el tercer lunes de
-  agosto. Se compara con el PDF oficial y se ajusta lo que la UAT haya movido.
+  agosto. Se compara con el PDF oficial y se ajusta lo que la universidad haya movido.
 - La pantalla avisa si hay periodos encimados, huecos entre periodos, fechas
   al revés, y cuando el calendario ya no cubre la fecha de hoy (cambio de
   año: **cada año hay que capturar el calendario nuevo**).
@@ -203,7 +203,7 @@ Configuración → **Calendario escolar**. Todo se captura a mano.
 **Dónde se usa:**
 - Estadísticas y Comparar: botones "Este periodo (nombre)" y "Periodo
   anterior (nombre)". Sustituyen a "Este semestre", que suponía enero–junio /
-  julio–diciembre y no corresponde a la UAT.
+  julio–diciembre y no corresponde a la universidad.
 - Resumen: un día inhábil sin registros muestra "Hoy es día inhábil" en vez
   de la alerta "verifica que el escáner esté operando".
 - Los promedios **no** dependen del calendario: ya excluyen solos los días

@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  matricula.utils.ts                                  ║
-// ║  Stenbrary v3.6.2 — Validación de matrícula UAT      ║
+// ║  Stenbrary v3.6.2 — Validación de matrícula          ║
 // ║                                                      ║
 // ║  Formato detectado: [a]NNNNNNNNNN                    ║
 // ║  - Prefijo 'a' o 'A' opcional (indica "alumno")      ║
@@ -149,7 +149,7 @@ export function validarMatricula(valor: string): ValidacionMatricula {
 
 /**
  * Validación rápida para el scanner (solo números, sin prefijo).
- * El código de barras de la credencial UAT contiene solo la parte numérica.
+ * El código de barras de la credencial universitaria contiene solo la parte numérica.
  *
  * Esta función es más permisiva que validarMatricula() porque el scanner
  * necesita aceptar rápido sin preguntar por prefijos.

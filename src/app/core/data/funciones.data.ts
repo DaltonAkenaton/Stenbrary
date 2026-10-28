@@ -69,7 +69,7 @@ export interface Funcion {
    */
   demo?: DemoVisual;
   /**
-   * Solo existe con la conexión a la nube (v3.57.0). Mientras la UAT use el
+   * Solo existe con la conexión a la nube (v3.57.0). Mientras la universidad use el
    * sistema en local se oculta, igual que en Configuración: anunciar algo que
    * no se puede abrir confunde.
    */

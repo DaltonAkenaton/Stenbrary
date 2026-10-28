@@ -6,7 +6,7 @@
 // ║  la base con alumnos + registros realistas para       ║
 // ║  validar vistas y performance con volumen.            ║
 // ║                                                      ║
-// ║  MODELO REALISTA (UAT — calendario 2026):             ║
+// ║  MODELO REALISTA (calendario universitario 2026):    ║
 // ║  - 3 períodos lectivos: primavera, verano, otoño.     ║
 // ║  - Verano: solo 15% de alumnos activos (cursos).      ║
 // ║  - Festivos oficiales y Semana Santa excluidos.       ║
@@ -49,7 +49,7 @@ export interface ConteoDatosPrueba {
 }
 
 // ═══════════════════════════════════════════════
-// CALENDARIO UAT (constantes — futura config per-universidad)
+// CALENDARIO UNIVERSITARIO (constantes — futura config per-universidad)
 // ═══════════════════════════════════════════════
 
 interface PeriodoLectivo {
@@ -59,14 +59,14 @@ interface PeriodoLectivo {
   densidadFactor: number;
 }
 
-const PERIODOS_LECTIVOS_UAT: PeriodoLectivo[] = [
+const PERIODOS_LECTIVOS: PeriodoLectivo[] = [
   { nombre: 'primavera', inicioMMDD: '01-12', finMMDD: '05-15', densidadFactor: 1.0 },
   { nombre: 'verano',    inicioMMDD: '06-01', finMMDD: '07-15', densidadFactor: 1.0 },
   { nombre: 'otono',     inicioMMDD: '08-17', finMMDD: '12-07', densidadFactor: 1.0 },
 ];
 
-// Festivos oficiales MX + UAT (MM-DD)
-const FESTIVOS_UAT_MMDD = [
+// Festivos oficiales MX + universidad (MM-DD)
+const FESTIVOS_MMDD = [
   '01-01', // Año nuevo
   '02-05', // Día de la Constitución
   '03-16', // Natalicio de Juárez
@@ -90,7 +90,7 @@ const HORA_CIERRE = 22;
 // Refleja "solo 200–400 de 2554 se inscriben a cursos de verano".
 const PROB_ACTIVO_EN_VERANO = 0.15;
 
-// Distribución realista de turnos (2/3 matutino típico UAT).
+// Distribución realista de turnos (2/3 matutino, típico).
 const TURNOS_PONDERADOS: { turno: 'Matutino' | 'Vespertino' | 'Mixto'; peso: number }[] = [
   { turno: 'Matutino',   peso: 0.66 },
   { turno: 'Vespertino', peso: 0.22 },
@@ -290,7 +290,7 @@ export class DatosPruebaService {
     if (diaSemana === 0) return { lectivo: false, factor: 0, esVerano: false };
 
     // Festivos oficiales.
-    if (FESTIVOS_UAT_MMDD.includes(mmdd)) {
+    if (FESTIVOS_MMDD.includes(mmdd)) {
       return { lectivo: false, factor: 0, esVerano: false };
     }
 
@@ -300,7 +300,7 @@ export class DatosPruebaService {
     }
 
     // Períodos lectivos.
-    for (const p of PERIODOS_LECTIVOS_UAT) {
+    for (const p of PERIODOS_LECTIVOS) {
       if (mmdd >= p.inicioMMDD && mmdd <= p.finMMDD) {
         const esVerano = p.nombre === 'verano';
         let factor = p.densidadFactor;

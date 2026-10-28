@@ -49,6 +49,20 @@ export interface VersionChangelog {
  */
 export const CHANGELOG: VersionChangelog[] = [
   {
+    version: '3.62.2',
+    fecha: '2026-10-27',
+    cambios: [
+      {
+        tipo: 'fix',
+        texto: 'Conexión con la nube (función en pausa, apagada en todos los equipos): las reglas de la base en línea ahora rechazan cualquier consulta sin sesión iniciada, y una cuenta nueva ya no ve datos hasta que el coordinador le asigna un rol. El acceso es solo por invitación: si alguien pide el enlace con un correo no invitado, el sistema le dice que pida acceso al coordinador.',
+      },
+      {
+        tipo: 'cambio',
+        texto: 'Configuración → Calendario escolar: el botón para precargar periodos y días inhábiles ahora se llama "Cargar calendario base". Funciona igual: carga el calendario oficial 2026 o una aproximación para otros años, que luego puedes ajustar.',
+      },
+    ],
+  },
+  {
     version: '3.62.1',
     fecha: '2026-10-27',
     cambios: [
@@ -723,7 +737,7 @@ export const CHANGELOG: VersionChangelog[] = [
       {
         tipo: 'feat',
         texto:
-          'Calendario escolar: elige un año y pulsa "Cargar calendario UAT". Para 2026 carga el oficial; para otros años, ' +
+          'Calendario escolar: elige un año y pulsa "Cargar calendario base". Para 2026 carga el oficial; para otros años, ' +
           'una aproximación con las reglas habituales de la universidad (festivos que se recorren a lunes, Semana Santa, vacaciones) que luego ajustas.',
       },
       {
@@ -855,7 +869,7 @@ export const CHANGELOG: VersionChangelog[] = [
         tipo: 'feat',
         texto:
           'Nueva sección Configuración → Calendario escolar: periodos (Primavera, Verano, Otoño) y días inhábiles, ' +
-          'todo editable a mano. Viene precargado con el calendario oficial UAT 2026.',
+          'todo editable a mano. Viene precargado con el calendario universitario 2026.',
       },
       {
         tipo: 'cambio',

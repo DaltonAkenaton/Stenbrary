@@ -1,8 +1,8 @@
 # Seguridad de Stenbrary
 
 Modelo de amenazas, controles que existen y su verificación, y límites que
-una aplicación local sin servidor **no puede** superar. Estado a v3.62.0
-(2026-10-26).
+una aplicación local sin servidor **no puede** superar. Estado a v3.62.2
+(2026-10-27).
 
 ## 1. Qué hay que proteger y de quién
 
@@ -122,10 +122,51 @@ Angular 21 tiene soporte LTS hasta junio de 2027.
   (`core/utils/logger.ts`).
 - Las matrículas del repositorio, pruebas y demo son sintéticas (serie
   `229999000N`, `9000001+`).
-- La nube (Supabase) está apagada en el build de producción, que no incluye
-  credenciales. La clave del proyecto de **desarrollo** que aparece en
-  `environment.ts` y en el workflow manual es la *publishable*: pública por
-  diseño y limitada por RLS (`supabase/migrations`).
+- La nube (Supabase) está apagada y ningún `environment` incluye
+  credenciales. No hay proyectos de Supabase desplegados: el de desarrollo se
+  eliminó el 2026-10-27 (ver 2.8).
+
+### 2.8 Backend en pausa: políticas RLS (defecto corregido en 0009)
+
+El prototipo de backend (`supabase/`) no está desplegado, pero su esquema se
+mantiene correcto y probado. La auditoría del 2026-10-27 encontró un defecto
+en las políticas de 0003:
+
+```sql
+using (public.is_super_admin()
+       or organization_id is not distinct from public.current_organization_id())
+```
+
+`is not distinct from` estaba ahí para que el modo de una sola institución
+(`organization_id` NULL) funcionara: `NULL = NULL` es NULL, y con `=` nadie
+habría visto nada. Pero `current_organization_id()` sale de `auth.uid()`, que
+**también es NULL sin sesión**. Resultado:
+
+1. Con la URL del proyecto y la llave publicable (que estaban en el repositorio,
+   como es normal: son públicas *porque* la RLS debería bastar), cualquiera
+   podía leer, modificar y borrar alumnos, visitas y motivos.
+2. Toda cuenta nueva nacía como `asistente` y las políticas no revisaban el
+   rol: crearse una cuenta con cualquier correo daba el mismo acceso.
+
+El proyecto afectado solo tuvo datos de prueba y se eliminó. **Corrección
+(`0009_rls_sin_sesion.sql`)**:
+
+- `anon` pierde todo privilegio sobre las tablas de datos y la función de alta
+  (sin sesión: *permission denied*, no un arreglo vacío).
+- Las políticas pasan a `to authenticated` y exigen rol de personal
+  (`es_personal()`) además de la organización.
+- Las cuentas nuevas nacen como `alumno`; el registro libre se cierra en el
+  servidor (`enable_signup = false`) y en el cliente (`shouldCreateUser: false`).
+  El acceso es por invitación y el coordinador asigna el rol.
+
+**Verificación:** `npx supabase test db` (pgTAP, `supabase/tests/database/`,
+43 pruebas). Con 0001–0008 fallan 31; con 0009 pasan todas. Incluyen controles
+positivos (el coordinador opera, invita y promueve), para que "bloquear todo"
+no cuente como corrección.
+
+**Lección:** una comparación que trata NULL como valor válido necesita que el
+NULL de "sin sesión" no pueda alcanzarla. Toda política nueva lleva `to
+authenticated` y una prueba sin sesión.
 
 ## 3. Riesgos residuales conocidos
 

@@ -3,7 +3,7 @@
 // ║  Stenbrary v3.12.1 — Reporte de errores              ║
 // ║                                                      ║
 // ║  Envía errores no manejados a un endpoint HTTP       ║
-// ║  (Sentry tunnel, Netlify Function, backend propio).  ║
+// ║  (Sentry tunnel, función serverless, backend propio).║
 // ║                                                      ║
 // ║  Si el endpoint está vacío en environment.ts, es     ║
 // ║  no-op total: cero costo de red/bundle.              ║

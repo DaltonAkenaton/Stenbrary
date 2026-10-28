@@ -4,7 +4,7 @@ export const environment = {
   /**
    * Muestra la sección "Conexión con la nube" en Configuración → Avanzado
    * (v3.46.0). Apagado: el sistema se presenta e instala en modo local
-   * mientras la UAT no autorice guardar datos de alumnos en la nube, y la
+   * mientras la universidad no autorice guardar datos de alumnos en la nube, y la
    * sección solo confundiría. Si una instalación YA tiene la nube encendida,
    * la sección se muestra igual para poder apagarla.
    */

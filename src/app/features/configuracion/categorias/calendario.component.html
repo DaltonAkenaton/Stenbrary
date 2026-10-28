@@ -13,8 +13,8 @@
     Los <strong style="color:#E8F4F8">periodos</strong> alimentan los botones "Este periodo" y
     "Periodo anterior" de Estadísticas. Los <strong style="color:#E8F4F8">días inhábiles</strong>
     evitan que el Resumen te alerte de "sin registros" un día festivo. Todo se captura a mano:
-    si la UAT recorre un festivo, solo cambia la fecha. Para empezar un año nuevo, elige el año
-    y pulsa <strong style="color:#E8F4F8">Cargar calendario UAT</strong>: carga una aproximación
+    si la universidad recorre un festivo, solo cambia la fecha. Para empezar un año nuevo, elige el año
+    y pulsa <strong style="color:#E8F4F8">Cargar calendario base</strong>: carga una aproximación
     con las reglas habituales de la universidad, que luego ajustas con el calendario oficial.
   </p>
 
@@ -54,8 +54,8 @@
       }
     </select>
     <button class="btn-inline" (click)="cargarCalendarioUat()"
-            matTooltip="Oficial para 2026; para otros años, una aproximación con las reglas de la UAT que luego puedes ajustar">
-      <mat-icon>event_repeat</mat-icon> Cargar calendario UAT
+            matTooltip="Oficial para 2026; para otros años, una aproximación con las reglas de la universidad que luego puedes ajustar">
+      <mat-icon>event_repeat</mat-icon> Cargar calendario base
     </button>
     @if (hayCambios()) {
       <span class="cal-pendiente">Cambios sin guardar</span>
