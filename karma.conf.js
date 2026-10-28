@@ -29,6 +29,12 @@ module.exports = function (config) {
         { type: 'html' },
         { type: 'text-summary' },
       ],
+      // Piso medido el 2026-10-27 (80.3 / 68.3 / 75.9 / 82.4 %), un poco por
+      // debajo para no fallar por ruido. El README cita la de sentencias: si
+      // baja de aquí, `npm run test:ci` falla en vez de dejar la cifra vieja.
+      check: {
+        global: { statements: 79, branches: 66, functions: 74, lines: 81 },
+      },
     },
     reporters: ['progress', 'kjhtml'],
     browsers: ['Chrome'],

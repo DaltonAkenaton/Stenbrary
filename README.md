@@ -19,8 +19,9 @@ estadísticas y reportes sin configurar nada.
 las visitas en papel o en hojas de cálculo y necesitan cifras confiables de uso.
 
 **Estado:** desarrollado y probado (versión 3.62.2). Se diseñó con la
-coordinación de una biblioteca universitaria y se validó con ella, pero **no se
-adoptó**: las bibliotecas de esa institución registran sus visitas en un
+coordinación de una biblioteca universitaria, que aportó los requisitos y revisó
+el sistema durante el desarrollo; la prueba piloto con alumnos reales no llegó a
+hacerse. **No se adoptó**: las bibliotecas de esa institución registran sus visitas en un
 formulario estandarizado de Google Forms, del que salen los reportes oficiales,
 y cambiarlo en una sola biblioteca rompería ese estándar. Se mantiene como
 proyecto de portafolio; no está en operación ni tiene usuarios reales. De esa
@@ -225,7 +226,8 @@ Para probar el esquema (requiere Docker): `npx supabase start` y
 
 ## Pruebas
 
-- **491 pruebas unitarias** en 29 archivos (cobertura de sentencias 80 %),
+- **491 pruebas unitarias** en 29 archivos (80 % de sentencias de los archivos
+  que cargan, con un piso que el CI hace cumplir; las pantallas se prueban con E2E),
   centradas en la lógica pura (fechas, métricas, matrícula, calendario,
   importación, respaldos, hash del PIN) y en los servicios de datos. Incluyen
   fallos reales a media transacción y PDF generados con texto hostil.

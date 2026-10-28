@@ -9,6 +9,25 @@ descubrió, qué se decidió, qué sigue. Breve y honesto.
 
 ---
 
+## 2026-10-27 — Auditoría final: pendientes de portafolio (sin versión nueva)
+
+- Cobertura medida: 80.3 % sentencias, 68.3 % ramas, 75.9 % funciones,
+  82.4 % líneas (solo archivos que cargan las pruebas unitarias). El README
+  citaba 80 % sin nada que lo sostuviera: `karma.conf.js` ahora tiene un piso
+  (`check.global`) y `test:ci` falla si baja.
+- README: "se validó con ella" → qué aportó la coordinación y que el piloto no
+  se hizo.
+- `smoke.spec.ts`: la única matrícula de prueba fuera de la serie sintética
+  pasa a `2299990999`.
+- No se hizo, a propósito: publicar `3rdpartylicenses.txt` (exige cambiar el
+  build de Cloudflare), dividir los componentes grandes (riesgo sin beneficio
+  para un proyecto en mantenimiento), forzar el cambio del PIN de fábrica
+  (solo importa en operación real).
+- Fuera del código: descripción y topics del repo en GitHub (decía Angular 18
+  y Tailwind) los corrige el dueño en About.
+
+---
+
 ## 2026-10-27 — v3.62.2: auditoría de portafolio y RLS sin sesión (0009)
 
 **Qué se hizo**

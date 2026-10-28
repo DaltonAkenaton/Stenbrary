@@ -135,7 +135,7 @@ test.describe('Asistente de configuración inicial', () => {
       await new Promise<void>((ok, no) => {
         const tx = db.transaction('alumnos', 'readwrite');
         tx.objectStore('alumnos').put({
-          id: 'a-existente', matricula: '2241419999', nombre: 'Previo',
+          id: 'a-existente', matricula: '2299990999', nombre: 'Previo',
           apellidoPaterno: 'Usuario', apellidoMaterno: 'Antiguo',
           carrera: 'ISC', grado: 1, grupo: 'A', turno: 'Matutino',
           activo: true, fechaRegistro: new Date(), datosExtra: {},
